@@ -1,0 +1,11 @@
+{
+  "success": true,
+  "type": "user_input",
+  "run_identifier": "2537522dadc14e10",
+  "user_input": "testing python RUN",
+  "message": "User input received successfully",
+  "command": "USERINPUT",
+  "args": [],
+  "output_file": "/Users/wukunhuan/.local/bin/RUN_output/run_2537522dadc14e10.json",
+  "duration": 0
+}

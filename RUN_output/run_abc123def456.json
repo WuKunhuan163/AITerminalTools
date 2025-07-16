@@ -1,0 +1,7 @@
+{
+  "success": true,
+  "type": "user_input",
+  "run_identifier": "abc123def456",
+  "user_input": "direct test",
+  "message": "User input received successfully"
+}

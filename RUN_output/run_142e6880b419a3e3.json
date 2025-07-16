@@ -1,0 +1,10 @@
+{
+  "success": false,
+  "error": "Interactive mode not supported in RUN environment. Please provide a query.",
+  "suggestion": "Usage: SEARCH_PAPER 'your query here' --max-results 10",
+  "run_identifier": "142e6880b419a3e3",
+  "command": "SEARCH_PAPER",
+  "args": [],
+  "output_file": "/Users/wukunhuan/.local/bin/RUN_output/run_142e6880b419a3e3.json",
+  "duration": 0
+}

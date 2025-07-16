@@ -1,0 +1,36 @@
+{
+  "success": true,
+  "message": "Alias 'testcmd' created successfully",
+  "alias_name": "testcmd",
+  "alias_command": "echo 'This is a test command'",
+  "files_processed": 3,
+  "files_updated": 3,
+  "results": [
+    {
+      "file": "/Users/wukunhuan/.bash_profile",
+      "success": true,
+      "created_file": false,
+      "updated_existing": false
+    },
+    {
+      "file": "/Users/wukunhuan/.bashrc",
+      "success": true,
+      "created_file": false,
+      "updated_existing": false
+    },
+    {
+      "file": "/Users/wukunhuan/.zshrc",
+      "success": true,
+      "created_file": false,
+      "updated_existing": false
+    }
+  ],
+  "run_identifier": "9faeb328d270a914",
+  "command": "ALIAS",
+  "args": [
+    "testcmd",
+    "echo 'This is a test command'"
+  ],
+  "output_file": "/Users/wukunhuan/.local/bin/RUN_output/run_9faeb328d270a914.json",
+  "duration": 0
+}

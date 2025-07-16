@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "message": "Help information",
+  "help": "FILE_SELECT - File Selection Tool",
+  "run_identifier": "fa87f1eb45917d78",
+  "command": "FILE_SELECT",
+  "args": [
+    "--help"
+  ],
+  "output_file": "/Users/wukunhuan/.local/bin/RUN_output/run_fa87f1eb45917d78.json",
+  "duration": 7
+}

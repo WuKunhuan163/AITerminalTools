@@ -1,0 +1,17 @@
+{
+  "success": true,
+  "message": "File selected successfully",
+  "selected_file": "/Users/wukunhuan/Desktop/test_document.pdf",
+  "file_name": "test_document.pdf",
+  "file_size": 78110,
+  "run_identifier": "d7b61cc4d710c167",
+  "command": "FILE_SELECT",
+  "args": [
+    "--types",
+    "pdf",
+    "--title",
+    "Select PDF File"
+  ],
+  "output_file": "/Users/wukunhuan/.local/bin/RUN_output/run_d7b61cc4d710c167.json",
+  "duration": 101
+}

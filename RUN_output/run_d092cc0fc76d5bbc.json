@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "message": "Help information",
+  "help": "ALIAS - Permanent Shell Alias Creation Tool",
+  "run_identifier": "d092cc0fc76d5bbc",
+  "command": "ALIAS",
+  "args": [
+    "--help"
+  ],
+  "output_file": "/Users/wukunhuan/.local/bin/RUN_output/run_d092cc0fc76d5bbc.json",
+  "duration": 9
+}

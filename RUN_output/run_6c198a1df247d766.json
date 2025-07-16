@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "message": "Selected 2 file(s)",
+  "selected_files": [
+    "/Users/wukunhuan/Desktop/demo1_test.pdf",
+    "/Users/wukunhuan/Desktop/test_document.pdf"
+  ],
+  "file_count": 2,
+  "run_identifier": "6c198a1df247d766",
+  "command": "FILE_SELECT",
+  "args": [
+    "--types",
+    "txt,pdf",
+    "--multiple",
+    "--title",
+    "Select Multiple Files"
+  ],
+  "output_file": "/Users/wukunhuan/.local/bin/RUN_output/run_6c198a1df247d766.json",
+  "duration": 17
+}

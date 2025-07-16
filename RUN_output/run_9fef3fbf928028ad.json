@@ -1,0 +1,9 @@
+{
+  "success": false,
+  "error": "No URL provided. Usage: DOWNLOAD <url> [destination]",
+  "run_identifier": "9fef3fbf928028ad",
+  "command": "DOWNLOAD",
+  "args": [],
+  "output_file": "/Users/wukunhuan/.local/bin/RUN_output/run_9fef3fbf928028ad.json",
+  "duration": 0
+}

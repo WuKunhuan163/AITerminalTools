@@ -1,0 +1,9 @@
+{
+  "success": false,
+  "error": "No arguments provided. Usage: EXPORT <variable_name> <value>",
+  "run_identifier": "eec376d1c677d21e",
+  "command": "EXPORT",
+  "args": [],
+  "output_file": "/Users/wukunhuan/.local/bin/RUN_output/run_eec376d1c677d21e.json",
+  "duration": 0
+}

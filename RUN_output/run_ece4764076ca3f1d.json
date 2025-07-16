@@ -1,0 +1,12 @@
+{
+  "success": false,
+  "error": "Command execution failed",
+  "command": "LEARN",
+  "args": [
+    "python basics"
+  ],
+  "run_identifier": "ece4764076ca3f1d",
+  "exit_code": 1,
+  "duration": 2,
+  "output_file": "/Users/wukunhuan/.local/bin/RUN_output/run_ece4764076ca3f1d.json"
+}

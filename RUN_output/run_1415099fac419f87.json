@@ -1,0 +1,8 @@
+{
+  "success": false,
+  "error": "Command not found: /Users/wukunhuan/.local/bin/--help",
+  "command": "--help",
+  "args": [],
+  "run_identifier": "1415099fac419f87",
+  "output_file": "/Users/wukunhuan/.local/bin/RUN_output/run_1415099fac419f87.json"
+}

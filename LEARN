@@ -27,7 +27,19 @@ def main():
     
     # 传递所有参数给learn_entry
     try:
+        # 构造完整的命令字符串，包括 "LEARN" 前缀
+        command_parts = ["LEARN"] + sys.argv[1:]
+        command_string = " ".join(command_parts)
+        
+        # 临时修改 sys.argv 以传递给 learn_entry
+        original_argv = sys.argv[:]
+        sys.argv = ["learn_entry.py", command_string]
+        
         learn_main()
+        
+        # 恢复原始 sys.argv
+        sys.argv = original_argv
+        
         return 0
     except SystemExit as e:
         return e.code

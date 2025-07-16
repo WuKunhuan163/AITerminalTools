@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "message": "Help information",
+  "help": "显示帮助信息",
+  "run_identifier": "ffd35a77a928eeae",
+  "command": "EXTRACT_PDF",
+  "args": [
+    "--help"
+  ],
+  "output_file": "/Users/wukunhuan/.local/bin/RUN_output/run_ffd35a77a928eeae.json",
+  "duration": 0
+}

@@ -1,0 +1,9 @@
+#!/bin/bash
+# SEARCH_PAPER Command Script
+# Enhanced Academic Paper Search Tool - now calls Python version
+
+# Get script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Call Python version of SEARCH_PAPER script
+exec /usr/bin/python3 "$SCRIPT_DIR/SEARCH_PAPER.py" "$@" 

@@ -1,0 +1,9 @@
+#!/bin/bash
+# GOOGLE_DRIVE 命令脚本
+# Google Drive access tool - 现在调用Python版本
+
+# 获取脚本所在目录
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# 调用Python版本的GOOGLE_DRIVE脚本
+exec /usr/bin/python3 "$SCRIPT_DIR/GOOGLE_DRIVE.py" "$@" 

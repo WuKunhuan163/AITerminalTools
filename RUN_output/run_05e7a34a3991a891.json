@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "message": "Command executed successfully (no explicit output)",
+  "command": "OVERLEAF",
+  "args": [
+    "pdf_extractor/formula_test_output/test2_recompile.tex"
+  ],
+  "run_identifier": "05e7a34a3991a891",
+  "exit_code": 0,
+  "duration": 1,
+  "output_file": "/Users/wukunhuan/.local/bin/RUN_output/run_05e7a34a3991a891.json"
+}

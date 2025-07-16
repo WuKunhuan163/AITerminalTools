@@ -1,0 +1,5 @@
+#!/bin/bash
+# USERINPUT - User Input Command for Cursor AI
+# Simple wrapper to execute USERINPUT.py
+
+exec /usr/bin/python3 "$(dirname "$0")/USERINPUT.py" "$@"

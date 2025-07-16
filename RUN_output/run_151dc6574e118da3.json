@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "message": "Environment variable BIN_TEST_RUN_VAR exported successfully",
+  "variable": "BIN_TEST_RUN_VAR",
+  "value": "test_value_from_run",
+  "updated_files": [
+    "/Users/wukunhuan/.bash_profile",
+    "/Users/wukunhuan/.bashrc",
+    "/Users/wukunhuan/.zshrc"
+  ],
+  "failed_files": null,
+  "run_identifier": "151dc6574e118da3",
+  "command": "EXPORT",
+  "args": [
+    "BIN_TEST_RUN_VAR",
+    "test_value_from_run"
+  ],
+  "output_file": "/Users/wukunhuan/.local/bin/RUN_output/run_151dc6574e118da3.json",
+  "duration": 0
+}

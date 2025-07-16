@@ -1,0 +1,12 @@
+{
+  "success": false,
+  "error": "Error: Directory '/nonexistent/directory' does not exist",
+  "run_identifier": "cbb458a9f3b22267",
+  "command": "FILE_SELECT",
+  "args": [
+    "--dir",
+    "/nonexistent/directory"
+  ],
+  "output_file": "/Users/wukunhuan/.local/bin/RUN_output/run_cbb458a9f3b22267.json",
+  "duration": 0
+}

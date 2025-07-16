@@ -1,0 +1,11 @@
+{
+  "success": true,
+  "message": "Google Drive opened successfully",
+  "url": "https://drive.google.com/",
+  "action": "browser_opened",
+  "run_identifier": "b319a95e30f03798",
+  "command": "GOOGLE_DRIVE",
+  "args": [],
+  "output_file": "/Users/wukunhuan/.local/bin/RUN_output/run_b319a95e30f03798.json",
+  "duration": 0
+}
