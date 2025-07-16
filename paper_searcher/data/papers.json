@@ -1,0 +1,33 @@
+{
+  "query": "搜索自然语言处理的论文 引用量高的",
+  "keywords": [
+    "搜索自然语言处理的论文",
+    "引用量高的"
+  ],
+  "total_papers": 1,
+  "search_params": {
+    "sources": [
+      "all"
+    ],
+    "max_results": 10,
+    "sort_by": "citation",
+    "year_range": null
+  },
+  "papers": [
+    {
+      "title": "示例论文: 搜索自然语言处理的论文 引用量高的相关研究",
+      "authors": [
+        "作者1",
+        "作者2"
+      ],
+      "abstract": "这是一篇关于搜索自然语言处理的论文 引用量高的的示例论文摘要...",
+      "url": "https://example.com/paper1",
+      "pdf_url": "https://example.com/paper1.pdf",
+      "publication_date": "2023",
+      "citation_count": 10,
+      "venue": "示例会议",
+      "doi": null,
+      "keywords": []
+    }
+  ]
+}

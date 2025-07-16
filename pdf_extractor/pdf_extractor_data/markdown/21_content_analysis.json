@@ -1,0 +1,31 @@
+{
+  "images": [],
+  "tables": [
+    {
+      "page": 1,
+      "block_idx": 0,
+      "bbox": [
+        64,
+        89,
+        232,
+        664
+      ],
+      "type": "table"
+    }
+  ],
+  "interline_equations": [
+    {
+      "page": 1,
+      "block_idx": 3,
+      "bbox": [
+        280,
+        196,
+        419,
+        223
+      ],
+      "type": "interline_equation"
+    }
+  ],
+  "inline_equations": [],
+  "total_blocks": 8
+}

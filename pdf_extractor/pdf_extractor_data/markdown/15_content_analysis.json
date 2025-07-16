@@ -1,0 +1,141 @@
+{
+  "images": [
+    {
+      "page": 2,
+      "block_idx": 0,
+      "bbox": [
+        54,
+        77,
+        291,
+        192
+      ],
+      "type": "image"
+    }
+  ],
+  "tables": [],
+  "interline_equations": [
+    {
+      "page": 1,
+      "block_idx": 1,
+      "bbox": [
+        58,
+        106,
+        272,
+        120
+      ],
+      "type": "interline_equation"
+    },
+    {
+      "page": 1,
+      "block_idx": 12,
+      "bbox": [
+        350,
+        359,
+        528,
+        374
+      ],
+      "type": "interline_equation"
+    },
+    {
+      "page": 1,
+      "block_idx": 14,
+      "bbox": [
+        358,
+        415,
+        520,
+        428
+      ],
+      "type": "interline_equation"
+    },
+    {
+      "page": 1,
+      "block_idx": 16,
+      "bbox": [
+        399,
+        460,
+        477,
+        475
+      ],
+      "type": "interline_equation"
+    },
+    {
+      "page": 1,
+      "block_idx": 18,
+      "bbox": [
+        379,
+        518,
+        497,
+        545
+      ],
+      "type": "interline_equation"
+    },
+    {
+      "page": 1,
+      "block_idx": 20,
+      "bbox": [
+        335,
+        576,
+        540,
+        588
+      ],
+      "type": "interline_equation"
+    },
+    {
+      "page": 2,
+      "block_idx": 5,
+      "bbox": [
+        83,
+        622,
+        262,
+        641
+      ],
+      "type": "interline_equation"
+    },
+    {
+      "page": 2,
+      "block_idx": 10,
+      "bbox": [
+        334,
+        262,
+        541,
+        274
+      ],
+      "type": "interline_equation"
+    },
+    {
+      "page": 2,
+      "block_idx": 12,
+      "bbox": [
+        388,
+        314,
+        489,
+        326
+      ],
+      "type": "interline_equation"
+    },
+    {
+      "page": 2,
+      "block_idx": 14,
+      "bbox": [
+        320,
+        365,
+        557,
+        407
+      ],
+      "type": "interline_equation"
+    },
+    {
+      "page": 2,
+      "block_idx": 19,
+      "bbox": [
+        384,
+        620,
+        492,
+        634
+      ],
+      "type": "interline_equation"
+    }
+  ],
+  "inline_equations": [],
+  "total_blocks": 45
+}

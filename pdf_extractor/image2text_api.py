@@ -71,7 +71,7 @@ def get_image_analysis(image_path: str, mode: str = "academic") -> str:
 # 测试入口 (保持不变)
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("用法: python understand_image_google_api.py <image_path> [mode]", file=sys.stderr)
+        print("用法: python image2text_api.py <image_path> [mode]", file=sys.stderr)
         sys.exit(1)
     
     image_path_arg = sys.argv[1]

@@ -1,0 +1,20 @@
+{
+  "table.pdf": {
+    "success": false,
+    "output_path": null,
+    "error": "",
+    "recognition_result": "\\frac  \\frac { \\textit { x } \\mid \\textit { y } \\mid \\textit { z } } { 1 \\ , | \\ , \\begin{array} { l } { 2 \\ , | \\ , \\frac { 3 } { 3 } | } \\\\ { \\frac { \\textit { 4 } \\ , | \\ , \\frac { 5 } { \\beta } \\ , | \\ , \\frac { 6 } { \\gamma } | } { \\beta } \\end{array} } } { \\alpha \\ , | \\ , \\begin{array} { l } { \\beta } \\end{array} | \\ , \\gamma }"
+  },
+  "formula.pdf": {
+    "success": true,
+    "output_path": "/Users/wukunhuan/.local/bin/pdf_extractor/test_MinerU_formula/formula_unimernet.pdf",
+    "error": null,
+    "recognition_result": "\\left. \\begin{array} { l l } { \\displaystyle f ( x ) = \\int _ { - \\infty } ^ { \\infty } e ^ { - x ^ { 2 } } d x } & { \\qquad \\qquad \\qquad ( 1 ) } \\\\ { \\displaystyle \\qquad = \\sqrt { \\pi } } & { \\qquad \\qquad \\qquad ( 2 ) } \\\\ { \\displaystyle \\nabla \\cdot \\vec { F } = \\frac { \\partial F _ { x } } { \\partial x } + \\frac { \\partial F _ { y } } { \\partial y } + \\frac { \\partial F _ { z } } { \\partial z } } & { \\qquad \\qquad \\qquad ( 3 ) } \\end{array} \\right."
+  },
+  "matrix.pdf": {
+    "success": true,
+    "output_path": "/Users/wukunhuan/.local/bin/pdf_extractor/test_MinerU_formula/matrix_unimernet.pdf",
+    "error": null,
+    "recognition_result": "{ \\left( \\begin{array} { l l l } { a } & { b } & { c } \\\\ { d } & { e } & { f } \\\\ { g } & { h } & { i } \\end{array} \\right) } { \\left( \\begin{array} { l } { x } \\\\ { y } \\\\ { z } \\end{array} \\right) } = { \\left( \\begin{array} { l } { a x + b y + c z } \\\\ { d x + e y + f z } \\\\ { g x + h y + i z } \\end{array} \\right) }"
+  }
+}

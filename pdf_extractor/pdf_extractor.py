@@ -9,8 +9,13 @@ from pathlib import Path
 
 # Local imports
 try:
+    # Add current directory to path for local imports
+    current_dir = Path(__file__).parent
+    if str(current_dir) not in sys.path:
+        sys.path.insert(0, str(current_dir))
+    
     from paper_layouts import get_layout_processor, rejoin_paragraphs
-    from understand_image_google_api import get_image_analysis
+    from image2text_api import get_image_analysis
 except ImportError as e:
     print(f"错误: 无法导入必要的本地模块. {e}", file=sys.stderr)
     sys.exit(1)
@@ -126,7 +131,8 @@ def extract_and_analyze_pdf(path_str: str, layout_mode: str, mode: str, call_api
     with open(output_path, 'w', encoding='utf-8') as f: f.write(final_markdown_string)
     
     print(f"✅ Report saved to: {output_path}", file=sys.stderr)
-    print(final_markdown_string)
+    # print(final_markdown_string)
+    return output_path
 
 # --- Main Entry Point ---
 if __name__ == "__main__":
