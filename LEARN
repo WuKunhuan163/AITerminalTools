@@ -1,0 +1,40 @@
+#!/usr/bin/env python3
+"""
+LEARN 命令入口脚本
+"""
+
+import sys
+import os
+from pathlib import Path
+
+# 添加learn_project目录到Python路径
+script_dir = Path(__file__).parent
+learn_project_dir = Path.home() / ".local" / "project" / "learn_project"
+sys.path.insert(0, str(learn_project_dir))
+
+from learn_entry import main as learn_main
+
+
+def main():
+    """主函数"""
+    # 如果没有参数，显示帮助信息
+    if len(sys.argv) == 1:
+        print("LEARN - 智能学习系统")
+        print("用法: LEARN [参数...]")
+        print("详细帮助请查看: LEARN.md")
+        print("或运行: LEARN --help")
+        return 0
+    
+    # 传递所有参数给learn_entry
+    try:
+        learn_main()
+        return 0
+    except SystemExit as e:
+        return e.code
+    except Exception as e:
+        print(f"LEARN系统错误: {e}")
+        return 1
+
+
+if __name__ == '__main__':
+    sys.exit(main()) 

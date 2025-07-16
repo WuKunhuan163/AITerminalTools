@@ -1,5 +1,0 @@
-# Requirements for the LEARN project system
-PyMuPDF>=1.23.0  # For PDF processing (fitz)
-pathlib  # For path handling (usually built-in)
-argparse  # For command line parsing (usually built-in)
-typing  # For type hints (usually built-in) 

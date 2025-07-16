@@ -1,0 +1,11 @@
+{
+  "success": true,
+  "message": "Command executed successfully",
+  "command": "PAPER_SEARCH",
+  "args": "3DGS --max-results 3",
+  "stdout": "警告: scholarly库未安装，Google Scholar搜索功能将受限\n警告: arxiv库未安装，Arxiv搜索功能将受限\n搜索查询: 3DGS\n选项: {'max_results': 3}\n\n正在搜索 google_scholar...\n使用备用搜索方法...\n从 google_scholar 找到 1 篇论文\n\n正在搜索 arxiv...\n使用备用搜索方法...\n从 arxiv 找到 3 篇论文\n结果已保存到: /Users/wukunhuan/.local/project/paper_searcher/data/papers.json\n\n=== 搜索摘要 ===\n查询: 3DGS\n总共找到: 4 篇论文\n  其他: 1 篇\n  Arxiv: 3 篇\n\n前5篇论文:\n  1. 示例论文: 3dgs相关研究\n     引用数: 10\n  2. 3D Gaussian Splatting in Robotics: A Survey\n  3. WATER-GS: Toward Copyright Protection for 3D Gaussian Splatting via\n  Universal Watermarking\n  4. CAT-3DGS Pro: A New Benchmark for Efficient 3DGS Compression",
+  "stderr": "",
+  "exit_code": 0,
+  "duration": 0,
+  "output_file": "/Users/wukunhuan/.local/bin/RUN_output/run_fb8b488d16c4efa4a14a7e7f39f16ed1c0405632e22197316d6fce2eb884aa34.json"
+}

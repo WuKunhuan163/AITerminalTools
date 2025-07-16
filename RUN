@@ -1,0 +1,250 @@
+#!/bin/bash
+# RUN 命令脚本
+# 通用命令包装器，支持JSON返回值
+
+# 获取脚本所在目录
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+OUTPUT_DIR="$SCRIPT_DIR/RUN_output"
+
+# 确保输出目录存在
+mkdir -p "$OUTPUT_DIR"
+
+# 生成唯一的输出文件名
+generate_output_file() {
+    local cmd_string="$*"
+    local timestamp=$(date +%s%N)
+    local hash=$(echo "${cmd_string}_${timestamp}" | shasum -a 256 | cut -d' ' -f1)
+    echo "$OUTPUT_DIR/run_${hash}.json"
+}
+
+# 包装命令执行
+wrap_command() {
+    local command="$1"
+    shift
+    local args="$@"
+    local output_file=$(generate_output_file "$command" "$args")
+    
+    # 支持的命令列表
+    local supported_commands=("OVERLEAF" "PAPER_SEARCH" "PAPER_SEARCH_ENHANCED" "LEARN" "ALIAS")
+    local command_found=false
+    
+    # 检查命令是否支持
+    for supported_cmd in "${supported_commands[@]}"; do
+        if [[ "$command" == "$supported_cmd" ]]; then
+            command_found=true
+            break
+        fi
+    done
+    
+    if [[ "$command_found" == false ]]; then
+        cat > "$output_file" << EOF
+{
+  "success": false,
+  "error": "Unsupported command: $command. Supported commands: ${supported_commands[*]}",
+  "command": "$command",
+  "args": "$args",
+  "output_file": "$output_file"
+}
+EOF
+        echo "$output_file"
+        return 1
+    fi
+    
+    # 构建完整的命令路径
+    local full_command="$SCRIPT_DIR/$command"
+    
+    # 检查命令是否存在
+    if [[ ! -f "$full_command" ]]; then
+        cat > "$output_file" << EOF
+{
+  "success": false,
+  "error": "Command not found: $full_command",
+  "command": "$command",
+  "args": "$args",
+  "output_file": "$output_file"
+}
+EOF
+        echo "$output_file"
+        return 1
+    fi
+    
+    # 执行命令并捕获输出
+    local start_time=$(date +%s)
+    local temp_output=$(mktemp)
+    local temp_error=$(mktemp)
+    local exit_code=0
+    
+    # 根据不同命令调用不同的处理方式
+    case "$command" in
+        "OVERLEAF")
+            # OVERLEAF已经返回JSON，直接执行
+            if "$full_command" $args > "$temp_output" 2> "$temp_error"; then
+                exit_code=0
+            else
+                exit_code=$?
+            fi
+            ;;
+        "PAPER_SEARCH_ENHANCED")
+            # PAPER_SEARCH_ENHANCED already returns JSON, directly execute
+            if "$full_command" $args > "$temp_output" 2> "$temp_error"; then
+                exit_code=0
+            else
+                exit_code=$?
+            fi
+            ;;
+        "PAPER_SEARCH"|"LEARN"|"ALIAS")
+            # 其他命令需要包装输出为JSON
+            if "$full_command" $args > "$temp_output" 2> "$temp_error"; then
+                exit_code=0
+            else
+                exit_code=$?
+            fi
+            ;;
+        *)
+            echo "Internal error: unhandled command $command" > "$temp_error"
+            exit_code=1
+            ;;
+    esac
+    
+    local end_time=$(date +%s)
+    local duration=$((end_time - start_time))
+    
+    # 读取输出和错误
+    local stdout_content=$(cat "$temp_output")
+    local stderr_content=$(cat "$temp_error")
+    
+    # 清理临时文件
+    rm -f "$temp_output" "$temp_error"
+    
+    # 根据命令类型处理输出
+    if [[ "$command" == "OVERLEAF" || "$command" == "PAPER_SEARCH_ENHANCED" ]]; then
+        # Commands that already return JSON, directly use
+        if [[ $exit_code -eq 0 && -n "$stdout_content" ]]; then
+            # 验证是否为有效JSON
+            if echo "$stdout_content" | python3 -m json.tool > /dev/null 2>&1; then
+                # 添加包装器信息
+                echo "$stdout_content" | python3 -c "
+import json
+import sys
+data = json.load(sys.stdin)
+data['wrapped'] = True
+data['command'] = '$command'
+data['args'] = '$args'
+data['output_file'] = '$output_file'
+data['duration'] = $duration
+print(json.dumps(data, indent=2, ensure_ascii=False))
+" > "$output_file"
+            else
+                # 输出不是有效JSON，包装为错误
+                python3 -c "
+import json
+import sys
+data = {
+    'success': False,
+    'error': 'Invalid JSON output from command',
+    'command': '$command',
+    'args': '$args',
+    'stdout': '''$stdout_content''',
+    'stderr': '''$stderr_content''',
+    'exit_code': $exit_code,
+    'duration': $duration,
+    'output_file': '$output_file'
+}
+print(json.dumps(data, indent=2, ensure_ascii=False))
+" > "$output_file"
+            fi
+        else
+            # 命令执行失败
+            python3 -c "
+import json
+import sys
+data = {
+    'success': False,
+    'error': 'Command execution failed',
+    'command': '$command',
+    'args': '$args',
+    'stdout': '''$stdout_content''',
+    'stderr': '''$stderr_content''',
+    'exit_code': $exit_code,
+    'duration': $duration,
+    'output_file': '$output_file'
+}
+print(json.dumps(data, indent=2, ensure_ascii=False))
+" > "$output_file"
+        fi
+    else
+        # 其他命令，包装输出为JSON
+        if [[ $exit_code -eq 0 ]]; then
+            # Use Python to properly escape JSON
+            python3 -c "
+import json
+import sys
+data = {
+    'success': True,
+    'message': 'Command executed successfully',
+    'command': '$command',
+    'args': '$args',
+    'stdout': '''$stdout_content''',
+    'stderr': '''$stderr_content''',
+    'exit_code': $exit_code,
+    'duration': $duration,
+    'output_file': '$output_file'
+}
+print(json.dumps(data, indent=2, ensure_ascii=False))
+" > "$output_file"
+        else
+            # Use Python to properly escape JSON
+            python3 -c "
+import json
+import sys
+data = {
+    'success': False,
+    'error': 'Command execution failed',
+    'command': '$command',
+    'args': '$args',
+    'stdout': '''$stdout_content''',
+    'stderr': '''$stderr_content''',
+    'exit_code': $exit_code,
+    'duration': $duration,
+    'output_file': '$output_file'
+}
+print(json.dumps(data, indent=2, ensure_ascii=False))
+" > "$output_file"
+        fi
+    fi
+    
+    # 输出结果文件路径
+    echo "$output_file"
+    return $exit_code
+}
+
+# 主函数
+main() {
+    if [[ $# -eq 0 ]]; then
+        cat > /dev/stderr << EOF
+Usage: RUN <command> [args...]
+
+Supported commands:
+  - OVERLEAF [file.tex]
+  - PAPER_SEARCH <query>
+  - PAPER_SEARCH_ENHANCED <query>
+  - LEARN <topic>
+  - ALIAS <name> <command>
+
+Example:
+  RUN OVERLEAF document.tex
+  RUN PAPER_SEARCH "machine learning"
+  RUN PAPER_SEARCH_ENHANCED "3DGS" --max-results 3
+  RUN LEARN "python basics"
+  RUN ALIAS ll "ls -la"
+
+The command returns a JSON file path containing the execution results.
+EOF
+        return 1
+    fi
+    
+    wrap_command "$@"
+}
+
+# 调用主函数
+main "$@" 

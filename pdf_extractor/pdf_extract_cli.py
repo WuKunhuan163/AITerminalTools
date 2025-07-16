@@ -71,8 +71,8 @@ def get_interactive_options():
         call_api = True
         call_api_force = False
     
-    # Get debug option
-    debug = input("Enable debug mode? (y/n, default: n): ").strip().lower() == 'y'
+    # Set debug to False (removed from interactive options)
+    debug = False
     
     # Get MinerU option
     print("\nPDF Extraction Engine:")
@@ -186,8 +186,25 @@ def print_content_analysis(content_stats):
     print("="*50)
 
 
+def clean_data_directory():
+    """Clean the pdf_extractor_data directory."""
+    data_dir = Path(__file__).parent / "pdf_extractor_data"
+    
+    if data_dir.exists():
+        import shutil
+        shutil.rmtree(data_dir)
+        print(f"✅ Cleaned data directory: {data_dir}")
+    else:
+        print(f"ℹ️  Data directory doesn't exist: {data_dir}")
+
+
 def main():
     """Main CLI entry point for PDF_EXTRACT command."""
+    
+    # Check for clean command
+    if len(sys.argv) >= 2 and (sys.argv[1] == "clean" or sys.argv[1] == "--clean"):
+        clean_data_directory()
+        return 0
     
     # Check if PDF path is provided
     if len(sys.argv) < 2:
@@ -199,6 +216,19 @@ def main():
             sys.exit(1)
         
         print(f"📄 Selected PDF: {pdf_path}")
+        
+        # Check if same-name markdown file exists in PDF directory
+        pdf_path_obj = Path(pdf_path)
+        pdf_directory = pdf_path_obj.parent
+        pdf_stem = pdf_path_obj.stem
+        same_name_md_file = pdf_directory / f"{pdf_stem}.md"
+        
+        if same_name_md_file.exists():
+            print(f"\n⚠️  File {same_name_md_file} already exists.")
+            overwrite = input("Do you want to overwrite it? (y/N): ").strip().lower()
+            if overwrite != 'y':
+                print("Operation cancelled.")
+                sys.exit(0)
         
         # Get options interactively
         page_range, call_api, call_api_force, debug, use_mineru = get_interactive_options()
@@ -270,20 +300,7 @@ def main():
                 latest_temp = max(mineru_temp_dirs, key=lambda x: os.path.getctime(f'/var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/{x}'))
                 temp_dir = f'/var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/{latest_temp}'
                 
-                middle_file = find_middle_file(temp_dir)
-                if middle_file:
-                    print(f"📋 Analyzing content types from: {middle_file}")
-                    content_stats = analyze_content_types(middle_file)
-                    if content_stats:
-                        print_content_analysis(content_stats)
-                        
-                        # Save analysis results
-                        analysis_file = result_path.replace('.md', '_content_analysis.json')
-                        with open(analysis_file, 'w', encoding='utf-8') as f:
-                            json.dump(content_stats, f, indent=2, ensure_ascii=False)
-                        print(f"💾 Content analysis saved to: {analysis_file}")
-                else:
-                    print("⚠️  Could not find middle.json file for content analysis")
+                # Content analysis removed per user request
             else:
                 print("ℹ️  MinerU likely fell back to original extractor, no content analysis available")
         else:

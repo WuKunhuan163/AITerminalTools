@@ -1,0 +1,88 @@
+#!/bin/bash
+# ALIAS 命令脚本
+# 在系统路径文件中永久创建alias
+
+# 显示使用帮助
+show_help() {
+    echo "ALIAS - 永久别名创建工具"
+    echo "用法: ALIAS <简写命令> <等效命令>"
+    echo ""
+    echo "示例:"
+    echo "  ALIAS ll 'ls -la'"
+    echo "  ALIAS gs 'git status'"
+    echo "  ALIAS python python3"
+    echo ""
+    echo "注意:"
+    echo "  - 简写命令不能是 'ALIAS'"
+    echo "  - 等效命令如有空格需要用引号包围"
+    echo "  - 别名将添加到 ~/.bash_profile, ~/.bashrc 和 ~/.zshrc"
+}
+
+# 检查参数
+if [ $# -eq 0 ]; then
+    show_help
+    exit 1
+fi
+
+if [ $# -ne 2 ]; then
+    echo "错误: 需要提供两个参数"
+    show_help
+    exit 1
+fi
+
+# 获取参数
+alias_name="$1"
+alias_command="$2"
+
+# 检查别名名称
+if [ "$alias_name" = "ALIAS" ]; then
+    echo "错误: 简写命令不能是 'ALIAS'"
+    exit 1
+fi
+
+# 检查别名名称是否包含特殊字符
+if [[ "$alias_name" =~ [[:space:]] ]]; then
+    echo "错误: 别名名称不能包含空格"
+    exit 1
+fi
+
+# 创建别名行
+alias_line="alias $alias_name='$alias_command'"
+
+# 要更新的配置文件列表
+config_files=(
+    "$HOME/.bash_profile"
+    "$HOME/.bashrc"
+    "$HOME/.zshrc"
+)
+
+echo "正在创建别名: $alias_name -> $alias_command"
+
+# 为每个配置文件添加别名
+for config_file in "${config_files[@]}"; do
+    # 检查文件是否存在，不存在则创建
+    if [ ! -f "$config_file" ]; then
+        touch "$config_file"
+        echo "创建了配置文件: $config_file"
+    fi
+    
+    # 检查别名是否已存在
+    if grep -q "^alias $alias_name=" "$config_file"; then
+        echo "警告: 别名 '$alias_name' 在 $config_file 中已存在，将被更新"
+        # 删除现有的别名
+        sed -i '' "/^alias $alias_name=/d" "$config_file"
+    fi
+    
+    # 添加新的别名
+    echo "$alias_line" >> "$config_file"
+    echo "✅ 已添加到: $config_file"
+done
+
+echo ""
+echo "🎉 别名创建完成！"
+echo "💡 要立即使用别名，请运行以下命令之一:"
+echo "   source ~/.bash_profile"
+echo "   source ~/.bashrc"
+echo "   source ~/.zshrc"
+echo ""
+echo "或者重新打开终端窗口。" 

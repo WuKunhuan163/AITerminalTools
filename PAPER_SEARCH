@@ -9,7 +9,7 @@ from pathlib import Path
 
 # 添加paper_searcher目录到Python路径
 script_dir = Path(__file__).parent
-paper_searcher_dir = script_dir / "paper_searcher"
+paper_searcher_dir = Path.home() / ".local" / "project" / "paper_searcher"
 sys.path.insert(0, str(paper_searcher_dir))
 
 from paper_search_handler import PaperSearchHandler

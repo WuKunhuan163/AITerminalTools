@@ -1,0 +1,101 @@
+#!/bin/bash
+# OVERLEAF 命令脚本
+# LaTeX文件编译工具 - 支持GUI文件选择和JSON返回值
+
+# Python脚本用于文件选择
+select_tex_file() {
+    /usr/bin/python3 -c "
+import tkinter as tk
+from tkinter import filedialog
+import os
+import json
+import sys
+
+def select_file():
+    root = tk.Tk()
+    root.withdraw()  # 隐藏主窗口
+    
+    # 设置文件选择对话框
+    file_path = filedialog.askopenfilename(
+        title='选择LaTeX文件',
+        initialdir=os.getcwd(),
+        filetypes=[('LaTeX files', '*.tex'), ('All files', '*.*')]
+    )
+    
+    if file_path:
+        print(file_path)
+        return file_path
+    else:
+        return None
+
+if __name__ == '__main__':
+    selected = select_file()
+    if not selected:
+        sys.exit(1)
+"
+}
+
+# 编译LaTeX文件的函数
+compile_latex() {
+    local tex_file="$1"
+    local filename=$(basename "$tex_file" .tex)
+    local dir=$(dirname "$tex_file")
+    
+    # 创建临时日志文件
+    local log_file="/tmp/overleaf_compile_$$.log"
+    
+    # 切换到文件目录
+    cd "$dir" || {
+        echo "{\"success\": false, \"error\": \"Cannot access directory: $dir\", \"file\": \"$tex_file\"}"
+        return 1
+    }
+    
+    # 执行编译
+    if latexmk -pdf -pdflatex="pdflatex -interaction=nonstopmode" "$filename.tex" > "$log_file" 2>&1; then
+        # 编译成功，清理临时文件
+        latexmk -c -quiet "$filename.tex" >/dev/null 2>&1
+        rm -f "$filename.fdb_latexmk"
+        
+        # 检查PDF是否生成
+        if [ -f "$filename.pdf" ]; then
+            echo "{\"success\": true, \"message\": \"Compilation successful\", \"file\": \"$tex_file\", \"output\": \"$dir/$filename.pdf\"}"
+        else
+            echo "{\"success\": false, \"error\": \"PDF not generated\", \"file\": \"$tex_file\"}"
+        fi
+    else
+        # 编译失败，读取错误信息
+        local error_msg=$(tail -20 "$log_file" | tr '\n' ' ' | sed 's/"/\\"/g')
+        echo "{\"success\": false, \"error\": \"Compilation failed: $error_msg\", \"file\": \"$tex_file\"}"
+    fi
+    
+    # 清理日志文件
+    rm -f "$log_file"
+}
+
+# 主函数
+overleaf() {
+    if [ $# -eq 0 ]; then
+        # 没有参数时，打开文件选择器
+        selected_file=$(select_tex_file)
+        if [ $? -eq 0 ] && [ -n "$selected_file" ]; then
+            compile_latex "$selected_file"
+        else
+            echo "{\"success\": false, \"error\": \"No file selected\", \"file\": null}"
+            return 1
+        fi
+    else
+        # 有参数时，直接编译指定文件
+        local tex_file="$1"
+        
+        # 检查文件是否存在
+        if [ ! -f "$tex_file" ]; then
+            echo "{\"success\": false, \"error\": \"File not found: $tex_file\", \"file\": \"$tex_file\"}"
+            return 1
+        fi
+        
+        compile_latex "$tex_file"
+    fi
+}
+
+# 调用函数并传递所有参数
+overleaf "$@" 

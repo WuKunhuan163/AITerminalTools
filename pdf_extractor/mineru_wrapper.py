@@ -74,11 +74,9 @@ class MinerUWrapper:
                 if end_page is not None:
                     cmd.extend(["-e", str(end_page)])
             
-            # Strategy: Always disable formula and table parsing to avoid tokenizer errors
-            # The UnimerNet model has a tokenizer compatibility issue that causes crashes
-            # We'll identify formulas and tables through layout analysis instead
-            cmd.extend(["-f", "false"])  # Disable formula parsing (avoid tokenizer error)
-            cmd.extend(["-t", "false"])  # Disable table parsing (avoid tokenizer error)
+            # Enable formula and table parsing with error handling
+            cmd.extend(["-f", "true"])  # Enable formula parsing
+            cmd.extend(["-t", "true"])  # Enable table parsing
             
             if debug:
                 print(f"MinerU command: {' '.join(cmd)}", file=sys.stderr)
@@ -87,9 +85,7 @@ class MinerUWrapper:
             page_count = self._estimate_page_count(page_range)
             timeout = max(600, page_count * 120)  # 2 minutes per page, minimum 10 minutes
             
-            print(f"🔄 Starting MinerU processing with {timeout}s timeout...", file=sys.stderr)
-            
-            # Execute MinerU command with real-time output
+            # Execute MinerU command silently
             result = self._run_with_progress(cmd, timeout)
             
             # Print debug output if enabled or if there was an error
@@ -104,16 +100,22 @@ class MinerUWrapper:
             
             # Check for runtime errors even if return code is 0
             if "Exception:" in result.stdout or "Error:" in result.stdout or "Traceback" in result.stdout:
-                print("MinerU: Runtime error detected in output", file=sys.stderr)
-                if debug:
-                    print(f"MinerU: Error details in stdout", file=sys.stderr)
-                return self._fallback_to_original(pdf_path, layout_mode, mode, call_api, call_api_force, page_range, debug)
+                # Check for specific tokenizer errors
+                if "tokenizer" in result.stdout.lower() or "unimernet" in result.stdout.lower():
+                    print("⚠️  Warning: UnimerNet tokenizer failed to recognize some formulas", file=sys.stderr)
+                    print("💡 Some mathematical formulas may not be properly converted to LaTeX", file=sys.stderr)
+                    # Continue processing instead of failing completely
+                else:
+                    print("MinerU: Runtime error detected in output", file=sys.stderr)
+                    if debug:
+                        print(f"MinerU: Error details in stdout", file=sys.stderr)
+                    return self._fallback_to_original(pdf_path, layout_mode, mode, call_api, call_api_force, page_range, debug)
             
             # Find the output markdown file
             output_file = self._find_output_file(self.temp_dir)
             if output_file:
                 # Move to pdf_extractor_data directory and process with API if requested
-                return self._move_to_data_directory(output_file, call_api, call_api_force)
+                return self._move_to_data_directory(output_file, pdf_path, call_api, call_api_force)
             else:
                 print("MinerU: No output file found", file=sys.stderr)
                 if debug:
@@ -142,8 +144,7 @@ class MinerUWrapper:
             # Keep temporary directory for debugging (comment out cleanup)
             # if self.temp_dir and os.path.exists(self.temp_dir):
             #     shutil.rmtree(self.temp_dir)
-            if self.temp_dir and os.path.exists(self.temp_dir):
-                print(f"🔧 Debug: Keeping temp directory: {self.temp_dir}", file=sys.stderr)
+            pass
     
     def _parse_page_range(self, page_range: str) -> tuple[Optional[int], Optional[int]]:
         """Parse page range string into start and end pages (0-indexed)."""
@@ -183,12 +184,10 @@ class MinerUWrapper:
             return 10  # Default estimate
     
     def _run_with_progress(self, cmd: list, timeout: int):
-        """Run MinerU command with real-time progress output."""
+        """Run MinerU command with silenced output."""
         import subprocess
         import threading
         import time
-        
-        print("📊 MinerU processing started...", file=sys.stderr)
         
         # Start the process
         process = subprocess.Popen(
@@ -201,16 +200,18 @@ class MinerUWrapper:
             universal_newlines=True
         )
         
-        # Collect output
+        # Collect output silently
         stdout_lines = []
         stderr_lines = []
         
         def read_output():
             for line in iter(process.stdout.readline, ''):
                 stdout_lines.append(line)
-                # Show progress indicators
-                if any(keyword in line.lower() for keyword in ['batch', 'processing', 'predict', 'pages']):
-                    print(f"📈 Progress: {line.strip()}", file=sys.stderr)
+                # Check for tokenizer warnings in real-time
+                if "tokenizer" in line.lower() and ("error" in line.lower() or "warning" in line.lower()):
+                    print("⚠️  Warning: UnimerNet tokenizer issue detected during processing", file=sys.stderr)
+                elif "unimernet" in line.lower() and ("error" in line.lower() or "fail" in line.lower()):
+                    print("⚠️  Warning: UnimerNet formula recognition failed for some content", file=sys.stderr)
         
         # Start output reading thread
         output_thread = threading.Thread(target=read_output)
@@ -268,14 +269,14 @@ class MinerUWrapper:
         
         return None
     
-    def _move_to_data_directory(self, source_file: str, call_api: bool = False, call_api_force: bool = False) -> str:
-        """Move output file to pdf_extractor_data directory and optionally process images with API."""
+    def _move_to_data_directory(self, source_file: str, pdf_path: str, call_api: bool = False, call_api_force: bool = False) -> str:
+        """Move output file to pdf_extractor_data directory and create same-name file in PDF directory."""
         # Create data directory structure
         data_dir = Path(__file__).parent / "pdf_extractor_data"
         markdown_dir = data_dir / "markdown"
         markdown_dir.mkdir(parents=True, exist_ok=True)
         
-        # Find next available filename
+        # Find next available filename for pdf_extractor_data
         counter = 0
         while True:
             target_file = markdown_dir / f"{counter}.md"
@@ -283,14 +284,89 @@ class MinerUWrapper:
                 break
             counter += 1
         
-        # Copy file to target location
+        # Copy file to pdf_extractor_data location
         shutil.copy2(source_file, target_file)
+        
+        # Copy images from MinerU temp directory to pdf_extractor_data/images
+        self._copy_mineru_images_to_data_directory(data_dir)
         
         # Post-process with image API if requested
         if call_api:
             self._post_process_with_image_api(str(target_file), call_api_force)
         
+        # Create same-name markdown file in PDF directory
+        pdf_path_obj = Path(pdf_path)
+        pdf_directory = pdf_path_obj.parent
+        pdf_stem = pdf_path_obj.stem
+        same_name_md_file = pdf_directory / f"{pdf_stem}.md"
+        
+        # Read the content from the pdf_extractor_data file
+        with open(target_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # Update image paths to reference pdf_extractor_data
+        updated_content = self._update_image_paths_for_paper_directory(content, str(data_dir))
+        
+        # Write to same-name file in PDF directory
+        with open(same_name_md_file, 'w', encoding='utf-8') as f:
+            f.write(updated_content)
+        
         return str(target_file)
+    
+    def _update_image_paths_for_paper_directory(self, content: str, data_dir: str) -> str:
+        """Update image paths in markdown content to reference pdf_extractor_data directory."""
+        import re
+        
+        # Find all image references in markdown
+        image_pattern = r'!\[([^\]]*)\]\(([^)]+)\)'
+        
+        def replace_image_path(match):
+            alt_text = match.group(1)
+            original_path = match.group(2)
+            
+            # Convert relative paths to absolute paths referencing pdf_extractor_data
+            if not original_path.startswith(('http://', 'https://', '/')):
+                # This is a relative path, convert it to reference pdf_extractor_data
+                if 'images/' in original_path:
+                    # Extract the filename
+                    filename = Path(original_path).name
+                    new_path = str(Path(data_dir) / 'images' / filename)
+                else:
+                    # If it's not in images/ folder, try to find it in pdf_extractor_data
+                    new_path = str(Path(data_dir) / 'images' / Path(original_path).name)
+                
+                return f'![{alt_text}]({new_path})'
+            else:
+                # Keep absolute paths as they are
+                return match.group(0)
+        
+        # Replace all image paths
+        updated_content = re.sub(image_pattern, replace_image_path, content)
+        
+        return updated_content
+    
+    def _copy_mineru_images_to_data_directory(self, data_dir: Path):
+        """Copy images from MinerU temp directory to pdf_extractor_data/images."""
+        if not hasattr(self, 'temp_dir') or not self.temp_dir:
+            return
+        
+        # Create images directory
+        images_dir = data_dir / "images"
+        images_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Find all image files in temp directory
+        temp_path = Path(self.temp_dir)
+        image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff']
+        
+        for root, dirs, files in os.walk(temp_path):
+            for file in files:
+                if any(file.lower().endswith(ext) for ext in image_extensions):
+                    source_image = Path(root) / file
+                    target_image = images_dir / file
+                    
+                    # Copy image if it doesn't exist or is different
+                    if not target_image.exists() or source_image.stat().st_size != target_image.stat().st_size:
+                        shutil.copy2(source_image, target_image)
     
     def _post_process_with_image_api(self, markdown_file: str, force: bool = False):
         """Post-process markdown file by adding image API descriptions."""
