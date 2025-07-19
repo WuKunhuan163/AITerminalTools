@@ -1,0 +1,5 @@
+{
+  "success": true,
+  "message": "Command executed successfully",
+  "output": "🔄 Loading UnimerNet model from /Users/wukunhuan/.local/bin/UNIMERNET_PROJ/unimernet_models/unimernet_base\n📱 Using device: cpu\n🔄 Loading UnimerNet from /Users/wukunhuan/.local/bin/UNIMERNET_PROJ/unimernet_models/unimernet_base\n📱 Using device: cpu\n✅ UnimerNet model loaded on cpu\n✅ UnimerNet model loaded successfully\nImage: _UNITTEST/_DATA/test_formula.png\nType: formula\nProcessor: extract_pdf_mineru\nFrom cache: False\n\nResult:\n$$\n\\vert ( \\epsilon _ { \\theta } ( x _ { t } ^ { \\mathrm { r e f } } , t , x ^ { \\prime } , c ^ { \\mathrm { t e x } } ) - \\epsilon ) \\vert\n$$\n$$\n\\mathbb { E } _ { x ^ { \\mathrm { r e f } } , t , \\epsilon , x ^ { \\prime } } [ \\| ( \\epsilon _ { \\theta } ( x _ { t } ^ { \\mathrm { r e f } } , t , x\n$$"
+}

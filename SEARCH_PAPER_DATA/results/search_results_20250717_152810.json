@@ -1,0 +1,54 @@
+{
+  "success": true,
+  "query": "machine learning",
+  "max_results": 2,
+  "total_papers_found": 2,
+  "source_results": {
+    "arxiv": 2,
+    "google_scholar": 0,
+    "semantic_scholar": 2
+  },
+  "papers": [
+    {
+      "title": "Language Models Improve When Pretraining Data Matches Target Tasks",
+      "authors": [
+        "David Mizrahi",
+        "Anders Boesen Lindbo Larsen",
+        "Jesse Allardice",
+        "Suzie Petryk",
+        "Yuri Gorokhov",
+        "Jeffrey Li",
+        "Alex Fang",
+        "Josh Gardner",
+        "Tom Gunter",
+        "Afshin Dehghan"
+      ],
+      "abstract": "Every data selection method inherently has a target. In practice, these\ntargets often emerge implicitly through benchmark-driven iteration: researchers\ndevelop selection strategies, train models, measure benchmark performance, then\nrefine accordingly. This raises a natural question: what happens when we make\nthis optimization explicit? To explore this, we propose benchmark-targeted\nranking (BETR), a simple method that selects pretraining documents based on\nsimilarity to benchmark training examples. BETR embeds benchmark examples and a\nsample of pretraining documents in a shared space, scores this sample by\nsimilarity to benchmarks, then trains a lightweight classifier to predict these\nscores for the full corpus. We compare data selection methods by training over\n500 models spanning $10^{19}$ to $10^{22}$ FLOPs and fitting scaling laws to\nthem. From this, we find that simply aligning pretraining data to evaluation\nbenchmarks using BETR achieves a 2.1x compute multiplier over DCLM-Baseline\n(4.7x over unfiltered data) and improves performance on 9 out of 10 tasks\nacross all scales. BETR also generalizes well: when targeting a diverse set of\nbenchmarks disjoint from our evaluation suite, it still matches or outperforms\nbaselines. Our scaling analysis further reveals a clear trend: larger models\nrequire less aggressive filtering. Overall, our findings show that directly\nmatching pretraining data to target tasks precisely shapes model capabilities\nand highlight that optimal selection strategies must adapt to model scale.",
+      "url": "http://arxiv.org/abs/2507.12466v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.12466v1.pdf",
+      "publication_date": "2025-07-16",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    },
+    {
+      "title": "CytoSAE: Interpretable Cell Embeddings for Hematology",
+      "authors": [
+        "Muhammed Furkan Dasdelen",
+        "Hyesu Lim",
+        "Michele Buck",
+        "Katharina S. Götze",
+        "Carsten Marr",
+        "Steffen Schneider"
+      ],
+      "abstract": "Sparse autoencoders (SAEs) emerged as a promising tool for mechanistic\ninterpretability of transformer-based foundation models. Very recently, SAEs\nwere also adopted for the visual domain, enabling the discovery of visual\nconcepts and their patch-wise attribution to tokens in the transformer model.\nWhile a growing number of foundation models emerged for medical imaging, tools\nfor explaining their inferences are still lacking. In this work, we show the\napplicability of SAEs for hematology. We propose CytoSAE, a sparse autoencoder\nwhich is trained on over 40,000 peripheral blood single-cell images. CytoSAE\ngeneralizes to diverse and out-of-domain datasets, including bone marrow\ncytology, where it identifies morphologically relevant concepts which we\nvalidated with medical experts. Furthermore, we demonstrate scenarios in which\nCytoSAE can generate patient-specific and disease-specific concepts, enabling\nthe detection of pathognomonic cells and localized cellular abnormalities at\nthe patch level. We quantified the effect of concepts on a patient-level AML\nsubtype classification task and show that CytoSAE concepts reach performance\ncomparable to the state-of-the-art, while offering explainability on the\nsub-cellular level. Source code and model weights are available at\nhttps://github.com/dynamical-inference/cytosae.",
+      "url": "http://arxiv.org/abs/2507.12464v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.12464v1.pdf",
+      "publication_date": "2025-07-16",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    }
+  ],
+  "timestamp": "2025-07-17T15:28:10.381493"
+}

@@ -50,7 +50,7 @@ class TestExtractPDF(unittest.TestCase):
         # Test with RUN environment
         with patch.dict(os.environ, {
             'RUN_IDENTIFIER': 'test_run',
-            'RUN_OUTPUT_FILE': '/tmp/test_output.json'
+            'RUN_DATA_FILE': '/tmp/test_output.json'
         }):
             self.assertTrue(EXTRACT_PDF.is_run_environment())
     
@@ -148,7 +148,7 @@ class TestExtractPDF(unittest.TestCase):
     
     @unittest.skipIf(EXTRACT_PDF is None, "EXTRACT_PDF module not available")
     @patch('tkinter.filedialog.askopenfilename')
-    def test_gui_file_selection(self, mock_filedialog):
+    def test_gui_FILEDIALOGion(self, mock_filedialog):
         """Test GUI file selection when no arguments provided"""
         mock_filedialog.return_value = str(self.test_pdf_file)
         

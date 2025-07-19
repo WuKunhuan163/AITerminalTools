@@ -1,0 +1,5 @@
+{
+  "success": true,
+  "message": "Command executed successfully",
+  "output": "🔄 开始后处理 test_error_handling.md...\n🖼️  处理图片...\n⚠️  图片文件不存在: test_error_handling_extract_data/images/nonexistent_image.jpg\nℹ️  没有图片被成功处理\n🧮 处理公式...\n⚠️  公式图片文件不存在: test_error_handling_extract_data/images/nonexistent_formula.jpg\nℹ️  没有公式被成功处理\n📊 处理表格...\n⚠️  表格图片文件不存在: test_error_handling_extract_data/images/nonexistent_table.jpg\nℹ️  没有表格被成功处理\n✅ 后处理完成: test_error_handling.md"
+}

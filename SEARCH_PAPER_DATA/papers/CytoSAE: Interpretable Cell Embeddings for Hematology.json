@@ -1,0 +1,18 @@
+{
+  "title": "CytoSAE: Interpretable Cell Embeddings for Hematology",
+  "authors": [
+    "Muhammed Furkan Dasdelen",
+    "Hyesu Lim",
+    "Michele Buck",
+    "Katharina S. Götze",
+    "Carsten Marr",
+    "Steffen Schneider"
+  ],
+  "abstract": "Sparse autoencoders (SAEs) emerged as a promising tool for mechanistic\ninterpretability of transformer-based foundation models. Very recently, SAEs\nwere also adopted for the visual domain, enabling the discovery of visual\nconcepts and their patch-wise attribution to tokens in the transformer model.\nWhile a growing number of foundation models emerged for medical imaging, tools\nfor explaining their inferences are still lacking. In this work, we show the\napplicability of SAEs for hematology. We propose CytoSAE, a sparse autoencoder\nwhich is trained on over 40,000 peripheral blood single-cell images. CytoSAE\ngeneralizes to diverse and out-of-domain datasets, including bone marrow\ncytology, where it identifies morphologically relevant concepts which we\nvalidated with medical experts. Furthermore, we demonstrate scenarios in which\nCytoSAE can generate patient-specific and disease-specific concepts, enabling\nthe detection of pathognomonic cells and localized cellular abnormalities at\nthe patch level. We quantified the effect of concepts on a patient-level AML\nsubtype classification task and show that CytoSAE concepts reach performance\ncomparable to the state-of-the-art, while offering explainability on the\nsub-cellular level. Source code and model weights are available at\nhttps://github.com/dynamical-inference/cytosae.",
+  "url": "http://arxiv.org/abs/2507.12464v1",
+  "pdf_url": "http://arxiv.org/pdf/2507.12464v1.pdf",
+  "publication_date": "2025-07-16",
+  "venue": "arXiv preprint",
+  "citation_count": null,
+  "source": "arxiv"
+}

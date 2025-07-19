@@ -1,0 +1,32 @@
+{
+  "success": true,
+  "query": "test query",
+  "max_results": 1,
+  "total_papers_found": 1,
+  "source_results": {
+    "arxiv": 1,
+    "google_scholar": 0,
+    "semantic_scholar": 0
+  },
+  "papers": [
+    {
+      "title": "The BAO-CMB Tension and Implications for Inflation",
+      "authors": [
+        "Elisa G. M. Ferreira",
+        "Evan McDonough",
+        "Lennart Balkenhol",
+        "Renata Kallosh",
+        "Lloyd Knox",
+        "Andrei Linde"
+      ],
+      "abstract": "The scalar spectral index $n_s$ is a powerful test of inflationary models.\nThe tightest constraint on $n_s$ to date derives from the combination of cosmic\nmicrowave background (CMB) data with baryon acoustic oscillation (BAO) data.\nThe resulting $n_s$ constraint is shifted significantly upward relative to the\nconstraint from CMB alone, with the consequence that previously preferred\ninflationary models are seemingly disfavored by $\\gtrsim 2 \\sigma$. Here we\nshow that this shift in $n_s$ is the combined effect of a degeneracy between\n$n_s$ and BAO parameters exhibited by CMB data and the tension between CMB\ndatasets and DESI BAO data under the assumption of the standard cosmological\nmodel. Given the crucial role of $n_s$ in discriminating between inflationary\nmodels, we urge caution in interpreting CMB+BAO constraints on $n_s$ until the\nBAO-CMB tension is resolved.",
+      "url": "http://arxiv.org/abs/2507.12459v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.12459v1.pdf",
+      "publication_date": "2025-07-16",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    }
+  ],
+  "timestamp": "2025-07-17T15:24:02.924528"
+}

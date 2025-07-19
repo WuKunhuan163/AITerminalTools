@@ -65,7 +65,7 @@ This is the introduction section.
         # Test with RUN environment
         with patch.dict(os.environ, {
             'RUN_IDENTIFIER': 'test_run',
-            'RUN_OUTPUT_FILE': '/tmp/test_output.json'
+            'RUN_DATA_FILE': '/tmp/test_output.json'
         }):
             self.assertTrue(OVERLEAF.is_run_environment())
     
@@ -148,7 +148,7 @@ This is the introduction section.
     
     @unittest.skipIf(OVERLEAF is None, "OVERLEAF module not available")
     @patch('tkinter.filedialog.askopenfilename')
-    def test_gui_file_selection(self, mock_filedialog):
+    def test_gui_FILEDIALOGion(self, mock_filedialog):
         """Test GUI file selection when no arguments provided"""
         mock_filedialog.return_value = str(self.test_tex_file)
         

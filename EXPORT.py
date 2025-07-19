@@ -12,43 +12,17 @@ import hashlib
 from pathlib import Path
 from typing import List, Dict, Any
 
-def generate_run_identifier():
-    """生成一个基于时间和随机数的唯一标识符"""
-    import time
-    import random
-    
-    timestamp = str(time.time())
-    random_num = str(random.randint(100000, 999999))
-    combined = f"{timestamp}_{random_num}_{os.getpid()}"
-    
-    return hashlib.sha256(combined.encode()).hexdigest()[:16]
+
 
 def get_run_context():
     """获取 RUN 执行上下文信息"""
     run_identifier = os.environ.get('RUN_IDENTIFIER')
-    output_file = os.environ.get('RUN_OUTPUT_FILE')
+    output_file = os.environ.get('RUN_DATA_FILE')
     
-    if run_identifier:
-        if not output_file:
-            output_file = f"RUN_output/run_{run_identifier}.json"
+    if run_identifier and output_file:
         return {
             'in_run_context': True,
             'identifier': run_identifier,
-            'output_file': output_file
-        }
-    elif output_file:
-        try:
-            filename = Path(output_file).stem
-            if filename.startswith('run_'):
-                identifier = filename[4:]
-            else:
-                identifier = generate_run_identifier()
-        except:
-            identifier = generate_run_identifier()
-        
-        return {
-            'in_run_context': True,
-            'identifier': identifier,
             'output_file': output_file
         }
     else:
@@ -68,8 +42,7 @@ def write_to_json_output(data, run_context):
         output_path = Path(run_context['output_file'])
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # 添加RUN相关信息
-        data['run_identifier'] = run_context['identifier']
+        # 不再添加冗余的RUN相关信息
         
         with open(run_context['output_file'], 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
@@ -77,6 +50,37 @@ def write_to_json_output(data, run_context):
     except Exception as e:
         print(f"Error writing to JSON output file: {e}")
         return False
+
+def update_shell_configs():
+    """更新shell配置文件（source所有配置文件）"""
+    config_files = get_shell_config_files()
+    
+    success_count = 0
+    for config_file in config_files:
+        try:
+            import subprocess
+            result = subprocess.run(
+                ["bash", "-c", f"source {str(config_file)}"],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            if result.returncode == 0:
+                success_count += 1
+                print(f"✅ Updated: {config_file}")
+            else:
+                print(f"❌ Failed to update {config_file}: {result.stderr}")
+        except Exception as e:
+            print(f"❌ Error updating {config_file}: {e}")
+    
+    if success_count > 0:
+        print(f"🎉 Successfully updated {success_count} configuration files!")
+        print("💡 Changes should now be active in your current shell.")
+    else:
+        print("❌ Failed to update any configuration files.")
+    
+    return success_count > 0
+
 
 def get_shell_config_files():
     """获取shell配置文件路径"""
@@ -240,6 +244,7 @@ def show_help():
     help_text = """EXPORT - Environment Variable Export Tool
 
 Usage: EXPORT <variable_name> <value>
+       EXPORT --update
 
 Arguments:
   variable_name        Name of the environment variable to export
@@ -247,11 +252,13 @@ Arguments:
 
 Options:
   --help, -h          Show this help message
+  --update            Update shell configuration files (source all config files)
 
 Examples:
   EXPORT OPENROUTER_API_KEY "sk-or-v1-..."
   EXPORT PATH "/usr/local/bin:$PATH"
   EXPORT MY_VAR "some value"
+  EXPORT --update
 
 This tool will:
 1. Set the environment variable in the current session
@@ -259,7 +266,7 @@ This tool will:
 3. Create backups of configuration files before modifying them
 
 Note: You may need to restart your terminal or run 'source ~/.bash_profile' 
-to apply changes in new sessions."""
+to apply changes in new sessions. Use --update to apply changes immediately."""
     
     print(help_text)
 
@@ -296,6 +303,19 @@ def main():
             else:
                 show_help()
             return 0
+        elif args[0] == '--update':
+            if run_context['in_run_context']:
+                success = update_shell_configs()
+                output_data = {
+                    "success": success,
+                    "message": "Configuration files updated" if success else "Failed to update configuration files"
+                }
+                write_to_json_output(output_data, run_context)
+                return 0 if success else 1
+            else:
+                print("Updating shell configuration files...")
+                success = update_shell_configs()
+                return 0 if success else 1
         else:
             if run_context['in_run_context']:
                 error_data = {

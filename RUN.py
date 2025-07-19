@@ -14,15 +14,22 @@ import subprocess
 from pathlib import Path
 
 def generate_run_identifier(*args):
-    """生成一个基于命令、时间戳和随机数的唯一标识符"""
+    """生成一个基于时间戳+短hash的唯一标识符"""
     cmd_string = ' '.join(str(arg) for arg in args)
     timestamp = str(time.time_ns())
     random_num = str(random.randint(100000, 999999))
     pid = str(os.getpid())
     combined = f"{cmd_string}_{timestamp}_{random_num}_{pid}"
     
-    # 使用 SHA256 生成哈希并截取前16位
-    return hashlib.sha256(combined.encode()).hexdigest()[:16]
+    # 生成时间戳部分（格式：YYYYMMDD_HHMMSS）
+    import datetime
+    now = datetime.datetime.now()
+    timestamp_str = now.strftime("%Y%m%d_%H%M%S")
+    
+    # 使用 SHA256 生成哈希并截取前8位
+    hash_part = hashlib.sha256(combined.encode()).hexdigest()[:8]
+    
+    return f"{timestamp_str}_{hash_part}"
 
 def get_script_dir():
     """获取脚本所在目录"""
@@ -31,7 +38,7 @@ def get_script_dir():
 def generate_output_file(identifier):
     """基于标识符生成输出文件路径"""
     script_dir = get_script_dir()
-    output_dir = script_dir / "RUN_output"
+    output_dir = script_dir / "RUN_DATA"
     output_dir.mkdir(exist_ok=True)
     return output_dir / f"run_{identifier}.json"
 
@@ -60,11 +67,7 @@ def wrap_command(command, *args):
     if not full_command.exists():
         data = {
             'success': False,
-            'error': f'Command not found: {full_command}',
-            'command': command,
-            'args': list(args),
-            'run_identifier': run_identifier,
-            'output_file': str(output_file)
+            'error': f'Command not found: {full_command}'
         }
         write_json_output(data, output_file)
         return str(output_file), 1
@@ -75,7 +78,7 @@ def wrap_command(command, *args):
     # 设置环境变量
     env = os.environ.copy()
     env['RUN_IDENTIFIER'] = run_identifier
-    env['RUN_OUTPUT_FILE'] = str(output_file)
+    env['RUN_DATA_FILE'] = str(output_file)
     env['RUN_COMMAND'] = command
     env['RUN_ARGS'] = ' '.join(args)
     
@@ -84,19 +87,22 @@ def wrap_command(command, *args):
         result = subprocess.run(
             [str(full_command)] + list(args),
             env=env,
-            capture_output=False,  # 让输出直接显示到终端
+            capture_output=True,  # 捕获输出
             text=True
         )
         exit_code = result.returncode
+        stdout_output = result.stdout.strip()
+        stderr_output = result.stderr.strip()
+        
+        # 如果有stderr输出，打印到终端
+        if stderr_output:
+            print(stderr_output, file=sys.stderr)
+            
     except Exception as e:
         exit_code = 1
         data = {
             'success': False,
-            'error': f'Command execution failed: {str(e)}',
-            'command': command,
-            'args': list(args),
-            'run_identifier': run_identifier,
-            'output_file': str(output_file)
+            'error': f'Command execution failed: {str(e)}'
         }
         write_json_output(data, output_file)
         return str(output_file), exit_code
@@ -107,46 +113,45 @@ def wrap_command(command, *args):
     
     # 检查被调用的命令是否已经创建了输出文件
     if not output_file.exists():
-        # 如果命令没有创建输出文件，创建一个默认的
-        if exit_code == 0:
-            data = {
-                'success': True,
-                'message': 'Command executed successfully (no explicit output)',
-                'command': command,
-                'args': list(args),
-                'run_identifier': run_identifier,
-                'exit_code': exit_code,
-                'duration': duration,
-                'output_file': str(output_file)
-            }
+        # 如果命令没有创建输出文件，尝试解析stdout作为JSON
+        if stdout_output:
+            try:
+                # 尝试解析stdout为JSON
+                data = json.loads(stdout_output)
+            except json.JSONDecodeError:
+                # 如果不是JSON，创建一个包含输出的结构
+                if exit_code == 0:
+                    data = {
+                        'success': True,
+                        'message': 'Command executed successfully',
+                        'output': stdout_output
+                    }
+                else:
+                    data = {
+                        'success': False,
+                        'error': 'Command execution failed',
+                        'output': stdout_output
+                    }
         else:
-            data = {
-                'success': False,
-                'error': 'Command execution failed',
-                'command': command,
-                'args': list(args),
-                'run_identifier': run_identifier,
-                'exit_code': exit_code,
-                'duration': duration,
-                'output_file': str(output_file)
-            }
+            # 如果没有stdout输出，创建默认结果
+            if exit_code == 0:
+                data = {
+                    'success': True,
+                    'message': 'Command executed successfully'
+                }
+            else:
+                data = {
+                    'success': False,
+                    'error': 'Command execution failed'
+                }
         write_json_output(data, output_file)
     else:
-        # 如果命令已经创建了输出文件，添加包装器信息
+        # 如果命令已经创建了输出文件，保持原样
         try:
             with open(output_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
         except:
-            data = {}
-        
-        # 添加包装器信息
-        data.update({
-            'command': command,
-            'args': list(args),
-            'run_identifier': run_identifier,
-            'output_file': str(output_file),
-            'duration': duration
-        })
+            data = {'success': False, 'error': 'Failed to read command output'}
         
         write_json_output(data, output_file)
     
@@ -168,14 +173,14 @@ Examples:
   RUN.py USERINPUT
 
 The command returns a JSON file path containing the execution results.
-Commands can write to the JSON output file via the RUN_OUTPUT_FILE environment variable.
+Commands can write to the JSON output file via the RUN_DATA_FILE environment variable.
 Each execution gets a unique RUN_IDENTIFIER for isolation.
 With --show flag, JSON results are also displayed in terminal.
 
 Functions available for import:
   - generate_run_identifier(*args): Generate unique identifier
   - wrap_command(command, *args): Execute command with wrapper
-""", file=sys.stderr)
+""")
 
 def main():
     """主函数"""
@@ -185,6 +190,11 @@ def main():
     
     args = sys.argv[1:]
     show_output = False
+    
+    # 检查 --help 参数
+    if args and args[0] in ['--help', '-h']:
+        show_usage()
+        return 0
     
     # 解析 --show 参数
     if args and args[0] == '--show':
@@ -201,30 +211,39 @@ def main():
     # 执行命令
     output_file, exit_code = wrap_command(command, *command_args)
     
-    # 如果使用了 --show 参数，显示JSON输出
+    # 如果使用了 --show 参数，显示JSON输出并包含文件路径
     if show_output:
         # 清屏
         os.system('clear' if os.name == 'posix' else 'cls')
         
         # 显示JSON内容
         if Path(output_file).exists():
-            print("=== RUN Command JSON Output ===")
-            print(f"Command: {command} {' '.join(command_args)}")
-            print(f"Output File: {output_file}")
-            print("===============================")
-            print()
-            
             try:
                 with open(output_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
+                
+                # 将输出文件路径添加到JSON数据中
+                data['_RUN_DATA_file'] = output_file
+                
                 print(json.dumps(data, indent=2, ensure_ascii=False))
             except Exception as e:
-                print(f"Error reading output file: {e}")
+                error_data = {
+                    "success": False,
+                    "error": f"Error reading output file: {e}",
+                    "RUN_DATA_file": output_file
+                }
+                print(json.dumps(error_data, indent=2, ensure_ascii=False))
         else:
-            print(f"Error: Output file not found: {output_file}")
+            error_data = {
+                "success": False,
+                "error": f"Output file not found: {output_file}",
+                "RUN_DATA_file": output_file
+            }
+            print(json.dumps(error_data, indent=2, ensure_ascii=False))
+    else:
+        # 非show模式下，仍然输出文件路径（保持向后兼容）
+        print(output_file)
     
-    # 始终返回输出文件路径
-    print(output_file)
     return exit_code
 
 if __name__ == "__main__":

@@ -13,7 +13,7 @@
 ### 2. 唯一标识符系统
 - 支持通过 `RUN_IDENTIFIER` 环境变量区分不同的 RUN 执行
 - 自动生成基于时间戳、随机数和进程ID的唯一标识符
-- 向后兼容旧的 `RUN_OUTPUT_FILE` 环境变量
+- 向后兼容旧的 `RUN_DATA_FILE` 环境变量
 
 ### 3. 项目信息显示
 - 自动检测项目名称和目录结构
@@ -51,13 +51,13 @@ python3 USERINPUT.py --set-identifier <identifier> <output_file>
 ### 环境变量
 
 - `RUN_IDENTIFIER`: 运行标识符（优先级最高）
-- `RUN_OUTPUT_FILE`: 输出文件路径（向后兼容）
+- `RUN_DATA_FILE`: 输出文件路径（向后兼容）
 
 ## 运行模式详解
 
 ### 独立模式
 
-当没有设置 `RUN_IDENTIFIER` 或 `RUN_OUTPUT_FILE` 环境变量时：
+当没有设置 `RUN_IDENTIFIER` 或 `RUN_DATA_FILE` 环境变量时：
 
 1. 显示简单的 Tkinter GUI 界面（如果可用）
 2. 显示项目信息和提示头部
@@ -101,7 +101,7 @@ def generate_run_identifier():
 
 1. `RUN USERINPUT` 执行时，RUN 脚本自动：
    - 生成唯一的 `RUN_IDENTIFIER`
-   - 设置 `RUN_OUTPUT_FILE` 环境变量
+   - 设置 `RUN_DATA_FILE` 环境变量
    - 调用 `USERINPUT.py`
 
 2. `USERINPUT.py` 检测到 RUN 环境后：
@@ -140,9 +140,9 @@ RUN USERINPUT  # 生成标识符: x9y8z7w6v5u4t3s2
 
 ## 向后兼容性
 
-脚本完全向后兼容旧的 `RUN_OUTPUT_FILE` 系统：
+脚本完全向后兼容旧的 `RUN_DATA_FILE` 系统：
 
-1. 如果只设置了 `RUN_OUTPUT_FILE`，会从文件名提取标识符
+1. 如果只设置了 `RUN_DATA_FILE`，会从文件名提取标识符
 2. 如果无法提取，会自动生成新的标识符
 3. 保持原有的 JSON 输出格式
 
@@ -168,7 +168,7 @@ if context['in_run_context']:
 ```bash
 # 在其他脚本中使用
 export RUN_IDENTIFIER=$(python3 USERINPUT.py --generate-id)
-export RUN_OUTPUT_FILE="output/run_${RUN_IDENTIFIER}.json"
+export RUN_DATA_FILE="output/run_${RUN_IDENTIFIER}.json"
 
 # 调用 USERINPUT
 python3 USERINPUT.py
@@ -202,5 +202,5 @@ python3 USERINPUT.py --set-identifier test123
 
 ### v1.0 (原始版本)
 - 基本的用户输入功能
-- 简单的 RUN_OUTPUT_FILE 支持
+- 简单的 RUN_DATA_FILE 支持
 - GUI 界面显示 

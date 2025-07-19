@@ -1,0 +1,5 @@
+{
+  "success": false,
+  "error": "Command execution failed",
+  "output": "❌ 提取数据目录不存在: /Users/wukunhuan/Desktop/test_p1,3,4_extract_data\n❌ 后处理失败: /Users/wukunhuan/Desktop/test_p1,3,4.md"
+}

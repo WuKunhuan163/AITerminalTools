@@ -1,0 +1,21 @@
+{
+  "title": "VideoITG: Multimodal Video Understanding with Instructed Temporal\n  Grounding",
+  "authors": [
+    "Shihao Wang",
+    "Guo Chen",
+    "De-an Huang",
+    "Zhiqi Li",
+    "Minghan Li",
+    "Guilin Li",
+    "Jose M. Alvarez",
+    "Lei Zhang",
+    "Zhiding Yu"
+  ],
+  "abstract": "Recent studies have revealed that selecting informative and relevant video\nframes can significantly improve the performance of Video Large Language Models\n(Video-LLMs). Current methods, such as reducing inter-frame redundancy,\nemploying separate models for image-text relevance assessment, or utilizing\ntemporal video grounding for event localization, substantially adopt\nunsupervised learning paradigms, whereas they struggle to address the complex\nscenarios in long video understanding. We propose Instructed Temporal Grounding\nfor Videos (VideoITG), featuring customized frame sampling aligned with user\ninstructions. The core of VideoITG is the VidThinker pipeline, an automated\nannotation framework that explicitly mimics the human annotation process.\nFirst, it generates detailed clip-level captions conditioned on the\ninstruction; then, it retrieves relevant video segments through\ninstruction-guided reasoning; finally, it performs fine-grained frame selection\nto pinpoint the most informative visual evidence. Leveraging VidThinker, we\nconstruct the VideoITG-40K dataset, containing 40K videos and 500K instructed\ntemporal grounding annotations. We then design a plug-and-play VideoITG model,\nwhich takes advantage of visual language alignment and reasoning capabilities\nof Video-LLMs, for effective frame selection in a discriminative manner.\nCoupled with Video-LLMs, VideoITG achieves consistent performance improvements\nacross multiple multimodal video understanding benchmarks, showing its\nsuperiority and great potentials for video understanding.",
+  "url": "http://arxiv.org/abs/2507.13353v1",
+  "pdf_url": "http://arxiv.org/pdf/2507.13353v1.pdf",
+  "publication_date": "2025-07-17",
+  "venue": "arXiv preprint",
+  "citation_count": null,
+  "source": "arxiv"
+}

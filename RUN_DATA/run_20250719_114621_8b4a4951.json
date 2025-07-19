@@ -1,0 +1,53 @@
+{
+  "success": true,
+  "message": "Command executed successfully",
+  "timestamp": "2025-07-19T11:46:22.204385",
+  "models": [
+    "google/gemini-2.5-flash-lite-preview-06-17",
+    "deepseek/deepseek-chat",
+    "deepseek/deepseek-v3-base:free",
+    "deepseek/deepseek-r1:free",
+    "meta-llama/llama-3.2-3b-instruct:free",
+    "deepseek/deepseek-r1"
+  ],
+  "total_count": 6,
+  "default_model": "google/gemini-2.5-flash-lite-preview-06-17",
+  "model_details": {
+    "google/gemini-2.5-flash-lite-preview-06-17": {
+      "input_cost_per_1m": 0.1,
+      "output_cost_per_1m": 0.4,
+      "context_length": 1048576,
+      "useable": true
+    },
+    "deepseek/deepseek-chat": {
+      "input_cost_per_1m": 0.3,
+      "output_cost_per_1m": 0.85,
+      "context_length": 163840,
+      "useable": true
+    },
+    "deepseek/deepseek-v3-base:free": {
+      "input_cost_per_1m": 0.0,
+      "output_cost_per_1m": 0.0,
+      "context_length": 163840,
+      "useable": true
+    },
+    "deepseek/deepseek-r1:free": {
+      "input_cost_per_1m": 0.0,
+      "output_cost_per_1m": 0.0,
+      "context_length": 163840,
+      "useable": true
+    },
+    "meta-llama/llama-3.2-3b-instruct:free": {
+      "input_cost_per_1m": 0.0,
+      "output_cost_per_1m": 0.0,
+      "context_length": 131072,
+      "useable": true
+    },
+    "deepseek/deepseek-r1": {
+      "input_cost_per_1m": 0.4,
+      "output_cost_per_1m": 2.0,
+      "context_length": 163840,
+      "useable": true
+    }
+  }
+}

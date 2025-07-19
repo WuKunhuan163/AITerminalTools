@@ -10,7 +10,7 @@ RUN 是一个通用命令包装器，可以将任何命令包装为返回JSON结
 - **错误处理**: 完整的错误信息和状态报告
 - **唯一文件名**: 使用SHA256哈希避免文件名冲突
 - **执行时间**: 记录命令执行时间
-- **输出保存**: 结果保存到 `~/.local/bin/RUN_output/` 目录
+- **输出保存**: 结果保存到 `~/.local/bin/RUN_DATA/` 目录
 - **终端显示**: 支持 `--show` 标志在终端显示结果
 
 ## 使用方法
@@ -35,7 +35,7 @@ RUN 命令输出一个JSON文件的路径，该文件包含命令的执行结果
 ```bash
 # 基本执行
 RUN SEARCH_PAPER "3DGS" --max-results 3
-# 输出：/Users/wukunhuan/.local/bin/RUN_output/run_xxx.json
+# 输出：/Users/wukunhuan/.local/bin/RUN_DATA/run_xxx.json
 
 # 带终端显示
 RUN --show SEARCH_PAPER "3DGS" --max-results 3
@@ -64,7 +64,7 @@ RUN USERINPUT
   "wrapped": true,
   "command": "SEARCH_PAPER",
   "args": "3DGS --max-results 3",
-  "output_file": "/Users/wukunhuan/.local/bin/RUN_output/run_xxx.json",
+  "output_file": "/Users/wukunhuan/.local/bin/RUN_DATA/run_xxx.json",
   "duration": 3
 }
 ```
@@ -80,7 +80,7 @@ RUN USERINPUT
   "stderr": "",
   "exit_code": 0,
   "duration": 0,
-  "output_file": "/Users/wukunhuan/.local/bin/RUN_output/run_xxx.json"
+  "output_file": "/Users/wukunhuan/.local/bin/RUN_DATA/run_xxx.json"
 }
 ```
 
@@ -95,7 +95,7 @@ RUN USERINPUT
   "stderr": "command not found",
   "exit_code": 1,
   "duration": 0,
-  "output_file": "/Users/wukunhuan/.local/bin/RUN_output/run_xxx.json"
+  "output_file": "/Users/wukunhuan/.local/bin/RUN_DATA/run_xxx.json"
 }
 ```
 
@@ -113,7 +113,7 @@ RUN USERINPUT
 ```
 === RUN Command Output ===
 Command: SEARCH_PAPER 3DGS --max-results 2
-Output File: /Users/wukunhuan/.local/bin/RUN_output/run_xxx.json
+Output File: /Users/wukunhuan/.local/bin/RUN_DATA/run_xxx.json
 ==========================
 
 {
@@ -137,10 +137,10 @@ Output File: /Users/wukunhuan/.local/bin/RUN_output/run_xxx.json
     "wrapped": true,
     "command": "SEARCH_PAPER",
     "args": "3DGS --max-results 2",
-    "output_file": "/Users/wukunhuan/.local/bin/RUN_output/run_xxx.json",
+    "output_file": "/Users/wukunhuan/.local/bin/RUN_DATA/run_xxx.json",
     "duration": 3
 }
-/Users/wukunhuan/.local/bin/RUN_output/run_xxx.json
+/Users/wukunhuan/.local/bin/RUN_DATA/run_xxx.json
 ```
 
 ## 程序化调用
@@ -222,7 +222,7 @@ RUN --show SEARCH_PAPER "machine learning"
 
 ## 项目位置
 - 主程序: `~/.local/bin/RUN`
-- 输出目录: `~/.local/bin/RUN_output/`
+- 输出目录: `~/.local/bin/RUN_DATA/`
 
 ## 更多信息
 RUN命令现在是一个真正的通用命令包装器，能够包装任何命令并提供统一的JSON接口，同时支持人性化的终端显示功能！ 

@@ -1,9 +1,0 @@
-{
-  "success": true,
-  "message": "PDF extraction completed successfully",
-  "file": "/Users/wukunhuan/Desktop/test_document.pdf",
-  "command": "/usr/bin/python3 /Users/wukunhuan/.local/project/pdf_extractor/pdf_extract_cli.py /Users/wukunhuan/Desktop/test_document.pdf --use-mineru --no-image-api",
-  "stdout": "🔄 Using MinerU for PDF extraction...\n\n✅ SUCCESS: PDF extracted to /Users/wukunhuan/.local/project/pdf_extractor/pdf_extractor_data/markdown/34.md\n⏱️  Total processing time: 63.41 seconds\n",
-  "stderr": "/Users/wukunhuan/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020\n  warnings.warn(\nMinerU: Last output lines:\n  Python runtime state: core initialized\n  OSError: [Errno 9] Bad file descriptor\n  \n  Current thread 0x00000001ffc1f240 (most recent call first):\n    <no Python frame>\nMinerU: Runtime error detected in output\n⚠️  MinerU failed, falling back to original PDF extractor\nℹ️ Using arXiv layout processor.\nℹ️ Starting semantic analysis...\n   - Processing page 1/1...\nℹ️ Cache updated.\n✅ Report saved to: /Users/wukunhuan/.local/project/pdf_extractor/pdf_extractor_data/markdown/34.md\n",
-  "run_identifier": "879aefbacbdf94cb"
-}

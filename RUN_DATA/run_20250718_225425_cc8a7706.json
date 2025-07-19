@@ -1,0 +1,9 @@
+{
+  "success": false,
+  "message": "All API keys failed",
+  "result": null,
+  "image_path": "/Users/wukunhuan/.local/bin/EXTRACT_PDF_PROJ/pdf_extractor_data/images/f4cd9a3ff84d91d075920ece838ca96f7a4344b466805a78f03ceb0b3ce11fb7.jpg",
+  "api": "google",
+  "reason": "所有配置的API密钥都无法成功获取回复。",
+  "timestamp": "2025-07-18T22:54:32.607837"
+}

@@ -1,0 +1,17 @@
+{
+  "success": true,
+  "content": "```markdown\n# 机器学习入门：练习与思考\n\n欢迎来到机器学习的奇妙世界！这里有一些小练习，帮助你巩固刚学到的知识。准备好让你的大脑“动起来”了吗？\n\n---\n\n## 基础知识测试\n\n1.  **机器学习的核心思想是什么？**\n    <details>\n    <summary>点击查看答案</summary>\n    让计算机从数据中“自己学习”规律，而不是预设死板的规则。\n    </details>\n\n2.  **在监督学习中，我们提供给模型的是什么？**\n    <details>\n    <summary>点击查看答案</summary>\n    “问题”（数据）和“答案”（标签）。\n    </details>\n\n3.  **预测一个房屋的售价属于哪种机器学习任务？**\n    <details>\n    <summary>点击查看答案</summary>\n    回归 (Regression)。\n    </details>\n\n---\n\n## 理解应用题\n\n1.  **如果你想让电脑识别出不同种类的水果（比如苹果、香蕉），你会选择监督学习还是无监督学习？为什么？**\n    <details>\n    <summary>点击查看答案</summary>\n    监督学习。因为我们需要提供带有“水果名称”（标签）的水果图片（数据）来训练模型，告诉它“这是苹果”，“那是香蕉”。\n    </details>\n\n2.  **在预测泰坦尼克号乘客的生还情况时，除了“性别”和“船票等级”，你觉得还有哪些“特征”可能对预测结果有帮助？**\n    <details>\n    <summary>点击查看答案</summary>\n    年龄、乘客人数（是否与家人同船）、登船港口、船舱等级等。\n    </details>\n\n3.  **为什么在训练模型时，我们会将数据分成训练集和测试集？**\n    <details>\n    <summary>点击查看答案</summary>\n    为了评估模型在新数据上的泛化能力。如果只在训练集上测试，模型可能只是“死记硬背”了训练数据，在新数据上表现会很差。\n    </details>\n\n---\n\n## 实践练习题\n\n1.  **鸢尾花分类练习：**\n    *   **任务：** 加载鸢尾花数据集，使用 K近邻 (KNN) 模型，并计算模型在测试集上的准确率。\n    *   **提示：** 记得使用 `train_test_split` 来划分数据。\n\n2.  **泰坦尼克号生还预测练习：**\n    *   **任务：** 加载泰坦尼克号数据集（假设你已经准备好），选择几个关键特征（如“性别”、“船票等级”、“年龄”），处理缺失值（例如，用平均值填充年龄），然后使用逻辑回归模型进行二分类预测，并计算模型的准确率。\n    *   **提示：** 确保将“性别”等类别特征转换为数值形式。\n\n---\n\n## 思考题\n\n1.  **模型“过拟合”和“欠拟合”是什么意思？它们分别代表了模型学习过程中的什么问题？**\n    <details>\n    <summary>点击查看答案</summary>\n    *   **过拟合 (Overfitting):** 模型在训练集上表现非常好，但在测试集（新数据）上表现很差。就像学生把课本内容背得滚瓜烂熟，但一遇到稍微变化的问题就懵了。\n    *   **欠拟合 (Underfitting):** 模型在训练集和测试集上表现都不好。就像学生压根没好好学习，对问题和答案都没掌握。\n    </details>\n\n2.  **除了 `scikit-learn`，你觉得还有哪些工具或资源可以帮助你学习和实践机器学习？**\n    <details>\n    <summary>点击查看答案</summary>\n    *   **编程语言：** Python (配合NumPy, Pandas, Matplotlib, Seaborn)。\n    *   **集成开发环境：** Jupyter Notebook/Lab。\n    *   **在线学习平台：** Coursera, DataCamp, Codecademy。\n    *   **书籍：** 《Python机器学习》、《Hands-On Machine Learning》。\n    *   **社区/博客：** Towards Data Science, Kaggle。\n    *   **视频教程：** StatQuest with Josh Starmer。\n    </details>\n```",
+  "model": "google/gemini-2.5-flash-lite-preview-06-17",
+  "usage": {
+    "input_tokens": 2932,
+    "output_tokens": 968,
+    "total_tokens": 3900
+  },
+  "cost": 0.0006804000000000001,
+  "model_info": {
+    "input_cost_per_1m": 0.1,
+    "output_cost_per_1m": 0.4,
+    "context_length": 1048576,
+    "useable": true
+  }
+}

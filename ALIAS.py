@@ -13,43 +13,17 @@ import re
 from pathlib import Path
 from typing import List, Optional
 
-def generate_run_identifier():
-    """生成一个基于时间和随机数的唯一标识符"""
-    import time
-    import random
-    
-    timestamp = str(time.time())
-    random_num = str(random.randint(100000, 999999))
-    combined = f"{timestamp}_{random_num}_{os.getpid()}"
-    
-    return hashlib.sha256(combined.encode()).hexdigest()[:16]
+
 
 def get_run_context():
     """获取 RUN 执行上下文信息"""
     run_identifier = os.environ.get('RUN_IDENTIFIER')
-    output_file = os.environ.get('RUN_OUTPUT_FILE')
+    output_file = os.environ.get('RUN_DATA_FILE')
     
-    if run_identifier:
-        if not output_file:
-            output_file = f"RUN_output/run_{run_identifier}.json"
+    if run_identifier and output_file:
         return {
             'in_run_context': True,
             'identifier': run_identifier,
-            'output_file': output_file
-        }
-    elif output_file:
-        try:
-            filename = Path(output_file).stem
-            if filename.startswith('run_'):
-                identifier = filename[4:]
-            else:
-                identifier = generate_run_identifier()
-        except:
-            identifier = generate_run_identifier()
-        
-        return {
-            'in_run_context': True,
-            'identifier': identifier,
             'output_file': output_file
         }
     else:
@@ -69,8 +43,7 @@ def write_to_json_output(data, run_context):
         output_path = Path(run_context['output_file'])
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # 添加RUN相关信息
-        data['run_identifier'] = run_context['identifier']
+        # 不再添加冗余的RUN相关信息
         
         with open(run_context['output_file'], 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
@@ -78,6 +51,47 @@ def write_to_json_output(data, run_context):
     except Exception as e:
         print(f"Error writing to JSON output file: {e}")
         return False
+
+def update_shell_configs():
+    """更新shell配置文件（source所有配置文件）"""
+    config_files = get_config_files()
+    
+    success_count = 0
+    for config_file in config_files:
+        try:
+            import subprocess
+            result = subprocess.run(
+                ["bash", "-c", f"source {str(config_file)}"],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            if result.returncode == 0:
+                success_count += 1
+                print(f"✅ Updated: {config_file}")
+            else:
+                print(f"❌ Failed to update {config_file}: {result.stderr}")
+        except Exception as e:
+            print(f"❌ Error updating {config_file}: {e}")
+    
+    if success_count > 0:
+        print(f"🎉 Successfully updated {success_count} configuration files!")
+        print("💡 Changes should now be active in your current shell.")
+    else:
+        print("❌ Failed to update any configuration files.")
+    
+    return success_count > 0
+
+
+def get_config_files() -> List[Path]:
+    """获取shell配置文件路径"""
+    home = Path.home()
+    return [
+        home / ".bash_profile",
+        home / ".bashrc", 
+        home / ".zshrc"
+    ]
+
 
 def validate_alias_name(alias_name: str) -> tuple[bool, str]:
     """验证别名名称是否有效"""
@@ -95,16 +109,6 @@ def validate_alias_name(alias_name: str) -> tuple[bool, str]:
         return False, "Alias name contains invalid characters"
     
     return True, ""
-
-def get_config_files() -> List[Path]:
-    """获取shell配置文件列表"""
-    home = Path.home()
-    config_files = [
-        home / ".bash_profile",
-        home / ".bashrc", 
-        home / ".zshrc"
-    ]
-    return config_files
 
 def check_existing_alias(alias_name: str, config_file: Path) -> bool:
     """检查别名是否已存在于配置文件中"""
@@ -154,7 +158,12 @@ def add_alias_to_file(alias_name: str, alias_command: str, config_file: Path) ->
             remove_existing_alias(alias_name, config_file)
         
         # 添加新的别名
-        alias_line = f"alias {alias_name}='{alias_command}'\n"
+        # 根据命令内容选择合适的引号
+        if "'" in alias_command:
+            alias_line = f'alias {alias_name}="{alias_command}"\n'
+        else:
+            alias_line = f"alias {alias_name}='{alias_command}'\n"
+        
         with open(config_file, 'a', encoding='utf-8') as f:
             f.write(alias_line)
         
@@ -251,6 +260,53 @@ def create_alias(alias_name: str, alias_command: str, run_context) -> int:
     
     return 0 if success_count > 0 else 1
 
+def remove_alias_from_all_files(alias_name: str, run_context) -> int:
+    """从所有配置文件中移除别名"""
+    config_files = get_config_files()
+    removed_count = 0
+    results = []
+
+    for config_file in config_files:
+        if remove_existing_alias(alias_name, config_file):
+            removed_count += 1
+            results.append({
+                "file": str(config_file),
+                "success": True,
+                "alias_name": alias_name
+            })
+        else:
+            results.append({
+                "file": str(config_file),
+                "success": False,
+                "error": "Failed to remove alias"
+            })
+
+    if run_context['in_run_context']:
+        output_data = {
+            "success": removed_count > 0,
+            "message": f"Alias '{alias_name}' removed successfully" if removed_count > 0 else "Failed to remove alias",
+            "alias_name": alias_name,
+            "files_processed": len(config_files),
+            "files_removed": removed_count,
+            "results": results
+        }
+        write_to_json_output(output_data, run_context)
+    else:
+        print(f"Removing alias: {alias_name}")
+        print()
+        for result in results:
+            if result["success"]:
+                print(f"✅ Removed alias '{alias_name}' from {result['file']}")
+            else:
+                print(f"❌ Failed to remove alias '{alias_name}' from {result['file']}: {result['error']}")
+        print()
+        if removed_count > 0:
+            print("🎉 Alias removed successfully!")
+        else:
+            print("❌ Alias not found in any configuration file.")
+    
+    return 0 if removed_count > 0 else 1
+
 def show_help():
     """显示帮助信息"""
     help_text = """ALIAS - Permanent Shell Alias Creation Tool
@@ -263,6 +319,8 @@ Arguments:
 
 Options:
   --help, -h      Show this help message
+  --remove        Remove an existing alias
+  --update        Update shell configuration files (source all config files)
 
 Examples:
   ALIAS ll "ls -la"                    # Create alias for detailed listing
@@ -270,6 +328,8 @@ Examples:
   ALIAS python python3                 # Create alias for python3
   ALIAS mydir "cd ~/my-project"        # Create alias for changing directory
   ALIAS serve "python -m http.server"  # Create alias for local server
+  ALIAS --remove ll                     # Remove the 'll' alias
+  ALIAS --update                        # Update shell configuration files
 
 Notes:
   - Alias names cannot contain spaces or special characters
@@ -318,6 +378,46 @@ def main():
         else:
             show_help()
         return 0
+    
+    # 处理移除别名
+    if args[0] == '--remove':
+        if len(args) != 2:
+            error_msg = "Error: --remove requires exactly one argument: alias_name"
+            if run_context['in_run_context']:
+                error_data = {"success": False, "error": error_msg}
+                write_to_json_output(error_data, run_context)
+            else:
+                print(f"❌ {error_msg}")
+                print("Usage: ALIAS --remove <alias_name>")
+            return 1
+        
+        alias_name = args[1]
+        return remove_alias_from_all_files(alias_name, run_context)
+    
+    # 处理更新配置文件
+    if args[0] == '--update':
+        if len(args) != 1:
+            error_msg = "Error: --update does not take any arguments"
+            if run_context['in_run_context']:
+                error_data = {"success": False, "error": error_msg}
+                write_to_json_output(error_data, run_context)
+            else:
+                print(f"❌ {error_msg}")
+                print("Usage: ALIAS --update")
+            return 1
+        
+        if run_context['in_run_context']:
+            success = update_shell_configs()
+            output_data = {
+                "success": success,
+                "message": "Configuration files updated" if success else "Failed to update configuration files"
+            }
+            write_to_json_output(output_data, run_context)
+            return 0 if success else 1
+        else:
+            print("Updating shell configuration files...")
+            success = update_shell_configs()
+            return 0 if success else 1
     
     if len(args) != 2:
         error_msg = "Error: Exactly two arguments required: alias_name and alias_command"

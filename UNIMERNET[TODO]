@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# UNIMERNET - Binary wrapper for UNIMERNET.py
+# UnimerNet Formula and Table Recognition Tool
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PYTHON_SCRIPT="$SCRIPT_DIR/UNIMERNET.py"
+
+# Check if Python script exists
+if [ ! -f "$PYTHON_SCRIPT" ]; then
+    echo "Error: UNIMERNET.py not found at $PYTHON_SCRIPT" >&2
+    exit 1
+fi
+
+# Execute the Python script with all arguments
+exec /usr/bin/python3 "$PYTHON_SCRIPT" "$@" 

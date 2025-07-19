@@ -1,0 +1,15 @@
+{
+  "description": "Global hash to type mapping for EXTRACT_PDF processing",
+  "created_at": "2025-07-19T12:17:00.000000",
+  "mappings": {
+    "333ac67e908acadb10d5c94ea89c1ce08648098ed00ee783ee2592e034e94baa": "formula",
+    "683dc7261b6963940c025abcb26b91f59818d0e24cd6b34780a338f53e3997f5": "image",
+    "2d9ad8e3e84e0ceabbd9075f3232ca7fcb1bd2d1ea36a413088970c612d06809": "image"
+  },
+  "usage_notes": [
+    "This file maps image file hashes to their content types (image, formula, table)",
+    "Used for placeholder regeneration when type information is missing",
+    "Automatically updated when processing items with known types"
+  ],
+  "last_updated": "2025-07-19T12:23:33.363508"
+}

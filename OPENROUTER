@@ -1,0 +1,20 @@
+#!/usr/bin/env python3
+"""
+OPENROUTER Tool - Main Executable
+OpenRouter API 调用工具的主可执行文件
+"""
+
+import os
+import sys
+from pathlib import Path
+
+# 直接调用OPENROUTER.py
+script_dir = Path(__file__).parent
+openrouter_py = script_dir / "OPENROUTER.py"
+
+if openrouter_py.exists():
+    # 执行OPENROUTER.py并传递所有参数
+    os.execv(sys.executable, [sys.executable, str(openrouter_py)] + sys.argv[1:])
+else:
+    print(f"错误：找不到OPENROUTER.py文件: {openrouter_py}", file=sys.stderr)
+    sys.exit(1) 

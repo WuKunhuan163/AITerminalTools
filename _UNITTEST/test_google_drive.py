@@ -31,7 +31,7 @@ class TestGoogleDrive(unittest.TestCase):
         # Test with RUN environment
         with patch.dict(os.environ, {
             'RUN_IDENTIFIER': 'test_run',
-            'RUN_OUTPUT_FILE': '/tmp/test_output.json'
+            'RUN_DATA_FILE': '/tmp/test_output.json'
         }):
             self.assertTrue(GOOGLE_DRIVE.is_run_environment())
     

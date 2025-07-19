@@ -1,8 +1,0 @@
-{
-  "success": false,
-  "error": "Command execution failed: [Errno 13] Permission denied: '/Users/wukunhuan/.local/project/pdf_extractor/test_unimernet_formula/test3_formula_1.tex'",
-  "command": "/Users/wukunhuan/.local/project/pdf_extractor/test_unimernet_formula/test3_formula_1.tex",
-  "args": [],
-  "run_identifier": "296cb67d2a28ba45",
-  "output_file": "/Users/wukunhuan/.local/bin/RUN_output/run_296cb67d2a28ba45.json"
-}

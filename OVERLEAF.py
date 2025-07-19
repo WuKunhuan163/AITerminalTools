@@ -12,43 +12,17 @@ import tempfile
 import hashlib
 from pathlib import Path
 
-def generate_run_identifier():
-    """生成一个基于时间和随机数的唯一标识符"""
-    import time
-    import random
-    
-    timestamp = str(time.time())
-    random_num = str(random.randint(100000, 999999))
-    combined = f"{timestamp}_{random_num}_{os.getpid()}"
-    
-    return hashlib.sha256(combined.encode()).hexdigest()[:16]
+
 
 def get_run_context():
     """获取 RUN 执行上下文信息"""
     run_identifier = os.environ.get('RUN_IDENTIFIER')
-    output_file = os.environ.get('RUN_OUTPUT_FILE')
+    output_file = os.environ.get('RUN_DATA_FILE')
     
-    if run_identifier:
-        if not output_file:
-            output_file = f"RUN_output/run_{run_identifier}.json"
+    if run_identifier and output_file:
         return {
             'in_run_context': True,
             'identifier': run_identifier,
-            'output_file': output_file
-        }
-    elif output_file:
-        try:
-            filename = Path(output_file).stem
-            if filename.startswith('run_'):
-                identifier = filename[4:]
-            else:
-                identifier = generate_run_identifier()
-        except:
-            identifier = generate_run_identifier()
-        
-        return {
-            'in_run_context': True,
-            'identifier': identifier,
             'output_file': output_file
         }
     else:
@@ -92,8 +66,7 @@ def write_to_json_output(data, run_context):
         output_path = Path(run_context['output_file'])
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # 添加RUN相关信息
-        data['run_identifier'] = run_context['identifier']
+        # 不再添加冗余的RUN相关信息
         
         with open(run_context['output_file'], 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)

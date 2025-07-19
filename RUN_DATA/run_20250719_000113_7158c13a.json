@@ -1,0 +1,5 @@
+{
+  "success": true,
+  "message": "Command executed successfully",
+  "output": "🔄 Loading UnimerNet from /Users/wukunhuan/.local/bin/UNIMERNET_PROJ/unimernet_models/unimernet_base\n📱 Using device: mps\n✅ UnimerNet model loaded on mps\n✅ UnimerNet is available and ready\nCache: 5 images cached"
+}

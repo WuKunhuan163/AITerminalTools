@@ -19,43 +19,17 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from datetime import datetime
 
-def generate_run_identifier():
-    """生成一个基于时间和随机数的唯一标识符"""
-    import time
-    import random
-    
-    timestamp = str(time.time())
-    random_num = str(random.randint(100000, 999999))
-    combined = f"{timestamp}_{random_num}_{os.getpid()}"
-    
-    return hashlib.sha256(combined.encode()).hexdigest()[:16]
+
 
 def get_run_context():
     """获取 RUN 执行上下文信息"""
     run_identifier = os.environ.get('RUN_IDENTIFIER')
-    output_file = os.environ.get('RUN_OUTPUT_FILE')
+    output_file = os.environ.get('RUN_DATA_FILE')
     
-    if run_identifier:
-        if not output_file:
-            output_file = f"RUN_output/run_{run_identifier}.json"
+    if run_identifier and output_file:
         return {
             'in_run_context': True,
             'identifier': run_identifier,
-            'output_file': output_file
-        }
-    elif output_file:
-        try:
-            filename = Path(output_file).stem
-            if filename.startswith('run_'):
-                identifier = filename[4:]
-            else:
-                identifier = generate_run_identifier()
-        except:
-            identifier = generate_run_identifier()
-        
-        return {
-            'in_run_context': True,
-            'identifier': identifier,
             'output_file': output_file
         }
     else:
@@ -75,8 +49,7 @@ def write_to_json_output(data, run_context):
         output_path = Path(run_context['output_file'])
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # 添加RUN相关信息
-        data['run_identifier'] = run_context['identifier']
+        # 不再添加冗余的RUN相关信息
         
         with open(run_context['output_file'], 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
@@ -97,20 +70,20 @@ def get_interactive_query(run_context):
         write_to_json_output(error_data, run_context)
         return None
     
-    print("=== Academic Paper Search Tool ===")
-    print("Enter your search query (or 'quit' to exit):")
-    print()
+    print("=== Academic Paper Search Tool ===", file=sys.stderr)
+    print("Enter your search query (or 'quit' to exit):", file=sys.stderr)
+    print(file=sys.stderr)
     
     try:
         query = input("Search query: ").strip()
         if query.lower() in ['quit', 'exit', 'q']:
             return None
         if not query:
-            print("Empty query. Please try again.")
+            print("Empty query. Please try again.", file=sys.stderr)
             return get_interactive_query(run_context)
         return query
     except (KeyboardInterrupt, EOFError):
-        print("\nSearch cancelled.")
+        print("\nSearch cancelled.", file=sys.stderr)
         return None
 
 class MultiPlatformPaperSearcher:
@@ -121,8 +94,12 @@ class MultiPlatformPaperSearcher:
         self.session.headers.update({
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         })
-        self.output_dir = Path.home() / ".local" / "project" / "paper_searcher" / "data"
+        self.output_dir = Path.cwd() / "SEARCH_PAPER_DATA"
+        self.results_dir = self.output_dir / "results"
+        self.papers_dir = self.output_dir / "papers"
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.results_dir.mkdir(parents=True, exist_ok=True)
+        self.papers_dir.mkdir(parents=True, exist_ok=True)
     
     def search_papers(self, query: str, max_results: int = 10, sources: List[str] = None) -> Dict[str, Any]:
         """
@@ -162,6 +139,7 @@ class MultiPlatformPaperSearcher:
                 
             except Exception as e:
                 source_results[source] = f"Error: {str(e)}"
+                print(f"Error searching {source}: {e}", file=sys.stderr)
                 continue
         
         # 去重和排序
@@ -214,7 +192,7 @@ class MultiPlatformPaperSearcher:
                     continue
                     
         except Exception as e:
-            print(f"arXiv search error: {e}")
+            print(f"arXiv search error: {e}", file=sys.stderr)
         
         return papers
     
@@ -243,7 +221,7 @@ class MultiPlatformPaperSearcher:
                     continue
                     
         except Exception as e:
-            print(f"Google Scholar search error: {e}")
+            print(f"Google Scholar search error: {e}", file=sys.stderr)
         
         return papers
     
@@ -268,7 +246,7 @@ class MultiPlatformPaperSearcher:
                     continue
                     
         except Exception as e:
-            print(f"Semantic Scholar search error: {e}")
+            print(f"Semantic Scholar search error: {e}", file=sys.stderr)
         
         return papers
     
@@ -311,7 +289,8 @@ class MultiPlatformPaperSearcher:
                 "source": "arxiv"
             }
             
-        except Exception:
+        except Exception as e:
+            print(f"Error parsing arXiv entry: {e}", file=sys.stderr)
             return None
     
     def _parse_google_scholar_entry(self, entry) -> Optional[Dict[str, Any]]:
@@ -382,7 +361,8 @@ class MultiPlatformPaperSearcher:
                 "source": "google_scholar"
             }
             
-        except Exception:
+        except Exception as e:
+            print(f"Error parsing Google Scholar entry: {e}", file=sys.stderr)
             return None
     
     def _parse_semantic_scholar_entry(self, paper_data) -> Optional[Dict[str, Any]]:
@@ -408,7 +388,8 @@ class MultiPlatformPaperSearcher:
                 "source": "semantic_scholar"
             }
             
-        except Exception:
+        except Exception as e:
+            print(f"Error parsing Semantic Scholar entry: {e}", file=sys.stderr)
             return None
     
     def _remove_duplicates(self, papers: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -427,19 +408,27 @@ class MultiPlatformPaperSearcher:
         return unique_papers
     
     def _save_results(self, result: Dict[str, Any]):
-        """保存结果"""
-        try:
-            output_file = self.output_dir / "search_results.json"
-            with open(output_file, 'w', encoding='utf-8') as f:
-                json.dump(result, f, indent=2, ensure_ascii=False)
-        except Exception:
-            pass
+        """保存搜索结果到JSON文件"""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        result_file = self.results_dir / f"search_results_{timestamp}.json"
+        with open(result_file, 'w', encoding='utf-8') as f:
+            json.dump(result, f, ensure_ascii=False, indent=2)
+        print(f"Results saved to {result_file}", file=sys.stderr)
+
+        # 保存每篇论文到单独的文件
+        for paper in result.get("papers", []):
+            paper_title = paper.get("title", "untitled").replace("/", "-")
+            paper_file = self.papers_dir / f"{paper_title}.json"
+            with open(paper_file, 'w', encoding='utf-8') as f:
+                json.dump(paper, f, ensure_ascii=False, indent=2)
+            print(f"Paper saved to {paper_file}", file=sys.stderr)
 
 def format_output(result: Dict[str, Any], run_context):
     """格式化输出"""
     if run_context['in_run_context']:
-        # 在RUN环境中，直接输出JSON
-        write_to_json_output(result, run_context)
+        # 在RUN环境中，直接输出JSON到stdout
+        # write_to_json_output(result, run_context)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
     else:
         # 直接调用时，输出格式化的结果
         print(f"\n=== Search Results for: '{result['query']}' ===")
@@ -497,93 +486,43 @@ Examples:
 
 def main():
     """主函数"""
-    # 获取执行上下文
-    run_context = get_run_context()
+    parser = argparse.ArgumentParser(
+        prog='SEARCH_PAPER',
+        description="SEARCH_PAPER - Enhanced Academic Paper Search Tool"
+    )
+    parser.add_argument("query", nargs='?', default=None, help="Search query (if not provided, interactive mode will start)")
+    parser.add_argument("--max-results", type=int, default=10, help="Maximum number of results")
+    parser.add_argument("--sources", type=str, help="Comma-separated list of sources: arxiv,google_scholar,semantic_scholar")
     
-    # 解析命令行参数
-    args = sys.argv[1:]
-    query = None
-    max_results = 10
-    sources = None
+    args = parser.parse_args()
     
-    # 手动解析参数
-    i = 0
-    while i < len(args):
-        arg = args[i]
-        
-        if arg in ['--help', '-h']:
-            if run_context['in_run_context']:
-                help_data = {
-                    "success": True,
-                    "message": "Help information",
-                    "help": "SEARCH_PAPER - Enhanced Academic Paper Search Tool"
-                }
-                write_to_json_output(help_data, run_context)
-            else:
-                show_help()
-            return 0
-        elif arg == '--max-results':
-            if i + 1 < len(args):
-                try:
-                    max_results = int(args[i + 1])
-                    i += 2
-                except ValueError:
-                    error_msg = "❌ Error: --max-results requires a number"
-                    if run_context['in_run_context']:
-                        error_data = {"success": False, "error": error_msg}
-                        write_to_json_output(error_data, run_context)
-                    else:
-                        print(error_msg)
-                    return 1
-            else:
-                error_msg = "❌ Error: --max-results requires a value"
-                if run_context['in_run_context']:
-                    error_data = {"success": False, "error": error_msg}
-                    write_to_json_output(error_data, run_context)
-                else:
-                    print(error_msg)
-                return 1
-        elif arg == '--sources':
-            if i + 1 < len(args):
-                sources = [s.strip() for s in args[i + 1].split(',')]
-                i += 2
-            else:
-                error_msg = "❌ Error: --sources requires a value"
-                if run_context['in_run_context']:
-                    error_data = {"success": False, "error": error_msg}
-                    write_to_json_output(error_data, run_context)
-                else:
-                    print(error_msg)
-                return 1
-        elif arg.startswith('-'):
-            error_msg = f"❌ Unknown option: {arg}"
-            if run_context['in_run_context']:
-                error_data = {"success": False, "error": error_msg}
-                write_to_json_output(error_data, run_context)
-            else:
-                print(error_msg)
-                print("Use --help for usage information")
-            return 1
-        else:
-            if query is None:
-                query = arg
-            else:
-                # 多个查询词，合并
-                query += " " + arg
-            i += 1
+    query = args.query
+    sources = args.sources.split(',') if args.sources else None
     
-    # 如果没有提供查询，启动交互模式
     if query is None:
-        query = get_interactive_query(run_context)
-        if query is None:
-            return 0
-    
-    # 执行搜索
+        try:
+            # 仅在非RUN环境下提示输入
+            if not os.environ.get('RUN_IDENTIFIER'):
+                 print("Search query: ", file=sys.stderr, end="")
+            query = input().strip()
+            if not query:
+                print("Empty query, exiting.", file=sys.stderr)
+                # 在RUN环境下，返回一个表示错误的JSON
+                if os.environ.get('RUN_IDENTIFIER'):
+                    print(json.dumps({"success": False, "error": "Empty query"}, ensure_ascii=False, indent=2))
+                    return 0
+                return 1
+        except (KeyboardInterrupt, EOFError):
+            print("\nSearch cancelled.", file=sys.stderr)
+            if os.environ.get('RUN_IDENTIFIER'):
+                print(json.dumps({"success": False, "error": "Search cancelled"}, ensure_ascii=False, indent=2))
+                return 0
+            return 1
+            
     searcher = MultiPlatformPaperSearcher()
-    result = searcher.search_papers(query, max_results, sources)
+    result = searcher.search_papers(query, args.max_results, sources)
     
-    # 输出结果
-    format_output(result, run_context)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
     
     return 0
 

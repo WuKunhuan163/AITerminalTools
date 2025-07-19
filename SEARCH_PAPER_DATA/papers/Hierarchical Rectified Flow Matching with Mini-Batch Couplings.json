@@ -1,0 +1,16 @@
+{
+  "title": "Hierarchical Rectified Flow Matching with Mini-Batch Couplings",
+  "authors": [
+    "Yichi Zhang",
+    "Yici Yan",
+    "Alex Schwing",
+    "Zhizhen Zhao"
+  ],
+  "abstract": "Flow matching has emerged as a compelling generative modeling approach that\nis widely used across domains. To generate data via a flow matching model, an\nordinary differential equation (ODE) is numerically solved via forward\nintegration of the modeled velocity field. To better capture the multi-modality\nthat is inherent in typical velocity fields, hierarchical flow matching was\nrecently introduced. It uses a hierarchy of ODEs that are numerically\nintegrated when generating data. This hierarchy of ODEs captures the\nmulti-modal velocity distribution just like vanilla flow matching is capable of\nmodeling a multi-modal data distribution. While this hierarchy enables to model\nmulti-modal velocity distributions, the complexity of the modeled distribution\nremains identical across levels of the hierarchy. In this paper, we study how\nto gradually adjust the complexity of the distributions across different levels\nof the hierarchy via mini-batch couplings. We show the benefits of mini-batch\ncouplings in hierarchical rectified flow matching via compelling results on\nsynthetic and imaging data. Code is available at\nhttps://riccizz.github.io/HRF_coupling.",
+  "url": "http://arxiv.org/abs/2507.13350v1",
+  "pdf_url": "http://arxiv.org/pdf/2507.13350v1.pdf",
+  "publication_date": "2025-07-17",
+  "venue": "arXiv preprint",
+  "citation_count": null,
+  "source": "arxiv"
+}

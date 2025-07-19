@@ -1,109 +1,32 @@
 {
   "tools": {
-    "OVERLEAF": {
-      "name": "OVERLEAF",
-      "description": "LaTeX文件编译工具，支持GUI文件选择和JSON返回值",
-      "purpose": "Compile LaTeX files to PDF",
-      "usage": "OVERLEAF [file.tex]",
+    "ALIAS": {
+      "name": "ALIAS",
+      "description": "Permanent Shell Alias Creation Tool",
+      "purpose": "Create, remove, and manage permanent aliases in shell configuration files",
+      "usage": "ALIAS <alias_name> <alias_command> [options]",
       "examples": [
-        "OVERLEAF document.tex",
-        "OVERLEAF  # GUI file selection"
+        "ALIAS ll 'ls -la'",
+        "ALIAS gs 'git status'",
+        "ALIAS --remove ll",
+        "ALIAS --update",
+        "ALIAS --help"
       ],
       "files": {
-        "binary": "OVERLEAF",
-        "python": "OVERLEAF.py",
-        "markdown": "OVERLEAF.md"
+        "binary": "ALIAS",
+        "python": "ALIAS.py",
+        "markdown": "ALIAS.md"
       },
       "run_compatible": true,
       "testable": true,
       "test_passed": true,
       "ai_usable": true,
-      "tool_use_scenario": "When user needs to compile LaTeX documents"
-    },
-    "EXTRACT_PDF": {
-      "name": "EXTRACT_PDF",
-      "description": "Enhanced PDF extraction using MinerU without image API analysis",
-      "purpose": "Extract content from PDF files using MinerU",
-      "usage": "EXTRACT_PDF <pdf_file> [options]",
-      "examples": [
-        "EXTRACT_PDF document.pdf --page 3",
-        "EXTRACT_PDF paper.pdf --page 1-5 --output /path/to/output",
-        "EXTRACT_PDF  # GUI file selection"
-      ],
-      "files": {
-        "binary": "EXTRACT_PDF",
-        "python": "EXTRACT_PDF.py",
-        "markdown": "EXTRACT_PDF.md"
-      },
-      "run_compatible": true,
-      "testable": true,
-      "test_passed": false,
-      "ai_usable": true,
-      "tool_use_scenario": "When user needs to extract content from PDF files"
-    },
-    "GOOGLE_DRIVE": {
-      "name": "GOOGLE_DRIVE",
-      "description": "Google Drive access tool",
-      "purpose": "Open Google Drive in browser",
-      "usage": "GOOGLE_DRIVE [url] [options]",
-      "examples": [
-        "GOOGLE_DRIVE  # Open main Google Drive",
-        "GOOGLE_DRIVE -my  # Open My Drive folder",
-        "GOOGLE_DRIVE https://drive.google.com/drive/my-drive"
-      ],
-      "files": {
-        "binary": "GOOGLE_DRIVE",
-        "python": "GOOGLE_DRIVE.py",
-        "markdown": "GOOGLE_DRIVE.md"
-      },
-      "run_compatible": true,
-      "testable": true,
-      "test_passed": true,
-      "ai_usable": false,
-      "tool_use_scenario": "When user wants to access Google Drive"
-    },
-    "SEARCH_PAPER": {
-      "name": "SEARCH_PAPER",
-      "description": "Enhanced Academic Paper Search Tool",
-      "purpose": "Search academic papers from multiple platforms (arXiv, Google Scholar, Semantic Scholar)",
-      "usage": "SEARCH_PAPER [query] [options]",
-      "examples": [
-        "SEARCH_PAPER  # Interactive mode",
-        "SEARCH_PAPER \"machine learning\"",
-        "SEARCH_PAPER \"deep learning\" --max-results 20",
-        "SEARCH_PAPER \"NLP\" --sources arxiv,semantic_scholar"
-      ],
-      "files": {
-        "binary": "SEARCH_PAPER",
-        "python": "SEARCH_PAPER.py",
-        "markdown": "SEARCH_PAPER.md"
-      },
-      "run_compatible": true,
-      "testable": true,
-      "test_passed": true,
-      "ai_usable": true,
-      "tool_use_scenario": "When user needs to search for academic papers"
-    },
-    "EXPORT": {
-      "name": "EXPORT",
-      "description": "Environment Variable Export Tool",
-      "purpose": "Export environment variables and write to multiple shell configuration files",
-      "usage": "EXPORT <variable_name> <value>",
-      "examples": [
-        "EXPORT OPENROUTER_API_KEY \"sk-or-v1-...\"",
-        "EXPORT PATH \"/usr/local/bin:$PATH\"",
-        "EXPORT MY_VAR \"some value\""
-      ],
-      "files": {
-        "binary": "EXPORT",
-        "python": "EXPORT.py",
-        "markdown": "EXPORT.md"
-      },
-      "run_compatible": true,
-      "testable": true,
-      "test_passed": true,
-      "ai_usable": true,
-      "tool_use_scenario": "When user needs to set environment variables persistently"
+      "tool_use_scenario": "When user needs to create, remove, or manage permanent shell aliases",
+      "file_hashes": {
+        "binary": "ffd7c01b3aa874e11df70837d7241d7df33b1f9fae3515d94c16e183210667ed",
+        "python": "4c2bec1d2362f458cd6358dbb77c7cafb1192a49ce9b8ce68fa23ea40de67da0",
+        "markdown": "f3f19c184f0a3e569322cb5f41c5acb61e88f13518c34f04a99961195b01ebd0"
+      }
     },
     "DOWNLOAD": {
       "name": "DOWNLOAD",
@@ -124,17 +47,238 @@
       "testable": true,
       "test_passed": true,
       "ai_usable": true,
-      "tool_use_scenario": "When user needs to download files from URLs"
+      "tool_use_scenario": "When user needs to download files from URLs",
+      "file_hashes": {
+        "binary": "2f49f5f0ed6ab4bbfbbb6efb38bd2bd234e0720e84785dc59e2fe8b96acd38cd",
+        "python": "42d4fff246ad48a1f7495110f0db3b3872b6189f17eaa69b1e52cb190aacebaf",
+        "markdown": "68cdcab942da1322377d8803314ce5ff3e9418ea97325d76716743188e5a6be8"
+      }
+    },
+    "EXPORT": {
+      "name": "EXPORT",
+      "description": "Environment Variable Export Tool",
+      "purpose": "Export environment variables and write to multiple shell configuration files",
+      "usage": "EXPORT <variable_name> <value>",
+      "examples": [
+        "EXPORT OPENROUTER_API_KEY \"sk-or-v1-...\"",
+        "EXPORT PATH \"/usr/local/bin:$PATH\"",
+        "EXPORT MY_VAR \"some value\""
+      ],
+      "files": {
+        "binary": "EXPORT",
+        "python": "EXPORT.py",
+        "markdown": "EXPORT.md"
+      },
+      "run_compatible": true,
+      "testable": true,
+      "test_passed": true,
+      "ai_usable": true,
+      "tool_use_scenario": "When user needs to set environment variables persistently",
+      "file_hashes": {
+        "binary": "7f5069550e393be7c79f848ce511105f5cb1fb3e39b504899c4810955db4d10e",
+        "python": "76b31d2bc57a5763288c2ddcf9b640abbae91593ce9f1a3bbd4cfa1da3f15d20",
+        "markdown": "2b229928786a6aca7aaad7b5779723004dec0e51608f6c69de2f7692d82fe1a6"
+      }
+    },
+    "EXTRACT_PDF": {
+      "name": "EXTRACT_PDF",
+      "description": "Enhanced PDF extraction using MinerU with post-processing support",
+      "purpose": "Extract text from PDF files using multiple extraction engines with async modes, and post-process markdown files to replace placeholders with actual content",
+      "usage": "EXTRACT_PDF <pdf_file> [options] | EXTRACT_PDF --post [<markdown_file>] [--post-type <type>] | EXTRACT_PDF --full <pdf_file> [options]",
+      "examples": [
+        "EXTRACT_PDF document.pdf --page 3",
+        "EXTRACT_PDF paper.pdf --page 1-5 --output /path/to/output",
+        "EXTRACT_PDF paper.pdf --engine mineru-asyn --page 1-3",
+        "EXTRACT_PDF --post",
+        "EXTRACT_PDF --post document.md --post-type image",
+        "EXTRACT_PDF --post document.md --post-type all",
+        "EXTRACT_PDF --full document.pdf",
+        "EXTRACT_PDF --full paper.pdf --engine mineru --page 1-10"
+      ],
+      "files": {
+        "binary": "EXTRACT_PDF",
+        "python": "EXTRACT_PDF.py",
+        "markdown": "EXTRACT_PDF.md"
+      },
+      "run_compatible": true,
+      "testable": true,
+      "test_passed": true,
+      "ai_usable": true,
+      "tool_use_scenario": "When user needs to extract text from PDF files with different extraction engines",
+      "file_hashes": {
+        "binary": "815cfcd144c0e380ef2a51600019ab1738cea17d79b919929d39986804c2788b",
+        "python": "d9c7522bb643c1450f7649bef9cb604c17005e1e45fa101549aa9f73c96fc5ed",
+        "markdown": "f282804d036bee86d731014f34bfeb91aaa012732e3283e29c82584c16375b4c"
+      }
+    },
+    "FILEDIALOG": {
+      "name": "FILEDIALOG",
+      "description": "File Selection Tool with tkinter GUI",
+      "purpose": "Open tkinter file selection dialog to specify file types",
+      "usage": "FILEDIALOG [options]",
+      "examples": [
+        "FILEDIALOG",
+        "FILEDIALOG --types pdf",
+        "FILEDIALOG --types pdf,txt,doc",
+        "FILEDIALOG --types image --title \"Select Image\"",
+        "FILEDIALOG --multiple --types pdf"
+      ],
+      "files": {
+        "binary": "FILEDIALOG",
+        "python": "FILEDIALOG.py",
+        "markdown": "FILEDIALOG.md"
+      },
+      "run_compatible": true,
+      "testable": true,
+      "test_passed": true,
+      "ai_usable": true,
+      "tool_use_scenario": "When user needs to select specific file types through a GUI dialog",
+      "file_hashes": {
+        "binary": "afc31e5c1a6a110ee9fca71dd2e30cbdfc3f6a2b49815769088d5f133bacdeba",
+        "python": "a2f642dd2e0dd2f0743e99cd471adf0518e53a4751c412c7d57e45893524046d",
+        "markdown": "91bbe4b18eadcb82159e044a547ef266e02e5ed87c2215e665d2bfae8d9efd97"
+      }
+    },
+    "GOOGLE_DRIVE": {
+      "name": "GOOGLE_DRIVE",
+      "description": "Google Drive access tool",
+      "purpose": "Open Google Drive in browser with various options",
+      "usage": "GOOGLE_DRIVE [url] [options]",
+      "examples": [
+        "GOOGLE_DRIVE",
+        "GOOGLE_DRIVE -my",
+        "GOOGLE_DRIVE https://drive.google.com/drive/my-drive"
+      ],
+      "files": {
+        "binary": "GOOGLE_DRIVE",
+        "python": "GOOGLE_DRIVE.py",
+        "markdown": "GOOGLE_DRIVE.md"
+      },
+      "run_compatible": true,
+      "testable": true,
+      "test_passed": false,
+      "ai_usable": true,
+      "tool_use_scenario": "When user needs to access Google Drive",
+      "file_hashes": {
+        "binary": "44fef98442c7e718bb0ba3f77c414e036031a1ecd0572b812335dea39b659ed3",
+        "python": "8db294f1e1b817a5349762e392642efc14f368af04980f1b31eb1f55d08f52b5",
+        "markdown": "3ce9f74117c5b8a348837264722b94ab5b388d3e6158310546fbacc4579b3509"
+      }
+    },
+    "IMG2TEXT": {
+      "name": "IMG2TEXT",
+      "description": "图片转文字描述工具，支持Google Gemini Vision API",
+      "purpose": "Convert images to structured text descriptions using Google Gemini Vision API",
+      "usage": "IMG2TEXT <image_path> [--mode academic|general|code_snippet] [--api google] [--output <file>]",
+      "examples": [
+        "IMG2TEXT example.png --mode academic",
+        "IMG2TEXT example.png --mode general --output result.txt",
+        "IMG2TEXT example.png --mode code_snippet"
+      ],
+      "files": {
+        "binary": "IMG2TEXT",
+        "python": "IMG2TEXT.py"
+      },
+      "run_compatible": true,
+      "testable": true,
+      "test_passed": false,
+      "ai_usable": true,
+      "tool_use_scenario": "When user needs to convert images to text descriptions",
+      "file_hashes": {
+        "binary": "f2d11dba37aee88e0ec5d69be78408dca4a42cda53e54627b74719ef41f71d41",
+        "python": "67b468c4ee41608c0c73eb5e22b7061b35ce678b5162c2cddff2b2c6d2ba6952"
+      }
+    },
+    "LEARN": {
+      "name": "LEARN",
+      "description": "智能学习系统",
+      "purpose": "Create structured learning materials from topics or PDF papers, with brainstorming-only mode",
+      "usage": "LEARN <topic|pdf_file> [options]",
+      "examples": [
+        "LEARN \"Python编程\" --mode Beginner --style Witty --output-dir /tmp/tutorial",
+        "LEARN paper.pdf --mode Advanced --style Rigorous --output-dir /tmp/paper-tutorial --read-images",
+        "LEARN \"AI Ethics\" --mode Practical --style Witty --no-auto-create"
+      ],
+      "files": {
+        "binary": "LEARN",
+        "python": "LEARN.py",
+        "markdown": "LEARN.md"
+      },
+      "run_compatible": true,
+      "testable": true,
+      "test_passed": true,
+      "ai_usable": true,
+      "tool_use_scenario": "When user needs to create structured learning materials or just brainstorm ideas",
+      "file_hashes": {
+        "binary": "662c3a497955a3d0a209a0322d0e5806aa2c14b9e9a24962b9bb862ca14a2e36",
+        "python": "2705e3be3149124269ca0bbb8ab89aa8647a6144e6f09fbc93a55c862ae5c753",
+        "markdown": "c7ec2e0a06064127872273c5f63b9a4154dcefcd2c6ac7e720347ca4793a6521"
+      }
+    },
+    "OPENROUTER": {
+      "name": "OPENROUTER",
+      "description": "OpenRouter API 调用工具",
+      "purpose": "Call OpenRouter API with customizable query, model, and API key parameters, with cost tracking and dynamic token limits",
+      "usage": "OPENROUTER <query> [options]",
+      "examples": [
+        "OPENROUTER \"What is machine learning?\"",
+        "OPENROUTER \"解释量子计算\" --model \"deepseek/deepseek-r1\"",
+        "OPENROUTER \"Write a Python function\" --key \"sk-or-v1-...\" --max-tokens 2000",
+        "OPENROUTER --list",
+        "OPENROUTER --add \"anthropic/claude-3-haiku\" --temp-key \"your-key\"",
+        "OPENROUTER --remove \"old-model\"",
+        "OPENROUTER --default \"google/gemini-2.5-flash-lite-preview-06-17\""
+      ],
+      "files": {
+        "binary": "OPENROUTER",
+        "python": "OPENROUTER.py",
+        "markdown": "OPENROUTER.md"
+      },
+      "run_compatible": true,
+      "testable": true,
+      "test_passed": true,
+      "ai_usable": true,
+      "tool_use_scenario": "When user needs to call OpenRouter API for AI responses with cost tracking",
+      "file_hashes": {
+        "binary": "763ee807b7ab16bb3906ca1dd3f8948c3a961f3a93179ac7be19e06d045363d4",
+        "python": "f82666f2937432c26c2311e1b09f2f19db77c3f32eac73a0560b39865fd7bb9e",
+        "markdown": "93f573a5d4635eed0819cf9655cdc8391ceb9a3399c52748d0b4dbeba75a7297"
+      }
+    },
+    "OVERLEAF": {
+      "name": "OVERLEAF",
+      "description": "LaTeX文件编译工具，支持GUI文件选择和JSON返回值",
+      "purpose": "Compile LaTeX files to PDF",
+      "usage": "OVERLEAF [file.tex]",
+      "examples": [
+        "OVERLEAF document.tex",
+        "OVERLEAF"
+      ],
+      "files": {
+        "binary": "OVERLEAF",
+        "python": "OVERLEAF.py",
+        "markdown": "OVERLEAF.md"
+      },
+      "run_compatible": true,
+      "testable": true,
+      "test_passed": true,
+      "ai_usable": true,
+      "tool_use_scenario": "When user needs to compile LaTeX documents",
+      "file_hashes": {
+        "binary": "a510b3f3eb3db8571b8690856653236e69adc7008125071ed2536db9a95b666b",
+        "python": "f2fe650e7eb459e16fc268f43fd96e74d9eb449bd4e63a0ec245580be5555230",
+        "markdown": "300d873116eda49b8dc30a758c7372ee4cf98eb21be4654874a9807f99bcacd3"
+      }
     },
     "RUN": {
       "name": "RUN",
-      "description": "Universal command wrapper with JSON output and unique identifier system",
-      "purpose": "Execute commands with JSON output and unique identifiers",
+      "description": "Execute bin tools with JSON output",
+      "purpose": "Execute other bin tools and capture their output in JSON format",
       "usage": "RUN [--show] <command> [args...]",
       "examples": [
         "RUN OVERLEAF document.tex",
-        "RUN --show SEARCH_PAPER \"machine learning\"",
-        "RUN EXTRACT_PDF paper.pdf --page 1"
+        "RUN SEARCH_PAPER \"3DGS\" --max-results 3",
+        "RUN --show SEARCH_PAPER \"3DGS\" --max-results 3"
       ],
       "files": {
         "binary": "RUN",
@@ -142,10 +286,42 @@
         "markdown": "RUN.md"
       },
       "run_compatible": false,
-      "testable": false,
+      "testable": true,
       "test_passed": true,
-      "ai_usable": false,
-      "tool_use_scenario": "When user needs JSON output from other tools"
+      "ai_usable": true,
+      "tool_use_scenario": "When user needs to execute other tools with JSON output",
+      "file_hashes": {
+        "binary": "9a59306098258957c9a2a1f9202ae96929b0ae583b2a4158315d2fe0be7cd967",
+        "python": "4f49e3b5d69f1ad4e6cd622bba58d5c17c9f0d7ec86c8eda74f331dcdefa6089",
+        "markdown": "5e358ab72a61ffe8eda22888b4d57161a9758c4d54972eb84a4993592416849b"
+      }
+    },
+    "SEARCH_PAPER": {
+      "name": "SEARCH_PAPER",
+      "description": "Enhanced Academic Paper Search Tool",
+      "purpose": "Search academic papers from multiple platforms (arXiv, Google Scholar, Semantic Scholar)",
+      "usage": "SEARCH_PAPER [query] [options]",
+      "examples": [
+        "SEARCH_PAPER",
+        "SEARCH_PAPER \"machine learning\"",
+        "SEARCH_PAPER \"deep learning\" --max-results 20",
+        "SEARCH_PAPER \"NLP\" --sources arxiv,semantic_scholar"
+      ],
+      "files": {
+        "binary": "SEARCH_PAPER",
+        "python": "SEARCH_PAPER.py",
+        "markdown": "SEARCH_PAPER.md"
+      },
+      "run_compatible": true,
+      "testable": true,
+      "test_passed": true,
+      "ai_usable": true,
+      "tool_use_scenario": "When user needs to search for academic papers",
+      "file_hashes": {
+        "binary": "2779f023273904684a05ee2f4e19c578e1c9ba957f43b8785edc3e6ed2409e5b",
+        "python": "9886a0e93f019c7a6a4be90a0fa783316710ecb482aab8c36d9004097c3f033a",
+        "markdown": "a5d4d13de705761a4d4b8ccd6a8eb6cc93173bf0a2fe6231a749104a105c4867"
+      }
     },
     "USERINPUT": {
       "name": "USERINPUT",
@@ -164,56 +340,17 @@
       "testable": false,
       "test_passed": true,
       "ai_usable": true,
-      "tool_use_scenario": "When you need to get user feedback in workflows"
-    },
-    "FILE_SELECT": {
-      "name": "FILE_SELECT",
-      "description": "File Selection Tool with tkinter GUI",
-      "purpose": "Open tkinter file selection dialog to specify file types",
-      "usage": "FILE_SELECT [options]",
-      "examples": [
-        "FILE_SELECT",
-        "FILE_SELECT --types pdf",
-        "FILE_SELECT --types pdf,txt,doc",
-        "FILE_SELECT --types image --title \"Select Image\"",
-        "FILE_SELECT --multiple --types pdf"
-      ],
-      "files": {
-        "binary": "FILE_SELECT",
-        "python": "FILE_SELECT.py",
-        "markdown": "FILE_SELECT.md"
-      },
-      "run_compatible": true,
-      "testable": true,
-      "test_passed": true,
-      "ai_usable": true,
-      "tool_use_scenario": "When user needs to select specific file types through a GUI dialog"
-    },
-    "ALIAS": {
-      "name": "ALIAS",
-      "description": "Permanent Shell Alias Creation Tool",
-      "purpose": "Create permanent aliases in shell configuration files",
-      "usage": "ALIAS <alias_name> <alias_command>",
-      "examples": [
-        "ALIAS ll 'ls -la'",
-        "ALIAS gs 'git status'",
-        "ALIAS --help"
-      ],
-      "files": {
-        "binary": "ALIAS",
-        "python": "ALIAS.py",
-        "markdown": "ALIAS.md"
-      },
-      "run_compatible": true,
-      "testable": true,
-      "test_passed": true,
-      "ai_usable": true,
-      "tool_use_scenario": "When user needs to create permanent shell aliases"
+      "tool_use_scenario": "When you need to get user feedback in workflows",
+      "file_hashes": {
+        "binary": "e22c6adbe2154a75486103b429394a8fbefb343567ab2f1e48f203998adf41aa",
+        "python": "a8da03bf864435f936556a2de6bd539b9c8025ee37609c39ea326125beaf7c6a",
+        "markdown": "c545394251662f69cb42ef394c3f858cc09cc04a2137a4fb31e607b633d4e951"
+      }
     }
   },
   "metadata": {
     "version": "1.0.0",
-    "last_updated": "2025-07-16",
-    "total_tools": 10
+    "last_updated": "2025-07-18",
+    "total_tools": 13
   }
 }

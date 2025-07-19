@@ -153,7 +153,7 @@ class TestRUN(unittest.TestCase):
         output_file = RUN.get_output_file_path(run_id)
         
         self.assertTrue(output_file.endswith(f"run_{run_id}.json"))
-        self.assertIn('RUN_output', output_file)
+        self.assertIn('RUN_DATA', output_file)
     
     @unittest.skipIf(RUN is None, "RUN module not available")
     def test_help_output(self):

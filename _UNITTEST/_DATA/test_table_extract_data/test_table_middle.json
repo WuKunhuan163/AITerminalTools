@@ -1,0 +1,176 @@
+{
+    "pdf_info": [
+        {
+            "preproc_blocks": [
+                {
+                    "type": "table",
+                    "bbox": [
+                        20,
+                        60,
+                        731,
+                        898
+                    ],
+                    "blocks": [
+                        {
+                            "type": "table_body",
+                            "bbox": [
+                                20,
+                                60,
+                                731,
+                                898
+                            ],
+                            "group_id": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        20,
+                                        92,
+                                        731,
+                                        898
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                20,
+                                                92,
+                                                731,
+                                                898
+                                            ],
+                                            "score": 0.925,
+                                            "html": "<html><body><table><tr><td rowspan=\"5\">Kref kref k Inov ref</td><td>= {ki}i=1 Intrinsics of xref Estimated intrinsics of xref</td></tr><tr><td>Estimated shared intrinsics of xref</td></tr><tr><td>Extrinsics of Xref</td></tr><tr><td>Extrinsics of viewpoints in repair path</td></tr><tr><td>Estimated extrinsics of Xref Masks of Xref</td></tr><tr><td></td><td>Center location of Gaussian</td></tr><tr><td></td><td>Rotation quaternion of Gaussian</td></tr><tr><td>9</td><td></td></tr><tr><td>S</td><td>Scale vector of Gaussian</td></tr><tr><td>σ sh</td><td>Opacity of Gaussian</td></tr><tr><td>Gc</td><td>Spherical harmonic coefficients of Gaussia Coarse 3D Gaussians</td></tr><tr><td>R</td><td></td></tr><tr><td></td><td>Diff usion based Gaussian repair model</td></tr><tr><td>8</td><td>Latent diff usion encoder of R</td></tr><tr><td>D</td><td>Latent diffusion decoder of R</td></tr><tr><td>x}$</td><td>Degraded rendering</td></tr><tr><td></td><td>Image repaired by R</td></tr><tr><td>∈s</td><td>3D Noise added to attributes of Gc</td></tr><tr><td></td><td>2D Gaussian noise for fi ne-tuning</td></tr><tr><td>∈θ</td><td>2D Noise predicted by R</td></tr><tr><td>ctex</td><td></td></tr><tr><td></td><td>Object-specific language prompt</td></tr><tr><td>P</td><td>Coarse point cloud predicted by DUSt3R</td></tr></table></body></html>",
+                                            "type": "table",
+                                            "image_path": "c3620664255ca1552ea815325bcce80d27c5a4432b3d0e4a2ff2f6ff2a49e2e0.jpg"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 1,
+                            "virtual_lines": [
+                                {
+                                    "bbox": [
+                                        20,
+                                        60,
+                                        731,
+                                        339.3333333333333
+                                    ],
+                                    "spans": [],
+                                    "index": 0
+                                },
+                                {
+                                    "bbox": [
+                                        20,
+                                        339.3333333333333,
+                                        731,
+                                        618.6666666666666
+                                    ],
+                                    "spans": [],
+                                    "index": 1
+                                },
+                                {
+                                    "bbox": [
+                                        20,
+                                        618.6666666666666,
+                                        731,
+                                        898.0
+                                    ],
+                                    "spans": [],
+                                    "index": 2
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 1
+                }
+            ],
+            "page_idx": 0,
+            "page_size": [
+                776,
+                916
+            ],
+            "discarded_blocks": [],
+            "para_blocks": [
+                {
+                    "type": "table",
+                    "bbox": [
+                        20,
+                        60,
+                        731,
+                        898
+                    ],
+                    "blocks": [
+                        {
+                            "type": "table_body",
+                            "bbox": [
+                                20,
+                                60,
+                                731,
+                                898
+                            ],
+                            "group_id": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        20,
+                                        92,
+                                        731,
+                                        898
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                20,
+                                                92,
+                                                731,
+                                                898
+                                            ],
+                                            "score": 0.925,
+                                            "html": "<html><body><table><tr><td rowspan=\"5\">Kref kref k Inov ref</td><td>= {ki}i=1 Intrinsics of xref Estimated intrinsics of xref</td></tr><tr><td>Estimated shared intrinsics of xref</td></tr><tr><td>Extrinsics of Xref</td></tr><tr><td>Extrinsics of viewpoints in repair path</td></tr><tr><td>Estimated extrinsics of Xref Masks of Xref</td></tr><tr><td></td><td>Center location of Gaussian</td></tr><tr><td></td><td>Rotation quaternion of Gaussian</td></tr><tr><td>9</td><td></td></tr><tr><td>S</td><td>Scale vector of Gaussian</td></tr><tr><td>σ sh</td><td>Opacity of Gaussian</td></tr><tr><td>Gc</td><td>Spherical harmonic coefficients of Gaussia Coarse 3D Gaussians</td></tr><tr><td>R</td><td></td></tr><tr><td></td><td>Diff usion based Gaussian repair model</td></tr><tr><td>8</td><td>Latent diff usion encoder of R</td></tr><tr><td>D</td><td>Latent diffusion decoder of R</td></tr><tr><td>x}$</td><td>Degraded rendering</td></tr><tr><td></td><td>Image repaired by R</td></tr><tr><td>∈s</td><td>3D Noise added to attributes of Gc</td></tr><tr><td></td><td>2D Gaussian noise for fi ne-tuning</td></tr><tr><td>∈θ</td><td>2D Noise predicted by R</td></tr><tr><td>ctex</td><td></td></tr><tr><td></td><td>Object-specific language prompt</td></tr><tr><td>P</td><td>Coarse point cloud predicted by DUSt3R</td></tr></table></body></html>",
+                                            "type": "table",
+                                            "image_path": "c3620664255ca1552ea815325bcce80d27c5a4432b3d0e4a2ff2f6ff2a49e2e0.jpg"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 1,
+                            "virtual_lines": [
+                                {
+                                    "bbox": [
+                                        20,
+                                        60,
+                                        731,
+                                        339.3333333333333
+                                    ],
+                                    "spans": [],
+                                    "index": 0
+                                },
+                                {
+                                    "bbox": [
+                                        20,
+                                        339.3333333333333,
+                                        731,
+                                        618.6666666666666
+                                    ],
+                                    "spans": [],
+                                    "index": 1
+                                },
+                                {
+                                    "bbox": [
+                                        20,
+                                        618.6666666666666,
+                                        731,
+                                        898.0
+                                    ],
+                                    "spans": [],
+                                    "index": 2
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 1
+                }
+            ]
+        }
+    ],
+    "_backend": "pipeline",
+    "_version_name": "2.1.0"
+}

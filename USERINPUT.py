@@ -11,51 +11,17 @@ import json
 import hashlib
 from pathlib import Path
 
-def generate_run_identifier():
-    """生成一个基于时间和随机数的唯一标识符"""
-    import time
-    import random
-    
-    # 使用时间戳和随机数生成唯一标识符
-    timestamp = str(time.time())
-    random_num = str(random.randint(100000, 999999))
-    combined = f"{timestamp}_{random_num}_{os.getpid()}"
-    
-    # 使用 SHA256 生成哈希
-    return hashlib.sha256(combined.encode()).hexdigest()[:16]
+
 
 def get_run_context():
     """获取 RUN 执行上下文信息"""
-    # 检查是否有 RUN_IDENTIFIER 环境变量
     run_identifier = os.environ.get('RUN_IDENTIFIER')
+    output_file = os.environ.get('RUN_DATA_FILE')
     
-    # 检查是否有 RUN_OUTPUT_FILE 环境变量（向后兼容）
-    output_file = os.environ.get('RUN_OUTPUT_FILE')
-    
-    # 如果有 RUN_IDENTIFIER，构造对应的输出文件路径
-    if run_identifier:
-        if not output_file:
-            # 如果没有指定输出文件，使用默认路径
-            output_file = f"RUN_output/run_{run_identifier}.json"
+    if run_identifier and output_file:
         return {
             'in_run_context': True,
             'identifier': run_identifier,
-            'output_file': output_file
-        }
-    elif output_file:
-        # 向后兼容：如果只有 RUN_OUTPUT_FILE，从文件名提取标识符
-        try:
-            filename = Path(output_file).stem
-            if filename.startswith('run_'):
-                identifier = filename[4:]  # 去掉 'run_' 前缀
-            else:
-                identifier = generate_run_identifier()
-        except:
-            identifier = generate_run_identifier()
-        
-        return {
-            'in_run_context': True,
-            'identifier': identifier,
             'output_file': output_file
         }
     else:
@@ -177,7 +143,6 @@ def write_to_json_output(user_input, run_context):
         data = {
             'success': True,
             'type': 'user_input',
-            'run_identifier': run_context['identifier'],
             'user_input': user_input,
             'message': 'User input received successfully'
         }
@@ -201,7 +166,7 @@ def main():
             # 设置 RUN_IDENTIFIER 环境变量并继续执行
             os.environ['RUN_IDENTIFIER'] = sys.argv[2]
             if len(sys.argv) > 3:
-                os.environ['RUN_OUTPUT_FILE'] = sys.argv[3]
+                os.environ['RUN_DATA_FILE'] = sys.argv[3]
     
     # 获取执行上下文
     run_context = get_run_context()
@@ -223,7 +188,7 @@ def main():
         # 不在 RUN 环境中，直接输出到 stdout（保持原有行为）
         os.system("clear") if os.name == "posix" else os.system("cls")
         if user_input != "stop":
-            user_input += "\n\n任务完成后，执行终端命令 `USERINPUT` 获取用户反馈。如遇异常情况（如程序停止），重复执行 `USERINPUT` 直到获得自然语言反馈。执行过程中也可随时使用 `USERINPUT` 确认问题。注意：使用 run_terminal_cmd 工具执行的命令就是字面上的 `USERINPUT`，不要添加其他参数或构造交互式命令。"
+            user_input += "\n\n任务完成后，执行终端命令 `USERINPUT` 获取用户反馈。如遇异常情况（如程序停止），重复执行 `USERINPUT` 直到获得自然语言反馈。执行过程中遇到不确定的情况，请使用 `USERINPUT` 确认，不要直接结束。注意：使用 run_terminal_cmd 工具执行的命令就是字面上的 `USERINPUT`，不要添加其他参数或构造交互式命令。"
         print(user_input)
 
 if __name__ == "__main__":

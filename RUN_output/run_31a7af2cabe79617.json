@@ -1,8 +1,0 @@
-{
-  "success": false,
-  "error": "Command not found: /Users/wukunhuan/.local/bin/--list",
-  "command": "--list",
-  "args": [],
-  "run_identifier": "31a7af2cabe79617",
-  "output_file": "/Users/wukunhuan/.local/bin/RUN_output/run_31a7af2cabe79617.json"
-}

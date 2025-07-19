@@ -1,0 +1,16 @@
+[
+    {
+        "type": "equation",
+        "img_path": "images/c46c914538cad397ff53ef6b8477cdeb8fd62e5ccd49f324376a0c13469dfd68.jpg",
+        "text": "$$\n\\vert ( \\epsilon _ { \\theta } ( x _ { t } ^ { \\mathrm { r e f } } , t , x ^ { \\prime } , c ^ { \\mathrm { t e x } } ) - \\epsilon ) \\vert\n$$",
+        "text_format": "latex",
+        "page_idx": 0
+    },
+    {
+        "type": "equation",
+        "img_path": "images/416326c82a27ff86032bfcc6a321e0490109a1b132a20b7275c90ffa6c2885fb.jpg",
+        "text": "$$\n\\mathbb { E } _ { x ^ { \\mathrm { r e f } } , t , \\epsilon , x ^ { \\prime } } [ \\| ( \\epsilon _ { \\theta } ( x _ { t } ^ { \\mathrm { r e f } } , t , x\n$$",
+        "text_format": "latex",
+        "page_idx": 0
+    }
+]
