@@ -5,132 +5,65 @@
                 {
                     "type": "interline_equation",
                     "bbox": [
-                        478,
-                        3,
-                        1039,
-                        133
+                        5,
+                        11,
+                        1099,
+                        126
                     ],
                     "lines": [
                         {
                             "bbox": [
-                                478,
-                                3,
-                                1039,
-                                133
+                                5,
+                                11,
+                                1099,
+                                126
                             ],
                             "spans": [
                                 {
-                                    "bbox": [
-                                        478,
-                                        3,
-                                        1039,
-                                        133
-                                    ],
-                                    "score": 0.58,
-                                    "content": "\\vert ( \\epsilon _ { \\theta } ( x _ { t } ^ { \\mathrm { r e f } } , t , x ^ { \\prime } , c ^ { \\mathrm { t e x } } ) - \\epsilon ) \\vert",
                                     "type": "interline_equation",
-                                    "image_path": "c46c914538cad397ff53ef6b8477cdeb8fd62e5ccd49f324376a0c13469dfd68.jpg"
+                                    "score": 0.495,
+                                    "bbox": [
+                                        5,
+                                        11,
+                                        1099,
+                                        126
+                                    ],
+                                    "image_path": "59d2ea5495a5ce6d71ff5722f1866976a89e5198c47162e5fd5b6257e66adc9f.jpg"
                                 }
                             ]
                         }
                     ],
-                    "index": 2,
+                    "index": 1,
                     "virtual_lines": [
                         {
                             "bbox": [
-                                478,
-                                3,
-                                1039,
-                                46.333333333333336
+                                5,
+                                11,
+                                1099,
+                                49.333333333333336
                             ],
                             "spans": [],
                             "index": 0
                         },
                         {
                             "bbox": [
-                                478,
-                                46.333333333333336,
-                                1039,
-                                89.66666666666667
-                            ],
-                            "spans": [],
-                            "index": 2
-                        },
-                        {
-                            "bbox": [
-                                478,
-                                89.66666666666667,
-                                1039,
-                                133.0
-                            ],
-                            "spans": [],
-                            "index": 5
-                        }
-                    ]
-                },
-                {
-                    "type": "interline_equation",
-                    "bbox": [
-                        197,
-                        9,
-                        758,
-                        127
-                    ],
-                    "lines": [
-                        {
-                            "bbox": [
-                                197,
-                                9,
-                                758,
-                                127
-                            ],
-                            "spans": [
-                                {
-                                    "bbox": [
-                                        197,
-                                        9,
-                                        758,
-                                        127
-                                    ],
-                                    "score": 0.6,
-                                    "content": "\\mathbb { E } _ { x ^ { \\mathrm { r e f } } , t , \\epsilon , x ^ { \\prime } } [ \\| ( \\epsilon _ { \\theta } ( x _ { t } ^ { \\mathrm { r e f } } , t , x",
-                                    "type": "interline_equation",
-                                    "image_path": "416326c82a27ff86032bfcc6a321e0490109a1b132a20b7275c90ffa6c2885fb.jpg"
-                                }
-                            ]
-                        }
-                    ],
-                    "index": 3,
-                    "virtual_lines": [
-                        {
-                            "bbox": [
-                                197,
-                                9,
-                                758,
-                                48.333333333333336
+                                5,
+                                49.333333333333336,
+                                1099,
+                                87.66666666666667
                             ],
                             "spans": [],
                             "index": 1
                         },
                         {
                             "bbox": [
-                                197,
-                                48.333333333333336,
-                                758,
-                                87.66666666666667
-                            ],
-                            "spans": [],
-                            "index": 3
-                        },
-                        {
-                            "bbox": [
-                                197,
+                                5,
                                 87.66666666666667,
-                                758,
-                                127.0
+                                1099,
+                                126.0
                             ],
                             "spans": [],
-                            "index": 4
+                            "index": 2
                         }
                     ]
                 }
@@ -145,132 +78,65 @@
                 {
                     "type": "interline_equation",
                     "bbox": [
-                        478,
-                        3,
-                        1039,
-                        133
+                        5,
+                        11,
+                        1099,
+                        126
                     ],
                     "lines": [
                         {
                             "bbox": [
-                                478,
-                                3,
-                                1039,
-                                133
+                                5,
+                                11,
+                                1099,
+                                126
                             ],
                             "spans": [
                                 {
-                                    "bbox": [
-                                        478,
-                                        3,
-                                        1039,
-                                        133
-                                    ],
-                                    "score": 0.58,
-                                    "content": "\\vert ( \\epsilon _ { \\theta } ( x _ { t } ^ { \\mathrm { r e f } } , t , x ^ { \\prime } , c ^ { \\mathrm { t e x } } ) - \\epsilon ) \\vert",
                                     "type": "interline_equation",
-                                    "image_path": "c46c914538cad397ff53ef6b8477cdeb8fd62e5ccd49f324376a0c13469dfd68.jpg"
+                                    "score": 0.495,
+                                    "bbox": [
+                                        5,
+                                        11,
+                                        1099,
+                                        126
+                                    ],
+                                    "image_path": "59d2ea5495a5ce6d71ff5722f1866976a89e5198c47162e5fd5b6257e66adc9f.jpg"
                                 }
                             ]
                         }
                     ],
-                    "index": 2,
+                    "index": 1,
                     "virtual_lines": [
                         {
                             "bbox": [
-                                478,
-                                3,
-                                1039,
-                                46.333333333333336
+                                5,
+                                11,
+                                1099,
+                                49.333333333333336
                             ],
                             "spans": [],
                             "index": 0
                         },
                         {
                             "bbox": [
-                                478,
-                                46.333333333333336,
-                                1039,
-                                89.66666666666667
-                            ],
-                            "spans": [],
-                            "index": 2
-                        },
-                        {
-                            "bbox": [
-                                478,
-                                89.66666666666667,
-                                1039,
-                                133.0
-                            ],
-                            "spans": [],
-                            "index": 5
-                        }
-                    ]
-                },
-                {
-                    "type": "interline_equation",
-                    "bbox": [
-                        197,
-                        9,
-                        758,
-                        127
-                    ],
-                    "lines": [
-                        {
-                            "bbox": [
-                                197,
-                                9,
-                                758,
-                                127
-                            ],
-                            "spans": [
-                                {
-                                    "bbox": [
-                                        197,
-                                        9,
-                                        758,
-                                        127
-                                    ],
-                                    "score": 0.6,
-                                    "content": "\\mathbb { E } _ { x ^ { \\mathrm { r e f } } , t , \\epsilon , x ^ { \\prime } } [ \\| ( \\epsilon _ { \\theta } ( x _ { t } ^ { \\mathrm { r e f } } , t , x",
-                                    "type": "interline_equation",
-                                    "image_path": "416326c82a27ff86032bfcc6a321e0490109a1b132a20b7275c90ffa6c2885fb.jpg"
-                                }
-                            ]
-                        }
-                    ],
-                    "index": 3,
-                    "virtual_lines": [
-                        {
-                            "bbox": [
-                                197,
-                                9,
-                                758,
-                                48.333333333333336
+                                5,
+                                49.333333333333336,
+                                1099,
+                                87.66666666666667
                             ],
                             "spans": [],
                             "index": 1
                         },
                         {
                             "bbox": [
-                                197,
-                                48.333333333333336,
-                                758,
-                                87.66666666666667
-                            ],
-                            "spans": [],
-                            "index": 3
-                        },
-                        {
-                            "bbox": [
-                                197,
+                                5,
                                 87.66666666666667,
-                                758,
-                                127.0
+                                1099,
+                                126.0
                             ],
                             "spans": [],
-                            "index": 4
+                            "index": 2
                         }
                     ]
                 }

@@ -1,269 +1,202 @@
 #!/usr/bin/env python3
 """
 UNIMERNET - UnimerNet Formula and Table Recognition Tool
-Standalone tool for mathematical formula and table recognition using UnimerNet
+Based on MinerU's UnimerNet implementation for high-accuracy mathematical formula and table recognition.
 """
 
 import os
 import sys
-import argparse
 import json
+import argparse
+import tempfile
+import shutil
 from pathlib import Path
+from typing import Optional, List, Dict, Any, Union
 from datetime import datetime
-from typing import Optional, Dict, Any, List
-import logging
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Add UNIMERNET_PROJ to path
+UNIMERNET_PROJ_PATH = Path(__file__).parent / "UNIMERNET_PROJ"
+sys.path.insert(0, str(UNIMERNET_PROJ_PATH))
 
-# Add current directory to path for imports
-current_dir = Path(__file__).parent
-if str(current_dir) not in sys.path:
-    sys.path.insert(0, str(current_dir))
+# Add EXTRACT_IMG_PROJ for cache system
+EXTRACT_IMG_PROJ_PATH = Path(__file__).parent / "EXTRACT_IMG_PROJ"
+if str(EXTRACT_IMG_PROJ_PATH) not in sys.path:
+    sys.path.insert(0, str(EXTRACT_IMG_PROJ_PATH))
 
-# Import centralized cache system
-# Import centralized cache system from EXTRACT_IMG_PROJ
 try:
-    from EXTRACT_IMG_PROJ.cache_system import ImageCacheSystem
-except ImportError:
-    # Fallback import path
-    import sys
-    from pathlib import Path
-    extract_img_proj = Path(__file__).parent / "EXTRACT_IMG_PROJ"
-    if str(extract_img_proj) not in sys.path:
-        sys.path.insert(0, str(extract_img_proj))
+    # Import centralized cache system
     from cache_system import ImageCacheSystem
+    CACHE_AVAILABLE = True
+except ImportError:
+    print("Warning: Centralized cache system not available", file=sys.stderr)
+    CACHE_AVAILABLE = False
 
-# Try to import UnimerNet functionality
 try:
-    # Add UNIMERNET_PROJ to path
-    unimernet_proj_path = current_dir / "UNIMERNET_PROJ"
-    if str(unimernet_proj_path) not in sys.path:
-        sys.path.insert(0, str(unimernet_proj_path))
-    
-    # Import UnimerNet with improved configuration
-    from unimernet_model import UnimernetModel
-    from mineru_config import config as mineru_config
+    # Import UnimerNet model components
+    from test_simple_unimernet import load_unimernet_model, recognize_image as simple_recognize
     UNIMERNET_AVAILABLE = True
-    logger.info("UnimerNet processor imported successfully")
-except ImportError as e:
-    logger.error(f"Failed to import UnimerNet processor: {e}")
+except ImportError:
+    print("Warning: UnimerNet model components not available", file=sys.stderr)
     UNIMERNET_AVAILABLE = False
 
 class UnimerNetProcessor:
-    """
-    Standalone UnimerNet processor for mathematical formulas and tables.
-    """
+    """UnimerNet processor using simplified unimernet interface"""
     
-    def __init__(self, use_cache: bool = True):
-        """
-        Initialize the UnimerNet processor.
-        
-        Args:
-            use_cache: Whether to use the centralized cache system
-        """
-        self.use_cache = use_cache
-        if use_cache:
-            self.cache_system = ImageCacheSystem()
+    def __init__(self):
+        # Initialize cache system
+        if CACHE_AVAILABLE:
+            self.cache_system = ImageCacheSystem(base_dir=Path(__file__).parent)
         else:
             self.cache_system = None
         
         # Initialize UnimerNet model
-        self.unimernet_model = None
-        if UNIMERNET_AVAILABLE:
-            try:
-                self.unimernet_model = UnimernetModel()
-                logger.info("UnimerNet model initialized successfully")
-            except Exception as e:
-                logger.error(f"Failed to initialize UnimerNet: {e}")
-                self.unimernet_model = None
+        self.model = None
+        self.tokenizer = None
+        self._init_unimernet_model()
+    
+    def _init_unimernet_model(self):
+        """Initialize UnimerNet model using simplified interface"""
+        if not UNIMERNET_AVAILABLE:
+            print("Warning: UnimerNet components not available", file=sys.stderr)
+            return
+        
+        try:
+            # Determine device
+            import torch
+            if torch.cuda.is_available():
+                device = "cuda"
+            elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+                device = "mps"
+            else:
+                device = "cpu"
+            
+            # Load model
+            self.model, self.tokenizer = load_unimernet_model(device=device)
+            
+        except Exception as e:
+            print(f"Warning: Failed to initialize UnimerNet model: {e}", file=sys.stderr)
+            self.model = None
+            self.tokenizer = None
     
     def is_available(self) -> bool:
-        """Check if UnimerNet is available and properly initialized."""
-        return self.unimernet_model is not None
+        """Check if UnimerNet is available and ready"""
+        return self.model is not None
     
-    def recognize_formula(self, image_path: str, force_reprocess: bool = False) -> Dict[str, Any]:
+    def recognize_image(self, image_path: str, content_type: str = "auto", use_cache: bool = True, force: bool = False) -> Dict[str, Any]:
         """
-        Recognize mathematical formula from image.
+        Recognize formula or table from image using MinerU's UnimerNet.
         
         Args:
             image_path: Path to the image file
-            force_reprocess: Force reprocessing even if cached
+            content_type: Type of content ("formula", "table", "auto")
+            use_cache: Whether to use cache system
+            force: Force reprocessing even if cached
             
         Returns:
-            Dictionary with recognition results
+            Recognition result dictionary
         """
-        return self.recognize_image(image_path, "formula", force_reprocess)
-    
-    def recognize_table(self, image_path: str, force_reprocess: bool = False) -> Dict[str, Any]:
-        """
-        Recognize table structure from image.
-        
-        Args:
-            image_path: Path to the image file
-            force_reprocess: Force reprocessing even if cached
-            
-        Returns:
-            Dictionary with recognition results
-        """
-        return self.recognize_image(image_path, "table", force_reprocess)
-    
-    def recognize_image(self, image_path: str, content_type: str = "auto", 
-                       force_reprocess: bool = False) -> Dict[str, Any]:
-        """
-        Recognize content from image using UnimerNet.
-        
-        Args:
-            image_path: Path to the image file
-            content_type: Type of content ('formula', 'table', 'auto')
-            force_reprocess: Force reprocessing even if cached
-            
-        Returns:
-            Dictionary with recognition results
-        """
-        image_path = Path(image_path)
-        
-        if not image_path.exists():
-            return {
-                "success": False,
-                "error": f"Image file not found: {image_path}",
-                "timestamp": datetime.now().isoformat()
-            }
-        
         if not self.is_available():
             return {
                 "success": False,
-                "error": "UnimerNet processor not available",
-                "timestamp": datetime.now().isoformat()
+                "error": "UnimerNet is not available. Please check MinerU installation."
             }
         
-        # Read image data for caching
-        try:
-            with open(image_path, 'rb') as f:
-                image_data = f.read()
-        except Exception as e:
+        if not os.path.exists(image_path):
             return {
                 "success": False,
-                "error": f"Failed to read image: {e}",
-                "timestamp": datetime.now().isoformat()
+                "error": f"Image file not found: {image_path}"
             }
         
-        # Check cache first (unless force reprocessing)
-        if self.use_cache and not force_reprocess:
-            cached_result = self.cache_system.get_cached_description(image_data)
-            if cached_result:
-                logger.info(f"Using cached result for {image_path.name}")
-                return {
-                    "success": True,
-                    "result": cached_result,
-                    "image_path": str(image_path),
-                    "content_type": "cached",
-                    "processor": "unimernet",
-                    "timestamp": datetime.now().isoformat(),
-                    "from_cache": True
-                }
+        # Check cache first
+        if use_cache and not force and self.cache_system:
+            try:
+                with open(image_path, 'rb') as f:
+                    image_data = f.read()
+                cached_description = self.cache_system.get_cached_description(image_data)
+                if cached_description:
+                    return {
+                        "success": True,
+                        "result": cached_description,
+                        "image_path": image_path,
+                        "content_type": "auto",  # We don't store content type in cache
+                        "processor": "unimernet",
+                        "timestamp": datetime.now().isoformat(),
+                        "from_cache": True
+                    }
+            except Exception as e:
+                print(f"Warning: Cache check failed: {e}", file=sys.stderr)
         
-        # Process with UnimerNet
         try:
-            logger.info(f"Processing {image_path.name} with UnimerNet")
-            result = self._process_with_unimernet(image_path)
+            # Use simplified recognition interface
+            result_text = simple_recognize(image_path, self.model, self.tokenizer)
             
-            if result and result.strip():
-                # Cache the result
-                if self.use_cache:
-                    self.cache_system.store_image_and_description(
-                        image_data, result, str(image_path)
-                    )
-                
-                return {
-                    "success": True,
-                    "result": result,
-                    "image_path": str(image_path),
-                    "content_type": content_type,
-                    "processor": "unimernet",
-                    "timestamp": datetime.now().isoformat(),
-                    "from_cache": False
-                }
-            else:
+            if result_text is None:
                 return {
                     "success": False,
-                    "error": "UnimerNet returned empty result",
-                    "image_path": str(image_path),
-                    "timestamp": datetime.now().isoformat()
+                    "error": "UnimerNet recognition failed - no result returned"
                 }
-        
+            
+            # Auto-detect content type if needed (simplified heuristic)
+            if content_type == "auto":
+                # Simple heuristic: if result contains table-like patterns, it's a table
+                if "|" in result_text or "\\begin{array}" in result_text or "\\begin{tabular}" in result_text:
+                    content_type = "table"
+                else:
+                    content_type = "formula"
+            
+            # Prepare result
+            result = {
+                "success": True,
+                "result": result_text,
+                "image_path": image_path,
+                "content_type": content_type,
+                "processor": "unimernet",
+                "timestamp": datetime.now().isoformat(),
+                "from_cache": False
+            }
+            
+            # Cache the result
+            if use_cache and self.cache_system:
+                try:
+                    with open(image_path, 'rb') as f:
+                        image_data = f.read()
+                    self.cache_system.store_image_and_description(
+                        image_data, 
+                        result_text
+                    )
+                except Exception as e:
+                    print(f"Warning: Cache storage failed: {e}", file=sys.stderr)
+            
+            return result
+            
         except Exception as e:
-            logger.error(f"UnimerNet processing failed: {e}")
             return {
                 "success": False,
-                "error": f"UnimerNet processing failed: {e}",
-                "image_path": str(image_path),
-                "timestamp": datetime.now().isoformat()
+                "error": f"UnimerNet processing failed: {str(e)}"
             }
     
-    def _process_with_unimernet(self, image_path: Path) -> Optional[str]:
-        """
-        Internal method to process image with UnimerNet.
-        
-        Args:
-            image_path: Path to image file
-            
-        Returns:
-            Processing result or None if failed
-        """
-        try:
-            from PIL import Image
-            # Load image
-            image = Image.open(image_path).convert('RGB')
-            
-            # Use the improved UnimerNet model
-            result = self.unimernet_model.predict_single_image(image)
-            
-            if result and result.strip():
-                return result
-        except Exception as e:
-            logger.warning(f"UnimerNet processing failed: {e}")
-        
-        return None
-    
-    def batch_recognize(self, image_paths: List[str], **kwargs) -> List[Dict[str, Any]]:
-        """
-        Process multiple images in batch.
-        
-        Args:
-            image_paths: List of image file paths
-            **kwargs: Additional arguments for recognize_image
-            
-        Returns:
-            List of recognition results
-        """
-        results = []
-        
-        for image_path in image_paths:
-            result = self.recognize_image(image_path, **kwargs)
-            results.append(result)
-        
-        return results
+
     
     def get_cache_stats(self) -> Dict[str, Any]:
-        """Get cache statistics."""
-        if self.use_cache:
-            return self.cache_system.get_cache_stats()
-        else:
-            return {"cache_disabled": True}
+        """Get cache statistics"""
+        if not self.cache_system:
+            return {"cache_available": False}
+        
+        return self.cache_system.get_cache_stats()
 
 def main():
-    """Command line interface for UNIMERNET."""
-    parser = argparse.ArgumentParser(description="UNIMERNET - UnimerNet Formula and Table Recognition Tool")
+    """Main CLI interface for UNIMERNET"""
+    parser = argparse.ArgumentParser(
+        description="UNIMERNET - UnimerNet Formula and Table Recognition Tool",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     
     parser.add_argument("image_path", nargs="?", help="Path to image file")
-    parser.add_argument("--type", choices=["formula", "table", "auto"], 
-                       default="auto", help="Content type hint")
-    parser.add_argument("--force", action="store_true", 
-                       help="Force reprocessing even if cached")
-    parser.add_argument("--batch", nargs="+", help="Process multiple images")
-    parser.add_argument("--no-cache", action="store_true", help="Disable cache")
+    parser.add_argument("--type", choices=["formula", "table", "auto"], default="auto",
+                       help="Content type hint (default: auto)")
+    parser.add_argument("--force", action="store_true", help="Force reprocessing even if cached")
+    parser.add_argument("--batch", action="store_true", help="Process multiple images")
+    parser.add_argument("--no-cache", action="store_true", help="Disable cache system")
     parser.add_argument("--stats", action="store_true", help="Show cache statistics")
     parser.add_argument("--output", help="Output file for results")
     parser.add_argument("--json", action="store_true", help="Output in JSON format")
@@ -272,85 +205,105 @@ def main():
     args = parser.parse_args()
     
     # Initialize processor
-    processor = UnimerNetProcessor(use_cache=not args.no_cache)
+    processor = UnimerNetProcessor()
     
-    # Check availability if requested
+    # Handle check command
     if args.check:
         if processor.is_available():
             print("✅ UnimerNet is available and ready")
-            if not args.no_cache:
+            if processor.cache_system:
                 stats = processor.get_cache_stats()
-                print(f"Cache: {stats.get('total_images', 0)} images cached")
+                if stats.get("cache_available"):
+                    print(f"Cache: {stats.get('total_cached_images', 0)} images cached")
         else:
             print("❌ UnimerNet is not available")
-            print("Please ensure UnimerNet dependencies are installed")
+            print("Please ensure MinerU dependencies are installed")
         return
     
-    # Show cache statistics if requested
+    # Handle stats command
     if args.stats:
         stats = processor.get_cache_stats()
-        if stats.get('cache_disabled'):
-            print("Cache is disabled")
+        if args.json:
+            print(json.dumps(stats, indent=2))
         else:
-            print("Cache Statistics:")
-            for key, value in stats.items():
-                print(f"  {key}: {value}")
+            if stats.get("cache_available"):
+                print("Cache Statistics:")
+                print(f"  Total cached images: {stats.get('total_cached_images', 0)}")
+                print(f"  Cache directory: {stats.get('cache_dir', 'N/A')}")
+            else:
+                print("Cache system not available")
         return
     
-    # Process images
-    if args.batch:
-        # Batch processing
-        results = processor.batch_recognize(
-            args.batch,
-            content_type=args.type,
-            force_reprocess=args.force
-        )
-        
-        if args.json:
-            output = {"batch_results": results}
-            print(json.dumps(output, indent=2, ensure_ascii=False))
-        else:
-            for i, result in enumerate(results):
-                print(f"\n--- Image {i+1}: {result.get('image_path', 'Unknown')} ---")
-                if result.get('success'):
-                    print(f"Type: {result.get('content_type', 'Unknown')}")
-                    print(f"From cache: {result.get('from_cache', False)}")
-                    print(f"Result: {result.get('result', 'No result')}")
-                else:
-                    print(f"Error: {result.get('error', 'Unknown error')}")
-    elif args.image_path:
-        # Single image processing
-        result = processor.recognize_image(
-            args.image_path,
-            content_type=args.type,
-            force_reprocess=args.force
-        )
-        
-        if args.json:
-            print(json.dumps(result, indent=2, ensure_ascii=False))
-        else:
-            if result.get('success'):
-                print(f"Image: {result.get('image_path', 'Unknown')}")
-                print(f"Type: {result.get('content_type', 'Unknown')}")
-                print(f"From cache: {result.get('from_cache', False)}")
-                print(f"\nResult:\n{result.get('result', 'No result')}")
-            else:
-                print(f"Error: {result.get('error', 'Unknown error')}")
-    else:
+    # Check if image path is provided
+    if not args.image_path:
         parser.print_help()
         return
     
-    # Save output to file if requested
-    if args.output:
-        if args.batch:
+    # Process images
+    use_cache = not args.no_cache
+    
+    if args.batch:
+        # Process multiple images
+        image_paths = args.image_path.split() if isinstance(args.image_path, str) else [args.image_path]
+        results = []
+        
+        for image_path in image_paths:
+            result = processor.recognize_image(
+                image_path=image_path,
+                content_type=args.type,
+                use_cache=use_cache,
+                force=args.force
+            )
+            results.append(result)
+        
+        # Output results
+        if args.json or args.output:
             output_data = {"batch_results": results}
+            output_text = json.dumps(output_data, indent=2)
         else:
-            output_data = result
+            output_lines = []
+            for result in results:
+                if result.get("success"):
+                    output_lines.append(f"Image: {result['image_path']}")
+                    output_lines.append(f"Type: {result['content_type']}")
+                    output_lines.append(f"From cache: {result.get('from_cache', False)}")
+                    output_lines.append(f"Result: {result['result']}")
+                    output_lines.append("")
+                else:
+                    output_lines.append(f"Error processing {result.get('image_path', 'unknown')}: {result.get('error', 'unknown error')}")
+                    output_lines.append("")
+            output_text = "\n".join(output_lines)
+    
+    else:
+        # Process single image
+        result = processor.recognize_image(
+            image_path=args.image_path,
+            content_type=args.type,
+            use_cache=use_cache,
+            force=args.force
+        )
         
+        # Output result
+        if args.json or args.output:
+            output_text = json.dumps(result, indent=2)
+        else:
+            if result.get("success"):
+                output_text = f"""Image: {result['image_path']}
+Type: {result['content_type']}
+From cache: {result.get('from_cache', False)}
+
+Result:
+{result['result']}"""
+            else:
+                output_text = f"Error: {result.get('error', 'unknown error')}"
+    
+    # Save to file if specified
+    if args.output:
         with open(args.output, 'w', encoding='utf-8') as f:
-            json.dump(output_data, f, indent=2, ensure_ascii=False)
-        
-        print(f"\nResults saved to: {args.output}")
+            f.write(output_text)
+        print(f"Results saved to {args.output}")
+    else:
+        print(output_text)
 
 if __name__ == "__main__":
     main() 

@@ -162,10 +162,11 @@ class ImageCacheSystem:
         total_size = sum(entry.get('file_size', 0) for entry in self.cache.values())
         
         return {
-            'total_images': total_images,
+            'cache_available': True,
+            'total_cached_images': total_images,
             'total_size_bytes': total_size,
             'total_size_mb': round(total_size / (1024 * 1024), 2),
-            'cache_dir': str(self.cache_dir),
+            'cache_dir': str(self.base_dir),
             'images_dir': str(self.images_dir)
         }
     

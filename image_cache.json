@@ -1,0 +1,11 @@
+{
+  "fd60112e0ba6ae825464c1bab1d2cac483e36efcba1f4fc0d68f1861a78300aa": {
+    "description": "\\begin{array} { r l } { \\frac { \\partial ^ { 2 } \\lambda _ { 1 } } { \\partial x ^ { 2 } } ( u _ { 1 } ^ { 2 } ) } & { = \\frac { \\lambda _ { 2 } ( \\lambda _ { 2 } - \\lambda _ { 3 } ) } { \\lambda _ { 1 } ( \\lambda _ { 2 } - \\lambda _ { 3 } ) } } \\\\ & { \\frac { \\partial ^ { 2 } \\lambda _ { 1 } } { \\partial x ^ { 2 } } ( u _ { 1 } ^ { 2 } ) } \\\\ & { = \\frac { \\lambda _ { 2 } ( \\lambda _ { 2 } - \\lambda _ { 3 } ) } { \\lambda _ { 1 } ( \\lambda _ { 2 } - \\lambda _ { 3 } ) } , \\quad \\mathrm { R e t a n d ~ a n d } \\quad } \\\\ { \\frac { \\partial ^ { 2 } \\lambda _ { 1 } } { \\partial x ^ { 2 } } ( u _ { 1 } ^ { 2 } ) } & { = \\frac { \\lambda _ { 2 } ( \\lambda _ { 2 } - \\lambda _ { 3 } ) } { \\lambda _ { 1 } ( \\lambda _ { 2 } - \\lambda _ { 3 } ) } } \\\\ & { \\frac { \\partial ^ { 2 } \\lambda _ { 2 } } { \\partial x ^ { 2 } } ( u _ { 1 } ^ { 2 } ) } \\\\ & { = \\frac { \\lambda _ { 1 } ( \\lambda _ { 2 } - \\lambda _ { 3 } ) } { \\lambda _ { 1 } ( \\lambda _ { 2 } - \\lambda _ { 3 } ) } , \\quad \\mathrm { R e t a n d ~ a n d ~ a n d } \\quad } \\\\ { \\frac { \\partial ^ { 2 } \\lambda _ { 1 } } { \\partial x ^ { 2 } } ( u _ { 1 } ^ { 2 } ) } & { = \\frac { \\lambda _ { 2 } ( \\lambda _ { 2 } - \\lambda _ { 3 } ) } { \\lambda _ { 1 } ( \\lambda _ { 2 } - \\lambda _ { 3 } ) } } \\\\ & { \\frac { \\partial ^ { 2 } \\lambda _ { 2 } } { \\partial x ^ { 2 } } ( u _ { 1 } ^ { 2 } ) } \\\\ & { = \\frac { \\lambda _ { 1 } ( \\lambda _ { 2 } - \\lambda _ { 3 } ) } { \\lambda _ { 1 } ( \\lambda _ { 2 } - \\lambda _ { 3 } ) } } \\\\ & { \\frac { \\partial ^ { 2 } \\lambda _ { 1 } } { \\partial x ^ { 2 } } ( u _ { 1 } ^ { 2 } ) } \\end{array}",
+    "timestamp": "2025-07-19T16:49:10.528924",
+    "sha256": "fd60112e0ba6ae825464c1bab1d2cac4d68f1861a78300aa1e056c0cbc69d108",
+    "md5": "83e36efcba1f4fc08396bdc36da23ba9",
+    "image_path": "/Users/wukunhuan/.local/bin/images/fd60112e0ba6ae825464c1bab1d2cac483e36efcba1f4fc0d68f1861a78300aa.jpg",
+    "source_path": null,
+    "file_size": 173244
+  }
+}

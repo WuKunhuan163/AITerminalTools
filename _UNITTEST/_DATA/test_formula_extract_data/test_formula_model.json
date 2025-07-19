@@ -14,36 +14,6 @@
                     292
                 ],
                 "score": 0.495
-            },
-            {
-                "category_id": 14,
-                "poly": [
-                    456,
-                    21,
-                    1756,
-                    21,
-                    1756,
-                    296,
-                    456,
-                    296
-                ],
-                "score": 0.6,
-                "latex": "\\mathbb { E } _ { x ^ { \\mathrm { r e f } } , t , \\epsilon , x ^ { \\prime } } [ \\| ( \\epsilon _ { \\theta } ( x _ { t } ^ { \\mathrm { r e f } } , t , x"
-            },
-            {
-                "category_id": 14,
-                "poly": [
-                    1107,
-                    8,
-                    2407,
-                    8,
-                    2407,
-                    309,
-                    1107,
-                    309
-                ],
-                "score": 0.58,
-                "latex": "\\vert ( \\epsilon _ { \\theta } ( x _ { t } ^ { \\mathrm { r e f } } , t , x ^ { \\prime } , c ^ { \\mathrm { t e x } } ) - \\epsilon ) \\vert"
             }
         ],
         "page_info": {

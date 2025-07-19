@@ -13,6 +13,7 @@ from unittest.mock import patch, MagicMock
 
 UNIMERNET_PATH = str(Path(__file__).parent.parent / 'UNIMERNET')
 UNIMERNET_PY = str(Path(__file__).parent.parent / 'UNIMERNET.py')
+EXTRACT_PDF_PY = str(Path(__file__).parent.parent / 'EXTRACT_PDF.py')
 TEST_DATA_DIR = Path(__file__).parent / '_DATA'
 
 class TestUnimernet(unittest.TestCase):
@@ -31,6 +32,144 @@ class TestUnimernet(unittest.TestCase):
         ], capture_output=True, text=True, timeout=180)  # 3 minutes timeout
         self.assertIn('✅ UnimerNet is available and ready', result.stdout)
         self.assertEqual(result.returncode, 0)
+
+    def test_formula_recognition_with_extract_pdf(self):
+        """Test formula recognition using EXTRACT_PDF with test_formula.png"""
+        if not self.test_formula.exists():
+            self.skipTest(f"Test image {self.test_formula} not found")
+        
+        # Create a temporary markdown file with formula placeholder
+        test_hash = "test_formula_hash"
+        temp_md_content = f"""# Test Formula Recognition
+
+This is a test document with a formula placeholder.
+
+[placeholder: formula]
+![](images/{test_hash}.jpg)
+
+End of document.
+"""
+        
+        # Create temporary directory structure
+        import tempfile
+        import shutil
+        from datetime import datetime
+        temp_dir = Path(tempfile.mkdtemp())
+        try:
+            # Create markdown file
+            temp_md = temp_dir / "test_formula.md"
+            temp_md.write_text(temp_md_content)
+            
+            # Create a dummy PDF file
+            temp_pdf = temp_dir / "test_formula.pdf"
+            temp_pdf.write_bytes(b'%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n')
+            
+            # Create extract_data directory structure to simulate post-processing
+            extract_data_dir = temp_dir / "test_formula_extract_data"
+            extract_data_dir.mkdir()
+            extract_images_dir = extract_data_dir / "images"
+            extract_images_dir.mkdir()
+            
+            # Copy formula image with a hash name
+            shutil.copy(self.test_formula, extract_images_dir / f"{test_hash}.jpg")
+            
+            # Create postprocess JSON file with correct format
+            postprocess_data = {
+                "pdf_file": "test_formula.pdf",
+                "created_at": datetime.now().isoformat(),
+                "total_items": 1,
+                "counts": {
+                    "images": 0,
+                    "formulas": 1,
+                    "tables": 0
+                },
+                "items": [{
+                    "type": "formula",
+                    "page": 1,
+                    "block_index": 0,
+                    "image_path": f"{test_hash}.jpg",
+                    "bbox": [],
+                    "processed": False,
+                    "processor": None,
+                    "id": test_hash
+                }]
+            }
+            postprocess_json = temp_dir / "test_formula_postprocess.json"
+            postprocess_json.write_text(json.dumps(postprocess_data, indent=2))
+            
+            # Debug: Print directory structure
+            print(f"Temp dir: {temp_dir}")
+            print(f"Files in temp dir: {list(temp_dir.iterdir())}")
+            print(f"Extract data dir exists: {extract_data_dir.exists()}")
+            print(f"Extract images dir exists: {extract_images_dir.exists()}")
+            print(f"Image file exists: {(extract_images_dir / f'{test_hash}.jpg').exists()}")
+            print(f"PDF file exists: {temp_pdf.exists()}")
+            print(f"Postprocess JSON exists: {postprocess_json.exists()}")
+            
+            # Test all possible image locations that _find_image_file checks
+            possible_locations = [
+                temp_dir / f"{test_hash}.jpg",
+                temp_dir / "images" / f"{test_hash}.jpg", 
+                temp_dir / f"test_formula_extract_data" / "images" / f"{test_hash}.jpg",
+                Path(__file__).parent.parent / "EXTRACT_PDF_PROJ" / "pdf_extractor_data" / "images" / f"{test_hash}.jpg"
+            ]
+            print("Checking possible image locations:")
+            for i, loc in enumerate(possible_locations):
+                print(f"  {i+1}. {loc} - exists: {loc.exists()}")
+            
+            # Also copy the image to the direct location that might be expected
+            shutil.copy(self.test_formula, temp_dir / f"{test_hash}.jpg")
+            
+            # Test EXTRACT_PDF post-processing with specific ID
+            result = subprocess.run([
+                sys.executable, EXTRACT_PDF_PY, 
+                "--post", str(temp_md),
+                "--ids", test_hash,
+                "--post-type", "formula"
+            ], capture_output=True, text=True, timeout=300, cwd=temp_dir)  # 5 minutes timeout
+            
+            print(f"EXTRACT_PDF output:\n{result.stdout}")
+            print(f"EXTRACT_PDF stderr:\n{result.stderr}")
+            
+            # Check if the process completed successfully
+            self.assertEqual(result.returncode, 0, f"EXTRACT_PDF failed with error: {result.stderr}")
+            
+            # Check for successful processing
+            self.assertIn("处理", result.stdout, "Should show processing activity")
+            
+            # For RUN environment, check for structured results
+            if "RUN_IDENTIFIER" in os.environ:
+                # Should have JSON output with recognition results
+                self.assertIn("success", result.stdout.lower())
+            
+            # Check that formula recognition completed successfully
+            output_text = result.stdout + result.stderr
+            
+            # Verify that UnimerNet recognition was successful
+            has_recognition_success = "Recognition successful:" in output_text
+            has_unimernet_success = "UnimerNet公式识别成功" in output_text
+            has_placeholder_replacement = "替换placeholder:" in output_text
+            
+            # Check that the formula recognition workflow completed successfully
+            self.assertTrue(has_recognition_success, 
+                          f"UnimerNet should show 'Recognition successful:' in output. Output: {output_text}")
+            self.assertTrue(has_unimernet_success, 
+                          f"Should show '✅ UnimerNet公式识别成功' in output. Output: {output_text}")
+            self.assertTrue(has_placeholder_replacement, 
+                          f"Should show placeholder replacement in output. Output: {output_text}")
+            
+            # Report the model weight initialization warning if present
+            has_weight_warning = "Some weights of UnimernetModel were not initialized from the model checkpoint" in output_text
+            if has_weight_warning:
+                print(f"⚠️  Model weight initialization warning detected - this needs to be fixed")
+            else:
+                print(f"✅ No model weight initialization warnings")
+            
+            print(f"✅ Formula recognition workflow test passed - UnimerNet integration working")
+            
+        finally:
+            # Clean up temporary directory
+            shutil.rmtree(temp_dir)
 
     def test_formula_recognition(self):
         """Test formula recognition with test_formula.png"""

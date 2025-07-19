@@ -1,0 +1,9 @@
+#!/bin/bash
+# UNIMERNET - UnimerNet Formula and Table Recognition Tool
+# Wrapper script for UNIMERNET.py
+
+# Get the directory of this script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Execute the Python script with all arguments
+/usr/bin/python3 "$SCRIPT_DIR/UNIMERNET.py" "$@" 

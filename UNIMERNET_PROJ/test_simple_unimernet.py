@@ -17,13 +17,19 @@ current_dir = Path(__file__).parent
 if str(current_dir) not in sys.path:
     sys.path.insert(0, str(current_dir))
 
-# Import the UnimerNet model components
+# Import MinerU's UnimerNet model components directly
 try:
-    from unimernet_model import UnimernetModel, MathDataset
+    # Add MinerU path
+    mineru_path = current_dir / "pdf_extractor_MinerU"
+    if str(mineru_path) not in sys.path:
+        sys.path.insert(0, str(mineru_path))
+    
+    from mineru.model.mfr.unimernet.Unimernet import UnimernetModel, MathDataset
     UNIMERNET_AVAILABLE = True
-except ImportError:
+    print("✅ MinerU UnimerNet components loaded successfully")
+except ImportError as e:
     UNIMERNET_AVAILABLE = False
-    print("⚠️  UnimerNet model components not available")
+    print(f"⚠️  MinerU UnimerNet model components not available: {e}")
 
 def load_unimernet_model(model_path: str = None, device: str = "cpu") -> Tuple[Optional[object], Optional[object]]:
     """
@@ -40,9 +46,42 @@ def load_unimernet_model(model_path: str = None, device: str = "cpu") -> Tuple[O
         print("❌ UnimerNet model components not available")
         return None, None
     
-    # Default model path
+    # Default model path - use local model first, then download if needed
     if model_path is None:
-        model_path = current_dir / "unimernet_models" / "unimernet_base"
+        # Try local model first
+        local_model_path = current_dir / "unimernet_models" / "unimernet_hf_small_2503"
+        
+        if local_model_path.exists():
+            model_path = local_model_path
+            print(f"📁 Using local model path: {model_path}")
+        else:
+            try:
+                # Download the model if local doesn't exist
+                from huggingface_hub import snapshot_download
+                
+                # Set environment variable to use huggingface
+                os.environ.setdefault('MINERU_MODEL_SOURCE', 'huggingface')
+                
+                # Download the model directly from HuggingFace
+                repo_id = "opendatalab/PDF-Extract-Kit-1.0"
+                model_subpath = "models/MFR/unimernet_hf_small_2503"
+                
+                print(f"📥 Downloading model from {repo_id}...")
+                cache_dir = snapshot_download(
+                    repo_id=repo_id,
+                    allow_patterns=[f"{model_subpath}/*"]
+                )
+                
+                model_path = Path(cache_dir) / model_subpath
+                print(f"📁 Using downloaded model path: {model_path}")
+                
+                # Verify the model path exists
+                if not model_path.exists():
+                    raise FileNotFoundError(f"Model path does not exist: {model_path}")
+                    
+            except Exception as e:
+                print(f"❌ Failed to download model: {e}")
+                raise Exception("No valid UnimerNet model found")
     
     model_path = Path(model_path)
     
