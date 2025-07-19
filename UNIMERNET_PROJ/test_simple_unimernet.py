@@ -17,19 +17,14 @@ current_dir = Path(__file__).parent
 if str(current_dir) not in sys.path:
     sys.path.insert(0, str(current_dir))
 
-# Import MinerU's UnimerNet model components directly
+# Import local UnimerNet model components (copied from MinerU)
 try:
-    # Add MinerU path
-    mineru_path = current_dir / "pdf_extractor_MinerU"
-    if str(mineru_path) not in sys.path:
-        sys.path.insert(0, str(mineru_path))
-    
-    from mineru.model.mfr.unimernet.Unimernet import UnimernetModel, MathDataset
+    from Unimernet import UnimernetModel, MathDataset
     UNIMERNET_AVAILABLE = True
-    print("✅ MinerU UnimerNet components loaded successfully")
+    print("✅ Local UnimerNet components loaded successfully")
 except ImportError as e:
     UNIMERNET_AVAILABLE = False
-    print(f"⚠️  MinerU UnimerNet model components not available: {e}")
+    print(f"⚠️  Local UnimerNet model components not available: {e}")
 
 def load_unimernet_model(model_path: str = None, device: str = "cpu") -> Tuple[Optional[object], Optional[object]]:
     """
@@ -92,6 +87,15 @@ def load_unimernet_model(model_path: str = None, device: str = "cpu") -> Tuple[O
     try:
         print(f"🔄 Loading UnimerNet model from {model_path}")
         print(f"📱 Using device: {device}")
+        
+        # Apply CPU optimizations if using CPU
+        if device.startswith("cpu"):
+            try:
+                from mineru_config import config
+                config.apply_cpu_optimizations()
+                print("🚀 Applied CPU optimizations for better performance")
+            except Exception as e:
+                print(f"⚠️  Failed to apply CPU optimizations: {e}")
         
         # Load the model
         model = UnimernetModel(str(model_path), device)

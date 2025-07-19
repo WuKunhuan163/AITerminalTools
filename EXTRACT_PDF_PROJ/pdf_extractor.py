@@ -145,10 +145,19 @@ def extract_and_analyze_pdf(path_str: str, layout_mode: str, mode: str, call_api
                             str(block['screenshot_path'])
                         )
                 
-                # If API is disabled and not in cache
+                # If API is disabled and not in cache, use placeholder for post-processing
                 if not description:
-                    description = "Analysis not performed (API not called)."
-                content += f"Analysis: \n== Description Starts Here ==\n{description}\n=== Description Ends Here ===\n"
+                    # Generate standard placeholder for post-processing
+                    # Use the hash-based filename from the block data
+                    image_hash = hashlib.md5(block['bytes_data']).hexdigest()
+                    image_filename = f"{image_hash}.jpg"
+                    print(f"   - Generating placeholder for {image_filename}", file=sys.stderr)
+                    content += f"![](images/{image_filename})[DESCRIPTION]\n"
+                else:
+                    # If we have description, include it normally
+                    image_hash = hashlib.md5(block['bytes_data']).hexdigest()
+                    image_filename = f"{image_hash}.jpg"
+                    content += f"![](images/{image_filename})\n\n**Analysis:**\n{description}\n"
             else:
                 content = block["content"]
 

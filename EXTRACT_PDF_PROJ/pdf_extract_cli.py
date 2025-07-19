@@ -507,6 +507,7 @@ def main():
             elif arg == "--async-mode":
                 async_mode = True
                 use_mineru = True  # Async mode requires MinerU
+                print(f"🔄 Async mode enabled via CLI", file=sys.stderr)
             
             i += 1
 

@@ -14,6 +14,12 @@ from pathlib import Path
 from typing import Optional, List, Dict, Any, Union
 from datetime import datetime
 
+def is_run_environment(command_identifier=None):
+    """Check if running in RUN environment by checking environment variables"""
+    if command_identifier:
+        return os.environ.get(f'RUN_IDENTIFIER_{command_identifier}') == 'True'
+    return False
+
 # Add UNIMERNET_PROJ to path
 UNIMERNET_PROJ_PATH = Path(__file__).parent / "UNIMERNET_PROJ"
 sys.path.insert(0, str(UNIMERNET_PROJ_PATH))
@@ -49,10 +55,10 @@ class UnimerNetProcessor:
         else:
             self.cache_system = None
         
-        # Initialize UnimerNet model
+        # Initialize UnimerNet model (lazy loading)
         self.model = None
         self.tokenizer = None
-        self._init_unimernet_model()
+        self._model_loaded = False
     
     def _init_unimernet_model(self):
         """Initialize UnimerNet model using simplified interface"""
@@ -61,14 +67,16 @@ class UnimerNetProcessor:
             return
         
         try:
-            # Determine device
+            # Determine device - check environment first
             import torch
-            if torch.cuda.is_available():
-                device = "cuda"
-            elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
-                device = "mps"
-            else:
-                device = "cpu"
+            device = os.environ.get('MINERU_DEVICE_MODE')
+            if device is None:
+                if torch.cuda.is_available():
+                    device = "cuda"
+                elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+                    device = "mps"
+                else:
+                    device = "cpu"
             
             # Load model
             self.model, self.tokenizer = load_unimernet_model(device=device)
@@ -95,11 +103,6 @@ class UnimerNetProcessor:
         Returns:
             Recognition result dictionary
         """
-        if not self.is_available():
-            return {
-                "success": False,
-                "error": "UnimerNet is not available. Please check MinerU installation."
-            }
         
         if not os.path.exists(image_path):
             return {
@@ -125,6 +128,17 @@ class UnimerNetProcessor:
                     }
             except Exception as e:
                 print(f"Warning: Cache check failed: {e}", file=sys.stderr)
+        
+        # Load model only when needed (lazy loading)
+        if not self._model_loaded:
+            self._init_unimernet_model()
+            self._model_loaded = True
+        
+        if not self.is_available():
+            return {
+                "success": False,
+                "error": "UnimerNet is not available. Please check MinerU installation."
+            }
         
         try:
             # Use simplified recognition interface
@@ -191,6 +205,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     
+    parser.add_argument("command_identifier", nargs="?", help="RUN command identifier (internal use)")
     parser.add_argument("image_path", nargs="?", help="Path to image file")
     parser.add_argument("--type", choices=["formula", "table", "auto"], default="auto",
                        help="Content type hint (default: auto)")
@@ -203,6 +218,21 @@ def main():
     parser.add_argument("--check", action="store_true", help="Check if UnimerNet is available")
     
     args = parser.parse_args()
+    
+    # Handle command_identifier from RUN
+    command_identifier = None
+    if args.command_identifier and not args.command_identifier.startswith('-'):
+        # First positional arg is command_identifier from RUN
+        command_identifier = args.command_identifier
+        # If image_path is None, shift args
+        if not args.image_path:
+            # This means command_identifier was passed but no image_path
+            pass
+    else:
+        # First arg is actually image_path, not command_identifier
+        if args.command_identifier and not args.image_path:
+            args.image_path = args.command_identifier
+            command_identifier = None
     
     # Initialize processor
     processor = UnimerNetProcessor()
@@ -284,7 +314,8 @@ def main():
         )
         
         # Output result
-        if args.json or args.output:
+        # Use JSON format if explicitly requested, for file output, OR if running in RUN environment
+        if args.json or args.output or is_run_environment(command_identifier):
             output_text = json.dumps(result, indent=2)
         else:
             if result.get("success"):

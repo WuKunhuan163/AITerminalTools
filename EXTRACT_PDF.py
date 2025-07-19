@@ -16,6 +16,12 @@ import shutil
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+def is_run_environment(command_identifier=None):
+    """Check if running in RUN environment by checking environment variables"""
+    if command_identifier:
+        return os.environ.get(f'RUN_IDENTIFIER_{command_identifier}') == 'True'
+    return False
+
 def get_run_context():
     """获取 RUN 执行上下文信息"""
     run_identifier = os.environ.get('RUN_IDENTIFIER')
@@ -139,6 +145,10 @@ class PDFExtractor:
             
             # 执行MinerU
             result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            
+            # Print stderr for debugging
+            if result.stderr:
+                print(result.stderr, file=sys.stderr)
             
             if result.returncode == 0:
                 # 检查是否有输出文件被创建，并复制到用户指定的目录
@@ -325,10 +335,268 @@ class PDFPostProcessor:
         self.debug = debug
         self.script_dir = Path(__file__).parent
         
-        # Import MinerUWrapper for advanced selective processing
+        # Use UNIMERNET tool for formula/table recognition instead of MinerU
+        self.unimernet_tool = self.script_dir / "UNIMERNET"
+        
+        # Import MinerUWrapper for image processing only
         sys.path.insert(0, str(self.script_dir / "EXTRACT_PDF_PROJ"))
         from mineru_wrapper import MinerUWrapper
         self.mineru_wrapper = MinerUWrapper()
+    
+    def _process_with_unimernet(self, image_path: str, content_type: str = "auto") -> str:
+        """使用UNIMERNET工具处理公式或表格图片"""
+        try:
+            # 使用EXTRACT_IMG工具（整合了UNIMERNET和cache）
+            extract_img_tool = self.script_dir / "EXTRACT_IMG"
+            if not extract_img_tool.exists():
+                print(f"⚠️  EXTRACT_IMG工具不可用: {extract_img_tool}")
+                return ""
+            
+            # 构建EXTRACT_IMG命令
+            cmd = [str(extract_img_tool), image_path, "--json"]
+            if content_type != "auto":
+                cmd.extend(["--type", content_type])
+            else:
+                cmd.extend(["--type", "formula"])  # Default to formula for UNIMERNET
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            
+            if result.returncode == 0:
+                # 解析EXTRACT_IMG的JSON输出
+                try:
+                    extract_result = json.loads(result.stdout)
+                    if extract_result.get('success'):
+                        recognition_result = extract_result.get('result', '')
+                        if recognition_result:
+                            # Check if it's from cache
+                            cache_info = " (来自缓存)" if extract_result.get('from_cache') else ""
+                            print(f"✅ EXTRACT_IMG识别成功{cache_info}: {len(recognition_result)} 字符")
+                            return f"**公式识别结果:**\n\n```latex\n{recognition_result}\n```"
+                        else:
+                            print("⚠️  EXTRACT_IMG返回空结果")
+                            return f"**公式识别失败:**\n\n```\n错误信息: EXTRACT_IMG返回空结果\n```"
+                    else:
+                        error_msg = extract_result.get('error', 'Unknown error')
+                        print(f"❌ EXTRACT_IMG处理失败: {error_msg}")
+                        return f"**公式识别失败:**\n\n```\n错误信息: {error_msg}\n```"
+                except json.JSONDecodeError as e:
+                    error_msg = f"JSON解析失败: {e}\n原始输出: {result.stdout[:200]}..."
+                    print(f"❌ 无法解析EXTRACT_IMG JSON输出: {e}")
+                    print(f"   原始输出: {result.stdout[:200]}...")
+                    return f"**公式识别失败:**\n\n```\n错误信息: {error_msg}\n```"
+            else:
+                error_msg = f"EXTRACT_IMG执行失败: {result.stderr}"
+                print(f"❌ EXTRACT_IMG执行失败: {result.stderr}")
+                return f"**公式识别失败:**\n\n```\n错误信息: {error_msg}\n```"
+                
+        except Exception as e:
+            print(f"❌ UNIMERNET处理异常: {e}")
+            return f"**公式识别失败:**\n\n```\n错误信息: UNIMERNET处理异常: {e}\n```"
+    
+    def _process_items_hybrid(self, pdf_file: str, md_file: str, status_data: dict, 
+                             items_to_process: list, process_type: str, custom_prompt: str = None) -> bool:
+        """使用混合方式处理项目：图像用传统API，公式表格用UNIMERNET"""
+        try:
+            # 读取markdown文件
+            with open(md_file, 'r', encoding='utf-8') as f:
+                md_content = f.read()
+            
+            # 处理每个项目
+            updated = False
+            for item_id in items_to_process:
+                # 在status_data中找到对应的项目
+                item = None
+                for status_item in status_data.get('items', []):
+                    status_item_id = status_item.get('id')
+                    if not status_item_id:
+                        # 从image_path生成ID
+                        image_path = status_item.get('image_path', '')
+                        if image_path:
+                            status_item_id = Path(image_path).stem
+                    
+                    if status_item_id == item_id:
+                        item = status_item
+                        break
+                
+                if not item:
+                    print(f"⚠️  未找到项目: {item_id}")
+                    continue
+                
+                if item.get('processed', False):
+                    print(f"⏭️  跳过已处理项目: {item_id}")
+                    continue
+                
+                item_type = item.get('type')
+                image_path = item.get('image_path', '')
+                
+                if not image_path:
+                    print(f"⚠️  图片路径为空: {item_id}")
+                    continue
+                
+                # 查找实际的图片文件路径
+                actual_image_path = self._find_actual_image_path(pdf_file, image_path)
+                if not actual_image_path:
+                    print(f"⚠️  图片文件不存在: {image_path}")
+                    continue
+                
+                print(f"🔄 处理 {item_type} 项目: {item_id}")
+                
+                # 根据类型选择处理方式
+                result_text = ""
+                if item_type == 'image':
+                    # 图像使用传统的图像API（通过MinerU wrapper）
+                    result_text = self._process_image_with_api(actual_image_path, custom_prompt)
+                elif item_type in ['formula', 'interline_equation']:
+                    # 公式使用UNIMERNET
+                    result_text = self._process_with_unimernet(actual_image_path, "formula")
+                elif item_type == 'table':
+                    # 表格使用UNIMERNET
+                    result_text = self._process_with_unimernet(actual_image_path, "table")
+                
+                if result_text:
+                    # 更新markdown文件中的占位符 - 使用新的placeholder格式
+                    # 查找 [placeholder: type] 和对应的图片行
+                    import re
+                    
+                    # 构建图片路径的正则表达式（支持绝对和相对路径）
+                    image_filename = Path(image_path).name
+                    placeholder_pattern = rf'\[placeholder:\s*{item_type}\]\s*\n!\[[^\]]*\]\([^)]*{re.escape(image_filename)}\)'
+                    
+                    # Check if result_text contains error information
+                    is_error = any(error_keyword in result_text for error_keyword in 
+                                  ["失败", "错误信息", "处理异常", "执行失败", "解析失败"])
+                    
+                    if is_error:
+                        # For errors, add error info below placeholder but keep placeholder
+                        # Escape special regex characters in result_text
+                        escaped_result_text = re.escape(result_text).replace(r'\n', '\n')
+                        replacement = f"[placeholder: {item_type}]\n\n{result_text}\n\n![](images/{image_filename})"
+                    else:
+                        # For successful processing, replace placeholder with result
+                        # Escape special regex characters in result_text  
+                        replacement = f"{result_text}\n![](images/{image_filename})"
+                    
+                    if re.search(placeholder_pattern, md_content):
+                        # Use lambda to avoid regex interpretation of replacement string
+                        md_content = re.sub(placeholder_pattern, lambda m: replacement, md_content)
+                        updated = True
+                        
+                        # 标记为已处理
+                        item['processed'] = True
+                        if is_error:
+                            print(f"⚠️  处理失败但已记录错误信息: {item_id}")
+                        else:
+                            print(f"✅ 完成 {item_type} 处理: {item_id}")
+                    else:
+                        print(f"⚠️  未找到占位符模式: [placeholder: {item_type}] + image {image_filename}")
+                        if self.debug:
+                            print(f"   调试：搜索模式: {placeholder_pattern}")
+                            # 显示markdown内容的前几行以便调试
+                            lines = md_content.split('\n')[:20]
+                            print("   调试：markdown前20行:")
+                            for i, line in enumerate(lines):
+                                print(f"   {i+1:2d}: {line}")
+                else:
+                    print(f"❌ 处理失败: {item_id}")
+            
+            if updated:
+                # 保存更新的markdown文件
+                with open(md_file, 'w', encoding='utf-8') as f:
+                    f.write(md_content)
+                
+                # 更新状态文件
+                status_file = Path(pdf_file).parent / f"{Path(pdf_file).stem}_postprocess.json"
+                with open(status_file, 'w', encoding='utf-8') as f:
+                    json.dump(status_data, f, indent=2, ensure_ascii=False)
+                
+                print(f"📝 已更新文件: {Path(md_file).name}")
+                return True
+            else:
+                print("ℹ️  没有内容需要更新")
+                return True
+                
+        except Exception as e:
+            print(f"❌ 混合处理异常: {e}")
+            return False
+    
+    def _find_actual_image_path(self, pdf_file: str, image_filename: str) -> Optional[str]:
+        """查找图片文件的实际路径"""
+        pdf_path = Path(pdf_file)
+        pdf_directory = pdf_path.parent
+        
+        # 可能的图片位置
+        possible_locations = [
+            pdf_directory / image_filename,
+            pdf_directory / "images" / image_filename,
+            Path(__file__).parent / "EXTRACT_PDF_PROJ" / "pdf_extractor_data" / "images" / image_filename
+        ]
+        
+        # 搜索 *_extract_data 目录
+        for item in pdf_directory.iterdir():
+            if item.is_dir() and item.name.endswith("_extract_data"):
+                extract_data_images = item / "images" / image_filename
+                possible_locations.append(extract_data_images)
+        
+        for location in possible_locations:
+            if location.exists():
+                print(f"   📁 找到图片: {location}")
+                return str(location)
+        
+        print(f"   ❌ 图片未找到: {image_filename}")
+        print(f"   🔍 搜索路径:")
+        for loc in possible_locations:
+            print(f"      - {loc} ({'存在' if loc.exists() else '不存在'})")
+        
+        return None
+    
+    def _process_image_with_api(self, image_path: str, custom_prompt: str = None) -> str:
+        """使用EXTRACT_IMG工具处理图像"""
+        try:
+            print(f"🖼️  使用EXTRACT_IMG处理: {Path(image_path).name}")
+            
+            # 调用EXTRACT_IMG工具（整合了IMG2TEXT和cache）
+            extract_img_tool = self.script_dir / "EXTRACT_IMG"
+            if not extract_img_tool.exists():
+                print(f"⚠️  EXTRACT_IMG工具不可用: {extract_img_tool}")
+                return ""
+            
+            cmd = [str(extract_img_tool), image_path, "--type", "image", "--mode", "academic", "--json"]
+            if custom_prompt:
+                cmd.extend(["--prompt", custom_prompt])
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            
+            if result.returncode == 0:
+                # 解析EXTRACT_IMG的JSON输出
+                try:
+                    extract_result = json.loads(result.stdout)
+                    if extract_result.get('success'):
+                        analysis_result = extract_result.get('result', '')
+                        if analysis_result:
+                            # Check if it's from cache
+                            cache_info = " (来自缓存)" if extract_result.get('from_cache') else ""
+                            print(f"✅ EXTRACT_IMG分析完成{cache_info}: {len(analysis_result)} 字符")
+                            return f"--- 图像分析结果 ---\n\n{analysis_result}\n\n------------------"
+                        else:
+                            print("⚠️  EXTRACT_IMG返回空结果")
+                            return f"--- 图像分析失败 ---\n\n**错误信息**: EXTRACT_IMG返回空结果\n\n------------------"
+                    else:
+                        error_msg = extract_result.get('error', 'Unknown error')
+                        print(f"❌ EXTRACT_IMG处理失败: {error_msg}")
+                        return f"--- 图像分析失败 ---\n\n**错误信息**: {error_msg}\n\n------------------"
+                except json.JSONDecodeError as e:
+                    error_msg = f"JSON解析失败: {e}\n原始输出: {result.stdout[:200]}..."
+                    print(f"❌ 无法解析EXTRACT_IMG JSON输出: {e}")
+                    print(f"   原始输出: {result.stdout[:200]}...")
+                    return f"--- 图像分析失败 ---\n\n**错误信息**: {error_msg}\n\n------------------"
+            else:
+                error_msg = f"EXTRACT_IMG执行失败: {result.stderr}"
+                print(f"❌ EXTRACT_IMG执行失败: {result.stderr}")
+                return f"--- 图像分析失败 ---\n\n**错误信息**: {error_msg}\n\n------------------"
+                
+        except Exception as e:
+            print(f"❌ IMG2TEXT处理异常: {e}")
+            return f"--- 图像分析失败 ---\n\n**错误信息**: IMG2TEXT处理异常: {e}\n\n------------------"
     
     def _select_markdown_file_interactive(self) -> str:
         """交互式选择markdown文件"""
@@ -579,16 +847,16 @@ class PDFPostProcessor:
                 if items_to_process:
                     print(f"🎯 找到 {len(items_to_process)} 个需要处理的项目")
                     
-                    # 使用MinerU wrapper进行selective processing
-                    success = self.mineru_wrapper.process_items_by_hash_ids(
-                        str(pdf_file), items_to_process, process_type, custom_prompt
+                    # 使用混合处理：图像用传统API，公式表格用UNIMERNET
+                    success = self._process_items_hybrid(
+                        str(pdf_file), str(md_file), status_data, items_to_process, process_type, custom_prompt
                     )
                     
                     if success:
-                        print(f"✅ 高级后处理完成")
+                        print(f"✅ 混合后处理完成")
                         return True
                     else:
-                        print(f"❌ 高级后处理失败")
+                        print(f"❌ 混合后处理失败")
                         return False
                 else:
                     print(f"ℹ️  没有找到需要处理的 {process_type} 类型项目")

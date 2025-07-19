@@ -1,0 +1,5 @@
+{
+  "success": true,
+  "message": "Command executed successfully",
+  "output": "✅ Local UnimerNet components loaded successfully\n{\n  \"success\": true,\n  \"result\": \"\\\\begin{array} { r } { \\\\mathcal { L } _ { \\\\mathrm { t u n e } } = \\\\mathbb { E } _ { { x } ^ { \\\\mathrm { r e f } } , t , \\\\epsilon , x ^ { \\\\prime } } \\\\left[ \\\\| ( \\\\epsilon _ { \\\\theta } ( x _ { t } ^ { \\\\mathrm { r e f } } , t , x ^ { \\\\prime } , c ^ { \\\\mathrm { t e x } } ) - \\\\epsilon ) \\\\| _ { 2 } ^ { 2 } \\\\right] , } \\\\end{array}\",\n  \"image_path\": \"/var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/padded_ca02cef0571499ddbe91047e6afc66d12b48e5fe311713e6fd488e441f36b6bb_9255.jpg\",\n  \"content_type\": \"auto\",\n  \"processor\": \"unimernet\",\n  \"timestamp\": \"2025-07-19T18:23:10.862482\",\n  \"from_cache\": true\n}"
+}

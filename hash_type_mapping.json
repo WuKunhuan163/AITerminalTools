@@ -5,12 +5,18 @@
     "333ac67e908acadb10d5c94ea89c1ce08648098ed00ee783ee2592e034e94baa": "formula",
     "683dc7261b6963940c025abcb26b91f59818d0e24cd6b34780a338f53e3997f5": "image",
     "2d9ad8e3e84e0ceabbd9075f3232ca7fcb1bd2d1ea36a413088970c612d06809": "image",
-    "59d2ea5495a5ce6d71ff5722f1866976a89e5198c47162e5fd5b6257e66adc9f": "interline_equation"
+    "59d2ea5495a5ce6d71ff5722f1866976a89e5198c47162e5fd5b6257e66adc9f": "interline_equation",
+    "8e4850d376d6107f8871eaaf6d81c035f0e91ed42a90a7270630eaa49346e443": "image",
+    "ca02cef0571499ddbe91047e6afc66d12b48e5fe311713e6fd488e441f36b6bb": "interline_equation",
+    "c28d2ad6b93ba944093ca755314b8bb30d5a50d9d54ad811cc200e10eebaea15": "interline_equation",
+    "26e5a7047a2a807c619d546e0e8161734822d86a407016a26a98587f0aede06e": "interline_equation",
+    "85ed5f7d3130327b00924533cc137d1fb21fd3426ec7997ddf827409bf7362ef": "interline_equation",
+    "6d23cb04d1a296497e03200bd551aff10869a5fe25ba829afa3a23e5b805cc6d": "interline_equation"
   },
   "usage_notes": [
     "This file maps image file hashes to their content types (image, formula, table)",
     "Used for placeholder regeneration when type information is missing",
     "Automatically updated when processing items with known types"
   ],
-  "last_updated": "2025-07-19T13:51:19.371466"
+  "last_updated": "2025-07-19T17:47:04.729073"
 }

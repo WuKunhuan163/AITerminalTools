@@ -77,15 +77,16 @@ def wrap_command(command, *args):
     
     # 设置环境变量
     env = os.environ.copy()
-    env['RUN_IDENTIFIER'] = run_identifier
+    env[f'RUN_IDENTIFIER_{run_identifier}'] = 'True'
     env['RUN_DATA_FILE'] = str(output_file)
     env['RUN_COMMAND'] = command
     env['RUN_ARGS'] = ' '.join(args)
     
     try:
-        # 执行命令
+        # 执行命令，传递identifier作为第一个参数
+        cmd_args = [str(full_command), run_identifier] + list(args)
         result = subprocess.run(
-            [str(full_command)] + list(args),
+            cmd_args,
             env=env,
             capture_output=True,  # 捕获输出
             text=True
@@ -155,6 +156,13 @@ def wrap_command(command, *args):
         
         write_json_output(data, output_file)
     
+    # 清除运行标识符
+    try:
+        if f'RUN_IDENTIFIER_{run_identifier}' in os.environ:
+            del os.environ[f'RUN_IDENTIFIER_{run_identifier}']
+    except:
+        pass  # 忽略清除失败
+    
     return str(output_file), exit_code
 
 def show_usage():
@@ -213,8 +221,8 @@ def main():
     
     # 如果使用了 --show 参数，显示JSON输出并包含文件路径
     if show_output:
-        # 清屏
-        os.system('clear' if os.name == 'posix' else 'cls')
+        # 不清屏，避免输出被截断
+        # os.system('clear' if os.name == 'posix' else 'cls')
         
         # 显示JSON内容
         if Path(output_file).exists():

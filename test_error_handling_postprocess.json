@@ -1,0 +1,12 @@
+{
+  "items": [
+    {
+      "id": "test_image",
+      "type": "image",
+      "image_path": "images/test_image.jpg",
+      "processed": false
+    }
+  ],
+  "total_items": 1,
+  "processed_items": 0
+} 

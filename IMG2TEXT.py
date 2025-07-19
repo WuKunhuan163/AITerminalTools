@@ -18,9 +18,11 @@ import datetime
 # 加载环境变量
 load_dotenv()
 
-def is_run_environment():
+def is_run_environment(command_identifier=None):
     """检测是否在RUN --show环境下运行"""
-    return os.environ.get('RUN_IDENTIFIER') and os.environ.get('RUN_DATA_FILE')
+    if command_identifier:
+        return os.environ.get(f'RUN_IDENTIFIER_{command_identifier}') == 'True'
+    return False
 
 def create_json_output(success, message, result=None, image_path=None, api=None, reason=None):
     return {
@@ -128,7 +130,7 @@ def get_image_analysis(image_path: str, mode: str = "general", api: str = "googl
 def main():
     """命令行接口"""
     parser = argparse.ArgumentParser(description="图片转文字描述工具（IMG2TEXT）")
-    parser.add_argument("image_path", help="图片文件路径")
+    parser.add_argument("positional_args", nargs="*", help="Positional arguments (command_identifier and/or image_path)")
     parser.add_argument("--mode", default="general", 
                        choices=["academic", "general", "code_snippet"],
                        help="分析模式")
@@ -137,10 +139,37 @@ def main():
     parser.add_argument("--prompt", default=None, help="自定义分析指令，会覆盖默认的模式提示")
     parser.add_argument("--output", help="输出结果到文件")
     args = parser.parse_args()
+    
+    # Handle positional arguments (command_identifier and/or image_path)
+    command_identifier = None
+    image_path = None
+    
+    if len(args.positional_args) == 0:
+        parser.error("Image path is required")
+    elif len(args.positional_args) == 1:
+        # One positional arg - could be image_path or command_identifier + image_path in other flags
+        arg = args.positional_args[0]
+        if arg.endswith(('.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.gif')) or '/' in arg or '\\' in arg:
+            # Looks like image path
+            image_path = arg
+        else:
+            # Could be command_identifier, but we need image_path too
+            # This case is ambiguous, assume it's image_path for now
+            image_path = arg
+    elif len(args.positional_args) == 2:
+        # Two positional args - first is command_identifier, second is image_path
+        command_identifier = args.positional_args[0]
+        image_path = args.positional_args[1]
+    else:
+        # Too many positional args
+        parser.error("Too many positional arguments")
+    
+    args.image_path = image_path
+    
     result = get_image_analysis(args.image_path, args.mode, args.api, args.key, args.prompt)
     
     # 如果在RUN环境下，直接输出JSON格式
-    if is_run_environment():
+    if is_run_environment(command_identifier):
         try:
             # 尝试解析result为JSON（如果已经是JSON字符串）
             json_result = json.loads(result)

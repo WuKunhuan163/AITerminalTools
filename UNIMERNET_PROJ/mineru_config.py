@@ -241,6 +241,34 @@ class UnimerNetConfig:
     def should_use_float16(self) -> bool:
         """Check if float16 should be used for the current device"""
         return not self.device.startswith("cpu")
+    
+    def get_cpu_optimizations(self) -> Dict[str, Any]:
+        """Get CPU optimization settings for better performance"""
+        optimizations = {}
+        
+        if self.device.startswith("cpu"):
+            # CPU-specific optimizations from MinerU
+            optimizations.update({
+                # Enable MPS fallback for better compatibility
+                'PYTORCH_ENABLE_MPS_FALLBACK': '1',
+                # Disable albumentations update checks
+                'NO_ALBUMENTATIONS_UPDATE': '1',
+                # Optimize batch size for CPU
+                'MINERU_MIN_BATCH_INFERENCE_SIZE': '32',  # Smaller batch for CPU
+                # Use CPU-optimized settings
+                'OMP_NUM_THREADS': str(os.cpu_count() or 4),
+                'MKL_NUM_THREADS': str(os.cpu_count() or 4),
+                'NUMEXPR_NUM_THREADS': str(os.cpu_count() or 4)
+            })
+        
+        return optimizations
+    
+    def apply_cpu_optimizations(self):
+        """Apply CPU optimizations to environment variables"""
+        optimizations = self.get_cpu_optimizations()
+        for key, value in optimizations.items():
+            os.environ.setdefault(key, value)
+            logger.info(f"Set {key}={value} for CPU optimization")
 
 # Global configuration instance
 config = UnimerNetConfig() 

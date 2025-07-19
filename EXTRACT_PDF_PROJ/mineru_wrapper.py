@@ -180,7 +180,16 @@ class MinerUWrapper:
                 
                 # If async mode, add placeholders for post-processing
                 if async_mode and target_file:
-                    self._add_async_placeholders(target_file, output_file, pdf_path)
+                    print(f"🔄 Async mode enabled, calling _add_async_placeholders", file=sys.stderr)
+                    # Create a modified pdf_path with page range for proper status file naming
+                    pdf_path_obj = Path(pdf_path)
+                    if page_range:
+                        modified_pdf_path = str(pdf_path_obj.parent / f"{pdf_path_obj.stem}_p{page_range}.pdf")
+                    else:
+                        modified_pdf_path = pdf_path
+                    self._add_async_placeholders(target_file, output_file, modified_pdf_path)
+                else:
+                    print(f"🔄 Async mode: {async_mode}, target_file: {target_file}", file=sys.stderr)
                 
                 return target_file
             else:
@@ -412,16 +421,16 @@ class MinerUWrapper:
             alt_text = match.group(1)
             original_path = match.group(2)
             
-            # Convert relative paths to absolute paths referencing pdf_extractor_data
+            # For same-name files in PDF directory, use relative paths to images/ folder
             if not original_path.startswith(('http://', 'https://', '/')):
-                # This is a relative path, convert it to reference pdf_extractor_data
+                # This is a relative path, keep it relative but point to local images/ folder
                 if 'images/' in original_path:
-                    # Extract the filename
+                    # Extract the filename and use relative path
                     filename = Path(original_path).name
-                    new_path = str(Path(data_dir) / 'images' / filename)
+                    new_path = f"images/{filename}"
                 else:
-                    # If it's not in images/ folder, try to find it in pdf_extractor_data
-                    new_path = str(Path(data_dir) / 'images' / Path(original_path).name)
+                    # If it's not in images/ folder, use relative path to images/
+                    new_path = f"images/{Path(original_path).name}"
                 
                 return f'![{alt_text}]({new_path})'
             else:
@@ -810,6 +819,7 @@ Formula recognition is currently unavailable.
     
     def _add_async_placeholders(self, target_file: str, original_output_file: str, pdf_path: str = None):
         """Add placeholders for async post-processing in markdown file and create JSON status file."""
+        print(f"🔄 Adding async placeholders to {target_file}", file=sys.stderr)
         try:
             # Find the middle.json file for image/formula/table information
             middle_file = self._find_middle_file(self.temp_dir)
@@ -868,6 +878,23 @@ Formula recognition is currently unavailable.
                     same_name_md_file = pdf_directory / f"{pdf_stem}.md"
                     
                     if same_name_md_file.exists():
+                        # Create images directory in PDF directory and copy images there
+                        pdf_images_dir = pdf_directory / "images"
+                        pdf_images_dir.mkdir(exist_ok=True)
+                        
+                        # Copy images from pdf_extractor_data to PDF directory images folder
+                        data_dir = Path(__file__).parent / "pdf_extractor_data"
+                        source_images_dir = data_dir / "images"
+                        
+                        if source_images_dir.exists():
+                            for image_filename in image_path_to_type.keys():
+                                source_image = source_images_dir / image_filename
+                                target_image = pdf_images_dir / image_filename
+                                
+                                if source_image.exists():
+                                    if not target_image.exists() or source_image.stat().st_size != target_image.stat().st_size:
+                                        shutil.copy2(source_image, target_image)
+                        
                         # Read the same-name file content
                         with open(same_name_md_file, 'r', encoding='utf-8') as f:
                             same_name_content = f.read()
@@ -880,6 +907,7 @@ Formula recognition is currently unavailable.
                             f.write(updated_same_name_content)
                         
                         print(f"✅ 同名文件也已更新: {same_name_md_file}", file=sys.stderr)
+                        print(f"📁 图片已复制到: {pdf_images_dir}", file=sys.stderr)
                 except Exception as e:
                     print(f"⚠️  Error updating same-name file: {e}", file=sys.stderr)
             
@@ -952,12 +980,10 @@ Formula recognition is currently unavailable.
                     break
             
             if block_type:
-                # Map interline_equation to formula for placeholder
-                if block_type == 'interline_equation':
-                    placeholder = "[placeholder: formula]"
-                else:
-                    placeholder = f"[placeholder: {block_type}]"
-                return f"{placeholder}\n{match.group(0)}"
+                # Generate standard [placeholder: type] format for post-processing
+                # Convert absolute path to relative path for images directory
+                relative_path = f"images/{image_filename}"
+                return f"[placeholder: {block_type}]\n![{alt_text}]({relative_path})"
             else:
                 # No type found, return original
                 return match.group(0)
@@ -1535,13 +1561,25 @@ Formula recognition is currently unavailable.
         possible_locations = [
             pdf_directory / image_filename,
             pdf_directory / "images" / image_filename,
-            pdf_directory / f"{pdf_directory.stem}_extract_data" / "images" / image_filename,
             Path(__file__).parent / "pdf_extractor_data" / "images" / image_filename
         ]
         
+        # Also search for *_extract_data directories in the PDF directory
+        for item in pdf_directory.iterdir():
+            if item.is_dir() and item.name.endswith("_extract_data"):
+                extract_data_images = item / "images" / image_filename
+                if extract_data_images.exists():
+                    possible_locations.append(extract_data_images)
+        
         for location in possible_locations:
             if location.exists():
+                print(f"   📁 找到图片: {location}")
                 return str(location)
+        
+        print(f"   ❌ 图片未找到: {image_filename}")
+        print(f"   🔍 搜索路径:")
+        for loc in possible_locations:
+            print(f"      - {loc} ({'存在' if loc.exists() else '不存在'})")
         
         return None
     

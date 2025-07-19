@@ -1,0 +1,9 @@
+{
+  "success": true,
+  "result": "\\begin{array} { r } { \\mathcal { L } _ { \\mathrm { t u n e } } = \\mathbb { E } _ { { x } ^ { \\mathrm { r e f } } , t , \\epsilon , x ^ { \\prime } } \\left[ \\| ( \\epsilon _ { \\theta } ( x _ { t } ^ { \\mathrm { r e f } } , t , x ^ { \\prime } , c ^ { \\mathrm { t e x } } ) - \\epsilon ) \\| _ { 2 } ^ { 2 } \\right] , } \\end{array}",
+  "image_path": "/var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/padded_ca02cef0571499ddbe91047e6afc66d12b48e5fe311713e6fd488e441f36b6bb_6733.jpg",
+  "content_type": "formula",
+  "processor": "unimernet",
+  "timestamp": "2025-07-19T18:50:30.886178",
+  "from_cache": true
+}
