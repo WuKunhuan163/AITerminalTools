@@ -1,0 +1,66 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref}
+
+\title{Test Report with References}
+\author{Test Author}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+\label{sec:introduction}
+
+This is the introduction section. We will discuss various topics in this document.
+
+As mentioned in Section~\ref{sec:methodology}, our approach is comprehensive.
+The results are presented in Section~\ref{sec:results}.
+
+\section{Methodology}
+\label{sec:methodology}
+
+This section describes the methodology used in our research.
+
+We refer back to the concepts introduced in Section~\ref{sec:introduction}.
+The detailed analysis can be found in Section~\ref{sec:analysis}.
+
+\section{Results}
+\label{sec:results}
+
+Here are the main results of our study.
+
+For more context, see Section~\ref{sec:introduction} and Section~\ref{sec:methodology}.
+
+\section{Analysis}
+\label{sec:analysis}
+
+This section provides detailed analysis of the results from Section~\ref{sec:results}.
+
+The methodology described in Section~\ref{sec:methodology} supports these findings.
+
+\section{Discussion}
+\label{sec:discussion}
+
+This section discusses the implications of our findings from Section~\ref{sec:results}.
+
+The analysis in Section~\ref{sec:analysis} provides the foundation for these discussions.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+In conclusion, this document has demonstrated that section references work correctly:
+\begin{itemize}
+    \item Introduction (Section~\ref{sec:introduction})
+    \item Methodology (Section~\ref{sec:methodology})
+    \item Results (Section~\ref{sec:results})
+    \item Analysis (Section~\ref{sec:analysis})
+    \item Discussion (Section~\ref{sec:discussion})
+\end{itemize}
+
+The LaTeX compilation handles cross-references properly, ensuring that all references like Section~\ref{sec:introduction} and Section~\ref{sec:methodology} are resolved correctly instead of showing "???" marks.
+
+\end{document} 

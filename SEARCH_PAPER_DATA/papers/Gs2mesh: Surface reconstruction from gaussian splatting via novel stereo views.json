@@ -1,0 +1,16 @@
+{
+  "title": "Gs2mesh: Surface reconstruction from gaussian splatting via novel stereo views",
+  "authors": [
+    "Y Wolf",
+    "A Bracha",
+    "R Kimmel - European Conference on Computer Vision",
+    "2024"
+  ],
+  "abstract": "… the noisy 3DGS representation and the smooth 3D mesh representation… the geometry of the \nscene directly from the Gaussian prop… based on implicit geometry. Neuralangelo [24], using a …",
+  "url": "https://link.springer.com/content/pdf/10.1007/978-3-031-73024-5_13.pdf",
+  "pdf_url": "",
+  "publication_date": "",
+  "venue": "Springer",
+  "citation_count": null,
+  "source": "google_scholar"
+}

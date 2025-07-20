@@ -1,0 +1,18 @@
+{
+  "title": "3dgsr: Implicit surface reconstruction with 3d gaussian splatting",
+  "authors": [
+    "X Lyu",
+    "YT Sun",
+    "YH Huang",
+    "X Wu",
+    "Z Yang… - ACM Transactions on …",
+    "2024"
+  ],
+  "abstract": "… Splatting (3DGS), namely 3DGSR, that allows for accurate … in neural implicit representation \nand 3D Gaussian splatting (… the SDF-and-Gaussian geometry consistency regularization for …",
+  "url": "https://dl.acm.org/doi/abs/10.1145/3687952",
+  "pdf_url": "",
+  "publication_date": "",
+  "venue": "dl.acm.org",
+  "citation_count": null,
+  "source": "google_scholar"
+}

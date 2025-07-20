@@ -1,0 +1,99 @@
+{
+  "success": true,
+  "query": "machine learning image classification, deep learning image classification, convolutional neural networks image classification, image classification deep learning, deep learning for computer vision",
+  "max_results": 5,
+  "total_papers_found": 5,
+  "source_results": {
+    "arxiv": 5,
+    "google_scholar": 5,
+    "semantic_scholar": 5
+  },
+  "papers": [
+    {
+      "title": "Effective field theory for superfluid vortex lattice from coset\n  construction",
+      "authors": [
+        "Aleksander Głódkowski",
+        "Sergej Moroz",
+        "Francisco Peña-Benítez",
+        "Piotr Surówka"
+      ],
+      "abstract": "Guided by symmetry principles, we construct an effective field theory that\ncaptures the long-wavelength dynamics of two-dimensional vortex crystals\nobserved in rotating Bose-Einstein condensates trapped in a harmonic potential.\nBy embedding the system into Newton--Cartan spacetime and analyzing its\nisometries, we identify the appropriate spacetime symmetry group for trapped\ncondensates at finite angular momentum. After introducing a coarse-grained\ndescription of the vortex lattice we consider a homogeneous equilibrium\nconfiguration and discuss the associated symmetry breaking pattern. We apply\nthe coset construction method to identify covariant structures that enter the\neffective action and discuss the physical interpretation of the inverse Higgs\nconstraints. We verify that Kohn's theorem is satisfied within our construction\nand subsequently focus on the gapless sector of the theory. In this regime, the\neffective theory accommodates a single gapless excitation--the Tkachenko\nmode--for which we construct both the leading-order and next-to-leading-order\nactions, the latter including cubic interaction terms.",
+      "url": "http://arxiv.org/abs/2507.13352v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13352v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    },
+    {
+      "title": "VideoITG: Multimodal Video Understanding with Instructed Temporal\n  Grounding",
+      "authors": [
+        "Shihao Wang",
+        "Guo Chen",
+        "De-an Huang",
+        "Zhiqi Li",
+        "Minghan Li",
+        "Guilin Li",
+        "Jose M. Alvarez",
+        "Lei Zhang",
+        "Zhiding Yu"
+      ],
+      "abstract": "Recent studies have revealed that selecting informative and relevant video\nframes can significantly improve the performance of Video Large Language Models\n(Video-LLMs). Current methods, such as reducing inter-frame redundancy,\nemploying separate models for image-text relevance assessment, or utilizing\ntemporal video grounding for event localization, substantially adopt\nunsupervised learning paradigms, whereas they struggle to address the complex\nscenarios in long video understanding. We propose Instructed Temporal Grounding\nfor Videos (VideoITG), featuring customized frame sampling aligned with user\ninstructions. The core of VideoITG is the VidThinker pipeline, an automated\nannotation framework that explicitly mimics the human annotation process.\nFirst, it generates detailed clip-level captions conditioned on the\ninstruction; then, it retrieves relevant video segments through\ninstruction-guided reasoning; finally, it performs fine-grained frame selection\nto pinpoint the most informative visual evidence. Leveraging VidThinker, we\nconstruct the VideoITG-40K dataset, containing 40K videos and 500K instructed\ntemporal grounding annotations. We then design a plug-and-play VideoITG model,\nwhich takes advantage of visual language alignment and reasoning capabilities\nof Video-LLMs, for effective frame selection in a discriminative manner.\nCoupled with Video-LLMs, VideoITG achieves consistent performance improvements\nacross multiple multimodal video understanding benchmarks, showing its\nsuperiority and great potentials for video understanding.",
+      "url": "http://arxiv.org/abs/2507.13353v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13353v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    },
+    {
+      "title": "Challenges for describing unitary evolution in nontrivial geometries:\n  pictures and representations",
+      "authors": [
+        "Steven B. Giddings",
+        "Julie Perkins"
+      ],
+      "abstract": "Description of evolution between spatial slices in a general spacetime\nsuffers from a significant difficulty: the states on the slices, in a given\nbasis, are not related by a unitary transformation. This problem, which occurs\nin spacetime dimensions above two, is directly related to the infinite number\nof inequivalent representations of the canonical commutators, and in particular\nwill arise for interacting theories in time-dependent spacetimes. We connect\ndifferent facets of this issue, and discuss its possible resolution. It is\ndirectly related to discussions of failure of a standard Schr\\\"odinger picture\nof evolution, and of evolution via \"many-fingered time.\" One requires a\ncondition specifying a physical unitary equivalence class of states; in general\nthis equivalence class evolves with time, and an important question is how it\nis determined. One approach to this in free theories is by imposing a Hadamard\ncondition on the two point function. We explore a different approach, which\nalso may be helpful for interacting theories, analyzing the structure of the\nstate in a local limit, and relate these approaches. We also elucidate the\nnon-Hadamard behavior of unphysical vacua, and discuss concrete examples of\nthese approaches involving cosmological and black hole evolution. The issues\nare extended in the context of quantum dynamical geometry, and raise important\nquestions for the proper description of the wavefunction of the universe and\nfor the role of the Wheeler-DeWitt equation.",
+      "url": "http://arxiv.org/abs/2507.13351v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13351v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    },
+    {
+      "title": "Hierarchical Rectified Flow Matching with Mini-Batch Couplings",
+      "authors": [
+        "Yichi Zhang",
+        "Yici Yan",
+        "Alex Schwing",
+        "Zhizhen Zhao"
+      ],
+      "abstract": "Flow matching has emerged as a compelling generative modeling approach that\nis widely used across domains. To generate data via a flow matching model, an\nordinary differential equation (ODE) is numerically solved via forward\nintegration of the modeled velocity field. To better capture the multi-modality\nthat is inherent in typical velocity fields, hierarchical flow matching was\nrecently introduced. It uses a hierarchy of ODEs that are numerically\nintegrated when generating data. This hierarchy of ODEs captures the\nmulti-modal velocity distribution just like vanilla flow matching is capable of\nmodeling a multi-modal data distribution. While this hierarchy enables to model\nmulti-modal velocity distributions, the complexity of the modeled distribution\nremains identical across levels of the hierarchy. In this paper, we study how\nto gradually adjust the complexity of the distributions across different levels\nof the hierarchy via mini-batch couplings. We show the benefits of mini-batch\ncouplings in hierarchical rectified flow matching via compelling results on\nsynthetic and imaging data. Code is available at\nhttps://riccizz.github.io/HRF_coupling.",
+      "url": "http://arxiv.org/abs/2507.13350v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13350v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    },
+    {
+      "title": "VisionThink: Smart and Efficient Vision Language Model via Reinforcement\n  Learning",
+      "authors": [
+        "Senqiao Yang",
+        "Junyi Li",
+        "Xin Lai",
+        "Bei Yu",
+        "Hengshuang Zhao",
+        "Jiaya Jia"
+      ],
+      "abstract": "Recent advancements in vision-language models (VLMs) have improved\nperformance by increasing the number of visual tokens, which are often\nsignificantly longer than text tokens. However, we observe that most real-world\nscenarios do not require such an extensive number of visual tokens. While the\nperformance drops significantly in a small subset of OCR-related tasks, models\nstill perform accurately in most other general VQA tasks with only 1/4\nresolution. Therefore, we propose to dynamically process distinct samples with\ndifferent resolutions, and present a new paradigm for visual token compression,\nnamely, VisionThink. It starts with a downsampled image and smartly decides\nwhether it is sufficient for problem solving. Otherwise, the model could output\na special token to request the higher-resolution image. Compared to existing\nEfficient VLM methods that compress tokens using fixed pruning ratios or\nthresholds, VisionThink autonomously decides whether to compress tokens case by\ncase. As a result, it demonstrates strong fine-grained visual understanding\ncapability on OCR-related tasks, and meanwhile saves substantial visual tokens\non simpler tasks. We adopt reinforcement learning and propose the LLM-as-Judge\nstrategy to successfully apply RL to general VQA tasks. Moreover, we carefully\ndesign a reward function and penalty mechanism to achieve a stable and\nreasonable image resize call ratio. Extensive experiments demonstrate the\nsuperiority, efficiency, and effectiveness of our method. Our code is available\nat https://github.com/dvlab-research/VisionThink.",
+      "url": "http://arxiv.org/abs/2507.13348v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13348v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    }
+  ],
+  "timestamp": "2025-07-20T20:58:00.760202"
+}

@@ -1,0 +1,19 @@
+{
+  "title": "GausSurf: Geometry-Guided 3D Gaussian Splatting for Surface Reconstruction",
+  "authors": [
+    "J Wang",
+    "Y Liu",
+    "P Wang",
+    "C Lin",
+    "J Hou",
+    "X Li… - arXiv preprint arXiv …",
+    "2024"
+  ],
+  "abstract": "… tion of neural implicit surfaces and 3DGS. However, the … Sugar: Surfacealigned gaussian \nsplatting for efficient 3d mesh … 3dgsr: Implicit surface reconstruction with 3d gaussian splatting. …",
+  "url": "https://arxiv.org/abs/2411.19454",
+  "pdf_url": "",
+  "publication_date": "",
+  "venue": "arxiv.org",
+  "citation_count": null,
+  "source": "google_scholar"
+}

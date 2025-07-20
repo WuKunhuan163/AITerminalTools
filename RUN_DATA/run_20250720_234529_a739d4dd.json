@@ -1,0 +1,5 @@
+{
+  "success": false,
+  "error": "Basic extraction failed: Failed to open file '/private/tmp/test_extract.pdf'.",
+  "engine_mode": "basic-asyn"
+}

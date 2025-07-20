@@ -1,0 +1,16 @@
+{
+  "title": "Neusg: Neural implicit surface reconstruction with 3d gaussian splatting guidance",
+  "authors": [
+    "H Chen",
+    "C Li",
+    "GH Lee - arXiv preprint arXiv:2312.00846",
+    "2023"
+  ],
+  "abstract": "… neural implicit surface reconstruction methods have achieved impressive performance in \nmulti-view 3D reconstruction by leveraging explicit geometry … mesh from the point cloud [17…",
+  "url": "https://arxiv.org/abs/2312.00846",
+  "pdf_url": "",
+  "publication_date": "",
+  "venue": "arxiv.org",
+  "citation_count": null,
+  "source": "google_scholar"
+}

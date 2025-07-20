@@ -8,7 +8,6 @@ import os
 import sys
 import argparse
 from pathlib import Path
-from dotenv import load_dotenv
 import google.generativeai as genai
 from google.api_core import exceptions
 from PIL import Image
@@ -16,10 +15,11 @@ import json
 import datetime
 
 # 加载环境变量
+from dotenv import load_dotenv
 load_dotenv()
 
 def is_run_environment(command_identifier=None):
-    """检测是否在RUN --show环境下运行"""
+    """Check if running in RUN environment by checking environment variables"""
     if command_identifier:
         return os.environ.get(f'RUN_IDENTIFIER_{command_identifier}') == 'True'
     return False

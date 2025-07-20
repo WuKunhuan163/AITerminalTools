@@ -1,0 +1,5 @@
+{
+  "success": true,
+  "message": "Command executed successfully",
+  "output": "OPENROUTER - OpenRouter API 调用工具\n\nUsage: OPENROUTER <query> [options]\n       OPENROUTER --list\n       OPENROUTER --default <model>\n\nOptions:\n  <query>                查询内容\n  --model <model>        指定模型 (默认使用第一个可用模型)\n  --key <api_key>        指定API密钥 (临时使用)\n     --max-tokens <num>     最大token数 (默认: 根据模型自动调整为上下文长度的1/4)\n  --temperature <float>  温度参数 (默认: 0.7)\n  --list                 列出所有可用模型\n  --default <model>      设置默认模型（将指定模型移到列表最上方）\n  --help                 显示帮助信息\n\nExamples:\n  OPENROUTER \"What is machine learning?\"\n  OPENROUTER \"解释量子计算\" --model \"deepseek/deepseek-r1:free\"\n  OPENROUTER \"Write a Python function\" --key \"sk-or-v1-...\" --max-tokens 2000\n  OPENROUTER \"创建一个学习计划\" --temperature 0.9\n\n  OPENROUTER --list\n  OPENROUTER --default \"deepseek/deepseek-chat\"\n\nEnvironment Variables:\n  OPENROUTER_API_KEY    默认API密钥\n\nNote: 只有标记为可用(useable=true)的模型才会显示在列表中。\n      运行 fetch_openrouter_models.py 来更新模型信息和费率。"
+}

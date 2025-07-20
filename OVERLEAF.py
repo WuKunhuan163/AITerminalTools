@@ -12,25 +12,15 @@ import tempfile
 import hashlib
 from pathlib import Path
 
+# 加载环境变量
+from dotenv import load_dotenv
+load_dotenv()
 
-
-def get_run_context():
-    """获取 RUN 执行上下文信息"""
-    run_identifier = os.environ.get('RUN_IDENTIFIER')
-    output_file = os.environ.get('RUN_DATA_FILE')
-    
-    if run_identifier and output_file:
-        return {
-            'in_run_context': True,
-            'identifier': run_identifier,
-            'output_file': output_file
-        }
-    else:
-        return {
-            'in_run_context': False,
-            'identifier': None,
-            'output_file': None
-        }
+def is_run_environment(command_identifier=None):
+    """Check if running in RUN environment by checking environment variables"""
+    if command_identifier:
+        return os.environ.get(f'RUN_IDENTIFIER_{command_identifier}') == 'True'
+    return False
 
 def select_tex_file():
     """使用GUI选择LaTeX文件"""
@@ -56,27 +46,35 @@ def select_tex_file():
         print("Error: tkinter is not available. Please provide a file path as argument.")
         return None
 
-def write_to_json_output(data, run_context):
+def write_to_json_output(data, command_identifier=None):
     """将结果写入到指定的 JSON 输出文件中"""
-    if not run_context['in_run_context'] or not run_context['output_file']:
+    if not is_run_environment(command_identifier):
+        return False
+    
+    # Get the specific output file for this command identifier
+    if command_identifier:
+        output_file = os.environ.get(f'RUN_DATA_FILE_{command_identifier}')
+    else:
+        output_file = os.environ.get('RUN_DATA_FILE')
+    
+    if not output_file:
         return False
     
     try:
         # 确保输出目录存在
-        output_path = Path(run_context['output_file'])
+        output_path = Path(output_file)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # 不再添加冗余的RUN相关信息
-        
-        with open(run_context['output_file'], 'w', encoding='utf-8') as f:
+        with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
         return True
     except Exception as e:
         print(f"Error writing to JSON output file: {e}")
         return False
 
-def compile_latex(tex_file, run_context):
+def compile_latex(tex_file, command_identifier=None, output_dir=None):
     """编译LaTeX文件"""
+    # 简化路径处理：使用绝对路径
     tex_path = Path(tex_file).resolve()
     
     if not tex_path.exists():
@@ -86,14 +84,25 @@ def compile_latex(tex_file, run_context):
             "file": str(tex_path)
         }
         
-        if run_context['in_run_context']:
-            write_to_json_output(error_data, run_context)
+        if is_run_environment(command_identifier):
+            write_to_json_output(error_data, command_identifier)
         else:
             print(f"Error: File not found: {tex_file}")
         return 1
     
     filename = tex_path.stem
-    directory = tex_path.parent
+    
+    # 在RUN环境下，使用/tmp目录作为工作目录
+    if is_run_environment(command_identifier):
+        # 创建临时工作目录
+        work_dir = Path(tempfile.mkdtemp(prefix=f"overleaf_{filename}_"))
+        # 复制tex文件到临时目录
+        import shutil
+        temp_tex = work_dir / f"{filename}.tex"
+        shutil.copy2(tex_path, temp_tex)
+        directory = work_dir
+    else:
+        directory = tex_path.parent
     
     # 创建临时日志文件
     log_file = tempfile.NamedTemporaryFile(mode='w+', suffix='.log', delete=False)
@@ -140,19 +149,45 @@ def compile_latex(tex_file, run_context):
             # 检查PDF是否生成
             pdf_file = directory / f"{filename}.pdf"
             if pdf_file.exists():
+                final_pdf_path = pdf_file
+                
+                # 如果指定了output_dir，移动PDF文件
+                if output_dir:
+                    output_path = Path(output_dir)
+                    output_path.mkdir(parents=True, exist_ok=True)
+                    final_pdf_path = output_path / f"{filename}.pdf"
+                    
+                    try:
+                        import shutil
+                        shutil.move(str(pdf_file), str(final_pdf_path))
+                    except Exception as e:
+                        error_data = {
+                            "success": False, 
+                            "error": f"Failed to move PDF to output directory: {str(e)}", 
+                            "file": str(tex_path)
+                        }
+                        
+                        if is_run_environment(command_identifier):
+                            write_to_json_output(error_data, command_identifier)
+                        else:
+                            print(f"Error: Failed to move PDF to output directory: {e}")
+                        return 1
+                
                 success_data = {
                     "success": True, 
                     "message": "Compilation successful", 
                     "file": str(tex_path), 
-                    "output": str(pdf_file)
+                    "output": str(final_pdf_path)
                 }
                 
-                if run_context['in_run_context']:
-                    write_to_json_output(success_data, run_context)
+                if is_run_environment(command_identifier):
+                    write_to_json_output(success_data, command_identifier)
                 else:
                     print("LaTeX compilation successful!")
                     print(f"Input file: {tex_path}")
-                    print(f"Output PDF: {pdf_file}")
+                    print(f"Output PDF: {final_pdf_path}")
+                    if output_dir:
+                        print(f"PDF moved to: {output_dir}")
                     print("\n=== Compilation Log ===")
                     print(log_content)
                 return 0
@@ -163,8 +198,8 @@ def compile_latex(tex_file, run_context):
                     "file": str(tex_path)
                 }
                 
-                if run_context['in_run_context']:
-                    write_to_json_output(error_data, run_context)
+                if is_run_environment(command_identifier):
+                    write_to_json_output(error_data, command_identifier)
                 else:
                     print("Error: PDF not generated")
                     print(f"Input file: {tex_path}")
@@ -183,8 +218,8 @@ def compile_latex(tex_file, run_context):
                 "file": str(tex_path)
             }
             
-            if run_context['in_run_context']:
-                write_to_json_output(error_data, run_context)
+            if is_run_environment(command_identifier):
+                write_to_json_output(error_data, command_identifier)
             else:
                 print("LaTeX compilation failed!")
                 print(f"Input file: {tex_path}")
@@ -200,8 +235,8 @@ def compile_latex(tex_file, run_context):
             "file": str(tex_path)
         }
         
-        if run_context['in_run_context']:
-            write_to_json_output(error_data, run_context)
+        if is_run_environment(command_identifier):
+            write_to_json_output(error_data, command_identifier)
         else:
             print(f"Error during compilation: {e}")
         return 1
@@ -212,17 +247,58 @@ def compile_latex(tex_file, run_context):
             os.unlink(log_file_path)
         except:
             pass
+        
+        # 在RUN环境下，清理临时工作目录
+        if is_run_environment(command_identifier) and 'work_dir' in locals():
+            try:
+                import shutil
+                shutil.rmtree(work_dir)
+            except:
+                pass
+
+def resolve_tex_path(tex_file):
+    """Resolve LaTeX file path (for test compatibility)"""
+    return Path(tex_file).resolve()
+
+def create_json_output(success=True, message="", output_file="", log_content=""):
+    """Create JSON output format (for test compatibility)"""
+    import datetime
+    return {
+        'success': success,
+        'message': message,
+        'output_file': output_file,
+        'log_content': log_content,
+        'timestamp': datetime.datetime.now().isoformat()
+    }
 
 def main():
     """主函数"""
-    # 获取执行上下文
-    run_context = get_run_context()
+    # 获取执行上下文和command_identifier
+    args = sys.argv[1:]
+    command_identifier = None
     
-    if len(sys.argv) == 1:
-        # 没有参数时，打开文件选择器
+    # 检查是否被RUN调用（第一个参数是command_identifier）
+    if args and is_run_environment(args[0]):
+        command_identifier = args[0]
+        args = args[1:]  # 移除command_identifier，保留实际参数
+    
+    # 解析命令行参数
+    import argparse
+    parser = argparse.ArgumentParser(description='OVERLEAF - LaTeX文件编译工具')
+    parser.add_argument('tex_file', nargs='?', help='LaTeX文件路径')
+    parser.add_argument('--output-dir', help='输出目录，编译完成后将PDF移动到此目录')
+    
+    try:
+        parsed_args = parser.parse_args(args)
+    except SystemExit:
+        # argparse的--help会导致SystemExit，我们需要正常处理
+        return 0
+    
+    if not parsed_args.tex_file:
+        # 没有文件参数时，打开文件选择器
         selected_file = select_tex_file()
         if selected_file:
-            return compile_latex(selected_file, run_context)
+            return compile_latex(selected_file, command_identifier, parsed_args.output_dir)
         else:
             error_data = {
                 "success": False, 
@@ -230,15 +306,14 @@ def main():
                 "file": None
             }
             
-            if run_context['in_run_context']:
-                write_to_json_output(error_data, run_context)
+            if is_run_environment(command_identifier):
+                write_to_json_output(error_data, command_identifier)
             else:
                 print("Error: No file selected")
             return 1
     else:
         # 有参数时，直接编译指定文件
-        tex_file = sys.argv[1]
-        return compile_latex(tex_file, run_context)
+        return compile_latex(parsed_args.tex_file, command_identifier, parsed_args.output_dir)
 
 if __name__ == "__main__":
     sys.exit(main()) 

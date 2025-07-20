@@ -17,6 +17,17 @@ import logging
 import tempfile
 import shutil
 
+# 加载环境变量
+from dotenv import load_dotenv
+load_dotenv()
+
+
+def is_run_environment(command_identifier=None):
+    """Check if running in RUN environment by checking environment variables"""
+    if command_identifier:
+        return os.environ.get(f'RUN_IDENTIFIER_{command_identifier}') == 'True'
+    return False
+
 # Import PIL for image processing
 try:
     from PIL import Image, ImageOps
@@ -28,12 +39,6 @@ except ImportError:
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-def is_run_environment(command_identifier=None):
-    """Check if running in RUN environment by checking environment variables"""
-    if command_identifier:
-        return os.environ.get(f'RUN_IDENTIFIER_{command_identifier}') == 'True'
-    return False
 
 # Add current directory to path for imports
 current_dir = Path(__file__).parent

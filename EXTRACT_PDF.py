@@ -13,8 +13,15 @@ import hashlib
 import re
 import tempfile
 import shutil
+import time
+import io
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+
+# 加载环境变量
+from dotenv import load_dotenv
+load_dotenv()
+
 
 def is_run_environment(command_identifier=None):
     """Check if running in RUN environment by checking environment variables"""
@@ -22,35 +29,26 @@ def is_run_environment(command_identifier=None):
         return os.environ.get(f'RUN_IDENTIFIER_{command_identifier}') == 'True'
     return False
 
-def get_run_context():
-    """获取 RUN 执行上下文信息"""
-    run_identifier = os.environ.get('RUN_IDENTIFIER')
-    output_file = os.environ.get('RUN_OUTPUT_FILE')
-    
-    if run_identifier and output_file:
-        return {
-            'in_run_context': True,
-            'identifier': run_identifier,
-            'output_file': output_file
-        }
-    else:
-        return {
-            'in_run_context': False,
-            'identifier': None,
-            'output_file': None
-        }
-
-def write_to_json_output(data, run_context):
+def write_to_json_output(data, command_identifier=None):
     """将结果写入到指定的 JSON 输出文件中"""
-    if not run_context['in_run_context'] or not run_context['output_file']:
+    if not is_run_environment(command_identifier):
+        return False
+    
+    # Get the specific output file for this command identifier
+    if command_identifier:
+        output_file = os.environ.get(f'RUN_DATA_FILE_{command_identifier}')
+    else:
+        output_file = os.environ.get('RUN_DATA_FILE')
+    
+    if not output_file:
         return False
     
     try:
         # 确保输出目录存在
-        output_path = Path(run_context['output_file'])
+        output_path = Path(output_file)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
-        with open(run_context['output_file'], 'w', encoding='utf-8') as f:
+        with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
         return True
     except Exception as e:
@@ -67,6 +65,10 @@ class PDFExtractor:
         
     def extract_pdf_basic(self, pdf_path: Path, page_spec: str = None, output_dir: Path = None) -> Tuple[bool, str]:
         """基础PDF提取功能"""
+        import time
+        
+        start_time = time.time()
+        
         try:
             # 使用Python的基础PDF处理库
             import fitz  # PyMuPDF
@@ -109,6 +111,13 @@ class PDFExtractor:
                 f.write('\n'.join(content))
             
             doc.close()
+            
+            # 计算处理时间
+            end_time = time.time()
+            processing_time = end_time - start_time
+            
+            print(f"⏱️  总处理时间: {processing_time:.2f} 秒")
+            
             return True, f"Basic extraction completed: {output_file}"
             
         except Exception as e:
@@ -117,6 +126,10 @@ class PDFExtractor:
     def extract_pdf_mineru(self, pdf_path: Path, page_spec: str = None, output_dir: Path = None, 
                           enable_analysis: bool = False) -> Tuple[bool, str]:
         """使用MinerU进行PDF提取"""
+        import time
+        
+        start_time = time.time()
+        
         try:
             # 检查MinerU CLI是否可用
             mineru_cli = self.proj_dir / "pdf_extract_cli.py"
@@ -150,11 +163,17 @@ class PDFExtractor:
             if result.stderr:
                 print(result.stderr, file=sys.stderr)
             
+            # 计算处理时间
+            end_time = time.time()
+            processing_time = end_time - start_time
+            
             if result.returncode == 0:
                 # 检查是否有输出文件被创建，并复制到用户指定的目录
                 output_file = self._handle_mineru_output(pdf_path, output_dir, result.stdout, page_spec)
+                print(f"⏱️  总处理时间: {processing_time:.2f} 秒")
                 return True, f"MinerU extraction completed: {output_file}"
             else:
+                print(f"⏱️  总处理时间: {processing_time:.2f} 秒")
                 return False, f"MinerU extraction failed: {result.stderr}"
                 
         except Exception as e:
@@ -316,7 +335,7 @@ class PDFExtractor:
         
         # 根据引擎模式选择处理方式
         if engine_mode == "basic":
-            return self.extract_pdf_basic(pdf_path, page_spec, output_dir_path)
+            return self.extract_pdf_basic_with_images(pdf_path, page_spec, output_dir_path)
         elif engine_mode == "basic-asyn":
             return self.extract_pdf_basic(pdf_path, page_spec, output_dir_path)
         elif engine_mode == "mineru":
@@ -327,6 +346,309 @@ class PDFExtractor:
             return self.extract_pdf_mineru(pdf_path, page_spec, output_dir_path, enable_analysis=True)
         else:
             return False, f"Unknown engine mode: {engine_mode}"
+    
+    def extract_pdf_basic_with_images(self, pdf_path: Path, page_spec: str = None, output_dir: Path = None) -> Tuple[bool, str]:
+        """基础PDF提取功能，包含图片提取和placeholder生成"""
+        import time
+        import hashlib
+        from PIL import Image
+        
+        start_time = time.time()
+        
+        try:
+            # 使用Python的基础PDF处理库
+            import fitz  # PyMuPDF
+            
+            # 打开PDF文件
+            doc = fitz.open(str(pdf_path))
+            
+            # 确定输出目录
+            if output_dir is None:
+                output_dir = pdf_path.parent
+            else:
+                output_dir = Path(output_dir)
+                output_dir.mkdir(parents=True, exist_ok=True)
+            
+            # 创建images目录
+            images_dir = output_dir / "images"
+            images_dir.mkdir(exist_ok=True)
+            
+            # 确定要处理的页面
+            if page_spec:
+                pages = self._parse_page_spec(page_spec, doc.page_count)
+            else:
+                pages = list(range(doc.page_count))
+            
+            # 构建输出文件名，包含页码信息
+            base_name = pdf_path.stem
+            if page_spec:
+                # 格式化页码信息：例如 "1,3,5" -> "_p1,3,5"，"1-5" -> "_p1-5"
+                page_suffix = f"_p{page_spec}"
+                output_filename = f"{base_name}{page_suffix}.md"
+            else:
+                output_filename = f"{base_name}.md"
+            
+            output_file = output_dir / output_filename
+            content = []
+            image_count = 0
+            
+            # 结束性标点符号列表
+            ending_punctuations = {'。', '.', '!', '?', '！', '？', ':', '：', ';', '；'}
+            
+            for page_num in pages:
+                page = doc[page_num]
+                text = page.get_text()
+                
+                # 提取页面中的图片
+                image_list = page.get_images(full=True)
+                page_content = f"# Page {page_num + 1}\n\n"
+                
+                # 图片合并处理：将临近的图片合并成一张大图
+                if image_list:
+                    merged_images = self._merge_nearby_images(doc, page, image_list, images_dir)
+                    
+                    # 为每个合并后的图片添加placeholder
+                    for merged_img_path in merged_images:
+                        page_content += f"[placeholder: image]\n"
+                        page_content += f"![](images/{merged_img_path.name})\n\n"
+                        image_count += 1
+                
+                # 处理正文换行符
+                processed_text = self._process_text_linebreaks(text, ending_punctuations)
+                
+                # 添加页面文本
+                page_content += f"{processed_text}\n\n"
+                content.append(page_content)
+            
+            # 写入markdown文件
+            with open(output_file, 'w', encoding='utf-8') as f:
+                f.write('\n'.join(content))
+            
+            doc.close()
+            
+            # 计算处理时间
+            end_time = time.time()
+            processing_time = end_time - start_time
+            
+            # 清理空的images目录
+            if image_count == 0 and images_dir.exists():
+                try:
+                    images_dir.rmdir()
+                    print("🧹 已清理空的 images 文件夹")
+                except:
+                    pass
+            
+            success_msg = f"Basic extraction completed: {output_file}"
+            if image_count > 0:
+                success_msg += f" (extracted {image_count} merged images)"
+            
+            print(f"⏱️  总处理时间: {processing_time:.2f} 秒")
+            
+            return True, success_msg
+            
+        except Exception as e:
+            return False, f"Basic extraction with images failed: {str(e)}"
+    
+    def _merge_nearby_images(self, doc, page, image_list, images_dir):
+        """合并临近的图片成一张大图"""
+        from PIL import Image
+        import hashlib
+        import fitz
+        import io
+        
+        merged_images = []
+        
+        if not image_list:
+            return merged_images
+        
+        try:
+            # 获取页面尺寸
+            page_rect = page.rect
+            page_width, page_height = page_rect.width, page_rect.height
+            
+            # 提取所有图片的位置和数据
+            image_data = []
+            for img_index, img in enumerate(image_list):
+                try:
+                    xref = img[0]
+                    pix = fitz.Pixmap(doc, xref)
+                    
+                    # 跳过CMYK图片
+                    if pix.n - pix.alpha >= 4:
+                        pix = None
+                        continue
+                    
+                    # 转换为RGB
+                    if pix.n - pix.alpha == 1:  # 灰度图
+                        pix = fitz.Pixmap(fitz.csRGB, pix)
+                    
+                    # 获取图片在页面中的位置（简化处理，使用图片索引作为位置）
+                    y_position = img_index * 100  # 简化的位置计算
+                    
+                    image_data.append({
+                        'index': img_index,
+                        'pix': pix,
+                        'y_pos': y_position
+                    })
+                    
+                except Exception as e:
+                    print(f"⚠️  处理图片 {img_index} 时出错: {e}")
+                    continue
+            
+            if not image_data:
+                return merged_images
+            
+            # 按Y位置排序
+            image_data.sort(key=lambda x: x['y_pos'])
+            
+            # 合并临近的图片（简化版：将所有图片垂直合并成一张大图）
+            if len(image_data) > 1:
+                # 计算合并后图片的总高度和最大宽度
+                total_height = 0
+                max_width = 0
+                pil_images = []
+                
+                for img_info in image_data:
+                    pix = img_info['pix']
+                    # 转换为PIL Image
+                    img_data = pix.tobytes("png")
+                    pil_img = Image.open(io.BytesIO(img_data))
+                    pil_images.append(pil_img)
+                    
+                    total_height += pil_img.height
+                    max_width = max(max_width, pil_img.width)
+                
+                # 创建合并后的大图
+                merged_img = Image.new('RGB', (max_width, total_height), 'white')
+                
+                y_offset = 0
+                for pil_img in pil_images:
+                    # 居中放置每张图片
+                    x_offset = (max_width - pil_img.width) // 2
+                    merged_img.paste(pil_img, (x_offset, y_offset))
+                    y_offset += pil_img.height
+                
+                # 生成合并图片的哈希文件名
+                import io
+                img_bytes = io.BytesIO()
+                merged_img.save(img_bytes, format='PNG')
+                img_hash = hashlib.sha256(img_bytes.getvalue()).hexdigest()
+                merged_filename = f"{img_hash}.png"
+                merged_path = images_dir / merged_filename
+                
+                # 保存合并后的图片
+                merged_img.save(str(merged_path))
+                merged_images.append(merged_path)
+                
+                print(f"🖼️  合并了 {len(image_data)} 张图片成一张大图: {merged_filename}")
+                
+                # 清理临时资源
+                for img_info in image_data:
+                    if img_info['pix']:
+                        img_info['pix'] = None
+                        
+            elif len(image_data) == 1:
+                # 只有一张图片，直接保存
+                pix = image_data[0]['pix']
+                img_data = pix.tobytes("png")
+                img_hash = hashlib.sha256(img_data).hexdigest()
+                img_filename = f"{img_hash}.png"
+                img_path = images_dir / img_filename
+                
+                # 根据是否有alpha通道选择格式
+                if pix.alpha:
+                    img_filename = f"{img_hash}.png"
+                else:
+                    img_filename = f"{img_hash}.jpg"
+                    img_path = images_dir / img_filename
+                
+                pix.save(str(img_path))
+                merged_images.append(img_path)
+                pix = None
+                
+        except Exception as e:
+            print(f"⚠️  图片合并过程出错: {e}")
+            # 如果合并失败，回退到单独保存每张图片
+            for img_index, img in enumerate(image_list):
+                try:
+                    xref = img[0]
+                    pix = fitz.Pixmap(doc, xref)
+                    
+                    if pix.n - pix.alpha < 4:
+                        img_data = pix.tobytes("png")
+                        img_hash = hashlib.sha256(img_data).hexdigest()
+                        
+                        if pix.alpha:
+                            img_filename = f"{img_hash}.png"
+                        else:
+                            img_filename = f"{img_hash}.jpg"
+                        
+                        img_path = images_dir / img_filename
+                        
+                        if pix.n - pix.alpha == 1:
+                            pix = fitz.Pixmap(fitz.csRGB, pix)
+                        
+                        pix.save(str(img_path))
+                        merged_images.append(img_path)
+                    
+                    pix = None
+                    
+                except Exception as e:
+                    print(f"⚠️  保存单张图片 {img_index} 失败: {e}")
+        
+        return merged_images
+    
+    def _process_text_linebreaks(self, text, ending_punctuations):
+        """处理正文换行符，智能合并句子和分段"""
+        if not text.strip():
+            return text
+        
+        lines = text.split('\n')
+        processed_lines = []
+        current_paragraph = []
+        
+        for line in lines:
+            line = line.strip()
+            
+            # 跳过空行
+            if not line:
+                if current_paragraph:
+                    # 如果当前段落有内容，结束当前段落
+                    paragraph_text = ' '.join(current_paragraph)
+                    processed_lines.append(paragraph_text)
+                    current_paragraph = []
+                    processed_lines.append('')  # 添加空行表示段落分隔
+                continue
+            
+            # 将当前行添加到段落中
+            current_paragraph.append(line)
+            
+            # 检查行是否以结束性标点符号结尾
+            if line and line[-1] in ending_punctuations:
+                # 结束当前段落
+                paragraph_text = ' '.join(current_paragraph)
+                processed_lines.append(paragraph_text)
+                current_paragraph = []
+                processed_lines.append('')  # 添加空行表示段落分隔
+        
+        # 处理最后一个段落
+        if current_paragraph:
+            paragraph_text = ' '.join(current_paragraph)
+            processed_lines.append(paragraph_text)
+        
+        # 清理多余的空行
+        result = []
+        prev_empty = False
+        for line in processed_lines:
+            if line == '':
+                if not prev_empty:
+                    result.append(line)
+                prev_empty = True
+            else:
+                result.append(line)
+                prev_empty = False
+        
+        return '\n'.join(result)
 
 class PDFPostProcessor:
     """PDF后处理器，用于处理图片、公式、表格的标签替换"""
@@ -1281,9 +1603,14 @@ def select_pdf_file():
 
 def main():
     """主函数"""
-    run_context = get_run_context()
-    
+    # 获取command_identifier
     args = sys.argv[1:]
+    command_identifier = None
+    
+    # 检查是否被RUN调用（第一个参数是command_identifier）
+    if args and is_run_environment(args[0]):
+        command_identifier = args[0]
+        args = args[1:]  # 移除command_identifier，保留实际参数
     if not args:
         # 如果没有参数，尝试使用GUI选择文件
         pdf_file = select_pdf_file()
@@ -1300,8 +1627,8 @@ def main():
                     "success": True,
                     "message": message
                 }
-                if run_context['in_run_context']:
-                    write_to_json_output(success_data, run_context)
+                if is_run_environment(command_identifier):
+                    write_to_json_output(success_data, command_identifier)
                 else:
                     print(f"✅ {message}")
                 return 0
@@ -1310,15 +1637,15 @@ def main():
                     "success": False,
                     "error": message
                 }
-                if run_context['in_run_context']:
-                    write_to_json_output(error_data, run_context)
+                if is_run_environment(command_identifier):
+                    write_to_json_output(error_data, command_identifier)
                 else:
                     print(f"❌ {message}")
                 return 1
         else:
-            if run_context['in_run_context']:
+            if is_run_environment(command_identifier):
                 error_data = {"success": False, "error": "No PDF file specified"}
-                write_to_json_output(error_data, run_context)
+                write_to_json_output(error_data, command_identifier)
             else:
                 print("❌ Error: No PDF file specified")
                 print("Use --help for usage information")
@@ -1342,13 +1669,13 @@ def main():
         arg = args[i]
         
         if arg in ['--help', '-h']:
-            if run_context['in_run_context']:
+            if is_run_environment(command_identifier):
                 help_data = {
                     "success": True,
                     "message": "Help information",
                     "help": show_help.__doc__
                 }
-                write_to_json_output(help_data, run_context)
+                write_to_json_output(help_data, command_identifier)
             else:
                 show_help()
             return 0
@@ -1358,9 +1685,9 @@ def main():
                 i += 2
             else:
                 error_msg = "❌ Error: --page requires a value"
-                if run_context['in_run_context']:
+                if is_run_environment(command_identifier):
                     error_data = {"success": False, "error": error_msg}
-                    write_to_json_output(error_data, run_context)
+                    write_to_json_output(error_data, command_identifier)
                 else:
                     print(error_msg)
                 return 1
@@ -1370,9 +1697,9 @@ def main():
                 i += 2
             else:
                 error_msg = "❌ Error: --output requires a value"
-                if run_context['in_run_context']:
+                if is_run_environment(command_identifier):
                     error_data = {"success": False, "error": error_msg}
-                    write_to_json_output(error_data, run_context)
+                    write_to_json_output(error_data, command_identifier)
                 else:
                     print(error_msg)
                 return 1
@@ -1381,18 +1708,18 @@ def main():
                 engine_mode = args[i + 1]
                 if engine_mode not in ['basic', 'basic-asyn', 'mineru', 'mineru-asyn', 'full']:
                     error_msg = f"❌ Error: Invalid engine mode: {engine_mode}"
-                    if run_context['in_run_context']:
+                    if is_run_environment(command_identifier):
                         error_data = {"success": False, "error": error_msg}
-                        write_to_json_output(error_data, run_context)
+                        write_to_json_output(error_data, command_identifier)
                     else:
                         print(error_msg)
                     return 1
                 i += 2
             else:
                 error_msg = "❌ Error: --engine requires a value"
-                if run_context['in_run_context']:
+                if is_run_environment(command_identifier):
                     error_data = {"success": False, "error": error_msg}
-                    write_to_json_output(error_data, run_context)
+                    write_to_json_output(error_data, command_identifier)
                 else:
                     print(error_msg)
                 return 1
@@ -1411,9 +1738,9 @@ def main():
                 i += 2
             else:
                 error_msg = "❌ Error: --full requires a PDF file"
-                if run_context['in_run_context']:
+                if is_run_environment(command_identifier):
                     error_data = {"success": False, "error": error_msg}
-                    write_to_json_output(error_data, run_context)
+                    write_to_json_output(error_data, command_identifier)
                 else:
                     print(error_msg)
                 return 1
@@ -1426,9 +1753,9 @@ def main():
                 i += 2
             else:
                 error_msg = "❌ Error: --ids requires a value"
-                if run_context['in_run_context']:
+                if is_run_environment(command_identifier):
                     error_data = {"success": False, "error": error_msg}
-                    write_to_json_output(error_data, run_context)
+                    write_to_json_output(error_data, command_identifier)
                 else:
                     print(error_msg)
                 return 1
@@ -1438,9 +1765,9 @@ def main():
                 i += 2
             else:
                 error_msg = "❌ Error: --prompt requires a value"
-                if run_context['in_run_context']:
+                if is_run_environment(command_identifier):
                     error_data = {"success": False, "error": error_msg}
-                    write_to_json_output(error_data, run_context)
+                    write_to_json_output(error_data, command_identifier)
                 else:
                     print(error_msg)
                 return 1
@@ -1449,18 +1776,18 @@ def main():
                 post_type = args[i + 1]
                 if post_type not in ['image', 'formula', 'table', 'all', 'all_images', 'all_formulas', 'all_tables']:
                     error_msg = f"❌ Error: Invalid post-type: {post_type}"
-                    if run_context['in_run_context']:
+                    if is_run_environment(command_identifier):
                         error_data = {"success": False, "error": error_msg}
-                        write_to_json_output(error_data, run_context)
+                        write_to_json_output(error_data, command_identifier)
                     else:
                         print(error_msg)
                     return 1
                 i += 2
             else:
                 error_msg = "❌ Error: --post-type requires a value"
-                if run_context['in_run_context']:
+                if is_run_environment(command_identifier):
                     error_data = {"success": False, "error": error_msg}
-                    write_to_json_output(error_data, run_context)
+                    write_to_json_output(error_data, command_identifier)
                 else:
                     print(error_msg)
                 return 1
@@ -1469,9 +1796,9 @@ def main():
             i += 1
         elif arg.startswith('-'):
             error_msg = f"❌ Unknown option: {arg}"
-            if run_context['in_run_context']:
+            if is_run_environment(command_identifier):
                 error_data = {"success": False, "error": error_msg}
-                write_to_json_output(error_data, run_context)
+                write_to_json_output(error_data, command_identifier)
             else:
                 print(error_msg)
                 print("Use --help for usage information")
@@ -1481,9 +1808,9 @@ def main():
                 pdf_file = arg
             else:
                 error_msg = "❌ Multiple PDF files specified. Only one file is supported."
-                if run_context['in_run_context']:
+                if is_run_environment(command_identifier):
                     error_data = {"success": False, "error": error_msg}
-                    write_to_json_output(error_data, run_context)
+                    write_to_json_output(error_data, command_identifier)
                 else:
                     print(error_msg)
                 return 1
@@ -1500,8 +1827,8 @@ def main():
                 "message": message,
                 "action": "clean_data"
             }
-            if run_context['in_run_context']:
-                write_to_json_output(success_data, run_context)
+            if is_run_environment(command_identifier):
+                write_to_json_output(success_data, command_identifier)
             else:
                 print(f"✅ {message}")
             return 0
@@ -1511,8 +1838,8 @@ def main():
                 "error": message,
                 "action": "clean_data"
             }
-            if run_context['in_run_context']:
-                write_to_json_output(error_data, run_context)
+            if is_run_environment(command_identifier):
+                write_to_json_output(error_data, command_identifier)
             else:
                 print(f"❌ {message}")
             return 1
@@ -1532,8 +1859,8 @@ def main():
                 "error": f"PDF extraction failed: {message}",
                 "step": "extraction"
             }
-            if run_context['in_run_context']:
-                write_to_json_output(error_data, run_context)
+            if is_run_environment(command_identifier):
+                write_to_json_output(error_data, command_identifier)
             else:
                 print(f"❌ PDF提取失败: {message}")
             return 1
@@ -1562,8 +1889,8 @@ def main():
                     "post_processing": "completed",
                     "post_type": post_type
                 }
-                if run_context['in_run_context']:
-                    write_to_json_output(success_data, run_context)
+                if is_run_environment(command_identifier):
+                    write_to_json_output(success_data, command_identifier)
                 else:
                     print(f"✅ 完整流程完成: {pdf_file} -> {md_file}")
                 return 0
@@ -1576,8 +1903,8 @@ def main():
                     "post_processing": "failed",
                     "post_type": post_type
                 }
-                if run_context['in_run_context']:
-                    write_to_json_output(warning_data, run_context)
+                if is_run_environment(command_identifier):
+                    write_to_json_output(warning_data, command_identifier)
                 else:
                     print(f"✅ PDF提取完成，但后处理失败: {md_file}")
                     print("💡 您可以稍后使用 EXTRACT_PDF --post 手动进行后处理")
@@ -1590,8 +1917,8 @@ def main():
                 "extraction_result": message,
                 "post_processing": "skipped"
             }
-            if run_context['in_run_context']:
-                write_to_json_output(warning_data, run_context)
+            if is_run_environment(command_identifier):
+                write_to_json_output(warning_data, command_identifier)
             else:
                 print(f"✅ PDF提取完成，但未找到markdown文件: {md_file}")
             return 0
@@ -1607,8 +1934,8 @@ def main():
                 "message": f"Post-processing completed: {post_file}",
                 "post_type": post_type
             }
-            if run_context['in_run_context']:
-                write_to_json_output(success_data, run_context)
+            if is_run_environment(command_identifier):
+                write_to_json_output(success_data, command_identifier)
             else:
                 print(f"✅ 后处理完成: {post_file}")
             return 0
@@ -1618,8 +1945,8 @@ def main():
                 "error": f"Post-processing failed: {post_file}",
                 "post_type": post_type
             }
-            if run_context['in_run_context']:
-                write_to_json_output(error_data, run_context)
+            if is_run_environment(command_identifier):
+                write_to_json_output(error_data, command_identifier)
             else:
                 print(f"❌ 后处理失败: {post_file}")
             return 1
@@ -1627,9 +1954,9 @@ def main():
     # 检查是否提供了PDF文件
     if pdf_file is None:
         error_msg = "❌ Error: No PDF file specified"
-        if run_context['in_run_context']:
+        if is_run_environment(command_identifier):
             error_data = {"success": False, "error": error_msg}
-            write_to_json_output(error_data, run_context)
+            write_to_json_output(error_data, command_identifier)
         else:
             print(error_msg)
             print("Use --help for usage information")
@@ -1645,8 +1972,8 @@ def main():
             "message": message,
             "engine_mode": engine_mode
         }
-        if run_context['in_run_context']:
-            write_to_json_output(success_data, run_context)
+        if is_run_environment(command_identifier):
+            write_to_json_output(success_data, command_identifier)
         else:
             print(f"✅ {message}")
         return 0
@@ -1656,15 +1983,18 @@ def main():
             "error": message,
             "engine_mode": engine_mode
         }
-        if run_context['in_run_context']:
-            write_to_json_output(error_data, run_context)
+        if is_run_environment(command_identifier):
+            write_to_json_output(error_data, command_identifier)
         else:
             print(f"❌ {message}")
         return 1
 
 def cleanup_images_folder():
-    """Clean up images folder created by MinerU module imports"""
-    images_path = Path("images")
+    """Clean up images folder created by MinerU module imports in current working directory"""
+    # Only clean up in the script directory (~/.local/bin), not in PDF directories
+    script_dir = Path(__file__).parent
+    images_path = script_dir / "images"
+    
     if images_path.exists() and images_path.is_dir():
         try:
             # Only remove if it's empty or contains only MinerU-generated files

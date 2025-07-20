@@ -1,0 +1,209 @@
+{
+  "success": true,
+  "query": "3D Gaussian Splatting, mesh reconstruction, 3D surface reconstruction, Gaussian splatting geometry, 3DGS mesh modeling",
+  "max_results": 10,
+  "total_papers_found": 10,
+  "source_results": {
+    "arxiv": 10,
+    "google_scholar": 10,
+    "semantic_scholar": 0
+  },
+  "papers": [
+    {
+      "title": "VideoITG: Multimodal Video Understanding with Instructed Temporal\n  Grounding",
+      "authors": [
+        "Shihao Wang",
+        "Guo Chen",
+        "De-an Huang",
+        "Zhiqi Li",
+        "Minghan Li",
+        "Guilin Li",
+        "Jose M. Alvarez",
+        "Lei Zhang",
+        "Zhiding Yu"
+      ],
+      "abstract": "Recent studies have revealed that selecting informative and relevant video\nframes can significantly improve the performance of Video Large Language Models\n(Video-LLMs). Current methods, such as reducing inter-frame redundancy,\nemploying separate models for image-text relevance assessment, or utilizing\ntemporal video grounding for event localization, substantially adopt\nunsupervised learning paradigms, whereas they struggle to address the complex\nscenarios in long video understanding. We propose Instructed Temporal Grounding\nfor Videos (VideoITG), featuring customized frame sampling aligned with user\ninstructions. The core of VideoITG is the VidThinker pipeline, an automated\nannotation framework that explicitly mimics the human annotation process.\nFirst, it generates detailed clip-level captions conditioned on the\ninstruction; then, it retrieves relevant video segments through\ninstruction-guided reasoning; finally, it performs fine-grained frame selection\nto pinpoint the most informative visual evidence. Leveraging VidThinker, we\nconstruct the VideoITG-40K dataset, containing 40K videos and 500K instructed\ntemporal grounding annotations. We then design a plug-and-play VideoITG model,\nwhich takes advantage of visual language alignment and reasoning capabilities\nof Video-LLMs, for effective frame selection in a discriminative manner.\nCoupled with Video-LLMs, VideoITG achieves consistent performance improvements\nacross multiple multimodal video understanding benchmarks, showing its\nsuperiority and great potentials for video understanding.",
+      "url": "http://arxiv.org/abs/2507.13353v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13353v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    },
+    {
+      "title": "Challenges for describing unitary evolution in nontrivial geometries:\n  pictures and representations",
+      "authors": [
+        "Steven B. Giddings",
+        "Julie Perkins"
+      ],
+      "abstract": "Description of evolution between spatial slices in a general spacetime\nsuffers from a significant difficulty: the states on the slices, in a given\nbasis, are not related by a unitary transformation. This problem, which occurs\nin spacetime dimensions above two, is directly related to the infinite number\nof inequivalent representations of the canonical commutators, and in particular\nwill arise for interacting theories in time-dependent spacetimes. We connect\ndifferent facets of this issue, and discuss its possible resolution. It is\ndirectly related to discussions of failure of a standard Schr\\\"odinger picture\nof evolution, and of evolution via \"many-fingered time.\" One requires a\ncondition specifying a physical unitary equivalence class of states; in general\nthis equivalence class evolves with time, and an important question is how it\nis determined. One approach to this in free theories is by imposing a Hadamard\ncondition on the two point function. We explore a different approach, which\nalso may be helpful for interacting theories, analyzing the structure of the\nstate in a local limit, and relate these approaches. We also elucidate the\nnon-Hadamard behavior of unphysical vacua, and discuss concrete examples of\nthese approaches involving cosmological and black hole evolution. The issues\nare extended in the context of quantum dynamical geometry, and raise important\nquestions for the proper description of the wavefunction of the universe and\nfor the role of the Wheeler-DeWitt equation.",
+      "url": "http://arxiv.org/abs/2507.13351v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13351v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    },
+    {
+      "title": "Hierarchical Rectified Flow Matching with Mini-Batch Couplings",
+      "authors": [
+        "Yichi Zhang",
+        "Yici Yan",
+        "Alex Schwing",
+        "Zhizhen Zhao"
+      ],
+      "abstract": "Flow matching has emerged as a compelling generative modeling approach that\nis widely used across domains. To generate data via a flow matching model, an\nordinary differential equation (ODE) is numerically solved via forward\nintegration of the modeled velocity field. To better capture the multi-modality\nthat is inherent in typical velocity fields, hierarchical flow matching was\nrecently introduced. It uses a hierarchy of ODEs that are numerically\nintegrated when generating data. This hierarchy of ODEs captures the\nmulti-modal velocity distribution just like vanilla flow matching is capable of\nmodeling a multi-modal data distribution. While this hierarchy enables to model\nmulti-modal velocity distributions, the complexity of the modeled distribution\nremains identical across levels of the hierarchy. In this paper, we study how\nto gradually adjust the complexity of the distributions across different levels\nof the hierarchy via mini-batch couplings. We show the benefits of mini-batch\ncouplings in hierarchical rectified flow matching via compelling results on\nsynthetic and imaging data. Code is available at\nhttps://riccizz.github.io/HRF_coupling.",
+      "url": "http://arxiv.org/abs/2507.13350v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13350v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    },
+    {
+      "title": "VisionThink: Smart and Efficient Vision Language Model via Reinforcement\n  Learning",
+      "authors": [
+        "Senqiao Yang",
+        "Junyi Li",
+        "Xin Lai",
+        "Bei Yu",
+        "Hengshuang Zhao",
+        "Jiaya Jia"
+      ],
+      "abstract": "Recent advancements in vision-language models (VLMs) have improved\nperformance by increasing the number of visual tokens, which are often\nsignificantly longer than text tokens. However, we observe that most real-world\nscenarios do not require such an extensive number of visual tokens. While the\nperformance drops significantly in a small subset of OCR-related tasks, models\nstill perform accurately in most other general VQA tasks with only 1/4\nresolution. Therefore, we propose to dynamically process distinct samples with\ndifferent resolutions, and present a new paradigm for visual token compression,\nnamely, VisionThink. It starts with a downsampled image and smartly decides\nwhether it is sufficient for problem solving. Otherwise, the model could output\na special token to request the higher-resolution image. Compared to existing\nEfficient VLM methods that compress tokens using fixed pruning ratios or\nthresholds, VisionThink autonomously decides whether to compress tokens case by\ncase. As a result, it demonstrates strong fine-grained visual understanding\ncapability on OCR-related tasks, and meanwhile saves substantial visual tokens\non simpler tasks. We adopt reinforcement learning and propose the LLM-as-Judge\nstrategy to successfully apply RL to general VQA tasks. Moreover, we carefully\ndesign a reward function and penalty mechanism to achieve a stable and\nreasonable image resize call ratio. Extensive experiments demonstrate the\nsuperiority, efficiency, and effectiveness of our method. Our code is available\nat https://github.com/dvlab-research/VisionThink.",
+      "url": "http://arxiv.org/abs/2507.13348v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13348v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    },
+    {
+      "title": "$π^3$: Scalable Permutation-Equivariant Visual Geometry Learning",
+      "authors": [
+        "Yifan Wang",
+        "Jianjun Zhou",
+        "Haoyi Zhu",
+        "Wenzheng Chang",
+        "Yang Zhou",
+        "Zizun Li",
+        "Junyi Chen",
+        "Jiangmiao Pang",
+        "Chunhua Shen",
+        "Tong He"
+      ],
+      "abstract": "We introduce $\\pi^3$, a feed-forward neural network that offers a novel\napproach to visual geometry reconstruction, breaking the reliance on a\nconventional fixed reference view. Previous methods often anchor their\nreconstructions to a designated viewpoint, an inductive bias that can lead to\ninstability and failures if the reference is suboptimal. In contrast, $\\pi^3$\nemploys a fully permutation-equivariant architecture to predict\naffine-invariant camera poses and scale-invariant local point maps without any\nreference frames. This design makes our model inherently robust to input\nordering and highly scalable. These advantages enable our simple and bias-free\napproach to achieve state-of-the-art performance on a wide range of tasks,\nincluding camera pose estimation, monocular/video depth estimation, and dense\npoint map reconstruction. Code and models are publicly available.",
+      "url": "http://arxiv.org/abs/2507.13347v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13347v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    },
+    {
+      "title": "Imbalance in Balance: Online Concept Balancing in Generation Models",
+      "authors": [
+        "Yukai Shi",
+        "Jiarong Ou",
+        "Rui Chen",
+        "Haotian Yang",
+        "Jiahao Wang",
+        "Xin Tao",
+        "Pengfei Wan",
+        "Di Zhang",
+        "Kun Gai"
+      ],
+      "abstract": "In visual generation tasks, the responses and combinations of complex\nconcepts often lack stability and are error-prone, which remains an\nunder-explored area. In this paper, we attempt to explore the causal factors\nfor poor concept responses through elaborately designed experiments. We also\ndesign a concept-wise equalization loss function (IMBA loss) to address this\nissue. Our proposed method is online, eliminating the need for offline dataset\nprocessing, and requires minimal code changes. In our newly proposed complex\nconcept benchmark Inert-CompBench and two other public test sets, our method\nsignificantly enhances the concept response capability of baseline models and\nyields highly competitive results with only a few codes.",
+      "url": "http://arxiv.org/abs/2507.13345v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13345v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    },
+    {
+      "title": "AutoPartGen: Autogressive 3D Part Generation and Discovery",
+      "authors": [
+        "Minghao Chen",
+        "Jianyuan Wang",
+        "Roman Shapovalov",
+        "Tom Monnier",
+        "Hyunyoung Jung",
+        "Dilin Wang",
+        "Rakesh Ranjan",
+        "Iro Laina",
+        "Andrea Vedaldi"
+      ],
+      "abstract": "We introduce AutoPartGen, a model that generates objects composed of 3D parts\nin an autoregressive manner. This model can take as input an image of an\nobject, 2D masks of the object's parts, or an existing 3D object, and generate\na corresponding compositional 3D reconstruction. Our approach builds upon\n3DShape2VecSet, a recent latent 3D representation with powerful geometric\nexpressiveness. We observe that this latent space exhibits strong compositional\nproperties, making it particularly well-suited for part-based generation tasks.\nSpecifically, AutoPartGen generates object parts autoregressively, predicting\none part at a time while conditioning on previously generated parts and\nadditional inputs, such as 2D images, masks, or 3D objects. This process\ncontinues until the model decides that all parts have been generated, thus\ndetermining automatically the type and number of parts. The resulting parts can\nbe seamlessly assembled into coherent objects or scenes without requiring\nadditional optimization. We evaluate both the overall 3D generation\ncapabilities and the part-level generation quality of AutoPartGen,\ndemonstrating that it achieves state-of-the-art performance in 3D part\ngeneration.",
+      "url": "http://arxiv.org/abs/2507.13346v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13346v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    },
+    {
+      "title": "Diffuman4D: 4D Consistent Human View Synthesis from Sparse-View Videos\n  with Spatio-Temporal Diffusion Models",
+      "authors": [
+        "Yudong Jin",
+        "Sida Peng",
+        "Xuan Wang",
+        "Tao Xie",
+        "Zhen Xu",
+        "Yifan Yang",
+        "Yujun Shen",
+        "Hujun Bao",
+        "Xiaowei Zhou"
+      ],
+      "abstract": "This paper addresses the challenge of high-fidelity view synthesis of humans\nwith sparse-view videos as input. Previous methods solve the issue of\ninsufficient observation by leveraging 4D diffusion models to generate videos\nat novel viewpoints. However, the generated videos from these models often lack\nspatio-temporal consistency, thus degrading view synthesis quality. In this\npaper, we propose a novel sliding iterative denoising process to enhance the\nspatio-temporal consistency of the 4D diffusion model. Specifically, we define\na latent grid in which each latent encodes the image, camera pose, and human\npose for a certain viewpoint and timestamp, then alternately denoising the\nlatent grid along spatial and temporal dimensions with a sliding window, and\nfinally decode the videos at target viewpoints from the corresponding denoised\nlatents. Through the iterative sliding, information flows sufficiently across\nthe latent grid, allowing the diffusion model to obtain a large receptive field\nand thus enhance the 4D consistency of the output, while making the GPU memory\nconsumption affordable. The experiments on the DNA-Rendering and ActorsHQ\ndatasets demonstrate that our method is able to synthesize high-quality and\nconsistent novel-view videos and significantly outperforms the existing\napproaches. See our project page for interactive demos and video results:\nhttps://diffuman4d.github.io/ .",
+      "url": "http://arxiv.org/abs/2507.13344v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13344v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    },
+    {
+      "title": "Taming Diffusion Transformer for Real-Time Mobile Video Generation",
+      "authors": [
+        "Yushu Wu",
+        "Yanyu Li",
+        "Anil Kag",
+        "Ivan Skorokhodov",
+        "Willi Menapace",
+        "Ke Ma",
+        "Arpit Sahni",
+        "Ju Hu",
+        "Aliaksandr Siarohin",
+        "Dhritiman Sagar",
+        "Yanzhi Wang",
+        "Sergey Tulyakov"
+      ],
+      "abstract": "Diffusion Transformers (DiT) have shown strong performance in video\ngeneration tasks, but their high computational cost makes them impractical for\nresource-constrained devices like smartphones, and real-time generation is even\nmore challenging. In this work, we propose a series of novel optimizations to\nsignificantly accelerate video generation and enable real-time performance on\nmobile platforms. First, we employ a highly compressed variational autoencoder\n(VAE) to reduce the dimensionality of the input data without sacrificing visual\nquality. Second, we introduce a KD-guided, sensitivity-aware tri-level pruning\nstrategy to shrink the model size to suit mobile platform while preserving\ncritical performance characteristics. Third, we develop an adversarial step\ndistillation technique tailored for DiT, which allows us to reduce the number\nof inference steps to four. Combined, these optimizations enable our model to\nachieve over 10 frames per second (FPS) generation on an iPhone 16 Pro Max,\ndemonstrating the feasibility of real-time, high-quality video generation on\nmobile devices.",
+      "url": "http://arxiv.org/abs/2507.13343v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13343v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    },
+    {
+      "title": "Expansion creates spin-glass order in finite-connectivity models: a\n  rigorous and intuitive approach from the theory of LDPC codes",
+      "authors": [
+        "Benedikt Placke",
+        "Grace M. Sommers",
+        "Nikolas P. Breuckmann",
+        "Tibor Rakovszky",
+        "Vedika Khemani"
+      ],
+      "abstract": "Complex free-energy landscapes with many local minima separated by large\nbarriers are believed to underlie glassy behavior across diverse physical\nsystems. This is the heuristic picture associated with replica symmetry\nbreaking (RSB) in spin glasses, but RSB has only been rigorously verified for\ncertain mean-field models with all-to-all connectivity. In this work, we give a\nrigorous proof of finite temperature spin glass order for a family of models\nwith local interactions on finite-connectivity, non-Euclidean expander graphs.\nTo this end, we bypass the RSB formalism entirely, and instead exploit the\nmathematical equivalence of such models to certain low-density parity check\n(LDPC) codes. We use code expansion, a property of LDPC codes which guarantees\nextensive energy barriers around ground states. Together with mild additional\nassumptions, this allows us to construct an explicit decomposition of the\nlow-temperature Gibbs state into disjoint components, each hosting an\nasymptotically long-lived state associated with a local minimum of the\nlandscape. Each component carries at most an exponentially small fraction of\nthe total weight, and almost all components do not contain ground states --\nwhich we take together to define spin-glass order. The proof is elementary, and\ntreats various expanding graph topologies on the same footing, including those\nwith short loops where existing approaches such as the cavity method fail. Our\nresults apply rigorously to diluted p-spin glasses for sufficiently large p,\nand while unproven, we also expect our assumptions to hold in a broader family\nof codes. Motivated by this, we numerically study two simple models, on random\nregular graphs and a regular tesselation of hyperbolic space. We show that both\nmodels undergo two transitions as a function of temperature, corresponding to\nthe onset of weak ergodicity breaking and spin glass order, respectively.",
+      "url": "http://arxiv.org/abs/2507.13342v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13342v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    }
+  ],
+  "timestamp": "2025-07-20T21:25:12.594908"
+}

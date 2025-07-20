@@ -1,0 +1,18 @@
+{
+  "title": "Pgsr: Planar-based gaussian splatting for efficient and high-fidelity surface reconstruction",
+  "authors": [
+    "D Chen",
+    "H Li",
+    "W Ye",
+    "Y Wang",
+    "W Xie… - … on Visualization and …",
+    "2024"
+  ],
+  "abstract": "… on 3DGS that achieves high-fidelity geometric reconstruction … introduce geometric constraints \nto ensure that the 3D Gaussian … GeoNeuS: Geometry-consistent neural implicit surfaces …",
+  "url": "https://ieeexplore.ieee.org/abstract/document/10747190/",
+  "pdf_url": "",
+  "publication_date": "",
+  "venue": "ieeexplore.ieee.org",
+  "citation_count": null,
+  "source": "google_scholar"
+}

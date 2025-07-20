@@ -41,12 +41,13 @@ class TestOpenRouter(BaseTest):
         self.assertIn('--model', result.stdout)
         self.assertIn('--key', result.stdout)
 
-    def test_missing_query_error(self):
-        """Test error when query is missing"""
-        result = self.assertCommandFail([
+    def test_missing_query_shows_help(self):
+        """Test that missing query shows help instead of error"""
+        result = self.assertCommandSuccess([
             sys.executable, str(self.openrouter_py)
         ])
-        self.assertIn('需要提供查询内容', result.stderr)
+        self.assertIn('OPENROUTER - OpenRouter API 调用工具', result.stdout)
+        self.assertIn('Usage:', result.stdout)
 
     def test_list_models(self):
         """Test --list option"""
@@ -178,11 +179,254 @@ class TestOpenRouterIntegration(APITest):
     
     def test_basic_functionality(self):
         """Test basic OPENROUTER functionality"""
-        # Test that the tool can be called and shows proper error for missing query
-        result = self.assertCommandFail([
+        # Test that the tool can be called and shows help for missing query
+        result = self.assertCommandSuccess([
             sys.executable, str(self.openrouter_py)
         ])
-        self.assertIn('需要提供查询内容', result.stderr)
+        self.assertIn('OPENROUTER - OpenRouter API 调用工具', result.stdout)
+        self.assertIn('Usage:', result.stdout)
+    
+    def test_invalid_api_key_error(self):
+        """Test error handling with invalid API key"""
+        result = self.run_subprocess([
+            sys.executable, str(self.openrouter_py),
+            'test query', '--key', 'invalid-key-12345'
+        ], timeout=30)
+        
+        # Should fail with invalid key
+        self.assertEqual(result.returncode, 1)
+        self.assertIn('错误', result.stderr)
+    
+    def test_output_dir_functionality(self):
+        """Test --output-dir functionality (without actual API call)"""
+        # Test that --output-dir parameter is accepted
+        result = self.run_subprocess([
+            sys.executable, str(self.openrouter_py),
+            '--help'
+        ])
+        
+        self.assertEqual(result.returncode, 0)
+        self.assertIn('--output-dir', result.stdout)
+    
+    def test_timeout_handling(self):
+        """Test timeout handling for API calls"""
+        # This test uses an invalid key which should fail quickly
+        # rather than timing out, but tests the error handling path
+        result = self.run_subprocess([
+            sys.executable, str(self.openrouter_py),
+            'test query', '--key', 'sk-invalid-timeout-test'
+        ], timeout=15)
+        
+        # Should fail (not timeout) due to invalid key
+        self.assertEqual(result.returncode, 1)
+    
+    def test_real_api_call_if_key_available(self):
+        """Test real API call if OPENROUTER_API_KEY is available"""
+        api_key = os.environ.get('OPENROUTER_API_KEY')
+        
+        if not api_key:
+            self.skipTest("OPENROUTER_API_KEY not available for real API testing")
+        
+        # Test with real API key and simple query
+        result = self.run_subprocess([
+            sys.executable, str(self.openrouter_py),
+            'What is 2+2?', '--max-tokens', '50'
+        ], timeout=60)
+        
+        if result.returncode == 0:
+            # API call succeeded - check for reasonable mathematical content
+            stdout_lower = result.stdout.lower()
+            # Should contain some mathematical content or answer
+            self.assertTrue(
+                '4' in result.stdout or 'four' in stdout_lower or 
+                '2' in result.stdout or 'add' in stdout_lower or
+                'sum' in stdout_lower or 'plus' in stdout_lower,
+                f"Expected mathematical content in response: {result.stdout[:100]}..."
+            )
+        else:
+            # API call failed - check for reasonable error message
+            self.assertIn('错误', result.stderr)
+    
+    def test_max_tokens_without_key(self):
+        """Test --max-tokens functionality without specifying --key"""
+        api_key = os.environ.get('OPENROUTER_API_KEY')
+        
+        if not api_key:
+            self.skipTest("OPENROUTER_API_KEY not available for max-tokens testing")
+        
+        # Test with long prompt and moderate max-tokens to verify truncation
+        long_prompt = ("Write a detailed story about a space explorer discovering a new planet. "
+                      "Include descriptions of the landscape, alien creatures, and the explorer's emotions. "
+                      "Make it approximately 500 words long. "
+                      "At the very end of your story, write exactly this sentence: 'This is the END of my story'")
+        
+        result = self.run_subprocess([
+            sys.executable, str(self.openrouter_py),
+            long_prompt, '--max-tokens', '100'
+        ], timeout=45)
+        
+        if result.returncode == 0:
+            # Verify the API call succeeded and tokens were limited
+            # Check stderr for token usage info
+            self.assertIn('📊 Token使用:', result.stderr, "Should show token usage information")
+            
+            # Extract output tokens from stderr
+            import re
+            token_match = re.search(r'输出 (\d+)', result.stderr)
+            if token_match:
+                output_tokens = int(token_match.group(1))
+                # Should be close to max-tokens limit (100)
+                self.assertLessEqual(output_tokens, 110, 
+                                   f"Output tokens ({output_tokens}) should be limited by max-tokens=100")
+            
+            # Response should not contain the ending sentence due to truncation
+            response = result.stdout.strip()
+            if response:  # Only check if there's actual response content
+                self.assertNotIn('This is the END of my story', response,
+                               "Response should be truncated before the ending sentence")
+        else:
+            # If failed, should have reasonable error message
+            self.assertIn('错误', result.stderr)
+    
+    def test_max_tokens_context_length_warning(self):
+        """Test warning when max-tokens exceeds model context length"""
+        api_key = os.environ.get('OPENROUTER_API_KEY')
+        
+        if not api_key:
+            self.skipTest("OPENROUTER_API_KEY not available for context length testing")
+        
+        # Test with max-tokens that exceeds typical model context length
+        result = self.run_subprocess([
+            sys.executable, str(self.openrouter_py),
+            'Hello', '--max-tokens', '100000000'  # Extremely large max-tokens
+        ], timeout=30)
+        
+        if result.returncode == 0:
+            # Should show warning about max-tokens being adjusted
+            self.assertIn('已调整', result.stderr, 
+                         "Should show warning when max-tokens exceeds context length")
+            
+            # Extract the adjusted max-tokens value from stderr
+            import re
+            adjusted_match = re.search(r'🔢 最大tokens: (\d+)', result.stderr)
+            if adjusted_match:
+                actual_max_tokens = int(adjusted_match.group(1))
+                # Should be much less than the requested 100000000
+                self.assertLess(actual_max_tokens, 100000, 
+                              f"Max-tokens should be adjusted to reasonable value, got {actual_max_tokens}")
+                # Should be reasonable fraction of context length (models typically have 16k-164k context)
+                self.assertGreater(actual_max_tokens, 1000,
+                                 f"Adjusted max-tokens should be reasonable, got {actual_max_tokens}")
+        else:
+            # If failed, should have reasonable error message
+            self.assertIn('错误', result.stderr)
+    
+    def test_real_api_call_with_output_dir(self):
+        """Test real API call with --output-dir if API key is available"""
+        api_key = os.environ.get('OPENROUTER_API_KEY')
+        
+        if not api_key:
+            self.skipTest("OPENROUTER_API_KEY not available for output-dir testing")
+        
+        import tempfile
+        test_dir = Path(tempfile.mkdtemp())
+        output_dir = test_dir / "openrouter_output"
+        
+        try:
+            # Test with real API key and output directory
+            result = self.run_subprocess([
+                sys.executable, str(self.openrouter_py),
+                'Hello world', '--max-tokens', '30',
+                '--output-dir', str(output_dir)
+            ], timeout=60)
+            
+            if result.returncode == 0:
+                # Check if output file was created
+                output_files = list(output_dir.glob("openrouter_*.txt"))
+                if output_files:
+                    self.assertGreater(len(output_files), 0, "Output file should be created")
+                    # Check file content
+                    with open(output_files[0], 'r', encoding='utf-8') as f:
+                        content = f.read()
+                        self.assertIn('Query: Hello world', content)
+                        self.assertIn('Model:', content)
+                        self.assertIn('Timestamp:', content)
+        finally:
+            import shutil
+            shutil.rmtree(test_dir, ignore_errors=True)
+    
+    def test_default_model_functionality(self):
+        """Test --default model functionality"""
+        api_key = os.environ.get('OPENROUTER_API_KEY')
+        
+        if not api_key:
+            self.skipTest("OPENROUTER_API_KEY not available for default model testing")
+        
+        import tempfile
+        import shutil
+        import json
+        
+        # Backup current models config
+        models_config = Path(__file__).parent.parent / "OPENROUTER_DATA" / "openrouter_models.json"
+        backup_dir = Path(tempfile.mkdtemp())
+        backup_file = backup_dir / "openrouter_models_backup.json"
+        
+        try:
+            # Backup existing config
+            if models_config.exists():
+                shutil.copy2(models_config, backup_file)
+            
+            # Get list of available models first
+            result = self.run_subprocess([
+                sys.executable, str(self.openrouter_py), '--list'
+            ], timeout=15)
+            
+            if result.returncode != 0:
+                self.skipTest("Cannot get model list for default testing")
+            
+            # Parse available models from output
+            available_models = []
+            for line in result.stdout.split('\n'):
+                if '. ' in line and 'deepseek' in line:
+                    # Extract model name from format "1. model-name"
+                    parts = line.strip().split('. ', 1)
+                    if len(parts) > 1:
+                        available_models.append(parts[1].split()[0])
+            
+            if not available_models:
+                self.skipTest("No available models found for default testing")
+            
+            # Choose a model to set as default (not the first one)
+            test_model = available_models[-1] if len(available_models) > 1 else available_models[0]
+            
+            # Set default model
+            result = self.run_subprocess([
+                sys.executable, str(self.openrouter_py),
+                '--default', test_model
+            ], timeout=15)
+            
+            self.assertEqual(result.returncode, 0, f"Setting default model failed: {result.stderr}")
+            
+            # Test that the model is now used by default
+            result = self.run_subprocess([
+                sys.executable, str(self.openrouter_py),
+                'Hello', '--max-tokens', '10'
+            ], timeout=30)
+            
+            if result.returncode == 0:
+                # Check stderr for model info
+                self.assertIn(test_model, result.stderr, f"Should use default model {test_model}")
+            
+        finally:
+            # Restore backup
+            try:
+                if backup_file.exists():
+                    shutil.copy2(backup_file, models_config)
+                elif models_config.exists():
+                    models_config.unlink()  # Remove if no backup existed
+                shutil.rmtree(backup_dir, ignore_errors=True)
+            except:
+                pass
 
 
 if __name__ == '__main__':

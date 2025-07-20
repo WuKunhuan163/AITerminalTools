@@ -14,6 +14,10 @@ from pathlib import Path
 from typing import Optional, List, Dict, Any, Union
 from datetime import datetime
 
+# 加载环境变量
+from dotenv import load_dotenv
+load_dotenv()
+
 def is_run_environment(command_identifier=None):
     """Check if running in RUN environment by checking environment variables"""
     if command_identifier:
@@ -37,13 +41,22 @@ except ImportError:
     print("Warning: Centralized cache system not available", file=sys.stderr)
     CACHE_AVAILABLE = False
 
-try:
-    # Import UnimerNet model components
-    from test_simple_unimernet import load_unimernet_model, recognize_image as simple_recognize
-    UNIMERNET_AVAILABLE = True
-except ImportError:
-    print("Warning: UnimerNet model components not available", file=sys.stderr)
-    UNIMERNET_AVAILABLE = False
+# Lazy import for UnimerNet model components
+UNIMERNET_AVAILABLE = None
+load_unimernet_model = None
+simple_recognize = None
+
+def _lazy_import_unimernet():
+    """Lazy import UnimerNet components only when needed"""
+    global UNIMERNET_AVAILABLE, load_unimernet_model, simple_recognize
+    if UNIMERNET_AVAILABLE is None:
+        try:
+            from test_simple_unimernet import load_unimernet_model, recognize_image as simple_recognize
+            UNIMERNET_AVAILABLE = True
+        except ImportError:
+            print("Warning: UnimerNet model components not available", file=sys.stderr)
+            UNIMERNET_AVAILABLE = False
+    return UNIMERNET_AVAILABLE
 
 class UnimerNetProcessor:
     """UnimerNet processor using simplified unimernet interface"""
@@ -51,7 +64,9 @@ class UnimerNetProcessor:
     def __init__(self):
         # Initialize cache system
         if CACHE_AVAILABLE:
-            self.cache_system = ImageCacheSystem(base_dir=Path(__file__).parent)
+            # Use EXTRACT_IMG_PROJ as base directory for cache system
+            extract_img_proj_dir = Path(__file__).parent / "EXTRACT_IMG_PROJ"
+            self.cache_system = ImageCacheSystem(base_dir=extract_img_proj_dir)
         else:
             self.cache_system = None
         
@@ -62,7 +77,7 @@ class UnimerNetProcessor:
     
     def _init_unimernet_model(self):
         """Initialize UnimerNet model using simplified interface"""
-        if not UNIMERNET_AVAILABLE:
+        if not _lazy_import_unimernet():
             print("Warning: UnimerNet components not available", file=sys.stderr)
             return
         
@@ -200,47 +215,54 @@ class UnimerNetProcessor:
 
 def main():
     """Main CLI interface for UNIMERNET"""
+    # 获取command_identifier
+    args_list = sys.argv[1:]
+    command_identifier = None
+    
+    # 检查是否被RUN调用（第一个参数是command_identifier）
+    if args_list and is_run_environment(args_list[0]):
+        command_identifier = args_list[0]
+        args_list = args_list[1:]  # 移除command_identifier，保留实际参数
+        # 重新构建sys.argv以供argparse使用
+        sys.argv = [sys.argv[0]] + args_list
+    
     parser = argparse.ArgumentParser(
         description="UNIMERNET - UnimerNet Formula and Table Recognition Tool",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     
-    parser.add_argument("command_identifier", nargs="?", help="RUN command identifier (internal use)")
     parser.add_argument("image_path", nargs="?", help="Path to image file")
     parser.add_argument("--type", choices=["formula", "table", "auto"], default="auto",
                        help="Content type hint (default: auto)")
     parser.add_argument("--force", action="store_true", help="Force reprocessing even if cached")
     parser.add_argument("--batch", action="store_true", help="Process multiple images")
-    parser.add_argument("--no-cache", action="store_true", help="Disable cache system")
     parser.add_argument("--stats", action="store_true", help="Show cache statistics")
-    parser.add_argument("--output", help="Output file for results")
+    parser.add_argument("--output", help="Specify a file to save the result")
     parser.add_argument("--json", action="store_true", help="Output in JSON format")
     parser.add_argument("--check", action="store_true", help="Check if UnimerNet is available")
     
     args = parser.parse_args()
-    
-    # Handle command_identifier from RUN
-    command_identifier = None
-    if args.command_identifier and not args.command_identifier.startswith('-'):
-        # First positional arg is command_identifier from RUN
-        command_identifier = args.command_identifier
-        # If image_path is None, shift args
-        if not args.image_path:
-            # This means command_identifier was passed but no image_path
-            pass
-    else:
-        # First arg is actually image_path, not command_identifier
-        if args.command_identifier and not args.image_path:
-            args.image_path = args.command_identifier
-            command_identifier = None
     
     # Initialize processor
     processor = UnimerNetProcessor()
     
     # Handle check command
     if args.check:
-        if processor.is_available():
-            print("✅ UnimerNet is available and ready")
+        # Check if components can be imported
+        if _lazy_import_unimernet():
+            print("✅ Local UnimerNet components loaded successfully")
+            # Try to initialize model to check full availability
+            try:
+                processor._init_unimernet_model()
+                processor._model_loaded = True
+                if processor.is_available():
+                    print("✅ UnimerNet is available and ready")
+                else:
+                    print("❌ UnimerNet model initialization failed")
+            except Exception as e:
+                print("❌ UnimerNet model initialization failed")
+                print(f"Error: {e}")
+            
             if processor.cache_system:
                 stats = processor.get_cache_stats()
                 if stats.get("cache_available"):
@@ -270,7 +292,7 @@ def main():
         return
     
     # Process images
-    use_cache = not args.no_cache
+    use_cache = True  # Cache is always enabled, --force bypasses it
     
     if args.batch:
         # Process multiple images

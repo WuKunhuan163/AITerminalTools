@@ -13,6 +13,15 @@ import requests
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Union
 
+# 加载环境变量
+from dotenv import load_dotenv
+load_dotenv()
+
+def is_run_environment(command_identifier=None):
+    """Check if running in RUN environment by checking environment variables"""
+    if command_identifier:
+        return os.environ.get(f'RUN_IDENTIFIER_{command_identifier}') == 'True'
+    return False
 
 # 模型配置文件路径
 MODELS_CONFIG_FILE = Path(__file__).parent / "OPENROUTER_DATA" / "openrouter_models.json"
@@ -147,10 +156,31 @@ def get_suggested_max_tokens(model_id: str, user_max_tokens: Optional[int] = Non
     
     return suggested_tokens
 
-
-def is_run_environment() -> bool:
-    """检查是否在RUN环境中运行"""
-    return 'RUN_DATA_FILE' in os.environ
+def write_to_json_output(data, command_identifier=None):
+    """将结果写入到指定的 JSON 输出文件中"""
+    if not is_run_environment(command_identifier):
+        return False
+    
+    # Get the specific output file for this command identifier
+    if command_identifier:
+        output_file = os.environ.get(f'RUN_DATA_FILE_{command_identifier}')
+    else:
+        output_file = os.environ.get('RUN_DATA_FILE')
+    
+    if not output_file:
+        return False
+    
+    try:
+        from pathlib import Path
+        output_path = Path(output_file)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        return True
+    except Exception as e:
+        print(f"Error writing to JSON output file: {e}")
+        return False
 
 
 def create_json_output(success: bool, message: str, **kwargs) -> Dict[str, Any]:
@@ -187,7 +217,7 @@ def list_models():
     else:
         # 在普通环境下显示格式化的模型列表（只显示可用模型）
         print("📋 可用模型列表:")
-        print("=" * 80)
+        print("=" * 40)
         for i, model_id in enumerate(useable_models, 1):
             info = models[model_id]
             input_cost = info.get('input_cost_per_1m', 0)
@@ -348,8 +378,9 @@ Options:
   <query>                查询内容
   --model <model>        指定模型 (默认使用第一个可用模型)
   --key <api_key>        指定API密钥 (临时使用)
-     --max-tokens <num>     最大token数 (默认: 根据模型自动调整为上下文长度的1/4)
+  --max-tokens <num>     最大token数 (默认: 根据模型自动调整为上下文长度的1/4)
   --temperature <float>  温度参数 (默认: 0.7)
+  --output-dir <dir>     输出目录，保存模型回复到指定目录
   --list                 列出所有可用模型
   --default <model>      设置默认模型（将指定模型移到列表最上方）
   --help                 显示帮助信息
@@ -378,6 +409,7 @@ Note: 只有标记为可用(useable=true)的模型才会显示在列表中。
     parser.add_argument('--temperature', type=float, default=0.7, help='温度参数')
     parser.add_argument('--list', action='store_true', help='列出所有可用模型')
     parser.add_argument('--default', help='设置默认模型')
+    parser.add_argument('--output-dir', help='输出目录，保存模型回复到指定目录')
     parser.add_argument('--help', action='store_true', help='显示帮助信息')
     
     args = parser.parse_args()
@@ -424,28 +456,57 @@ Note: 只有标记为可用(useable=true)的模型才会显示在列表中。
         else:
             print("❌ 没有提供查询内容", file=sys.stderr)
             sys.exit(1)
-        
-        result = call_openrouter_api(
-            query_content,
-            args.model,
-            args.key,
-            args.max_tokens,
-            args.temperature
-        )
-        
-        if is_run_environment():
-            # 在RUN环境下输出JSON格式
-            if 'RUN_DATA_FILE' in os.environ:
-                with open(os.environ['RUN_DATA_FILE'], 'w', encoding='utf-8') as f:
-                    json.dump(result, f, ensure_ascii=False, indent=2)
-            print(json.dumps(result, ensure_ascii=False, indent=2))
+    
+    result = call_openrouter_api(
+        query_content,
+        args.model,
+        args.key,
+        args.max_tokens,
+        args.temperature
+    )
+    
+    # 处理--output-dir功能
+    if result['success'] and args.output_dir:
+        try:
+            from pathlib import Path
+            import datetime
+            
+            output_path = Path(args.output_dir)
+            output_path.mkdir(parents=True, exist_ok=True)
+            
+            # 生成文件名：openrouter_YYYYMMDD_HHMMSS.txt
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_file = output_path / f"openrouter_{timestamp}.txt"
+            
+            # 写入回复内容和元数据
+            with open(output_file, 'w', encoding='utf-8') as f:
+                f.write(f"Query: {query_content}\n")
+                f.write(f"Model: {result.get('model', 'unknown')}\n")
+                f.write(f"Timestamp: {datetime.datetime.now().isoformat()}\n")
+                f.write(f"Cost: ${result.get('cost', 0):.6f}\n")
+                f.write(f"Tokens: {result.get('usage', {}).get('total_tokens', 0)}\n")
+                f.write("-" * 50 + "\n\n")
+                f.write(result['content'])
+            
+            result['output_file'] = str(output_file)
+            print(f"💾 回复已保存到: {output_file}", file=sys.stderr)
+            
+        except Exception as e:
+            print(f"⚠️  保存到输出目录失败: {e}", file=sys.stderr)
+    
+    if is_run_environment():
+        # 在RUN环境下输出JSON格式
+        if 'RUN_DATA_FILE' in os.environ:
+            with open(os.environ['RUN_DATA_FILE'], 'w', encoding='utf-8') as f:
+                json.dump(result, f, ensure_ascii=False, indent=2)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+    else:
+        # 在普通环境下输出格式化结果
+        if result['success']:
+            print(result['content'])
         else:
-            # 在普通环境下输出格式化结果
-            if result['success']:
-                print(result['content'])
-            else:
-                print(f"❌ 错误: {result['error']}", file=sys.stderr)
-                sys.exit(1)
+            print(f"❌ 错误: {result['error']}", file=sys.stderr)
+            sys.exit(1)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,16 @@
+{
+  "title": "Surface reconstruction from 3d gaussian splatting via local structural hints",
+  "authors": [
+    "Q Wu",
+    "J Zheng",
+    "J Cai - European Conference on Computer Vision",
+    "2024"
+  ],
+  "abstract": "… propose to jointly learn a neural implicit network to mimic and … , 3DGS represents the scene \nas tons of Gaussian primitives. Our primary goal is to reconstruct the scene geometry from 3D …",
+  "url": "https://link.springer.com/chapter/10.1007/978-3-031-72627-9_25",
+  "pdf_url": "",
+  "publication_date": "",
+  "venue": "Springer",
+  "citation_count": null,
+  "source": "google_scholar"
+}

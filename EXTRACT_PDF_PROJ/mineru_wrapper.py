@@ -653,7 +653,7 @@ class MinerUWrapper:
                 cwd=str(self.mineru_path),
                 capture_output=True,
                 text=True,
-                timeout=300,  # 5 minutes timeout
+                timeout=86400, # 1 day timeout (dummy),  # 5 minutes timeout
                 env=env
             )
             
@@ -1902,7 +1902,7 @@ Formula recognition is currently unavailable.
     def _load_hash_mapping(self) -> dict:
         """Load global hash to type mapping."""
         try:
-            mapping_file = Path(__file__).parent.parent / "hash_type_mapping.json"
+            mapping_file = Path(__file__) / "hash_type_mapping.json"
             if mapping_file.exists():
                 with open(mapping_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
@@ -1915,7 +1915,7 @@ Formula recognition is currently unavailable.
     def _save_hash_mapping(self, mappings: dict):
         """Save global hash to type mapping."""
         try:
-            mapping_file = Path(__file__).parent.parent / "hash_type_mapping.json"
+            mapping_file = Path(__file__) / "hash_type_mapping.json"
             
             # Load existing data or create new
             if mapping_file.exists():

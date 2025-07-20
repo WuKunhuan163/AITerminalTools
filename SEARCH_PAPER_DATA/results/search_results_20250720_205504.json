@@ -1,0 +1,70 @@
+{
+  "success": true,
+  "query": "3D Gaussian Splatting, mesh reconstruction",
+  "max_results": 3,
+  "total_papers_found": 3,
+  "source_results": {
+    "arxiv": 3,
+    "google_scholar": 3,
+    "semantic_scholar": 3
+  },
+  "papers": [
+    {
+      "title": "$π^3$: Scalable Permutation-Equivariant Visual Geometry Learning",
+      "authors": [
+        "Yifan Wang",
+        "Jianjun Zhou",
+        "Haoyi Zhu",
+        "Wenzheng Chang",
+        "Yang Zhou",
+        "Zizun Li",
+        "Junyi Chen",
+        "Jiangmiao Pang",
+        "Chunhua Shen",
+        "Tong He"
+      ],
+      "abstract": "We introduce $\\pi^3$, a feed-forward neural network that offers a novel\napproach to visual geometry reconstruction, breaking the reliance on a\nconventional fixed reference view. Previous methods often anchor their\nreconstructions to a designated viewpoint, an inductive bias that can lead to\ninstability and failures if the reference is suboptimal. In contrast, $\\pi^3$\nemploys a fully permutation-equivariant architecture to predict\naffine-invariant camera poses and scale-invariant local point maps without any\nreference frames. This design makes our model inherently robust to input\nordering and highly scalable. These advantages enable our simple and bias-free\napproach to achieve state-of-the-art performance on a wide range of tasks,\nincluding camera pose estimation, monocular/video depth estimation, and dense\npoint map reconstruction. Code and models are publicly available.",
+      "url": "http://arxiv.org/abs/2507.13347v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13347v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    },
+    {
+      "title": "AutoPartGen: Autogressive 3D Part Generation and Discovery",
+      "authors": [
+        "Minghao Chen",
+        "Jianyuan Wang",
+        "Roman Shapovalov",
+        "Tom Monnier",
+        "Hyunyoung Jung",
+        "Dilin Wang",
+        "Rakesh Ranjan",
+        "Iro Laina",
+        "Andrea Vedaldi"
+      ],
+      "abstract": "We introduce AutoPartGen, a model that generates objects composed of 3D parts\nin an autoregressive manner. This model can take as input an image of an\nobject, 2D masks of the object's parts, or an existing 3D object, and generate\na corresponding compositional 3D reconstruction. Our approach builds upon\n3DShape2VecSet, a recent latent 3D representation with powerful geometric\nexpressiveness. We observe that this latent space exhibits strong compositional\nproperties, making it particularly well-suited for part-based generation tasks.\nSpecifically, AutoPartGen generates object parts autoregressively, predicting\none part at a time while conditioning on previously generated parts and\nadditional inputs, such as 2D images, masks, or 3D objects. This process\ncontinues until the model decides that all parts have been generated, thus\ndetermining automatically the type and number of parts. The resulting parts can\nbe seamlessly assembled into coherent objects or scenes without requiring\nadditional optimization. We evaluate both the overall 3D generation\ncapabilities and the part-level generation quality of AutoPartGen,\ndemonstrating that it achieves state-of-the-art performance in 3D part\ngeneration.",
+      "url": "http://arxiv.org/abs/2507.13346v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13346v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    },
+    {
+      "title": "$\\texttt{raccoon}$: A Python package for removing wiggle artifacts in\n  the JWST NIRSpec integral field spectroscopy",
+      "authors": [
+        "Anowar J. Shajib"
+      ],
+      "abstract": "$\\texttt{raccoon}$ is a Python package for removing resampling noise -\ncommonly referred to as \"wiggles'' - from spaxel-level spectra in datacubes\nobtained from the JWST Near Infrared Spectrograph's (NIRSpec) integral field\nspectroscopy (IFS) mode. These wiggles arise as artifacts during resampling of\nthe 2D raw data into 3D datacubes, due to the point spread function (PSF) being\nundersampled. The standard JWST data reduction pipeline does not correct for\nthis noise. The wiggle artifacts can significantly degrade the scientific\nusability of the data, particularly at the spaxel level, undermining the\nexquisite spatial resolution of NIRSpec. $\\texttt{raccoon}$ provides an\nempirical correction by modeling and removing these artifacts, thereby\nrestoring the fidelity of the extracted spectra. $\\texttt{raccoon}$\nforward-models the wiggles as a chirp function impacting one or more template\nspectra that are directly fit to the original data across the entire wavelength\nrange. The best-fit wiggle model is then used to clean the data while\npropagating the associated uncertainties.",
+      "url": "http://arxiv.org/abs/2507.13341v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13341v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    }
+  ],
+  "timestamp": "2025-07-20T20:55:04.542661"
+}

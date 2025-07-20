@@ -85,7 +85,7 @@ UNIMERNET formula.png --force
 - `--batch`: Process multiple images
 - `--no-cache`: Disable cache system
 - `--stats`: Show cache statistics
-- `--output`: Output file for results
+- `--output`: Specify a file to save the result
 - `--json`: Output in JSON format
 - `--check`: Check if UnimerNet is available
 

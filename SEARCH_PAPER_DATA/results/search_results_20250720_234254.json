@@ -1,0 +1,35 @@
+{
+  "success": true,
+  "query": "test",
+  "max_results": 1,
+  "total_papers_found": 1,
+  "source_results": {
+    "arxiv": 1,
+    "google_scholar": 1,
+    "semantic_scholar": 0
+  },
+  "papers": [
+    {
+      "title": "Imbalance in Balance: Online Concept Balancing in Generation Models",
+      "authors": [
+        "Yukai Shi",
+        "Jiarong Ou",
+        "Rui Chen",
+        "Haotian Yang",
+        "Jiahao Wang",
+        "Xin Tao",
+        "Pengfei Wan",
+        "Di Zhang",
+        "Kun Gai"
+      ],
+      "abstract": "In visual generation tasks, the responses and combinations of complex\nconcepts often lack stability and are error-prone, which remains an\nunder-explored area. In this paper, we attempt to explore the causal factors\nfor poor concept responses through elaborately designed experiments. We also\ndesign a concept-wise equalization loss function (IMBA loss) to address this\nissue. Our proposed method is online, eliminating the need for offline dataset\nprocessing, and requires minimal code changes. In our newly proposed complex\nconcept benchmark Inert-CompBench and two other public test sets, our method\nsignificantly enhances the concept response capability of baseline models and\nyields highly competitive results with only a few codes.",
+      "url": "http://arxiv.org/abs/2507.13345v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13345v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    }
+  ],
+  "timestamp": "2025-07-20T23:42:54.042105"
+}

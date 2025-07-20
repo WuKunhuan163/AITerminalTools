@@ -13,6 +13,10 @@ import hashlib
 import subprocess
 from pathlib import Path
 
+# 加载环境变量
+from dotenv import load_dotenv
+load_dotenv()
+
 def generate_run_identifier(*args):
     """生成一个基于时间戳+短hash的唯一标识符"""
     cmd_string = ' '.join(str(arg) for arg in args)
@@ -41,6 +45,23 @@ def generate_output_file(identifier):
     output_dir = script_dir / "RUN_DATA"
     output_dir.mkdir(exist_ok=True)
     return output_dir / f"run_{identifier}.json"
+
+def get_output_file_path(identifier):
+    """获取输出文件路径（别名函数，用于测试兼容性）"""
+    return str(generate_output_file(identifier))
+
+def create_json_output(success=True, message="", command="", output="", error="", run_identifier=""):
+    """创建标准的JSON输出格式"""
+    import datetime
+    return {
+        'success': success,
+        'message': message,
+        'command': command,
+        'output': output,
+        'error': error,
+        'run_identifier': run_identifier,
+        'timestamp': datetime.datetime.now().isoformat()
+    }
 
 def write_json_output(data, output_file):
     """写入JSON数据到输出文件"""
@@ -78,9 +99,8 @@ def wrap_command(command, *args):
     # 设置环境变量
     env = os.environ.copy()
     env[f'RUN_IDENTIFIER_{run_identifier}'] = 'True'
-    env['RUN_DATA_FILE'] = str(output_file)
-    env['RUN_COMMAND'] = command
-    env['RUN_ARGS'] = ' '.join(args)
+    env[f'RUN_DATA_FILE_{run_identifier}'] = str(output_file)
+    env['RUN_DATA_FILE'] = str(output_file)  # 保持向后兼容
     
     try:
         # 执行命令，传递identifier作为第一个参数
@@ -164,6 +184,33 @@ def wrap_command(command, *args):
         pass  # 忽略清除失败
     
     return str(output_file), exit_code
+
+def parse_arguments(args_list):
+    """解析命令行参数"""
+    show_output = False
+    args = args_list[:]
+    
+    # 检查 --help 参数
+    if args and args[0] in ['--help', '-h']:
+        return {'help': True, 'show': False, 'command': None, 'args': []}
+    
+    # 解析 --show 参数
+    if args and args[0] == '--show':
+        show_output = True
+        args = args[1:]
+    
+    if not args:
+        return {'help': False, 'show': show_output, 'command': None, 'args': []}
+    
+    command = args[0]
+    command_args = args[1:]
+    
+    return {
+        'help': False,
+        'show': show_output,
+        'command': command,
+        'args': command_args
+    }
 
 def show_usage():
     """显示使用说明"""

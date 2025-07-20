@@ -1,0 +1,17 @@
+{
+  "title": "Direct learning of mesh and appearance via 3d gaussian splatting",
+  "authors": [
+    "A Lin",
+    "Y Xiang",
+    "P Kennedy",
+    "J Li - arXiv preprint arXiv:2405.06945",
+    "2024"
+  ],
+  "abstract": "… Geometry reconstruction can benefit from incorporating differentiable appearance models, \nsuch as Neural Radiance Fields and 3D Gaussian Splatting (3DGS). … geometry as an implicit …",
+  "url": "https://arxiv.org/abs/2405.06945",
+  "pdf_url": "",
+  "publication_date": "",
+  "venue": "arxiv.org",
+  "citation_count": null,
+  "source": "google_scholar"
+}

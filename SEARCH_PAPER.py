@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 SEARCH_PAPER.py - Enhanced Academic Paper Search Tool
-Supports interactive mode and multi-platform search (arXiv, Google Scholar, Semantic Scholar)
+Supports interactive mode and multi-platform search (arXiv, Google Scholar)
 Python version with RUN environment detection
 """
 
@@ -19,55 +19,52 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from datetime import datetime
 
+# 加载环境变量
+from dotenv import load_dotenv
+load_dotenv()
 
+def is_run_environment(command_identifier=None):
+    """Check if running in RUN environment by checking environment variables"""
+    if command_identifier:
+        return os.environ.get(f'RUN_IDENTIFIER_{command_identifier}') == 'True'
+    return False
 
-def get_run_context():
-    """获取 RUN 执行上下文信息"""
-    run_identifier = os.environ.get('RUN_IDENTIFIER')
-    output_file = os.environ.get('RUN_DATA_FILE')
-    
-    if run_identifier and output_file:
-        return {
-            'in_run_context': True,
-            'identifier': run_identifier,
-            'output_file': output_file
-        }
-    else:
-        return {
-            'in_run_context': False,
-            'identifier': None,
-            'output_file': None
-        }
-
-def write_to_json_output(data, run_context):
+def write_to_json_output(data, command_identifier=None):
     """将结果写入到指定的 JSON 输出文件中"""
-    if not run_context['in_run_context'] or not run_context['output_file']:
+    if not is_run_environment(command_identifier):
+        return False
+    
+    # Get the specific output file for this command identifier
+    if command_identifier:
+        output_file = os.environ.get(f'RUN_DATA_FILE_{command_identifier}')
+    else:
+        output_file = os.environ.get('RUN_DATA_FILE')
+    
+    if not output_file:
         return False
     
     try:
         # 确保输出目录存在
-        output_path = Path(run_context['output_file'])
+        output_path = Path(output_file)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # 不再添加冗余的RUN相关信息
-        
-        with open(run_context['output_file'], 'w', encoding='utf-8') as f:
+        with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
         return True
     except Exception as e:
         print(f"Error writing to JSON output file: {e}")
         return False
 
-def get_interactive_query(run_context):
+def get_interactive_query(command_identifier=None):
     """获取交互式查询输入"""
-    if run_context['in_run_context']:
+    if is_run_environment(command_identifier):
         # 在RUN环境中，返回错误
         error_data = {
             "success": False,
             "error": "Interactive mode not supported in RUN environment. Please provide a query.",
             "suggestion": "Usage: SEARCH_PAPER 'your query here' --max-results 10"
         }
-        write_to_json_output(error_data, run_context)
+        write_to_json_output(error_data, command_identifier)
         return None
     
     print("=== Academic Paper Search Tool ===", file=sys.stderr)
@@ -80,7 +77,7 @@ def get_interactive_query(run_context):
             return None
         if not query:
             print("Empty query. Please try again.", file=sys.stderr)
-            return get_interactive_query(run_context)
+            return get_interactive_query(command_identifier)
         return query
     except (KeyboardInterrupt, EOFError):
         print("\nSearch cancelled.", file=sys.stderr)
@@ -94,7 +91,7 @@ class MultiPlatformPaperSearcher:
         self.session.headers.update({
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         })
-        self.output_dir = Path.cwd() / "SEARCH_PAPER_DATA"
+        self.output_dir = Path(__file__).parent / "SEARCH_PAPER_DATA"
         self.results_dir = self.output_dir / "results"
         self.papers_dir = self.output_dir / "papers"
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -114,7 +111,7 @@ class MultiPlatformPaperSearcher:
             搜索结果字典
         """
         if sources is None:
-            sources = ['arxiv', 'google_scholar', 'semantic_scholar']
+            sources = ['arxiv', 'google_scholar']
         
         all_papers = []
         source_results = {}
@@ -126,8 +123,6 @@ class MultiPlatformPaperSearcher:
                     papers = self._search_arxiv(query, max_results)
                 elif source == 'google_scholar':
                     papers = self._search_google_scholar(query, max_results)
-                elif source == 'semantic_scholar':
-                    papers = self._search_semantic_scholar(query, max_results)
                 else:
                     continue
                 
@@ -170,7 +165,7 @@ class MultiPlatformPaperSearcher:
             # 使用arXiv API
             api_url = f"http://export.arxiv.org/api/query?search_query=all:{query}&start=0&max_results={max_results}&sortBy=submittedDate&sortOrder=descending"
             
-            response = self.session.get(api_url, timeout=10)
+            response = self.session.get(api_url, timeout=30)
             response.raise_for_status()
             
             # 解析XML响应
@@ -204,7 +199,7 @@ class MultiPlatformPaperSearcher:
             # 使用Google Scholar搜索URL
             search_url = f"https://scholar.google.com/scholar?q={query}&hl=en&num={max_results}"
             
-            response = self.session.get(search_url, timeout=10)
+            response = self.session.get(search_url, timeout=30)
             response.raise_for_status()
             
             soup = BeautifulSoup(response.content, 'html.parser')
@@ -225,30 +220,7 @@ class MultiPlatformPaperSearcher:
         
         return papers
     
-    def _search_semantic_scholar(self, query: str, max_results: int) -> List[Dict[str, Any]]:
-        """搜索Semantic Scholar"""
-        papers = []
-        
-        try:
-            api_url = f"https://api.semanticscholar.org/graph/v1/paper/search?query={query}&limit={max_results}&fields=title,authors,abstract,url,citationCount,publicationDate,venue"
-            
-            response = self.session.get(api_url, timeout=10)
-            response.raise_for_status()
-            
-            data = response.json()
-            
-            for paper_data in data.get('data', []):
-                try:
-                    paper = self._parse_semantic_scholar_entry(paper_data)
-                    if paper:
-                        papers.append(paper)
-                except Exception:
-                    continue
-                    
-        except Exception as e:
-            print(f"Semantic Scholar search error: {e}", file=sys.stderr)
-        
-        return papers
+
     
     def _parse_arxiv_entry(self, entry, namespaces) -> Optional[Dict[str, Any]]:
         """解析arXiv条目"""
@@ -365,32 +337,7 @@ class MultiPlatformPaperSearcher:
             print(f"Error parsing Google Scholar entry: {e}", file=sys.stderr)
             return None
     
-    def _parse_semantic_scholar_entry(self, paper_data) -> Optional[Dict[str, Any]]:
-        """解析Semantic Scholar条目"""
-        try:
-            title = paper_data.get('title', '')
-            authors = [author.get('name', '') for author in paper_data.get('authors', [])]
-            abstract = paper_data.get('abstract', '')
-            url = paper_data.get('url', '')
-            citation_count = paper_data.get('citationCount')
-            pub_date = paper_data.get('publicationDate', '')
-            venue = paper_data.get('venue', '')
-            
-            return {
-                "title": title,
-                "authors": authors,
-                "abstract": abstract,
-                "url": url,
-                "pdf_url": "",
-                "publication_date": pub_date,
-                "venue": venue,
-                "citation_count": citation_count,
-                "source": "semantic_scholar"
-            }
-            
-        except Exception as e:
-            print(f"Error parsing Semantic Scholar entry: {e}", file=sys.stderr)
-            return None
+
     
     def _remove_duplicates(self, papers: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """去重"""
@@ -423,9 +370,9 @@ class MultiPlatformPaperSearcher:
                 json.dump(paper, f, ensure_ascii=False, indent=2)
             print(f"Paper saved to {paper_file}", file=sys.stderr)
 
-def format_output(result: Dict[str, Any], run_context):
+def format_output(result: Dict[str, Any], command_identifier=None):
     """格式化输出"""
-    if run_context['in_run_context']:
+    if is_run_environment(command_identifier):
         # 在RUN环境中，直接输出JSON到stdout
         # write_to_json_output(result, run_context)
         print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -472,27 +419,36 @@ Arguments:
 
 Options:
   --max-results N      Maximum number of results (default: 10)
-  --sources LIST       Comma-separated list of sources: arxiv,google_scholar,semantic_scholar
+  --sources LIST       Comma-separated list of sources: arxiv,google_scholar
   --help, -h           Show this help message
 
 Examples:
   SEARCH_PAPER                                    # Interactive mode
   SEARCH_PAPER "machine learning"                 # Search all sources
   SEARCH_PAPER "deep learning" --max-results 20  # Limit results
-  SEARCH_PAPER "NLP" --sources arxiv,semantic_scholar  # Specific sources
+  SEARCH_PAPER "NLP" --sources arxiv,google_scholar  # Specific sources
   SEARCH_PAPER --help                             # Show help"""
     
     print(help_text)
 
 def main():
     """主函数"""
+    # 获取command_identifier
+    args_list = sys.argv[1:]
+    command_identifier = None
+    
+    # 检查是否被RUN调用（第一个参数是command_identifier）
+    if args_list and is_run_environment(args_list[0]):
+        command_identifier = args_list[0]
+        sys.argv = [sys.argv[0]] + args_list[1:]  # 移除command_identifier，保留实际参数
+    
     parser = argparse.ArgumentParser(
         prog='SEARCH_PAPER',
         description="SEARCH_PAPER - Enhanced Academic Paper Search Tool"
     )
     parser.add_argument("query", nargs='?', default=None, help="Search query (if not provided, interactive mode will start)")
     parser.add_argument("--max-results", type=int, default=10, help="Maximum number of results")
-    parser.add_argument("--sources", type=str, help="Comma-separated list of sources: arxiv,google_scholar,semantic_scholar")
+    parser.add_argument("--sources", type=str, help="Comma-separated list of sources: arxiv,google_scholar")
     
     args = parser.parse_args()
     

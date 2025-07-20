@@ -1,0 +1,181 @@
+{
+  "success": true,
+  "query": "3D Gaussian Splatting, mesh reconstruction, 3D surface reconstruction, Gaussian Splatting geometry, 3D point cloud reconstruction",
+  "max_results": 10,
+  "total_papers_found": 10,
+  "source_results": {
+    "arxiv": 10,
+    "google_scholar": 10,
+    "semantic_scholar": 0
+  },
+  "papers": [
+    {
+      "title": "Challenges for describing unitary evolution in nontrivial geometries:\n  pictures and representations",
+      "authors": [
+        "Steven B. Giddings",
+        "Julie Perkins"
+      ],
+      "abstract": "Description of evolution between spatial slices in a general spacetime\nsuffers from a significant difficulty: the states on the slices, in a given\nbasis, are not related by a unitary transformation. This problem, which occurs\nin spacetime dimensions above two, is directly related to the infinite number\nof inequivalent representations of the canonical commutators, and in particular\nwill arise for interacting theories in time-dependent spacetimes. We connect\ndifferent facets of this issue, and discuss its possible resolution. It is\ndirectly related to discussions of failure of a standard Schr\\\"odinger picture\nof evolution, and of evolution via \"many-fingered time.\" One requires a\ncondition specifying a physical unitary equivalence class of states; in general\nthis equivalence class evolves with time, and an important question is how it\nis determined. One approach to this in free theories is by imposing a Hadamard\ncondition on the two point function. We explore a different approach, which\nalso may be helpful for interacting theories, analyzing the structure of the\nstate in a local limit, and relate these approaches. We also elucidate the\nnon-Hadamard behavior of unphysical vacua, and discuss concrete examples of\nthese approaches involving cosmological and black hole evolution. The issues\nare extended in the context of quantum dynamical geometry, and raise important\nquestions for the proper description of the wavefunction of the universe and\nfor the role of the Wheeler-DeWitt equation.",
+      "url": "http://arxiv.org/abs/2507.13351v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13351v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    },
+    {
+      "title": "$π^3$: Scalable Permutation-Equivariant Visual Geometry Learning",
+      "authors": [
+        "Yifan Wang",
+        "Jianjun Zhou",
+        "Haoyi Zhu",
+        "Wenzheng Chang",
+        "Yang Zhou",
+        "Zizun Li",
+        "Junyi Chen",
+        "Jiangmiao Pang",
+        "Chunhua Shen",
+        "Tong He"
+      ],
+      "abstract": "We introduce $\\pi^3$, a feed-forward neural network that offers a novel\napproach to visual geometry reconstruction, breaking the reliance on a\nconventional fixed reference view. Previous methods often anchor their\nreconstructions to a designated viewpoint, an inductive bias that can lead to\ninstability and failures if the reference is suboptimal. In contrast, $\\pi^3$\nemploys a fully permutation-equivariant architecture to predict\naffine-invariant camera poses and scale-invariant local point maps without any\nreference frames. This design makes our model inherently robust to input\nordering and highly scalable. These advantages enable our simple and bias-free\napproach to achieve state-of-the-art performance on a wide range of tasks,\nincluding camera pose estimation, monocular/video depth estimation, and dense\npoint map reconstruction. Code and models are publicly available.",
+      "url": "http://arxiv.org/abs/2507.13347v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13347v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    },
+    {
+      "title": "AutoPartGen: Autogressive 3D Part Generation and Discovery",
+      "authors": [
+        "Minghao Chen",
+        "Jianyuan Wang",
+        "Roman Shapovalov",
+        "Tom Monnier",
+        "Hyunyoung Jung",
+        "Dilin Wang",
+        "Rakesh Ranjan",
+        "Iro Laina",
+        "Andrea Vedaldi"
+      ],
+      "abstract": "We introduce AutoPartGen, a model that generates objects composed of 3D parts\nin an autoregressive manner. This model can take as input an image of an\nobject, 2D masks of the object's parts, or an existing 3D object, and generate\na corresponding compositional 3D reconstruction. Our approach builds upon\n3DShape2VecSet, a recent latent 3D representation with powerful geometric\nexpressiveness. We observe that this latent space exhibits strong compositional\nproperties, making it particularly well-suited for part-based generation tasks.\nSpecifically, AutoPartGen generates object parts autoregressively, predicting\none part at a time while conditioning on previously generated parts and\nadditional inputs, such as 2D images, masks, or 3D objects. This process\ncontinues until the model decides that all parts have been generated, thus\ndetermining automatically the type and number of parts. The resulting parts can\nbe seamlessly assembled into coherent objects or scenes without requiring\nadditional optimization. We evaluate both the overall 3D generation\ncapabilities and the part-level generation quality of AutoPartGen,\ndemonstrating that it achieves state-of-the-art performance in 3D part\ngeneration.",
+      "url": "http://arxiv.org/abs/2507.13346v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13346v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    },
+    {
+      "title": "$\\texttt{raccoon}$: A Python package for removing wiggle artifacts in\n  the JWST NIRSpec integral field spectroscopy",
+      "authors": [
+        "Anowar J. Shajib"
+      ],
+      "abstract": "$\\texttt{raccoon}$ is a Python package for removing resampling noise -\ncommonly referred to as \"wiggles'' - from spaxel-level spectra in datacubes\nobtained from the JWST Near Infrared Spectrograph's (NIRSpec) integral field\nspectroscopy (IFS) mode. These wiggles arise as artifacts during resampling of\nthe 2D raw data into 3D datacubes, due to the point spread function (PSF) being\nundersampled. The standard JWST data reduction pipeline does not correct for\nthis noise. The wiggle artifacts can significantly degrade the scientific\nusability of the data, particularly at the spaxel level, undermining the\nexquisite spatial resolution of NIRSpec. $\\texttt{raccoon}$ provides an\nempirical correction by modeling and removing these artifacts, thereby\nrestoring the fidelity of the extracted spectra. $\\texttt{raccoon}$\nforward-models the wiggles as a chirp function impacting one or more template\nspectra that are directly fit to the original data across the entire wavelength\nrange. The best-fit wiggle model is then used to clean the data while\npropagating the associated uncertainties.",
+      "url": "http://arxiv.org/abs/2507.13341v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13341v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    },
+    {
+      "title": "SpectraLift: Physics-Guided Spectral-Inversion Network for\n  Self-Supervised Hyperspectral Image Super-Resolution",
+      "authors": [
+        "Ritik Shah",
+        "Marco F. Duarte"
+      ],
+      "abstract": "High-spatial-resolution hyperspectral images (HSI) are essential for\napplications such as remote sensing and medical imaging, yet HSI sensors\ninherently trade spatial detail for spectral richness. Fusing\nhigh-spatial-resolution multispectral images (HR-MSI) with\nlow-spatial-resolution hyperspectral images (LR-HSI) is a promising route to\nrecover fine spatial structures without sacrificing spectral fidelity. Most\nstate-of-the-art methods for HSI-MSI fusion demand point spread function (PSF)\ncalibration or ground truth high resolution HSI (HR-HSI), both of which are\nimpractical to obtain in real world settings. We present SpectraLift, a fully\nself-supervised framework that fuses LR-HSI and HR-MSI inputs using only the\nMSI's Spectral Response Function (SRF). SpectraLift trains a lightweight\nper-pixel multi-layer perceptron (MLP) network using ($i$)~a synthetic\nlow-spatial-resolution multispectral image (LR-MSI) obtained by applying the\nSRF to the LR-HSI as input, ($ii$)~the LR-HSI as the output, and ($iii$)~an\n$\\ell_1$ spectral reconstruction loss between the estimated and true LR-HSI as\nthe optimization objective. At inference, SpectraLift uses the trained network\nto map the HR-MSI pixel-wise into a HR-HSI estimate. SpectraLift converges in\nminutes, is agnostic to spatial blur and resolution, and outperforms\nstate-of-the-art methods on PSNR, SAM, SSIM, and RMSE benchmarks.",
+      "url": "http://arxiv.org/abs/2507.13339v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13339v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    },
+    {
+      "title": "Training Transformers with Enforced Lipschitz Constants",
+      "authors": [
+        "Laker Newhouse",
+        "R. Preston Hess",
+        "Franz Cesista",
+        "Andrii Zahorodnii",
+        "Jeremy Bernstein",
+        "Phillip Isola"
+      ],
+      "abstract": "Neural networks are often highly sensitive to input and weight perturbations.\nThis sensitivity has been linked to pathologies such as vulnerability to\nadversarial examples, divergent training, and overfitting. To combat these\nproblems, past research has looked at building neural networks entirely from\nLipschitz components. However, these techniques have not matured to the point\nwhere researchers have trained a modern architecture such as a transformer with\na Lipschitz certificate enforced beyond initialization. To explore this gap, we\nbegin by developing and benchmarking novel, computationally-efficient tools for\nmaintaining norm-constrained weight matrices. Applying these tools, we are able\nto train transformer models with Lipschitz bounds enforced throughout training.\nWe find that optimizer dynamics matter: switching from AdamW to Muon improves\nstandard methods -- weight decay and spectral normalization -- allowing models\nto reach equal performance with a lower Lipschitz bound. Inspired by Muon's\nupdate having a fixed spectral norm, we co-design a weight constraint method\nthat improves the Lipschitz vs. performance tradeoff on MLPs and 2M parameter\ntransformers. Our 2-Lipschitz transformer on Shakespeare text reaches\nvalidation accuracy 60%. Scaling to 145M parameters, our 10-Lipschitz\ntransformer reaches 21% accuracy on internet text. However, to match the\nNanoGPT baseline validation accuracy of 39.4%, our Lipschitz upper bound\nincreases to 10^264. Nonetheless, our Lipschitz transformers train without\nstability measures such as layer norm, QK norm, and logit tanh softcapping.",
+      "url": "http://arxiv.org/abs/2507.13338v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13338v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    },
+    {
+      "title": "N Bugs on a Circle",
+      "authors": [
+        "Josh Briley",
+        "Bryan Quaife"
+      ],
+      "abstract": "We describe and analyze a generalization of the classic ``Four Bugs on a\nSquare'' cyclic pursuit problem. Instead of allowing the bugs to spiral towards\none another, we constrain $N$ bugs to the perimeter of the unit circle.\nDepending on their configuration, each bug moves either clockwise or\ncounterclockwise with a constant angular speed, or remains stationary. Unlike\nthe original problem where bugs always coalesce, this generalization produces\nthree possible steady states: all bugs coalescing to a single point, clusters\nof bugs located at two antipodal points, or bugs entering a stable infinite\nchase cycle where they never meet. We analyze the stability of these steady\nstates and calculate the probability that randomly initialized bugs reach each\nstate. For $N \\leq 4$, we derive exact analytical expressions for these\nprobabilities. For larger values, we employ Monte Carlo simulations to estimate\nthe probability of coalescing, finding it approximately follows an inverse\nsquare root relationship with the number of bugs. This generalization reveals\nrich dynamical behaviors that are absent in the classic problem. Our analysis\nprovides insight into how restricting the bugs to the circle's perimeter\nfundamentally alters the long-term behavior of pursuing agents compared to\nunrestricted pursuit problems.",
+      "url": "http://arxiv.org/abs/2507.13333v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13333v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    },
+    {
+      "title": "Where is the Supervirial Gas? III. Insights from X-ray Shadow\n  Observations and a revised Model for the Soft Diffuse X-ray Background",
+      "authors": [
+        "Anjali Gupta",
+        "Smita Mathur",
+        "Joshua Kingsbury",
+        "Esma Korkmaz",
+        "Sanskriti Das",
+        "Yair Krongold",
+        "Manami Roy",
+        "Armando Lara-DI"
+      ],
+      "abstract": "Shadow observations provide a powerful tool to separate foreground components\nof the soft diffuse X-ray background (SDXB) from the background components.\nSuch observations have now established that the ``local'' foreground is made of\nthe solar wind charge exchange and the local bubble, and the background\nemission is from the extended circumgalactic medium (CGM) of the Milky Way and\nfrom the unresolved extragalactic sources. New data and careful analyses of the\nSDXB led to two new discoveries in recent years: (1) excess emission near 0.5\nkeV that is identified as the NVII emission line, and (2) excess emission near\n0.8-1.0 keV that is identified with an additional, super-virial temperature hot\nthermal component of the CGM. The goal of this paper is to use Suzaku shadow\nobservations along six sightlines to determine whether either of these\ncomponents is from the ``local'' sources. We eliminate the ambiguity regarding\nthe origin of NVII emission, ruling out the local origin. We confirm that the\nMilky Way CGM contains nitrogen-rich plasma, with a super-solar average (N/O)\nof 2.6+-0.5, and suggest that nitrogen-enhanced plasma is widespread throughout\nthe CGM. We find super-solar Ne abundance in two sighlines, also from the CGM.\nSimilarly, we rule out the local origin of the hot thermal component and\nconfirm that it is present beyond the shadowing clouds. Furthermore, we provide\na revised model of the soft diffuse X-ray background, which is crucial for\nextragalactic astronomy.",
+      "url": "http://arxiv.org/abs/2507.13331v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13331v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    },
+    {
+      "title": "A hierarchy of blood vessel models, Part II: 3D-3D to 3D-1D and 1D",
+      "authors": [
+        "Laurel Ohm",
+        "Sarah Strikwerda"
+      ],
+      "abstract": "We propose and analyze a hierarchy of three models of blood perfusion through\na tissue surrounding a thin arteriole or venule. Our goal is to rigorously link\n3D-3D Darcy--Stokes, 3D-1D Darcy--Poiseuille, and 1D Green's function methods\ncommonly used to model this process. Here in Part II, we consider the most\ndetailed level, a 3D-3D Darcy-Stokes system coupled across the permeable vessel\nsurface by mass conservation and pressure/stress balance conditions. We derive\na convergence result between the 3D-3D model and both the 3D-1D\nDarcy--Poiseuille model and 1D Green's function model proposed in Part I [Ohm\n\\& Strikwerda, arXiv preprint July 2025] at a rate proportional to\n$\\epsilon^{1/6}|\\log\\epsilon|$, where $\\epsilon$ is the maximum vessel radius.\nThe rate is limited by the inclusion of a degenerate endpoint where the vessel\nradius vanishes, i.e. becomes indistinguishable from a capillary. Key to our\nproof are \\emph{a priori} estimates for the 1D integrodifferential model\nobtained in Part I.",
+      "url": "http://arxiv.org/abs/2507.13330v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13330v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    },
+    {
+      "title": "Testing halo models for constraining astrophysical feedback with\n  multi-probe modeling: I. 3D Power spectra and mass fractions",
+      "authors": [
+        "Pranjal R. S.",
+        "Shivam Pandey",
+        "Dhayaa Anbajagane",
+        "Elisabeth Krause",
+        "Klaus Dolag"
+      ],
+      "abstract": "Upcoming Stage-IV surveys will deliver measurements of distribution of matter\nwith unprecedented precision, demanding highly accurate theoretical models for\ncosmological parameter inference. A major source of modeling uncertainty lies\nin astrophysical processes associated with galaxy formation and evolution,\nwhich remain poorly understood. Probes such as the thermal and kinematic\nSunyaev-Zel'dovich effects, X-rays, and dispersion measure from fast radio\nbursts offer a promising avenue for mapping the distribution and thermal\nproperties of cosmic baryons. A unified analytical framework capable of jointly\nmodeling these observables is essential for fully harnessing the complementary\ninformation while mitigating probe-specific systematics. In this work, we\npresent a detailed assessment of existing analytical models, which differ in\ntheir assumptions and prescriptions for simultaneously describing the\ndistribution of matter and baryons in the universe. Using the Magneticum\nhydrodynamical simulation, we test these models by jointly analyzing the 3D\nauto- and cross-power spectra of the matter and baryonic fields that underpin\nthe above probes. We find that all models can reproduce the power spectra at\nsub-percent to few-percent accuracy, depending on the tracer combination and\nnumber of free parameters. Their ability to recover underlying halo properties,\nsuch as the evolution of gas abundance and thermodynamic profiles with halo\nmass, varies considerably. Our results suggest that these models require\nfurther refinement and testing for reliable interpretation of multi-wavelength\ndatasets.",
+      "url": "http://arxiv.org/abs/2507.13317v1",
+      "pdf_url": "http://arxiv.org/pdf/2507.13317v1.pdf",
+      "publication_date": "2025-07-17",
+      "venue": "arXiv preprint",
+      "citation_count": null,
+      "source": "arxiv"
+    }
+  ],
+  "timestamp": "2025-07-20T21:15:28.021143"
+}

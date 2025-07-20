@@ -1,0 +1,17 @@
+{
+  "title": "Testing halo models for constraining astrophysical feedback with\n  multi-probe modeling: I. 3D Power spectra and mass fractions",
+  "authors": [
+    "Pranjal R. S.",
+    "Shivam Pandey",
+    "Dhayaa Anbajagane",
+    "Elisabeth Krause",
+    "Klaus Dolag"
+  ],
+  "abstract": "Upcoming Stage-IV surveys will deliver measurements of distribution of matter\nwith unprecedented precision, demanding highly accurate theoretical models for\ncosmological parameter inference. A major source of modeling uncertainty lies\nin astrophysical processes associated with galaxy formation and evolution,\nwhich remain poorly understood. Probes such as the thermal and kinematic\nSunyaev-Zel'dovich effects, X-rays, and dispersion measure from fast radio\nbursts offer a promising avenue for mapping the distribution and thermal\nproperties of cosmic baryons. A unified analytical framework capable of jointly\nmodeling these observables is essential for fully harnessing the complementary\ninformation while mitigating probe-specific systematics. In this work, we\npresent a detailed assessment of existing analytical models, which differ in\ntheir assumptions and prescriptions for simultaneously describing the\ndistribution of matter and baryons in the universe. Using the Magneticum\nhydrodynamical simulation, we test these models by jointly analyzing the 3D\nauto- and cross-power spectra of the matter and baryonic fields that underpin\nthe above probes. We find that all models can reproduce the power spectra at\nsub-percent to few-percent accuracy, depending on the tracer combination and\nnumber of free parameters. Their ability to recover underlying halo properties,\nsuch as the evolution of gas abundance and thermodynamic profiles with halo\nmass, varies considerably. Our results suggest that these models require\nfurther refinement and testing for reliable interpretation of multi-wavelength\ndatasets.",
+  "url": "http://arxiv.org/abs/2507.13317v1",
+  "pdf_url": "http://arxiv.org/pdf/2507.13317v1.pdf",
+  "publication_date": "2025-07-17",
+  "venue": "arXiv preprint",
+  "citation_count": null,
+  "source": "arxiv"
+}

@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "message": "Download completed successfully",
+  "url": "https://httpbin.org/uuid",
+  "destination": "/private/tmp/final_test.json",
+  "size": 53,
+  "content_type": "application/json"
+}

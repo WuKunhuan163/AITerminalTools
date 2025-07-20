@@ -13,39 +13,36 @@ import re
 from pathlib import Path
 from typing import List, Optional
 
+# 加载环境变量
+from dotenv import load_dotenv
+load_dotenv()
 
+def is_run_environment(command_identifier=None):
+    """Check if running in RUN environment by checking environment variables"""
+    if command_identifier:
+        return os.environ.get(f'RUN_IDENTIFIER_{command_identifier}') == 'True'
+    return False
 
-def get_run_context():
-    """获取 RUN 执行上下文信息"""
-    run_identifier = os.environ.get('RUN_IDENTIFIER')
-    output_file = os.environ.get('RUN_DATA_FILE')
-    
-    if run_identifier and output_file:
-        return {
-            'in_run_context': True,
-            'identifier': run_identifier,
-            'output_file': output_file
-        }
-    else:
-        return {
-            'in_run_context': False,
-            'identifier': None,
-            'output_file': None
-        }
-
-def write_to_json_output(data, run_context):
+def write_to_json_output(data, command_identifier=None):
     """将结果写入到指定的 JSON 输出文件中"""
-    if not run_context['in_run_context'] or not run_context['output_file']:
+    if not is_run_environment(command_identifier):
+        return False
+    
+    # Get the specific output file for this command identifier
+    if command_identifier:
+        output_file = os.environ.get(f'RUN_DATA_FILE_{command_identifier}')
+    else:
+        output_file = os.environ.get('RUN_DATA_FILE')
+    
+    if not output_file:
         return False
     
     try:
         # 确保输出目录存在
-        output_path = Path(run_context['output_file'])
+        output_path = Path(output_file)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # 不再添加冗余的RUN相关信息
-        
-        with open(run_context['output_file'], 'w', encoding='utf-8') as f:
+        with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
         return True
     except Exception as e:
@@ -172,7 +169,7 @@ def add_alias_to_file(alias_name: str, alias_command: str, config_file: Path) ->
         print(f"Error adding alias to {config_file}: {e}")
         return False
 
-def create_alias(alias_name: str, alias_command: str, run_context) -> int:
+def create_alias(alias_name: str, alias_command: str, command_identifier=None) -> int:
     """创建别名"""
     
     # 验证别名名称
@@ -184,8 +181,8 @@ def create_alias(alias_name: str, alias_command: str, run_context) -> int:
             "alias_name": alias_name
         }
         
-        if run_context['in_run_context']:
-            write_to_json_output(error_data, run_context)
+        if is_run_environment(command_identifier):
+            write_to_json_output(error_data, command_identifier)
         else:
             print(f"❌ Error: {error_msg}")
         
@@ -218,7 +215,7 @@ def create_alias(alias_name: str, alias_command: str, run_context) -> int:
             })
     
     # 准备输出数据
-    if run_context['in_run_context']:
+    if is_run_environment(command_identifier):
         output_data = {
             "success": success_count > 0,
             "message": f"Alias '{alias_name}' created successfully" if success_count > 0 else "Failed to create alias",
@@ -228,7 +225,7 @@ def create_alias(alias_name: str, alias_command: str, run_context) -> int:
             "files_updated": success_count,
             "results": results
         }
-        write_to_json_output(output_data, run_context)
+        write_to_json_output(output_data, command_identifier)
     else:
         print(f"Creating alias: {alias_name} -> {alias_command}")
         print()
@@ -260,7 +257,7 @@ def create_alias(alias_name: str, alias_command: str, run_context) -> int:
     
     return 0 if success_count > 0 else 1
 
-def remove_alias_from_all_files(alias_name: str, run_context) -> int:
+def remove_alias_from_all_files(alias_name: str, command_identifier=None) -> int:
     """从所有配置文件中移除别名"""
     config_files = get_config_files()
     removed_count = 0
@@ -281,7 +278,7 @@ def remove_alias_from_all_files(alias_name: str, run_context) -> int:
                 "error": "Failed to remove alias"
             })
 
-    if run_context['in_run_context']:
+    if is_run_environment(command_identifier):
         output_data = {
             "success": removed_count > 0,
             "message": f"Alias '{alias_name}' removed successfully" if removed_count > 0 else "Failed to remove alias",
@@ -290,7 +287,7 @@ def remove_alias_from_all_files(alias_name: str, run_context) -> int:
             "files_removed": removed_count,
             "results": results
         }
-        write_to_json_output(output_data, run_context)
+        write_to_json_output(output_data, command_identifier)
     else:
         print(f"Removing alias: {alias_name}")
         print()
@@ -348,19 +345,22 @@ This tool will:
 
 def main():
     """主函数"""
-    # 获取执行上下文
-    run_context = get_run_context()
-    
-    # 解析命令行参数
+    # 获取执行上下文和command_identifier
     args = sys.argv[1:]
+    command_identifier = None
+    
+    # 检查是否被RUN调用（第一个参数是command_identifier）
+    if args and is_run_environment(args[0]):
+        command_identifier = args[0]
+        args = args[1:]  # 移除command_identifier，保留实际参数
     
     if len(args) == 0:
-        if run_context['in_run_context']:
+        if is_run_environment(command_identifier):
             error_data = {
                 "success": False,
                 "error": "No arguments provided. Usage: ALIAS <alias_name> <alias_command>"
             }
-            write_to_json_output(error_data, run_context)
+            write_to_json_output(error_data, command_identifier)
         else:
             print("❌ Error: No arguments provided")
             print("Usage: ALIAS <alias_name> <alias_command>")
@@ -368,13 +368,13 @@ def main():
         return 1
     
     if args[0] in ['--help', '-h']:
-        if run_context['in_run_context']:
+        if is_run_environment(command_identifier):
             help_data = {
                 "success": True,
                 "message": "Help information",
                 "help": "ALIAS - Permanent Shell Alias Creation Tool"
             }
-            write_to_json_output(help_data, run_context)
+            write_to_json_output(help_data, command_identifier)
         else:
             show_help()
         return 0
@@ -383,36 +383,36 @@ def main():
     if args[0] == '--remove':
         if len(args) != 2:
             error_msg = "Error: --remove requires exactly one argument: alias_name"
-            if run_context['in_run_context']:
+            if is_run_environment(command_identifier):
                 error_data = {"success": False, "error": error_msg}
-                write_to_json_output(error_data, run_context)
+                write_to_json_output(error_data, command_identifier)
             else:
                 print(f"❌ {error_msg}")
                 print("Usage: ALIAS --remove <alias_name>")
             return 1
         
         alias_name = args[1]
-        return remove_alias_from_all_files(alias_name, run_context)
+        return remove_alias_from_all_files(alias_name, command_identifier)
     
     # 处理更新配置文件
     if args[0] == '--update':
         if len(args) != 1:
             error_msg = "Error: --update does not take any arguments"
-            if run_context['in_run_context']:
+            if is_run_environment(command_identifier):
                 error_data = {"success": False, "error": error_msg}
-                write_to_json_output(error_data, run_context)
+                write_to_json_output(error_data, command_identifier)
             else:
                 print(f"❌ {error_msg}")
                 print("Usage: ALIAS --update")
             return 1
         
-        if run_context['in_run_context']:
+        if is_run_environment(command_identifier):
             success = update_shell_configs()
             output_data = {
                 "success": success,
                 "message": "Configuration files updated" if success else "Failed to update configuration files"
             }
-            write_to_json_output(output_data, run_context)
+            write_to_json_output(output_data, command_identifier)
             return 0 if success else 1
         else:
             print("Updating shell configuration files...")
@@ -421,9 +421,9 @@ def main():
     
     if len(args) != 2:
         error_msg = "Error: Exactly two arguments required: alias_name and alias_command"
-        if run_context['in_run_context']:
+        if is_run_environment(command_identifier):
             error_data = {"success": False, "error": error_msg}
-            write_to_json_output(error_data, run_context)
+            write_to_json_output(error_data, command_identifier)
         else:
             print(f"❌ {error_msg}")
             print("Usage: ALIAS <alias_name> <alias_command>")
@@ -433,7 +433,7 @@ def main():
     alias_name = args[0]
     alias_command = args[1]
     
-    return create_alias(alias_name, alias_command, run_context)
+    return create_alias(alias_name, alias_command, command_identifier)
 
 if __name__ == "__main__":
     sys.exit(main()) 

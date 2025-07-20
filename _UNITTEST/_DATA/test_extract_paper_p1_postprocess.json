@@ -1,0 +1,33 @@
+{
+  "pdf_file": "test_extract_paper_p1.pdf",
+  "created_at": "2025-07-21T01:14:31.504642",
+  "total_items": 1,
+  "counts": {
+    "images": 1,
+    "formulas": 0,
+    "tables": 0
+  },
+  "items": [
+    {
+      "id": "f4cd9a3ff84d91d075920ece838ca96f7a4344b466805a78f03ceb0b3ce11fb7",
+      "type": "image",
+      "page": 1,
+      "block_index": 2,
+      "image_path": "f4cd9a3ff84d91d075920ece838ca96f7a4344b466805a78f03ceb0b3ce11fb7.jpg",
+      "bbox": [
+        50,
+        244,
+        560,
+        426
+      ],
+      "processed": false,
+      "processor": "Google API"
+    }
+  ],
+  "processing_commands": {
+    "image_analysis": "EXTRACT_PDF_POST test_extract_paper_p1.pdf --type image",
+    "formula_recognition": "EXTRACT_PDF_POST test_extract_paper_p1.pdf --type formula",
+    "table_recognition": "EXTRACT_PDF_POST test_extract_paper_p1.pdf --type table",
+    "process_all": "EXTRACT_PDF_POST test_extract_paper_p1.pdf --type all"
+  }
+}

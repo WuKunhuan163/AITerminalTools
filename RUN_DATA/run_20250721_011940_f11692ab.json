@@ -1,0 +1,5 @@
+{
+  "success": true,
+  "message": "Command executed successfully",
+  "output": "usage: SEARCH_PAPER [-h] [--max-results MAX_RESULTS] [--sources SOURCES]\n                    [query]\n\nSEARCH_PAPER - Enhanced Academic Paper Search Tool\n\npositional arguments:\n  query                 Search query (if not provided, interactive mode will\n                        start)\n\noptional arguments:\n  -h, --help            show this help message and exit\n  --max-results MAX_RESULTS\n                        Maximum number of results\n  --sources SOURCES     Comma-separated list of sources: arxiv,google_scholar"
+}

@@ -1,0 +1,16 @@
+{
+  "title": "3d gaussian splatting for large-scale surface reconstruction from aerial images",
+  "authors": [
+    "YZ Wu",
+    "J Liu",
+    "S Ji - arXiv preprint arXiv:2409.00381",
+    "2024"
+  ],
+  "abstract": "… geometric consistency constraints to enhance the geometric … , 3DGS uses 3D Gaussian \nprimitives instead of the implicit … multiresolution 3D hash grids with neural surface rendering, …",
+  "url": "https://arxiv.org/abs/2409.00381",
+  "pdf_url": "",
+  "publication_date": "",
+  "venue": "arxiv.org",
+  "citation_count": null,
+  "source": "google_scholar"
+}

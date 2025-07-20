@@ -1,0 +1,14 @@
+{
+  "title": "N Bugs on a Circle",
+  "authors": [
+    "Josh Briley",
+    "Bryan Quaife"
+  ],
+  "abstract": "We describe and analyze a generalization of the classic ``Four Bugs on a\nSquare'' cyclic pursuit problem. Instead of allowing the bugs to spiral towards\none another, we constrain $N$ bugs to the perimeter of the unit circle.\nDepending on their configuration, each bug moves either clockwise or\ncounterclockwise with a constant angular speed, or remains stationary. Unlike\nthe original problem where bugs always coalesce, this generalization produces\nthree possible steady states: all bugs coalescing to a single point, clusters\nof bugs located at two antipodal points, or bugs entering a stable infinite\nchase cycle where they never meet. We analyze the stability of these steady\nstates and calculate the probability that randomly initialized bugs reach each\nstate. For $N \\leq 4$, we derive exact analytical expressions for these\nprobabilities. For larger values, we employ Monte Carlo simulations to estimate\nthe probability of coalescing, finding it approximately follows an inverse\nsquare root relationship with the number of bugs. This generalization reveals\nrich dynamical behaviors that are absent in the classic problem. Our analysis\nprovides insight into how restricting the bugs to the circle's perimeter\nfundamentally alters the long-term behavior of pursuing agents compared to\nunrestricted pursuit problems.",
+  "url": "http://arxiv.org/abs/2507.13333v1",
+  "pdf_url": "http://arxiv.org/pdf/2507.13333v1.pdf",
+  "publication_date": "2025-07-17",
+  "venue": "arXiv preprint",
+  "citation_count": null,
+  "source": "arxiv"
+}

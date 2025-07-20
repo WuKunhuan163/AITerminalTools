@@ -1,0 +1,13 @@
+{
+  "title": "$\\texttt{raccoon}$: A Python package for removing wiggle artifacts in\n  the JWST NIRSpec integral field spectroscopy",
+  "authors": [
+    "Anowar J. Shajib"
+  ],
+  "abstract": "$\\texttt{raccoon}$ is a Python package for removing resampling noise -\ncommonly referred to as \"wiggles'' - from spaxel-level spectra in datacubes\nobtained from the JWST Near Infrared Spectrograph's (NIRSpec) integral field\nspectroscopy (IFS) mode. These wiggles arise as artifacts during resampling of\nthe 2D raw data into 3D datacubes, due to the point spread function (PSF) being\nundersampled. The standard JWST data reduction pipeline does not correct for\nthis noise. The wiggle artifacts can significantly degrade the scientific\nusability of the data, particularly at the spaxel level, undermining the\nexquisite spatial resolution of NIRSpec. $\\texttt{raccoon}$ provides an\nempirical correction by modeling and removing these artifacts, thereby\nrestoring the fidelity of the extracted spectra. $\\texttt{raccoon}$\nforward-models the wiggles as a chirp function impacting one or more template\nspectra that are directly fit to the original data across the entire wavelength\nrange. The best-fit wiggle model is then used to clean the data while\npropagating the associated uncertainties.",
+  "url": "http://arxiv.org/abs/2507.13341v1",
+  "pdf_url": "http://arxiv.org/pdf/2507.13341v1.pdf",
+  "publication_date": "2025-07-17",
+  "venue": "arXiv preprint",
+  "citation_count": null,
+  "source": "arxiv"
+}

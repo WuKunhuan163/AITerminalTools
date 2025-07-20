@@ -27,12 +27,11 @@ EXTRACT_PDF --full <pdf_file> [options]  # Extract PDF then auto post-process
 - `--page <spec>`: Extract specific page(s) (e.g., 3, 1-5, 1,3,5)
 - `--output <dir>`: Output directory (default: same as PDF)
 - `--engine <mode>`: Extraction engine mode:
-  - `basic`: Basic extractor (default)
-  - `basic-asyn`: Basic extractor, async mode (disable analysis)
-  - `mineru`: MinerU extractor (experimental)
-  - `mineru-asyn`: MinerU extractor, async mode (disable analysis)
+  - `basic`: Basic extractor with image processing (merge nearby images, generate placeholders)
+  - `basic-asyn`: Basic extractor, async mode (text-only, no image processing)
+  - `mineru`: MinerU extractor (experimental, no image/formula/table analysis)
+  - `mineru-asyn`: MinerU extractor, async mode (no image/formula/table analysis)
   - `full`: Full analysis mode (enable all features)
-- `--with-image-api`: Enable image API analysis (disabled by default)
 
 ### Post-processing Options
 - `--post [<file>]`: Post-process markdown file (replace placeholders)

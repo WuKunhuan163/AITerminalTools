@@ -390,7 +390,7 @@ def list_processing_items(pdf_path: str, item_type: str = 'all', show_processed:
             return True
         
         print(f"\n📋 {item_type.upper() if item_type != 'all' else 'ALL'} 项目列表:")
-        print("=" * 80)
+        print("=" * 40)
         
         for i, item in enumerate(filtered_items, 1):
             status_icon = "✅" if item.get('processed', False) else "⏳"

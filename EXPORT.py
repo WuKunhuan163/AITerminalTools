@@ -12,39 +12,37 @@ import hashlib
 from pathlib import Path
 from typing import List, Dict, Any
 
+# 加载环境变量
+from dotenv import load_dotenv
+load_dotenv()
 
 
-def get_run_context():
-    """获取 RUN 执行上下文信息"""
-    run_identifier = os.environ.get('RUN_IDENTIFIER')
-    output_file = os.environ.get('RUN_DATA_FILE')
-    
-    if run_identifier and output_file:
-        return {
-            'in_run_context': True,
-            'identifier': run_identifier,
-            'output_file': output_file
-        }
-    else:
-        return {
-            'in_run_context': False,
-            'identifier': None,
-            'output_file': None
-        }
+def is_run_environment(command_identifier=None):
+    """Check if running in RUN environment by checking environment variables"""
+    if command_identifier:
+        return os.environ.get(f'RUN_IDENTIFIER_{command_identifier}') == 'True'
+    return False
 
-def write_to_json_output(data, run_context):
+def write_to_json_output(data, command_identifier=None):
     """将结果写入到指定的 JSON 输出文件中"""
-    if not run_context['in_run_context'] or not run_context['output_file']:
+    if not is_run_environment(command_identifier):
+        return False
+    
+    # Get the specific output file for this command identifier
+    if command_identifier:
+        output_file = os.environ.get(f'RUN_DATA_FILE_{command_identifier}')
+    else:
+        output_file = os.environ.get('RUN_DATA_FILE')
+    
+    if not output_file:
         return False
     
     try:
         # 确保输出目录存在
-        output_path = Path(run_context['output_file'])
+        output_path = Path(output_file)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # 不再添加冗余的RUN相关信息
-        
-        with open(run_context['output_file'], 'w', encoding='utf-8') as f:
+        with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
         return True
     except Exception as e:
@@ -155,7 +153,7 @@ def add_export_statement(lines: List[str], var_name: str, var_value: str) -> Lis
     lines.append(export_line)
     return lines
 
-def export_variable(var_name: str, var_value: str, run_context):
+def export_variable(var_name: str, var_value: str, command_identifier=None):
     """导出环境变量并写入配置文件"""
     
     # 验证变量名
@@ -166,8 +164,8 @@ def export_variable(var_name: str, var_value: str, run_context):
             "variable": var_name
         }
         
-        if run_context['in_run_context']:
-            write_to_json_output(error_data, run_context)
+        if is_run_environment(command_identifier):
+            write_to_json_output(error_data, command_identifier)
         else:
             print(f"❌ Error: Invalid variable name: {var_name}")
         return 1
@@ -215,8 +213,8 @@ def export_variable(var_name: str, var_value: str, run_context):
             "failed_files": failed_files if failed_files else None
         }
         
-        if run_context['in_run_context']:
-            write_to_json_output(success_data, run_context)
+        if is_run_environment(command_identifier):
+            write_to_json_output(success_data, command_identifier)
         else:
             print(f"✅ Successfully exported {var_name}='{var_value}'")
             print(f"📝 Updated files: {', '.join(updated_files)}")
@@ -232,8 +230,8 @@ def export_variable(var_name: str, var_value: str, run_context):
             "failed_files": failed_files
         }
         
-        if run_context['in_run_context']:
-            write_to_json_output(error_data, run_context)
+        if is_run_environment(command_identifier):
+            write_to_json_output(error_data, command_identifier)
         else:
             print(f"❌ Error: Failed to update any configuration files")
             print(f"Failed files: {', '.join(failed_files)}")
@@ -272,19 +270,22 @@ to apply changes in new sessions. Use --update to apply changes immediately."""
 
 def main():
     """主函数"""
-    # 获取执行上下文
-    run_context = get_run_context()
-    
-    # 解析命令行参数
+    # 获取执行上下文和command_identifier
     args = sys.argv[1:]
+    command_identifier = None
+    
+    # 检查是否被RUN调用（第一个参数是command_identifier）
+    if args and is_run_environment(args[0]):
+        command_identifier = args[0]
+        args = args[1:]  # 移除command_identifier，保留实际参数
     
     if len(args) == 0:
-        if run_context['in_run_context']:
+        if is_run_environment(command_identifier):
             error_data = {
                 "success": False,
                 "error": "No arguments provided. Usage: EXPORT <variable_name> <value>"
             }
-            write_to_json_output(error_data, run_context)
+            write_to_json_output(error_data, command_identifier)
         else:
             print("❌ Error: No arguments provided")
             print("Usage: EXPORT <variable_name> <value>")
@@ -293,36 +294,36 @@ def main():
     
     if len(args) == 1:
         if args[0] in ['--help', '-h']:
-            if run_context['in_run_context']:
+            if is_run_environment(command_identifier):
                 help_data = {
                     "success": True,
                     "message": "Help information",
                     "help": "EXPORT - Environment Variable Export Tool"
                 }
-                write_to_json_output(help_data, run_context)
+                write_to_json_output(help_data, command_identifier)
             else:
                 show_help()
             return 0
         elif args[0] == '--update':
-            if run_context['in_run_context']:
+            if is_run_environment(command_identifier):
                 success = update_shell_configs()
                 output_data = {
                     "success": success,
                     "message": "Configuration files updated" if success else "Failed to update configuration files"
                 }
-                write_to_json_output(output_data, run_context)
+                write_to_json_output(output_data, command_identifier)
                 return 0 if success else 1
             else:
                 print("Updating shell configuration files...")
                 success = update_shell_configs()
                 return 0 if success else 1
         else:
-            if run_context['in_run_context']:
+            if is_run_environment(command_identifier):
                 error_data = {
                     "success": False,
                     "error": "Missing value. Usage: EXPORT <variable_name> <value>"
                 }
-                write_to_json_output(error_data, run_context)
+                write_to_json_output(error_data, command_identifier)
             else:
                 print("❌ Error: Missing value")
                 print("Usage: EXPORT <variable_name> <value>")
@@ -336,7 +337,7 @@ def main():
         if len(args) > 2:
             var_value = ' '.join(args[1:])
         
-        return export_variable(var_name, var_value, run_context)
+        return export_variable(var_name, var_value, command_identifier)
     
     return 1
 

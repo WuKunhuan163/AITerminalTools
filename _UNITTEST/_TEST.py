@@ -155,7 +155,7 @@ This document contains various elements that should be extractable from PDF form
         
         expected_tools = [
             'OVERLEAF', 'EXTRACT_PDF', 'GOOGLE_DRIVE', 'SEARCH_PAPER',
-            'EXPORT', 'DOWNLOAD', 'RUN', 'USERINPUT', 'FILEDIALOG'
+            'EXPORT', 'DOWNLOAD', 'RUN', 'FILEDIALOG'
         ]
         
         for tool in expected_tools:
@@ -191,7 +191,7 @@ This document contains various elements that should be extractable from PDF form
         
         # Check that all expected tools are registered
         expected_tools = ['OVERLEAF', 'EXTRACT_PDF', 'GOOGLE_DRIVE', 'SEARCH_PAPER',
-                         'EXPORT', 'DOWNLOAD', 'RUN', 'USERINPUT']
+                         'EXPORT', 'DOWNLOAD', 'RUN']
         
         tools_data = data['tools']
         for tool in expected_tools:

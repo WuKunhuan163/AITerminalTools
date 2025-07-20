@@ -1,0 +1,14 @@
+{
+  "title": "SpectraLift: Physics-Guided Spectral-Inversion Network for\n  Self-Supervised Hyperspectral Image Super-Resolution",
+  "authors": [
+    "Ritik Shah",
+    "Marco F. Duarte"
+  ],
+  "abstract": "High-spatial-resolution hyperspectral images (HSI) are essential for\napplications such as remote sensing and medical imaging, yet HSI sensors\ninherently trade spatial detail for spectral richness. Fusing\nhigh-spatial-resolution multispectral images (HR-MSI) with\nlow-spatial-resolution hyperspectral images (LR-HSI) is a promising route to\nrecover fine spatial structures without sacrificing spectral fidelity. Most\nstate-of-the-art methods for HSI-MSI fusion demand point spread function (PSF)\ncalibration or ground truth high resolution HSI (HR-HSI), both of which are\nimpractical to obtain in real world settings. We present SpectraLift, a fully\nself-supervised framework that fuses LR-HSI and HR-MSI inputs using only the\nMSI's Spectral Response Function (SRF). SpectraLift trains a lightweight\nper-pixel multi-layer perceptron (MLP) network using ($i$)~a synthetic\nlow-spatial-resolution multispectral image (LR-MSI) obtained by applying the\nSRF to the LR-HSI as input, ($ii$)~the LR-HSI as the output, and ($iii$)~an\n$\\ell_1$ spectral reconstruction loss between the estimated and true LR-HSI as\nthe optimization objective. At inference, SpectraLift uses the trained network\nto map the HR-MSI pixel-wise into a HR-HSI estimate. SpectraLift converges in\nminutes, is agnostic to spatial blur and resolution, and outperforms\nstate-of-the-art methods on PSNR, SAM, SSIM, and RMSE benchmarks.",
+  "url": "http://arxiv.org/abs/2507.13339v1",
+  "pdf_url": "http://arxiv.org/pdf/2507.13339v1.pdf",
+  "publication_date": "2025-07-17",
+  "venue": "arXiv preprint",
+  "citation_count": null,
+  "source": "arxiv"
+}

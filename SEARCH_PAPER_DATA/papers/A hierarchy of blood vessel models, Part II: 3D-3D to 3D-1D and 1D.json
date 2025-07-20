@@ -1,0 +1,14 @@
+{
+  "title": "A hierarchy of blood vessel models, Part II: 3D-3D to 3D-1D and 1D",
+  "authors": [
+    "Laurel Ohm",
+    "Sarah Strikwerda"
+  ],
+  "abstract": "We propose and analyze a hierarchy of three models of blood perfusion through\na tissue surrounding a thin arteriole or venule. Our goal is to rigorously link\n3D-3D Darcy--Stokes, 3D-1D Darcy--Poiseuille, and 1D Green's function methods\ncommonly used to model this process. Here in Part II, we consider the most\ndetailed level, a 3D-3D Darcy-Stokes system coupled across the permeable vessel\nsurface by mass conservation and pressure/stress balance conditions. We derive\na convergence result between the 3D-3D model and both the 3D-1D\nDarcy--Poiseuille model and 1D Green's function model proposed in Part I [Ohm\n\\& Strikwerda, arXiv preprint July 2025] at a rate proportional to\n$\\epsilon^{1/6}|\\log\\epsilon|$, where $\\epsilon$ is the maximum vessel radius.\nThe rate is limited by the inclusion of a degenerate endpoint where the vessel\nradius vanishes, i.e. becomes indistinguishable from a capillary. Key to our\nproof are \\emph{a priori} estimates for the 1D integrodifferential model\nobtained in Part I.",
+  "url": "http://arxiv.org/abs/2507.13330v1",
+  "pdf_url": "http://arxiv.org/pdf/2507.13330v1.pdf",
+  "publication_date": "2025-07-17",
+  "venue": "arXiv preprint",
+  "citation_count": null,
+  "source": "arxiv"
+}

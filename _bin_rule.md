@@ -34,13 +34,18 @@ When working with the user, you have access to the following custom binary tools
   - `EXPORT MY_VAR "some value"`
 
 ### EXTRACT_PDF
-- **Purpose**: Extract text from PDF files using multiple extraction engines with async modes
-- **Description**: Enhanced PDF extraction using MinerU
-- **Usage**: `EXTRACT_PDF <pdf_file> [options]`
+- **Purpose**: Extract text from PDF files using multiple extraction engines with image processing and text formatting, and post-process markdown files to replace placeholders with actual content
+- **Description**: Enhanced PDF extraction using MinerU with post-processing support
+- **Usage**: `EXTRACT_PDF <pdf_file> [options] | EXTRACT_PDF --post [<markdown_file>] [--post-type <type>] | EXTRACT_PDF --full <pdf_file> [options]`
 - **Examples**:
   - `EXTRACT_PDF document.pdf --page 3`
   - `EXTRACT_PDF paper.pdf --page 1-5 --output /path/to/output`
   - `EXTRACT_PDF paper.pdf --engine mineru-asyn --page 1-3`
+  - `EXTRACT_PDF --post`
+  - `EXTRACT_PDF --post document.md --post-type image`
+  - `EXTRACT_PDF --post document.md --post-type all`
+  - `EXTRACT_PDF --full document.pdf`
+  - `EXTRACT_PDF --full paper.pdf --engine mineru --page 1-10`
 
 ### FILEDIALOG
 - **Purpose**: Open tkinter file selection dialog to specify file types
@@ -54,13 +59,15 @@ When working with the user, you have access to the following custom binary tools
   - `FILEDIALOG --multiple --types pdf`
 
 ### LEARN
-- **Purpose**: Create structured learning materials from topics or PDF papers, with brainstorming-only mode
-- **Description**: 智能学习系统
-- **Usage**: `LEARN <topic|pdf_file> [options]`
+- **Purpose**: Create structured learning materials from topics or papers with advanced context support, paper search, and command generation
+- **Description**: 智能学习系统，支持文件引用、论文搜索、命令生成等高级功能
+- **Usage**: `LEARN <topic> [options] | LEARN --pdf <file> [options] | LEARN --description <text> [options] | LEARN --gen-command <description>`
 - **Examples**:
-  - `LEARN "Python编程" --mode Beginner --style Witty --output-dir /tmp/tutorial`
-  - `LEARN paper.pdf --mode Advanced --style Rigorous --output-dir /tmp/paper-tutorial --read-images`
-  - `LEARN "AI Ethics" --mode Practical --style Witty --no-auto-create`
+  - `LEARN -o ~/tutorials -m 初学者 -s 简洁明了 "Python基础编程"`
+  - `LEARN -o ~/tutorials -m 中级 --pdf "/path/to/paper.pdf"`
+  - `LEARN -o ~/tutorials -m 高级 -d "3D Gaussian Splatting" --negative "Pi3"`
+  - `LEARN -o ~/tutorials -m 初学者 "学习论文3.1节 @\"/path/to/paper.md\""`
+  - `LEARN --gen-command "我想学习深度学习论文的前五页"`
 
 ### OPENROUTER
 - **Purpose**: Call OpenRouter API with customizable query, model, and API key parameters, with cost tracking and dynamic token limits
@@ -130,7 +137,7 @@ When working with the user, you have access to the following custom binary tools
 - **EXPORT**: When user needs to set environment variables persistently
 - **EXTRACT_PDF**: When user needs to extract text from PDF files with different extraction engines
 - **FILEDIALOG**: When user needs to select specific file types through a GUI dialog
-- **LEARN**: When user needs to create structured learning materials or just brainstorm ideas
+- **LEARN**: When user needs structured learning materials, paper analysis, context-aware tutorials, or LEARN command generation
 - **OPENROUTER**: When user needs to call OpenRouter API for AI responses with cost tracking
 - **OVERLEAF**: When user needs to compile LaTeX documents
 - **RUN**: When user needs to execute other tools with JSON output

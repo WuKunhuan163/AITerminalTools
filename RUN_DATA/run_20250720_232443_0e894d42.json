@@ -1,0 +1,28 @@
+{
+  "success": true,
+  "message": "Alias 'concurrent1' created successfully",
+  "alias_name": "concurrent1",
+  "alias_command": "echo test1",
+  "files_processed": 3,
+  "files_updated": 3,
+  "results": [
+    {
+      "file": "/Users/wukunhuan/.bash_profile",
+      "success": true,
+      "created_file": false,
+      "updated_existing": false
+    },
+    {
+      "file": "/Users/wukunhuan/.bashrc",
+      "success": true,
+      "created_file": false,
+      "updated_existing": false
+    },
+    {
+      "file": "/Users/wukunhuan/.zshrc",
+      "success": true,
+      "created_file": false,
+      "updated_existing": false
+    }
+  ]
+}

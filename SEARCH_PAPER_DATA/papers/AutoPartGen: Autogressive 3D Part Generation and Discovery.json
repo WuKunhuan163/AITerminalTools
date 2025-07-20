@@ -1,0 +1,21 @@
+{
+  "title": "AutoPartGen: Autogressive 3D Part Generation and Discovery",
+  "authors": [
+    "Minghao Chen",
+    "Jianyuan Wang",
+    "Roman Shapovalov",
+    "Tom Monnier",
+    "Hyunyoung Jung",
+    "Dilin Wang",
+    "Rakesh Ranjan",
+    "Iro Laina",
+    "Andrea Vedaldi"
+  ],
+  "abstract": "We introduce AutoPartGen, a model that generates objects composed of 3D parts\nin an autoregressive manner. This model can take as input an image of an\nobject, 2D masks of the object's parts, or an existing 3D object, and generate\na corresponding compositional 3D reconstruction. Our approach builds upon\n3DShape2VecSet, a recent latent 3D representation with powerful geometric\nexpressiveness. We observe that this latent space exhibits strong compositional\nproperties, making it particularly well-suited for part-based generation tasks.\nSpecifically, AutoPartGen generates object parts autoregressively, predicting\none part at a time while conditioning on previously generated parts and\nadditional inputs, such as 2D images, masks, or 3D objects. This process\ncontinues until the model decides that all parts have been generated, thus\ndetermining automatically the type and number of parts. The resulting parts can\nbe seamlessly assembled into coherent objects or scenes without requiring\nadditional optimization. We evaluate both the overall 3D generation\ncapabilities and the part-level generation quality of AutoPartGen,\ndemonstrating that it achieves state-of-the-art performance in 3D part\ngeneration.",
+  "url": "http://arxiv.org/abs/2507.13346v1",
+  "pdf_url": "http://arxiv.org/pdf/2507.13346v1.pdf",
+  "publication_date": "2025-07-17",
+  "venue": "arXiv preprint",
+  "citation_count": null,
+  "source": "arxiv"
+}

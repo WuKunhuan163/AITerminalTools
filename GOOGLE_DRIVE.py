@@ -11,46 +11,43 @@ import webbrowser
 import hashlib
 from pathlib import Path
 
+# 加载环境变量
+from dotenv import load_dotenv
+load_dotenv()
 
+def is_run_environment(command_identifier=None):
+    """Check if running in RUN environment by checking environment variables"""
+    if command_identifier:
+        return os.environ.get(f'RUN_IDENTIFIER_{command_identifier}') == 'True'
+    return False
 
-def get_run_context():
-    """获取 RUN 执行上下文信息"""
-    run_identifier = os.environ.get('RUN_IDENTIFIER')
-    output_file = os.environ.get('RUN_DATA_FILE')
-    
-    if run_identifier and output_file:
-        return {
-            'in_run_context': True,
-            'identifier': run_identifier,
-            'output_file': output_file
-        }
-    else:
-        return {
-            'in_run_context': False,
-            'identifier': None,
-            'output_file': None
-        }
-
-def write_to_json_output(data, run_context):
+def write_to_json_output(data, command_identifier=None):
     """将结果写入到指定的 JSON 输出文件中"""
-    if not run_context['in_run_context'] or not run_context['output_file']:
+    if not is_run_environment(command_identifier):
+        return False
+    
+    # Get the specific output file for this command identifier
+    if command_identifier:
+        output_file = os.environ.get(f'RUN_DATA_FILE_{command_identifier}')
+    else:
+        output_file = os.environ.get('RUN_DATA_FILE')
+    
+    if not output_file:
         return False
     
     try:
         # 确保输出目录存在
-        output_path = Path(run_context['output_file'])
+        output_path = Path(output_file)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # 不再添加冗余的RUN相关信息
-        
-        with open(run_context['output_file'], 'w', encoding='utf-8') as f:
+        with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
         return True
     except Exception as e:
         print(f"Error writing to JSON output file: {e}")
         return False
 
-def open_google_drive(url=None, run_context=None):
+def open_google_drive(url=None, command_identifier=None):
     """打开Google Drive"""
     
     # 默认URL
@@ -69,8 +66,8 @@ def open_google_drive(url=None, run_context=None):
                 "action": "browser_opened"
             }
             
-            if run_context['in_run_context']:
-                write_to_json_output(success_data, run_context)
+            if is_run_environment(command_identifier):
+                write_to_json_output(success_data, command_identifier)
             else:
                 print(f"🚀 Opening Google Drive: {url}")
                 print("✅ Google Drive opened successfully in browser")
@@ -82,8 +79,8 @@ def open_google_drive(url=None, run_context=None):
                 "url": url
             }
             
-            if run_context['in_run_context']:
-                write_to_json_output(error_data, run_context)
+            if is_run_environment(command_identifier):
+                write_to_json_output(error_data, command_identifier)
             else:
                 print(f"❌ Error: Failed to open browser for {url}")
             return 1
@@ -95,8 +92,8 @@ def open_google_drive(url=None, run_context=None):
             "url": url
         }
         
-        if run_context['in_run_context']:
-            write_to_json_output(error_data, run_context)
+        if is_run_environment(command_identifier):
+            write_to_json_output(error_data, command_identifier)
         else:
             print(f"❌ Error opening Google Drive: {e}")
         return 1
@@ -124,11 +121,14 @@ Examples:
 
 def main():
     """主函数"""
-    # 获取执行上下文
-    run_context = get_run_context()
-    
-    # 解析命令行参数
+    # 获取执行上下文和command_identifier
     args = sys.argv[1:]
+    command_identifier = None
+    
+    # 检查是否被RUN调用（第一个参数是command_identifier）
+    if args and is_run_environment(args[0]):
+        command_identifier = args[0]
+        args = args[1:]  # 移除command_identifier，保留实际参数
     url = None
     
     # 处理参数
@@ -137,13 +137,13 @@ def main():
         url = None
     elif len(args) == 1:
         if args[0] in ['--help', '-h']:
-            if run_context['in_run_context']:
+            if is_run_environment(command_identifier):
                 help_data = {
                     "success": True,
                     "message": "Help information",
                     "help": "GOOGLE_DRIVE - Google Drive access tool"
                 }
-                write_to_json_output(help_data, run_context)
+                write_to_json_output(help_data, command_identifier)
             else:
                 show_help()
             return 0
@@ -156,13 +156,13 @@ def main():
     else:
         # 多个参数，检查是否有帮助选项
         if '--help' in args or '-h' in args:
-            if run_context['in_run_context']:
+            if is_run_environment(command_identifier):
                 help_data = {
                     "success": True,
                     "message": "Help information",
                     "help": "GOOGLE_DRIVE - Google Drive access tool"
                 }
-                write_to_json_output(help_data, run_context)
+                write_to_json_output(help_data, command_identifier)
             else:
                 show_help()
             return 0
@@ -171,15 +171,15 @@ def main():
             url = "https://drive.google.com/drive/u/0/my-drive"
         else:
             error_msg = "❌ Error: Too many arguments. Use --help for usage information."
-            if run_context['in_run_context']:
+            if is_run_environment(command_identifier):
                 error_data = {"success": False, "error": error_msg}
-                write_to_json_output(error_data, run_context)
+                write_to_json_output(error_data, command_identifier)
             else:
                 print(error_msg)
             return 1
     
     # 打开Google Drive
-    return open_google_drive(url, run_context)
+    return open_google_drive(url, command_identifier)
 
 if __name__ == "__main__":
     sys.exit(main()) 

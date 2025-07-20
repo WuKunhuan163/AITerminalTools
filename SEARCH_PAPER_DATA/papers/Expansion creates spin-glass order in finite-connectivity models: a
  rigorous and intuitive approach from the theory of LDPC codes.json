@@ -1,0 +1,17 @@
+{
+  "title": "Expansion creates spin-glass order in finite-connectivity models: a\n  rigorous and intuitive approach from the theory of LDPC codes",
+  "authors": [
+    "Benedikt Placke",
+    "Grace M. Sommers",
+    "Nikolas P. Breuckmann",
+    "Tibor Rakovszky",
+    "Vedika Khemani"
+  ],
+  "abstract": "Complex free-energy landscapes with many local minima separated by large\nbarriers are believed to underlie glassy behavior across diverse physical\nsystems. This is the heuristic picture associated with replica symmetry\nbreaking (RSB) in spin glasses, but RSB has only been rigorously verified for\ncertain mean-field models with all-to-all connectivity. In this work, we give a\nrigorous proof of finite temperature spin glass order for a family of models\nwith local interactions on finite-connectivity, non-Euclidean expander graphs.\nTo this end, we bypass the RSB formalism entirely, and instead exploit the\nmathematical equivalence of such models to certain low-density parity check\n(LDPC) codes. We use code expansion, a property of LDPC codes which guarantees\nextensive energy barriers around ground states. Together with mild additional\nassumptions, this allows us to construct an explicit decomposition of the\nlow-temperature Gibbs state into disjoint components, each hosting an\nasymptotically long-lived state associated with a local minimum of the\nlandscape. Each component carries at most an exponentially small fraction of\nthe total weight, and almost all components do not contain ground states --\nwhich we take together to define spin-glass order. The proof is elementary, and\ntreats various expanding graph topologies on the same footing, including those\nwith short loops where existing approaches such as the cavity method fail. Our\nresults apply rigorously to diluted p-spin glasses for sufficiently large p,\nand while unproven, we also expect our assumptions to hold in a broader family\nof codes. Motivated by this, we numerically study two simple models, on random\nregular graphs and a regular tesselation of hyperbolic space. We show that both\nmodels undergo two transitions as a function of temperature, corresponding to\nthe onset of weak ergodicity breaking and spin glass order, respectively.",
+  "url": "http://arxiv.org/abs/2507.13342v1",
+  "pdf_url": "http://arxiv.org/pdf/2507.13342v1.pdf",
+  "publication_date": "2025-07-17",
+  "venue": "arXiv preprint",
+  "citation_count": null,
+  "source": "arxiv"
+}

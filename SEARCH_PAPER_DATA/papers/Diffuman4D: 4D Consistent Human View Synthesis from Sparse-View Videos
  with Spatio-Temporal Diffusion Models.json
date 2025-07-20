@@ -1,0 +1,21 @@
+{
+  "title": "Diffuman4D: 4D Consistent Human View Synthesis from Sparse-View Videos\n  with Spatio-Temporal Diffusion Models",
+  "authors": [
+    "Yudong Jin",
+    "Sida Peng",
+    "Xuan Wang",
+    "Tao Xie",
+    "Zhen Xu",
+    "Yifan Yang",
+    "Yujun Shen",
+    "Hujun Bao",
+    "Xiaowei Zhou"
+  ],
+  "abstract": "This paper addresses the challenge of high-fidelity view synthesis of humans\nwith sparse-view videos as input. Previous methods solve the issue of\ninsufficient observation by leveraging 4D diffusion models to generate videos\nat novel viewpoints. However, the generated videos from these models often lack\nspatio-temporal consistency, thus degrading view synthesis quality. In this\npaper, we propose a novel sliding iterative denoising process to enhance the\nspatio-temporal consistency of the 4D diffusion model. Specifically, we define\na latent grid in which each latent encodes the image, camera pose, and human\npose for a certain viewpoint and timestamp, then alternately denoising the\nlatent grid along spatial and temporal dimensions with a sliding window, and\nfinally decode the videos at target viewpoints from the corresponding denoised\nlatents. Through the iterative sliding, information flows sufficiently across\nthe latent grid, allowing the diffusion model to obtain a large receptive field\nand thus enhance the 4D consistency of the output, while making the GPU memory\nconsumption affordable. The experiments on the DNA-Rendering and ActorsHQ\ndatasets demonstrate that our method is able to synthesize high-quality and\nconsistent novel-view videos and significantly outperforms the existing\napproaches. See our project page for interactive demos and video results:\nhttps://diffuman4d.github.io/ .",
+  "url": "http://arxiv.org/abs/2507.13344v1",
+  "pdf_url": "http://arxiv.org/pdf/2507.13344v1.pdf",
+  "publication_date": "2025-07-17",
+  "venue": "arXiv preprint",
+  "citation_count": null,
+  "source": "arxiv"
+}

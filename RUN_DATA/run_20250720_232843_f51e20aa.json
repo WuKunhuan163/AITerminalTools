@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "message": "Environment variable TEST_VAR2 exported successfully",
+  "variable": "TEST_VAR2",
+  "value": "run test value",
+  "updated_files": [
+    "/Users/wukunhuan/.bash_profile",
+    "/Users/wukunhuan/.bashrc",
+    "/Users/wukunhuan/.zshrc"
+  ],
+  "failed_files": null
+}

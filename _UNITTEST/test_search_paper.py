@@ -15,10 +15,10 @@ from unittest.mock import patch, MagicMock
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 try:
-    from SEARCH_PAPER import MultiPlatformPaperSearcher, get_run_context, write_to_json_output, main as search_paper_main
+    from SEARCH_PAPER import MultiPlatformPaperSearcher, is_run_environment, write_to_json_output, main as search_paper_main
 except ImportError as e:
     MultiPlatformPaperSearcher = None
-    get_run_context = None
+    is_run_environment = None
     write_to_json_output = None
     search_paper_main = None
     print(f"Failed to import SEARCH_PAPER components: {e}")
@@ -30,7 +30,7 @@ class TestSearchPaper(unittest.TestCase):
     def setUp(self):
         self.searcher = MultiPlatformPaperSearcher()
         # Create a temporary directory for test outputs
-        self.test_dir = Path("_UNITTEST/temp_test_data")
+        self.test_dir = Path("temp_test_data")
         self.searcher.output_dir = self.test_dir
         self.searcher.papers_dir = self.test_dir / "papers"
         self.test_dir.mkdir(exist_ok=True)
@@ -50,15 +50,13 @@ class TestSearchPaper(unittest.TestCase):
     def test_run_environment_detection(self):
         """Test RUN environment detection"""
         with patch.dict(os.environ, clear=True):
-            run_context = get_run_context()
-            self.assertFalse(run_context['in_run_context'])
+            self.assertFalse(is_run_environment())
         
         with patch.dict(os.environ, {
-            'RUN_IDENTIFIER': 'test_run',
-            'RUN_DATA_FILE': str(self.test_dir / 'test_output.json')
+            'RUN_IDENTIFIER_test_run': 'True',
+            'RUN_DATA_FILE_test_run': str(self.test_dir / 'test_output.json')
         }):
-            run_context = get_run_context()
-            self.assertTrue(run_context['in_run_context'])
+            self.assertTrue(is_run_environment('test_run'))
 
     @patch('SEARCH_PAPER.requests.Session.get')
     def test_arxiv_search(self, mock_get):
@@ -83,6 +81,45 @@ class TestSearchPaper(unittest.TestCase):
         self.assertIn('title', results[0])
         self.assertIn('url', results[0])
         mock_get.assert_called_once()
+        # Verify timeout is set to 30 seconds
+        call_args = mock_get.call_args
+        self.assertEqual(call_args[1]['timeout'], 30)
+
+    @patch('SEARCH_PAPER.requests.Session.get')
+    def test_google_scholar_search(self, mock_get):
+        """Test Google Scholar search functionality"""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.text = '''
+        <html>
+        <body>
+            <div class="gs_r gs_or gs_scl">
+                <div class="gs_ri">
+                    <h3 class="gs_rt">
+                        <a href="https://example.com/paper.pdf">Test Paper Title</a>
+                    </h3>
+                    <div class="gs_a">
+                        Test Author - 2024 - example.com
+                    </div>
+                    <div class="gs_rs">
+                        This is a test abstract for the paper about machine learning.
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        '''
+        mock_get.return_value = mock_response
+        
+        results = self.searcher._search_google_scholar("machine learning", max_results=5)
+        
+        self.assertIsInstance(results, list)
+        # Note: Google Scholar parsing might not always succeed due to HTML structure
+        # so we just verify the function runs without error
+        mock_get.assert_called_once()
+        # Verify timeout is set to 30 seconds
+        call_args = mock_get.call_args
+        self.assertEqual(call_args[1]['timeout'], 30)
 
     @patch('SEARCH_PAPER.requests.Session.get')
     def test_search_failure(self, mock_get):

@@ -1,0 +1,6 @@
+{
+  "success": true,
+  "type": "user_input",
+  "user_input": "stop",
+  "message": "User input received successfully"
+}

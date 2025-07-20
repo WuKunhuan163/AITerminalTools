@@ -1,0 +1,5 @@
+{
+  "success": true,
+  "message": "Command executed successfully",
+  "output": "usage: OVERLEAF.py [-h] [--output-dir OUTPUT_DIR] [tex_file]\n\nOVERLEAF - LaTeX文件编译工具\n\npositional arguments:\n  tex_file              LaTeX文件路径\n\noptional arguments:\n  -h, --help            show this help message and exit\n  --output-dir OUTPUT_DIR\n                        输出目录，编译完成后将PDF移动到此目录"
+}

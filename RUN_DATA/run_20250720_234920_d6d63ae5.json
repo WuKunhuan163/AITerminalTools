@@ -1,0 +1,4 @@
+{
+  "success": false,
+  "error": "No arguments provided. Usage: EXPORT <variable_name> <value>"
+}

@@ -87,6 +87,46 @@ class TestLearnAPI(APITest):
             if os.path.exists(dummy_pdf):
                 os.remove(dummy_pdf)
 
+    def test_learn_pdf_mode(self):
+        """Test LEARN --pdf mode"""
+        # Create a dummy PDF file
+        dummy_pdf = "/tmp/test_paper.pdf"
+        with open(dummy_pdf, 'w') as f:
+            f.write("dummy pdf content")
+        
+        try:
+            result = self.run_subprocess([
+                sys.executable, str(self.learn_py),
+                "--pdf", dummy_pdf, "--output", "/tmp/test", "测试PDF处理"
+            ])
+            # Should attempt to process PDF (may fail due to dummy content, but should try)
+            self.assertIn('直接处理PDF文件', result.stdout)
+        finally:
+            # Clean up
+            if os.path.exists(dummy_pdf):
+                os.remove(dummy_pdf)
+
+    def test_learn_gen_command(self):
+        """Test LEARN --gen-command feature"""
+        result = self.run_subprocess([
+            sys.executable, str(self.learn_py),
+            "--gen-command", "我想学习深度学习基础"
+        ])
+        # Should generate a LEARN command
+        self.assertIn('LEARN', result.stdout)
+
+    def test_learn_file_reference_parsing(self):
+        """Test file reference parsing functionality"""
+        # This test checks if the file reference parsing logic exists
+        # We can't easily test the full functionality without actual files
+        try:
+            import LEARN
+            # Check if the file reference functions exist
+            self.assertTrue(hasattr(LEARN, 'expand_file_references') or 
+                          'expand_file_references' in dir(LEARN))
+        except ImportError:
+            self.skipTest("LEARN module not available for direct import")
+
 
 if __name__ == '__main__':
     import unittest

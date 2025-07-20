@@ -1,0 +1,20 @@
+{
+  "title": "Where is the Supervirial Gas? III. Insights from X-ray Shadow\n  Observations and a revised Model for the Soft Diffuse X-ray Background",
+  "authors": [
+    "Anjali Gupta",
+    "Smita Mathur",
+    "Joshua Kingsbury",
+    "Esma Korkmaz",
+    "Sanskriti Das",
+    "Yair Krongold",
+    "Manami Roy",
+    "Armando Lara-DI"
+  ],
+  "abstract": "Shadow observations provide a powerful tool to separate foreground components\nof the soft diffuse X-ray background (SDXB) from the background components.\nSuch observations have now established that the ``local'' foreground is made of\nthe solar wind charge exchange and the local bubble, and the background\nemission is from the extended circumgalactic medium (CGM) of the Milky Way and\nfrom the unresolved extragalactic sources. New data and careful analyses of the\nSDXB led to two new discoveries in recent years: (1) excess emission near 0.5\nkeV that is identified as the NVII emission line, and (2) excess emission near\n0.8-1.0 keV that is identified with an additional, super-virial temperature hot\nthermal component of the CGM. The goal of this paper is to use Suzaku shadow\nobservations along six sightlines to determine whether either of these\ncomponents is from the ``local'' sources. We eliminate the ambiguity regarding\nthe origin of NVII emission, ruling out the local origin. We confirm that the\nMilky Way CGM contains nitrogen-rich plasma, with a super-solar average (N/O)\nof 2.6+-0.5, and suggest that nitrogen-enhanced plasma is widespread throughout\nthe CGM. We find super-solar Ne abundance in two sighlines, also from the CGM.\nSimilarly, we rule out the local origin of the hot thermal component and\nconfirm that it is present beyond the shadowing clouds. Furthermore, we provide\na revised model of the soft diffuse X-ray background, which is crucial for\nextragalactic astronomy.",
+  "url": "http://arxiv.org/abs/2507.13331v1",
+  "pdf_url": "http://arxiv.org/pdf/2507.13331v1.pdf",
+  "publication_date": "2025-07-17",
+  "venue": "arXiv preprint",
+  "citation_count": null,
+  "source": "arxiv"
+}

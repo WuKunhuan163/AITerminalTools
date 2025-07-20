@@ -1,0 +1,5 @@
+{
+  "success": true,
+  "message": "Command executed successfully",
+  "output": "USERINPUT - User Input Script for Cursor AI\n\nUsage:\n  USERINPUT                    Get user input interactively\n  USERINPUT --help             Show this help message\n\nDescription:\n  This tool is used to get user feedback in Cursor AI workflows.\n  It can work both standalone and within the RUN environment."
+}

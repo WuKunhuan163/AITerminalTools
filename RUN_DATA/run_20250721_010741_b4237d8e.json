@@ -1,0 +1,5 @@
+{
+  "success": true,
+  "message": "Command executed successfully",
+  "output": "usage: IMG2TEXT.py [-h] [--mode {academic,general,code_snippet}]\n                   [--api {google}] [--key KEY] [--prompt PROMPT]\n                   [--output OUTPUT]\n                   [positional_args ...]\n\n图片转文字描述工具（IMG2TEXT）\n\npositional arguments:\n  positional_args       Positional arguments (command_identifier and/or\n                        image_path)\n\noptions:\n  -h, --help            show this help message and exit\n  --mode {academic,general,code_snippet}\n                        分析模式\n  --api {google}        API接口，当前仅支持google\n  --key KEY             手动指定API key，优先级高于环境变量\n  --prompt PROMPT       自定义分析指令，会覆盖默认的模式提示\n  --output OUTPUT       输出结果到文件"
+}

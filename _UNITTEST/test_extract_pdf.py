@@ -216,6 +216,38 @@ class TestExtractPDFIntegration(unittest.TestCase):
             self.assertIn('message', output_data)
         except json.JSONDecodeError:
             self.fail("RUN --show EXTRACT_PDF did not return valid JSON")
+    
+    @unittest.skipIf(EXTRACT_PDF is None, "EXTRACT_PDF module not available")
+    def test_engine_modes(self):
+        """Test different engine modes"""
+        extractor = EXTRACT_PDF.PDFExtractor()
+        
+        # Test that basic mode enables image processing
+        # Test that basic-asyn mode disables image processing
+        # Note: We can't easily test the full functionality without actual PDF processing
+        # so we just test that the methods exist and can be called
+        
+        self.assertTrue(hasattr(extractor, 'extract_pdf_basic'))
+        self.assertTrue(hasattr(extractor, 'extract_pdf_basic_with_images'))
+        self.assertTrue(hasattr(extractor, '_merge_nearby_images'))
+        self.assertTrue(hasattr(extractor, '_process_text_linebreaks'))
+    
+    @unittest.skipIf(EXTRACT_PDF is None, "EXTRACT_PDF module not available")
+    def test_text_processing_methods(self):
+        """Test text processing methods"""
+        extractor = EXTRACT_PDF.PDFExtractor()
+        
+        # Test text linebreak processing
+        test_text = "This is line one.\nThis is line two\nthat continues here.\nThis is line three."
+        ending_punctuations = {'。', '.', '!', '?', '！', '？', ':', '：', ';', '；'}
+        
+        processed = extractor._process_text_linebreaks(test_text, ending_punctuations)
+        
+        # Should be a string
+        self.assertIsInstance(processed, str)
+        # Should contain the original content
+        self.assertIn("This is line one", processed)
+        self.assertIn("line two", processed)
 
 if __name__ == '__main__':
     unittest.main() 

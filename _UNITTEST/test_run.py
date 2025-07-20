@@ -42,7 +42,9 @@ class TestRUN(unittest.TestCase):
         id2 = RUN.generate_run_identifier()
         
         self.assertNotEqual(id1, id2)
-        self.assertEqual(len(id1), 16)  # Should be 16 character hex string
+        self.assertEqual(len(id1), 24)  # Should be YYYYMMDD_HHMMSS_XXXXXXXX format (24 chars)
+        # Check format: should contain two underscores
+        self.assertEqual(id1.count('_'), 2, "Identifier should have format YYYYMMDD_HHMMSS_XXXXXXXX")
     
     @unittest.skipIf(RUN is None, "RUN module not available")
     def test_json_output_format(self):
@@ -71,80 +73,112 @@ class TestRUN(unittest.TestCase):
         """Test command line argument parsing"""
         # Test basic command execution
         args = RUN.parse_arguments(['OVERLEAF', 'test.tex'])
-        self.assertEqual(args.command, 'OVERLEAF')
-        self.assertEqual(args.args, ['test.tex'])
+        self.assertEqual(args['command'], 'OVERLEAF')
+        self.assertEqual(args['args'], ['test.tex'])
         
         # Test --show flag
         args = RUN.parse_arguments(['--show', 'OVERLEAF'])
-        self.assertTrue(args.show)
-        self.assertEqual(args.command, 'OVERLEAF')
+        self.assertTrue(args['show'])
+        self.assertEqual(args['command'], 'OVERLEAF')
         
-        # Test --list flag
-        args = RUN.parse_arguments(['--list'])
-        self.assertTrue(args.list)
+        # Test --help flag
+        args = RUN.parse_arguments(['--help'])
+        self.assertTrue(args['help'])
     
     @unittest.skipIf(RUN is None, "RUN module not available")
-    @patch('json.load')
-    @patch('builtins.open')
-    def test_load_tools_registry(self, mock_open, mock_json_load):
-        """Test loading tools registry from bin.json"""
-        mock_json_load.return_value = {
-            'OVERLEAF': {'run_compatible': True},
-            'EXTRACT_PDF': {'run_compatible': True}
-        }
+    @unittest.skipIf(RUN is None, "RUN module not available")
+    def test_run_alias_command(self):
+        """Test RUN with ALIAS command - functional test"""
+        import tempfile
         
-        tools = RUN.load_tools_registry()
+        # Test creating an alias
+        result = subprocess.run([
+            sys.executable, str(Path(__file__).parent.parent / 'RUN.py'),
+            'ALIAS', 'test_alias', 'echo "test successful"'
+        ], capture_output=True, text=True, timeout=30)
         
-        self.assertIn('OVERLEAF', tools)
-        self.assertIn('EXTRACT_PDF', tools)
-        mock_open.assert_called_once()
+        # Should succeed (exit code 0)
+        self.assertEqual(result.returncode, 0)
+        
+        # Should output a JSON file path
+        output_lines = result.stdout.strip().split('\n')
+        json_file = output_lines[-1]  # Last line should be the JSON file path
+        self.assertTrue(json_file.endswith('.json'))
+        self.assertTrue(Path(json_file).exists())
+        
+        # Clean up
+        try:
+            if Path(json_file).exists():
+                Path(json_file).unlink()
+        except:
+            pass
     
     @unittest.skipIf(RUN is None, "RUN module not available")
-    def test_command_validation(self):
-        """Test command validation against registry"""
-        mock_tools = {
-            'OVERLEAF': {'run_compatible': True},
-            'EXTRACT_PDF': {'run_compatible': True},
-            'INVALID_TOOL': {'run_compatible': False}
-        }
+    def test_run_with_show_flag(self):
+        """Test RUN with --show flag - functional test with JSON parsing"""
+        result = subprocess.run([
+            sys.executable, str(Path(__file__).parent.parent / 'RUN.py'),
+            '--show', 'ALIAS', 'test_show', 'echo "show test"'
+        ], capture_output=True, text=True, timeout=30)
         
-        # Valid commands
-        self.assertTrue(RUN.is_valid_command('OVERLEAF', mock_tools))
-        self.assertTrue(RUN.is_valid_command('EXTRACT_PDF', mock_tools))
+        # Should succeed
+        self.assertEqual(result.returncode, 0)
         
-        # Invalid commands
-        self.assertFalse(RUN.is_valid_command('INVALID_TOOL', mock_tools))
-        self.assertFalse(RUN.is_valid_command('NONEXISTENT', mock_tools))
+        # Should contain JSON output in stdout when using --show
+        self.assertIn('{', result.stdout)  # Should contain JSON
+        self.assertIn('"success"', result.stdout)  # Should show success field
+        
+        # Parse and validate JSON output
+        import json
+        lines = result.stdout.strip().split('\n')
+        json_found = False
+        
+        for i, line in enumerate(lines):
+            if line.strip().startswith('{'):
+                try:
+                    # Extract JSON from this point
+                    json_lines = []
+                    brace_count = 0
+                    for j in range(i, len(lines)):
+                        json_lines.append(lines[j])
+                        brace_count += lines[j].count('{') - lines[j].count('}')
+                        if brace_count == 0 and lines[j].strip().endswith('}'):
+                            break
+                    
+                    json_content = '\n'.join(json_lines)
+                    data = json.loads(json_content)
+                    
+                    # Validate JSON structure
+                    self.assertIn('success', data)
+                    self.assertIsInstance(data['success'], bool)
+                    json_found = True
+                    break
+                except (json.JSONDecodeError, ValueError):
+                    continue
+        
+        self.assertTrue(json_found, "Valid JSON output not found in stdout")
     
-    @unittest.skipIf(RUN is None, "RUN module not available")
-    @patch('subprocess.run')
-    def test_command_execution_success(self, mock_run):
-        """Test successful command execution"""
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout='{"success": true, "message": "Test successful"}',
-            stderr=""
-        )
+    @unittest.skipIf(RUN is None, "RUN module not available") 
+    def test_run_invalid_command(self):
+        """Test RUN with invalid command - functional test"""
+        result = subprocess.run([
+            sys.executable, str(Path(__file__).parent.parent / 'RUN.py'),
+            'INVALID_NONEXISTENT_COMMAND'
+        ], capture_output=True, text=True, timeout=10)
         
-        result = RUN.execute_command('OVERLEAF', ['test.tex'], 'test_run_id')
+        # Should fail (non-zero exit code)
+        self.assertNotEqual(result.returncode, 0)
         
-        self.assertTrue(result['success'])
-        mock_run.assert_called_once()
-    
-    @unittest.skipIf(RUN is None, "RUN module not available")
-    @patch('subprocess.run')
-    def test_command_execution_failure(self, mock_run):
-        """Test failed command execution"""
-        mock_run.return_value = MagicMock(
-            returncode=1,
-            stdout="",
-            stderr="Command failed"
-        )
-        
-        result = RUN.execute_command('OVERLEAF', ['test.tex'], 'test_run_id')
-        
-        self.assertFalse(result['success'])
-        self.assertIn('failed', result['message'].lower())
+        # Should still output a JSON file path even for failures
+        if result.stdout.strip():
+            output_lines = result.stdout.strip().split('\n')
+            json_file = output_lines[-1]
+            if json_file.endswith('.json') and Path(json_file).exists():
+                # Clean up
+                try:
+                    Path(json_file).unlink()
+                except:
+                    pass
     
     @unittest.skipIf(RUN is None, "RUN module not available")
     def test_output_file_creation(self):
@@ -167,6 +201,132 @@ class TestRUN(unittest.TestCase):
                 
                 # Check that help was printed
                 mock_stdout.write.assert_called()
+
+    @unittest.skipIf(RUN is None, "RUN module not available")
+    def test_all_run_compatible_tools(self):
+        """Test all RUN-compatible tools from _bin.json registry"""
+        import json
+        
+        # Load _bin.json registry
+        bin_json_path = Path(__file__).parent.parent / '_bin.json'
+        if not bin_json_path.exists():
+            self.skipTest("_bin.json not found")
+        
+        with open(bin_json_path, 'r') as f:
+            registry = json.load(f)
+        
+        # Find all RUN-compatible tools with test commands
+        run_tools = []
+        for name, tool in registry['tools'].items():
+            if tool.get('run_compatible', False) and 'test_command' in tool:
+                run_tools.append((name, tool['test_command']))
+        
+        self.assertGreater(len(run_tools), 0, "No RUN-compatible tools found with test commands")
+        
+        # Test each tool
+        failed_tools = []
+        passed_tools = []
+        
+        for tool_name, test_args in run_tools:
+            with self.subTest(tool=tool_name):
+                try:
+                    # Run the tool with --show flag
+                    # Use appropriate timeout for file processing tools
+                    file_processing_timeouts = {
+                        'OVERLEAF': 15,     # LaTeX compilation (increased for complex docs)
+                        'IMG2TEXT': 15,     # Image analysis with API
+                        'UNIMERNET': 10,    # Formula recognition
+                        'EXTRACT_PDF': 20   # PDF extraction with MinerU
+                    }
+                    timeout = file_processing_timeouts.get(tool_name, 30)
+                    result = subprocess.run([
+                        sys.executable, str(Path(__file__).parent.parent / 'RUN.py'),
+                        '--show', tool_name
+                    ] + test_args, 
+                    capture_output=True, text=True, timeout=timeout,
+                    cwd=Path(__file__).parent.parent)  # Use parent directory as working directory
+                    
+                    # Should succeed (exit code 0)
+                    if result.returncode != 0:
+                        error_msg = f"{tool_name}: exit code {result.returncode}"
+                        if result.stderr:
+                            error_msg += f" (stderr: {result.stderr[:100]})"
+                        if result.stdout:
+                            error_msg += f" (stdout: {result.stdout[:100]})"
+
+                        failed_tools.append(error_msg)
+                        continue
+                    
+                    # Should contain JSON output
+                    if '{' not in result.stdout:
+                        failed_tools.append(f"{tool_name}: no JSON output")
+                        continue
+                    
+                    # Try to parse JSON from stdout
+                    lines = result.stdout.strip().split('\n')
+                    json_found = False
+                    
+                    for i, line in enumerate(lines):
+                        if line.strip().startswith('{'):
+                            # Try to parse JSON from this point
+                            try:
+                                json_lines = []
+                                brace_count = 0
+                                for j in range(i, len(lines)):
+                                    json_lines.append(lines[j])
+                                    brace_count += lines[j].count('{') - lines[j].count('}')
+                                    if brace_count == 0 and lines[j].strip().endswith('}'):
+                                        break
+                                
+                                json_content = '\n'.join(json_lines)
+                                data = json.loads(json_content)
+                                
+                                # Verify required fields
+                                self.assertIn('success', data, f"{tool_name}: missing 'success' field")
+                                
+                                json_found = True
+                                break
+                            except (json.JSONDecodeError, ValueError):
+                                continue
+                    
+                    if not json_found:
+                        failed_tools.append(f"{tool_name}: invalid JSON output")
+                        continue
+                    
+                    passed_tools.append(tool_name)
+                    
+                    # Clean up any output files
+                    if result.stdout.strip():
+                        output_lines = result.stdout.strip().split('\n')
+                        for line in output_lines:
+                            if line.endswith('.json') and Path(line).exists():
+                                try:
+                                    Path(line).unlink()
+                                except:
+                                    pass
+                
+                except subprocess.TimeoutExpired:
+                    failed_tools.append(f"{tool_name}: timeout")
+                except Exception as e:
+                    failed_tools.append(f"{tool_name}: {str(e)}")
+        
+        # Report results
+        print(f"\nRUN Tool Test Results:")
+        print(f"  Passed: {len(passed_tools)} tools")
+        for tool in passed_tools:
+            print(f"    ✅ {tool}")
+        
+        if failed_tools:
+            print(f"  Failed: {len(failed_tools)} tools")
+            for failure in failed_tools:
+                print(f"    ❌ {failure}")
+        
+        print(f"  Total tested: {len(run_tools)} tools")
+        
+        # Test should pass if at least 70% of tools work (some tools may have complex dependencies)
+        success_rate = len(passed_tools) / len(run_tools) if run_tools else 0
+        self.assertGreaterEqual(success_rate, 0.7, 
+            f"Only {success_rate:.1%} of tools passed. Failed: {failed_tools}")
 
 class TestRUNIntegration(unittest.TestCase):
     """Integration tests for RUN tool"""

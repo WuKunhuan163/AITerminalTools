@@ -12,39 +12,36 @@ import hashlib
 from pathlib import Path
 from typing import Optional, List, Tuple
 
+# 加载环境变量
+from dotenv import load_dotenv
+load_dotenv()
 
+def is_run_environment(command_identifier=None):
+    """Check if running in RUN environment by checking environment variables"""
+    if command_identifier:
+        return os.environ.get(f'RUN_IDENTIFIER_{command_identifier}') == 'True'
+    return False
 
-def get_run_context():
-    """获取 RUN 执行上下文信息"""
-    run_identifier = os.environ.get('RUN_IDENTIFIER')
-    output_file = os.environ.get('RUN_DATA_FILE')
-    
-    if run_identifier and output_file:
-        return {
-            'in_run_context': True,
-            'identifier': run_identifier,
-            'output_file': output_file
-        }
-    else:
-        return {
-            'in_run_context': False,
-            'identifier': None,
-            'output_file': None
-        }
-
-def write_to_json_output(data, run_context):
+def write_to_json_output(data, command_identifier=None):
     """将结果写入到指定的 JSON 输出文件中"""
-    if not run_context['in_run_context'] or not run_context['output_file']:
+    if not is_run_environment(command_identifier):
+        return False
+    
+    # Get the specific output file for this command identifier
+    if command_identifier:
+        output_file = os.environ.get(f'RUN_DATA_FILE_{command_identifier}')
+    else:
+        output_file = os.environ.get('RUN_DATA_FILE')
+    
+    if not output_file:
         return False
     
     try:
         # 确保输出目录存在
-        output_path = Path(run_context['output_file'])
+        output_path = Path(output_file)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # 不再添加冗余的RUN相关信息
-        
-        with open(run_context['output_file'], 'w', encoding='utf-8') as f:
+        with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
         return True
     except Exception as e:
@@ -184,11 +181,14 @@ This tool will:
 
 def main():
     """主函数"""
-    # 获取执行上下文
-    run_context = get_run_context()
-    
-    # 解析命令行参数
+    # 获取执行上下文和command_identifier
     args = sys.argv[1:]
+    command_identifier = None
+    
+    # 检查是否被RUN调用（第一个参数是command_identifier）
+    if args and is_run_environment(args[0]):
+        command_identifier = args[0]
+        args = args[1:]  # 移除command_identifier，保留实际参数
     
     # 默认参数
     file_types_str = "all"
@@ -202,13 +202,13 @@ def main():
         arg = args[i]
         
         if arg in ['--help', '-h']:
-            if run_context['in_run_context']:
+            if is_run_environment(command_identifier):
                 help_data = {
                     "success": True,
                     "message": "Help information",
                     "help": "FILEDIALOG - File Selection Tool"
                 }
-                write_to_json_output(help_data, run_context)
+                write_to_json_output(help_data, command_identifier)
             else:
                 show_help()
             return 0
@@ -219,9 +219,9 @@ def main():
                 i += 2
             else:
                 error_msg = "Error: --types requires a value"
-                if run_context['in_run_context']:
+                if is_run_environment(command_identifier):
                     error_data = {"success": False, "error": error_msg}
-                    write_to_json_output(error_data, run_context)
+                    write_to_json_output(error_data, command_identifier)
                 else:
                     print(f"❌ {error_msg}")
                 return 1
@@ -232,9 +232,9 @@ def main():
                 i += 2
             else:
                 error_msg = "Error: --title requires a value"
-                if run_context['in_run_context']:
+                if is_run_environment(command_identifier):
                     error_data = {"success": False, "error": error_msg}
-                    write_to_json_output(error_data, run_context)
+                    write_to_json_output(error_data, command_identifier)
                 else:
                     print(f"❌ {error_msg}")
                 return 1
@@ -245,9 +245,9 @@ def main():
                 i += 2
             else:
                 error_msg = "Error: --dir requires a value"
-                if run_context['in_run_context']:
+                if is_run_environment(command_identifier):
                     error_data = {"success": False, "error": error_msg}
-                    write_to_json_output(error_data, run_context)
+                    write_to_json_output(error_data, command_identifier)
                 else:
                     print(f"❌ {error_msg}")
                 return 1
@@ -258,9 +258,9 @@ def main():
             
         else:
             error_msg = f"Error: Unknown argument '{arg}'"
-            if run_context['in_run_context']:
+            if is_run_environment(command_identifier):
                 error_data = {"success": False, "error": error_msg}
-                write_to_json_output(error_data, run_context)
+                write_to_json_output(error_data, command_identifier)
             else:
                 print(f"❌ {error_msg}")
                 print("Use --help for usage information")
@@ -269,9 +269,9 @@ def main():
     # 验证初始目录
     if initial_dir and not os.path.exists(initial_dir):
         error_msg = f"Error: Directory '{initial_dir}' does not exist"
-        if run_context['in_run_context']:
+        if is_run_environment(command_identifier):
             error_data = {"success": False, "error": error_msg}
-            write_to_json_output(error_data, run_context)
+            write_to_json_output(error_data, command_identifier)
         else:
             print(f"❌ {error_msg}")
         return 1
@@ -285,13 +285,13 @@ def main():
         
         if selected is None:
             # 用户取消了选择
-            if run_context['in_run_context']:
+            if is_run_environment(command_identifier):
                 result_data = {
                     "success": False,
                     "message": "File selection cancelled by user",
                     "selected_files": None
                 }
-                write_to_json_output(result_data, run_context)
+                write_to_json_output(result_data, command_identifier)
             else:
                 print("❌ File selection cancelled")
             return 1
@@ -300,33 +300,33 @@ def main():
         if multiple:
             if not selected:
                 # 没有选择任何文件
-                if run_context['in_run_context']:
+                if is_run_environment(command_identifier):
                     result_data = {
                         "success": False,
                         "message": "No files selected",
                         "selected_files": []
                     }
-                    write_to_json_output(result_data, run_context)
+                    write_to_json_output(result_data, command_identifier)
                 else:
                     print("❌ No files selected")
                 return 1
             else:
                 # 选择了多个文件
-                if run_context['in_run_context']:
+                if is_run_environment(command_identifier):
                     result_data = {
                         "success": True,
                         "message": f"Selected {len(selected)} file(s)",
                         "selected_files": selected,
                         "file_count": len(selected)
                     }
-                    write_to_json_output(result_data, run_context)
+                    write_to_json_output(result_data, command_identifier)
                 else:
                     print(f"✅ Selected {len(selected)} file(s):")
                     for i, file_path in enumerate(selected, 1):
                         print(f"  {i}. {file_path}")
         else:
             # 单个文件选择
-            if run_context['in_run_context']:
+            if is_run_environment(command_identifier):
                 result_data = {
                     "success": True,
                     "message": "File selected successfully",
@@ -334,7 +334,7 @@ def main():
                     "file_name": os.path.basename(selected),
                     "file_size": os.path.getsize(selected) if os.path.exists(selected) else 0
                 }
-                write_to_json_output(result_data, run_context)
+                write_to_json_output(result_data, command_identifier)
             else:
                 print(f"✅ Selected file: {selected}")
                 if os.path.exists(selected):
@@ -345,9 +345,9 @@ def main():
         
     except Exception as e:
         error_msg = f"Error during file selection: {str(e)}"
-        if run_context['in_run_context']:
+        if is_run_environment(command_identifier):
             error_data = {"success": False, "error": error_msg}
-            write_to_json_output(error_data, run_context)
+            write_to_json_output(error_data, command_identifier)
         else:
             print(f"❌ {error_msg}")
         return 1
