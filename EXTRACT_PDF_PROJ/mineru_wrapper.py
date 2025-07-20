@@ -1501,6 +1501,10 @@ Formula recognition is currently unavailable.
                 print(f"❌ Markdown文件不存在: {markdown_file}")
                 return False
             
+            # Clean up existing template placeholders first
+            print(f"🧹 清理现有模板占位符...")
+            self._clean_existing_templates(str(markdown_file))
+            
             # Process each selected item with real content processing
             processed_ids = []
             for item in selected_items:
@@ -1535,16 +1539,21 @@ Formula recognition is currently unavailable.
                     processed_content = self._process_table_content(image_file_path)
                 
                 if processed_content:
-                    # Replace placeholder with processed content in markdown
-                    if self._replace_placeholder_with_content(str(markdown_file), item_id, processed_content):
-                        # Update status
-                        if self._update_item_processing_status(str(status_file), item_id, True):
-                            processed_ids.append(item_id)
-                            print(f"✅ 成功处理并替换内容: {item_id}")
+                    # Validate that processed content is not just a template
+                    if self._is_valid_processed_content(processed_content, item_type):
+                        # Replace placeholder with processed content in markdown
+                        if self._replace_placeholder_with_content(str(markdown_file), item_id, processed_content):
+                            # Update status
+                            if self._update_item_processing_status(str(status_file), item_id, True):
+                                processed_ids.append(item_id)
+                                print(f"✅ 成功处理并替换内容: {item_id}")
+                            else:
+                                print(f"⚠️  状态更新失败: {item_id}")
                         else:
-                            print(f"⚠️  状态更新失败: {item_id}")
+                            print(f"⚠️  内容替换失败: {item_id}")
                     else:
-                        print(f"⚠️  内容替换失败: {item_id}")
+                        print(f"⚠️  处理内容无效，跳过替换: {item_id}")
+                        # Don't mark as processed if content is invalid
                 else:
                     print(f"⚠️  内容处理失败: {item_id}")
             
@@ -1586,6 +1595,8 @@ Formula recognition is currently unavailable.
     def _process_image_content(self, image_file_path: str, custom_prompt: str = None) -> Optional[str]:
         """Process image content using IMG2TEXT tool."""
         try:
+            import time
+            start_time = time.time()
             print(f"   🔄 调用IMG2TEXT工具...")
             
             # Call IMG2TEXT tool with academic mode for papers
@@ -1598,6 +1609,8 @@ Formula recognition is currently unavailable.
                 cmd.extend(["--prompt", custom_prompt])
             
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+            end_time = time.time()
+            processing_time = end_time - start_time
             
             if result.returncode == 0:
                 description = result.stdout.strip()
@@ -1617,7 +1630,7 @@ Formula recognition is currently unavailable.
                     
                     return f"\n\n**图片分析结果:**\n{formatted_error}\n"
                 elif description:
-                    print(f"   ✅ IMG2TEXT处理成功")
+                    print(f"   ✅ IMG2TEXT处理成功 (耗时: {processing_time:.2f}秒)")
                     return f"\n\n**图片分析结果:**\n{description}\n"
                 else:
                     print(f"   ⚠️  IMG2TEXT返回空结果")
@@ -1705,7 +1718,18 @@ Formula recognition is currently unavailable.
             
             if result and result.strip():
                 print(f"   ✅ UnimerNet公式识别成功")
-                return f"\n\n**公式识别结果:**\n{result}\n"
+                # Clean up the result and format it properly
+                cleaned_result = result.strip()
+                
+                # Check if it's already in LaTeX format
+                if cleaned_result.startswith('$') or cleaned_result.startswith('\\'):
+                    # Already formatted LaTeX
+                    formatted_result = cleaned_result
+                else:
+                    # Wrap in display math mode
+                    formatted_result = f"$$\n{cleaned_result}\n$$"
+                
+                return f"\n\n**公式识别结果:**\n{formatted_result}\n"
             else:
                 print(f"   ⚠️  UnimerNet返回空结果")
                 return f"\n\n**公式识别结果:**\n$$ \\text{{[公式识别失败]}} \\quad \\text{{来自 {Path(image_file_path).name}}} $$\n"
@@ -1744,6 +1768,75 @@ Formula recognition is currently unavailable.
             print(f"   ❌ 表格处理失败: {e}")
             return f"\n\n**表格识别结果:**\n| 表格识别 | 失败 | 来自 {Path(image_file_path).name} |\n| 处理状态 | 失败 | 处理异常 |\n"
     
+    def _is_valid_processed_content(self, content: str, item_type: str) -> bool:
+        """Validate that processed content is not just a template or placeholder."""
+        if not content or not content.strip():
+            return False
+        
+        # Check for common placeholder patterns
+        placeholder_patterns = [
+            r'\[公式识别结果\]',
+            r'\[公式识别失败\]',
+            r'\[图片识别结果\]',
+            r'\[表格识别结果\]',
+            r'\[.*识别.*\]',
+            r'来自.*\.jpg',
+            r'处理失败',
+            r'识别失败'
+        ]
+        
+        import re
+        for pattern in placeholder_patterns:
+            if re.search(pattern, content):
+                print(f"   ⚠️  检测到无效内容模板: {pattern}")
+                return False
+        
+        # Type-specific validation
+        if item_type in ['formula', 'interline_equation']:
+            # Formula should contain mathematical content
+            if not any(char in content for char in ['$', '\\', '{', '}', '^', '_', '=', '+', '-', '*', '/']):
+                print(f"   ⚠️  公式内容缺少数学符号")
+                return False
+        
+        return True
+
+    def _clean_existing_templates(self, markdown_file: str) -> bool:
+        """Clean up existing template placeholders in markdown file."""
+        try:
+            with open(markdown_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # Pattern to match problematic templates
+            import re
+            
+            # Pattern for formula templates with placeholder text
+            formula_template_pattern = r'\*\*公式识别结果:\*\*\s*\$\$\s*\\text\{\\?\[公式识别结果\\?\]\}.*?\$\$'
+            
+            # Replace with placeholder for reprocessing
+            def replace_formula_template(match):
+                # Extract hash from the template if present
+                hash_match = re.search(r'来自\s+([a-f0-9]+)\.jpg', match.group(0))
+                if hash_match:
+                    hash_id = hash_match.group(1)
+                    return f'[placeholder: formula]\n![](images/{hash_id}.jpg)'
+                else:
+                    return '[placeholder: formula]\n![](images/unknown.jpg)'
+            
+            updated_content = re.sub(formula_template_pattern, replace_formula_template, content, flags=re.DOTALL)
+            
+            # Save if changes were made
+            if updated_content != content:
+                with open(markdown_file, 'w', encoding='utf-8') as f:
+                    f.write(updated_content)
+                print(f"   🧹 清理了模板占位符")
+                return True
+            
+            return False
+            
+        except Exception as e:
+            print(f"   ❌ 清理模板失败: {e}")
+            return False
+
     def _replace_placeholder_with_content(self, markdown_file: str, hash_id: str, content: str, preserve_hash: bool = True) -> bool:
         """Replace placeholder with processed content in markdown file."""
         try:
@@ -1776,7 +1869,7 @@ Formula recognition is currently unavailable.
                                 # Replace placeholder with processed content, preserve hash ID
                                 if preserve_hash:
                                     # Keep hash ID as a comment for rendering purposes
-                                    updated_lines.append(f"--- hash: {hash_id} ---")
+                                    updated_lines.append(f"<!-- hash: {hash_id} -->")
                                     updated_lines.append(content)
                                     updated_lines.append(next_line)  # Keep the original image reference
                                 else:

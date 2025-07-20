@@ -99,895 +99,517 @@ def get_output_directory_tkinter():
             title="选择项目目录"
         )
         
+        # 销毁tkinter窗口
         root.destroy()
         
         if selected_dir:
-            print(f"选择的目录: {selected_dir}")
+            print(f"✅ 选择目录: {selected_dir}")
             return selected_dir
         else:
-            print("未选择目录")
+            print("❌ 未选择目录")
             return None
             
     except ImportError:
-        print("tkinter不可用，请手动输入目录路径")
-        output_dir = input("请输入目标目录路径: ").strip()
-        if output_dir and Path(output_dir).exists():
-            return output_dir
-        else:
-            print("无效的目录路径")
-            return None
+        print("❌ tkinter不可用，请手动输入目录路径")
+        return None
     except Exception as e:
-        print(f"目录选择出错: {e}")
-        print("请手动输入目录路径")
-        output_dir = input("请输入目标目录路径: ").strip()
-        if output_dir and Path(output_dir).exists():
-            return output_dir
-        else:
-            print("无效的目录路径")
-            return None
-
-
-def get_topic_type():
-    """Get the type of learning topic from user."""
-    print("你想学习什么内容？")
-    choice = interactive_select("学习类型:", ["通用主题 (如Python、机器学习等)", "学术论文 (PDF文件)"])
-    if choice is None:
+        print(f"❌ 目录选择失败: {e}")
         return None
-    elif choice == 0:
-        return "general"
-    else:
-        return "paper"
 
 
-def get_general_topic_params():
-    """Get parameters for general topic learning."""
-    # Get topic
-    topic = input("请输入要学习的主题: ").strip()
-    if not topic:
-        topic = "Python basics"
-        print(f"使用默认主题: {topic}")
-    
-    # Get mode
-    mode_choice = interactive_select("学习模式:", ["Beginner (初学者)", "Advanced (高级)", "Practical (实践型)"])
-    if mode_choice is None:
-        return None
-    mode = ["Beginner", "Advanced", "Practical"][mode_choice]
-    
-    # Get style
-    style_choice = interactive_select("解释风格:", ["Rigorous (严谨)", "Witty (幽默)"])
-    if style_choice is None:
-        return None
-    style = ["Rigorous", "Witty"][style_choice]
-    
-    # Get output directory
-    output_dir = get_output_directory()
-    if output_dir is None:
-        return None
-    
-    return {
-        "topic": topic,
-        "mode": mode,
-        "style": style,
-        "type": "general",
-        "output_dir": output_dir
-    }
-
-
-def get_paper_input_type():
-    """Get paper input type."""
-    return interactive_select(
-        "论文输入方式:", 
-        [
-            "已处理的Markdown文件 (.md)", 
-            "PDF文件路径",
-            "论文URL链接", 
-            "论文描述/标题 (自动搜索)"
-        ]
-    )
-
-
-def show_file_selection_guidance():
-    """Show tkinter dialog to guide user through file selection process."""
+def get_paper_file():
+    """Get paper file using tkinter file selection."""
     try:
         import tkinter as tk
-        from tkinter import messagebox
+        from tkinter import filedialog
         
-        # Create root window but hide it
+        print("📄 请在弹出的窗口中选择论文文件...")
+        
+        # 创建tkinter根窗口并隐藏
         root = tk.Tk()
         root.withdraw()
         root.attributes('-topmost', True)
         
-        # Show guidance message
-        result = messagebox.askyesnocancel(
-            "LEARN - 论文文件选择",
-            "接下来将打开文件选择对话框。\n\n"
-            "请选择以下类型的文件：\n"
-            "• PDF论文文件 (.pdf)\n"
-            "• Markdown论文文件 (.md)\n\n"
-            "如果您没有本地文件，请点击\"取消\"，\n"
-            "然后可以提供论文URL或描述进行搜索。\n\n"
-            "是否继续文件选择？",
-            icon='question'
+        # 打开文件选择对话框
+        selected_file = filedialog.askopenfilename(
+            title="选择论文文件",
+            filetypes=[
+                ("PDF文件", "*.pdf"),
+                ("Markdown文件", "*.md"),
+                ("文本文件", "*.txt"),
+                ("所有文件", "*.*")
+            ]
         )
         
+        # 销毁tkinter窗口
         root.destroy()
-        return result  # True = Yes, False = No, None = Cancel
         
+        if selected_file:
+            print(f"✅ 选择文件: {selected_file}")
+            return selected_file
+        else:
+            print("❌ 未选择文件")
+            return None
+            
     except ImportError:
-        print("📁 接下来将打开文件选择对话框...")
-        print("   - 可以选择PDF或Markdown论文文件")
-        print("   - 如果没有本地文件，可以取消选择，然后提供URL或描述")
-        return True
-
-
-def get_paper_params():
-    """Get parameters for paper learning with enhanced input handling."""
-    # Show guidance dialog first
-    guidance_result = show_file_selection_guidance()
-    
-    paper_content = None
-    paper_path = None
-    paper_url = None
-    paper_description = None
-    input_type = None
-    
-    if guidance_result is True:  # User chose to proceed with file selection
-        print("📁 打开文件选择对话框...")
-        try:
-            script_dir = Path(__file__).parent
-            file_select_path = script_dir / "FILE_SELECT"
-            
-            result = subprocess.run([
-                str(file_select_path), "--types", "pdf,md", "--title", "选择论文文件 (PDF或Markdown)"
-            ], capture_output=True, text=True)
-            
-            if result.returncode == 0:
-                selected_file = result.stdout.strip()
-                if selected_file and Path(selected_file).exists():
-                    print(f"选择的文件: {selected_file}")
-                    
-                    if selected_file.endswith('.md'):
-                        # Markdown file
-                        with open(selected_file, 'r', encoding='utf-8') as f:
-                            paper_content = f.read()
-                        paper_path = selected_file
-                        input_type = 0
-                        print("✅ 已读取Markdown论文内容")
-                        
-                    elif selected_file.endswith('.pdf'):
-                        # PDF file
-                        paper_path = selected_file
-                        input_type = 1
-                        print("✅ 已选择PDF论文文件")
-                        
-                else:
-                    print("⚠️  文件选择被取消或文件无效")
-                    guidance_result = None  # Treat as cancel
-            else:
-                print("⚠️  文件选择对话框执行失败")
-                guidance_result = None  # Treat as cancel
-                
-        except Exception as e:
-            print(f"❌ 文件选择过程出错: {e}")
-            guidance_result = None  # Treat as cancel
-    
-    # If file selection was cancelled or failed, ask for URL or description
-    if guidance_result is None or guidance_result is False:
-        print("\n📝 请提供论文信息：")
-        
-        choice = interactive_select(
-            "论文来源:", 
-            ["论文URL链接", "论文描述/标题 (将自动搜索)"]
-        )
-        
-        if choice is None:
-            return None
-        
-        if choice == 0:  # URL
-            paper_url = input("请输入论文URL: ").strip()
-            if not paper_url:
-                print("❌ 未输入有效的URL")
-                return None
-            print(f"论文URL: {paper_url}")
-            input_type = 2
-            
-        elif choice == 1:  # Description
-            paper_description = input("请输入论文描述或标题: ").strip()
-            if not paper_description:
-                print("❌ 未输入有效的描述")
-                return None
-            print(f"论文描述: {paper_description}")
-            input_type = 3
-    
-    if input_type is None:
-        print("❌ 未选择有效的论文输入方式")
+        print("❌ tkinter不可用，请手动输入文件路径")
         return None
-    
-    # Get image analysis option (only for PDF processing)
-    read_images = False
-    if input_type == 1 or (input_type == 2 and paper_url):  # PDF file or URL
-        image_choice = interactive_select("是否分析图片:", ["否", "是"])
-        if image_choice is None:
-            return None
-        read_images = image_choice == 1
-
-    # Get learning mode and style
-    mode_choice = interactive_select("学习模式:", ["Beginner (初学者)", "Advanced (高级)", "Practical (实践型)"])
-    if mode_choice is None:
+    except Exception as e:
+        print(f"❌ 文件选择失败: {e}")
         return None
-    mode = ["Beginner", "Advanced", "Practical"][mode_choice]
-
-    style_choice = interactive_select("解释风格:", ["Rigorous (严谨)", "Witty (幽默)"])
-    if style_choice is None:
-        return None
-    style = ["Rigorous", "Witty"][style_choice]
-
-    # Get output directory
-    output_dir = get_output_directory()
-    if output_dir is None:
-        return None
-
-    return {
-        "paper_path": paper_path,
-        "paper_content": paper_content,
-        "paper_url": paper_url,
-        "paper_description": paper_description,
-        "input_type": input_type,
-        "read_images": read_images,
-        "mode": mode,
-        "style": style,
-        "type": "paper",
-        "output_dir": output_dir
-    }
 
 
 def run_interactive_mode():
-    """Run interactive mode to collect parameters."""
-    # Clear terminal
+    """Run in interactive mode to collect parameters."""
     clear_terminal()
+    print("=== LEARN 智能学习系统 ===")
+    print("欢迎使用智能学习内容生成工具！")
+    print()
     
-    # Get topic type
-    topic_type = get_topic_type()
-    if topic_type is None:
-        print("设置已取消")
+    # Step 1: Select learning type
+    print("📚 第1步：选择学习类型")
+    type_choice = interactive_select(
+        "学习类型:",
+        ["通用主题学习", "基于学术论文学习"]
+    )
+    if type_choice is None:
         return None
     
-    # Get parameters based on type
-    if topic_type == "general":
-        params = get_general_topic_params()
-    else:
-        params = get_paper_params()
+    params = {}
     
-    if params is None:
-        print("设置已取消")
+    if type_choice == 0:  # General topic
+        params["type"] = "general"
+        
+        # Get topic
+        print("\n📝 第2步：输入学习主题")
+        while True:
+            topic = input("请输入学习主题 (例如: Python基础, 机器学习, 数据结构): ").strip()
+            if topic:
+                params["topic"] = topic
+                break
+            print("请输入有效的主题")
+        
+    else:  # Paper-based
+        params["type"] = "paper"
+        
+        print("\n📄 第2步：选择论文输入方式")
+        input_choice = interactive_select(
+            "论文输入方式:",
+            ["本地Markdown文件", "本地PDF文件", "论文URL", "论文描述/搜索"]
+        )
+        if input_choice is None:
+            return None
+            
+        params["input_type"] = input_choice
+        
+        if input_choice == 0:  # Markdown file
+            paper_file = get_paper_file()
+            if not paper_file:
+                return None
+            params["paper_path"] = paper_file
+            
+            # Read markdown content
+            try:
+                with open(paper_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                params["paper_content"] = content
+                print(f"✅ 读取Markdown文件: {len(content)} 字符")
+            except Exception as e:
+                print(f"❌ 读取文件失败: {e}")
+                return None
+                
+        elif input_choice == 1:  # PDF file
+            paper_file = get_paper_file()
+            if not paper_file:
+                return None
+            params["paper_path"] = paper_file
+            
+            # Ask about image processing
+            print("\n🖼️  图像处理选项")
+            image_choice = interactive_select(
+                "是否处理PDF中的图像、公式和表格？",
+                ["否 (仅提取文本，速度快)", "是 (完整处理，需要API调用)"]
+            )
+            params["read_images"] = image_choice == 1
+            
+        elif input_choice == 2:  # URL
+            while True:
+                url = input("请输入论文URL: ").strip()
+                if url:
+                    params["paper_url"] = url
+                    break
+                print("请输入有效的URL")
+                
+            # Ask about image processing
+            print("\n🖼️  图像处理选项")
+            image_choice = interactive_select(
+                "是否处理PDF中的图像、公式和表格？",
+                ["否 (仅提取文本，速度快)", "是 (完整处理，需要API调用)"]
+            )
+            params["read_images"] = image_choice == 1
+            
+        elif input_choice == 3:  # Description/Search
+            while True:
+                description = input("请输入论文描述或关键词: ").strip()
+                if description:
+                    params["paper_description"] = description
+                    break
+                print("请输入有效的描述")
+                
+            # Ask about image processing
+            print("\n🖼️  图像处理选项")
+            image_choice = interactive_select(
+                "是否处理PDF中的图像、公式和表格？",
+                ["否 (仅提取文本，速度快)", "是 (完整处理，需要API调用)"]
+            )
+            params["read_images"] = image_choice == 1
+    
+    # Step 3: Select learning level
+    print("\n🎯 第3步：选择学习水平")
+    mode_choice = interactive_select(
+        "学习水平:",
+        ["初学者", "中级", "高级", "专家"]
+    )
+    if mode_choice is None:
+        return None
+    
+    modes = ["初学者", "中级", "高级", "专家"]
+    params["mode"] = modes[mode_choice]
+    
+    # Step 4: Select explanation style
+    print("\n📖 第4步：选择解释风格")
+    style_choice = interactive_select(
+        "解释风格:",
+        ["简洁明了", "详细深入", "实例丰富", "理论导向"]
+    )
+    if style_choice is None:
+        return None
+    
+    styles = ["简洁明了", "详细深入", "实例丰富", "理论导向"]
+    params["style"] = styles[style_choice]
+    
+    # Step 5: Get output directory
+    print("\n📁 第5步：选择输出目录")
+    output_dir = get_output_directory()
+    if not output_dir:
+        return None
+    
+    params["output_dir"] = output_dir
+    
+    # Check for existing files
+    if not check_and_confirm_overwrite(output_dir):
+        print("操作已取消")
         return None
     
     return params
 
 
 def parse_direct_command(args):
-    """Parse direct command arguments."""
-    parser = argparse.ArgumentParser(description="LEARN - 智能学习系统")
-    parser.add_argument("topic", help="学习主题或PDF文件路径")
-    parser.add_argument("--type", choices=["general", "paper"], help="学习类型 (general: 通用主题, paper: 学术论文)")
-    parser.add_argument("--mode", choices=["Beginner", "Advanced", "Practical"], help="学习模式")
-    parser.add_argument("--style", choices=["Rigorous", "Witty"], help="解释风格")
-    parser.add_argument("--output-dir", help="输出目录 (如果未提供，将弹出选择对话框)")
-    parser.add_argument("--read-images", action="store_true", help="分析PDF中的图片")
-    parser.add_argument("--no-auto-create", action="store_true", help="不自动创建文件，只获取结构建议")
-    parser.add_argument("--not-default", action="store_true", help="不使用默认设置，启用交互式选择")
+    """Parse direct command line arguments."""
+    parser = argparse.ArgumentParser(description='LEARN - 智能学习系统')
     
-    parsed_args = parser.parse_args(args)
+    # Basic options
+    parser.add_argument('topic', nargs='?', help='学习主题')
+    parser.add_argument('-o', '--output', required=True, help='输出目录')
+    parser.add_argument('-m', '--mode', choices=['初学者', '中级', '高级', '专家'], 
+                       default='中级', help='学习水平')
+    parser.add_argument('-s', '--style', choices=['简洁明了', '详细深入', '实例丰富', '理论导向'],
+                       default='详细深入', help='解释风格')
     
-    # 处理输出目录逻辑
-    if not parsed_args.output_dir:
-        if parsed_args.not_default:
-            # 使用交互式选择
-            print("📁 未指定输出目录，请选择输出文件夹...")
-            parsed_args.output_dir = get_output_directory()
-            if not parsed_args.output_dir:
-                print("❌ 未选择输出目录，退出程序")
-                return None
-        else:
-            # 使用默认设置：当前目录
-            parsed_args.output_dir = os.getcwd()
-            print(f"📁 使用默认输出目录：{parsed_args.output_dir}")
+    # Paper options
+    parser.add_argument('-p', '--paper', help='论文文件路径')
+    parser.add_argument('-u', '--url', help='论文URL')
+    parser.add_argument('-d', '--description', help='论文描述/搜索关键词')
+    parser.add_argument('--read-images', action='store_true', help='处理PDF中的图像、公式和表格')
     
-    # 处理mode和style的默认值
-    if not parsed_args.mode:
-        if parsed_args.not_default:
-            # 使用交互式选择（这里应该调用交互式选择函数）
-            parsed_args.mode = "Beginner"  # 临时使用默认值，后续可以改为交互式
-        else:
-            # 使用默认设置：第一项
-            parsed_args.mode = "Beginner"
-            print(f"📚 使用默认学习模式：{parsed_args.mode}")
+    # Model options
+    parser.add_argument('--model', help='指定OpenRouter模型')
+    parser.add_argument('--max-tokens', type=int, help='最大token数')
+    parser.add_argument('--not-default', action='store_true', help='非默认模式，需要用户确认')
+    parser.add_argument('--no-auto-create', action='store_true', help='不自动创建文件，仅生成内容')
     
-    if not parsed_args.style:
-        if parsed_args.not_default:
-            # 使用交互式选择（这里应该调用交互式选择函数）
-            parsed_args.style = "Rigorous"  # 临时使用默认值，后续可以改为交互式
-        else:
-            # 使用默认设置：第一项
-            parsed_args.style = "Rigorous"
-            print(f"🎨 使用默认解释风格：{parsed_args.style}")
+    try:
+        parsed_args = parser.parse_args(args)
+    except SystemExit:
+        return None
     
-    # 检查文件覆盖（仅在非--not-default模式下）
-    if not parsed_args.not_default and not parsed_args.no_auto_create:
-        if check_and_confirm_overwrite(parsed_args.output_dir):
-            print("✅ 确认继续")
-        else:
-            print("❌ 用户取消操作")
-            return None
+    # Build parameters
+    params = {
+        'mode': parsed_args.mode,
+        'style': parsed_args.style,
+        'output_dir': parsed_args.output,
+        'not_default': parsed_args.not_default,
+        'no_auto_create': parsed_args.no_auto_create
+    }
     
-    # Determine if it's a paper or general topic
-    # Check if type is explicitly specified
-    if parsed_args.type:
-        if parsed_args.type == "paper":
-            # Force paper type regardless of topic content
-            if parsed_args.topic.endswith('.pdf'):
-                return {
-                    "paper_path": parsed_args.topic,
-                    "input_type": 1,  # PDF file
-                    "read_images": parsed_args.read_images,
-                    "mode": parsed_args.mode,
-                    "style": parsed_args.style,
-                    "type": "paper",
-                    "output_dir": parsed_args.output_dir,
-                    "no_auto_create": parsed_args.no_auto_create,
-                    "not_default": parsed_args.not_default
-                }
-            elif parsed_args.topic.endswith('.md'):
-                try:
-                    with open(parsed_args.topic, 'r', encoding='utf-8') as f:
-                        paper_content = f.read()
-                except FileNotFoundError:
-                    print(f"❌ 找不到Markdown文件: {parsed_args.topic}")
-                    return None
-                except Exception as e:
-                    print(f"❌ 读取Markdown文件失败: {e}")
-                    return None
-                    
-                return {
-                    "paper_path": parsed_args.topic,
-                    "paper_content": paper_content,
-                    "input_type": 0,  # Markdown file
-                    "read_images": False,
-                    "mode": parsed_args.mode,
-                    "style": parsed_args.style,
-                    "type": "paper",
-                    "output_dir": parsed_args.output_dir,
-                    "no_auto_create": parsed_args.no_auto_create,
-                    "not_default": parsed_args.not_default
-                }
-            elif parsed_args.topic.startswith('http://') or parsed_args.topic.startswith('https://'):
-                return {
-                    "paper_url": parsed_args.topic,
-                    "input_type": 2,  # URL
-                    "read_images": parsed_args.read_images,
-                    "mode": parsed_args.mode,
-                    "style": parsed_args.style,
-                    "type": "paper",
-                    "output_dir": parsed_args.output_dir,
-                    "no_auto_create": parsed_args.no_auto_create,
-                    "not_default": parsed_args.not_default
-                }
-            else:
-                # Treat as paper description
-                return {
-                    "paper_description": parsed_args.topic,
-                    "input_type": 3,  # Description/Search
-                    "read_images": parsed_args.read_images,
-                    "mode": parsed_args.mode,
-                    "style": parsed_args.style,
-                    "type": "paper",
-                    "output_dir": parsed_args.output_dir,
-                    "no_auto_create": parsed_args.no_auto_create,
-                    "not_default": parsed_args.not_default
-                }
-        else:  # general
-            # Force general type
-            return {
-                "topic": parsed_args.topic,
-                "mode": parsed_args.mode,
-                "style": parsed_args.style,
-                "type": "general",
-                "output_dir": parsed_args.output_dir,
-                "no_auto_create": parsed_args.no_auto_create,
-                "not_default": parsed_args.not_default
-            }
+    if parsed_args.model:
+        params['selected_model'] = parsed_args.model
+    if parsed_args.max_tokens:
+        params['max_tokens'] = parsed_args.max_tokens
     
-    # Auto-detect type if not specified
-    if parsed_args.topic.endswith('.pdf'):
-        return {
-            "paper_path": parsed_args.topic,
-            "input_type": 1,  # PDF file
-            "read_images": parsed_args.read_images,
-            "mode": parsed_args.mode,
-            "style": parsed_args.style,
-            "type": "paper",
-            "output_dir": parsed_args.output_dir,
-            "no_auto_create": parsed_args.no_auto_create,
-            "not_default": parsed_args.not_default
-        }
-    elif parsed_args.topic.endswith('.md'):
-        # Markdown file
-        try:
-            with open(parsed_args.topic, 'r', encoding='utf-8') as f:
-                paper_content = f.read()
-        except FileNotFoundError:
-            print(f"❌ 找不到Markdown文件: {parsed_args.topic}")
-            return None
-        except Exception as e:
-            print(f"❌ 读取Markdown文件失败: {e}")
-            return None
-            
-        return {
-            "paper_path": parsed_args.topic,
-            "paper_content": paper_content,
-            "input_type": 0,  # Markdown file
-            "read_images": False,  # Not applicable for MD files
-            "mode": parsed_args.mode,
-            "style": parsed_args.style,
-            "type": "paper",
-            "output_dir": parsed_args.output_dir,
-            "no_auto_create": parsed_args.no_auto_create,
-            "not_default": parsed_args.not_default
-        }
-    elif parsed_args.topic.startswith('http://') or parsed_args.topic.startswith('https://'):
-        # URL
-        return {
-            "paper_url": parsed_args.topic,
-            "input_type": 2,  # URL
-            "read_images": parsed_args.read_images,
-            "mode": parsed_args.mode,
-            "style": parsed_args.style,
-            "type": "paper",
-            "output_dir": parsed_args.output_dir,
-            "no_auto_create": parsed_args.no_auto_create,
-            "not_default": parsed_args.not_default
-        }
+    # Determine type based on arguments
+    if parsed_args.paper:
+        params['type'] = 'paper'
+        params['input_type'] = 1  # PDF file
+        params['paper_path'] = parsed_args.paper
+        params['read_images'] = parsed_args.read_images
+    elif parsed_args.url:
+        params['type'] = 'paper'
+        params['input_type'] = 2  # URL
+        params['paper_url'] = parsed_args.url
+        params['read_images'] = parsed_args.read_images
+    elif parsed_args.description:
+        params['type'] = 'paper'
+        params['input_type'] = 3  # Description/Search
+        params['paper_description'] = parsed_args.description
+        params['read_images'] = parsed_args.read_images
+    elif parsed_args.topic:
+        params['type'] = 'general'
+        params['topic'] = parsed_args.topic
     else:
-        # Check if it's a file path that exists
-        if os.path.exists(parsed_args.topic):
-            if parsed_args.topic.endswith('.pdf'):
-                return {
-                    "paper_path": parsed_args.topic,
-                    "input_type": 1,  # PDF file
-                    "read_images": parsed_args.read_images,
-                    "mode": parsed_args.mode,
-                    "style": parsed_args.style,
-                    "type": "paper",
-                    "output_dir": parsed_args.output_dir,
-                    "no_auto_create": parsed_args.no_auto_create,
-                    "not_default": parsed_args.not_default
-                }
-            elif parsed_args.topic.endswith('.md'):
-                try:
-                    with open(parsed_args.topic, 'r', encoding='utf-8') as f:
-                        paper_content = f.read()
-                except Exception as e:
-                    print(f"❌ 读取Markdown文件失败: {e}")
-                    return None
-                    
-                return {
-                    "paper_path": parsed_args.topic,
-                    "paper_content": paper_content,
-                    "input_type": 0,  # Markdown file
-                    "read_images": False,
-                    "mode": parsed_args.mode,
-                    "style": parsed_args.style,
-                    "type": "paper",
-                    "output_dir": parsed_args.output_dir,
-                    "no_auto_create": parsed_args.no_auto_create,
-                    "not_default": parsed_args.not_default
-                }
-        
-        # Treat as general topic or paper description
-        # If it looks like a paper description (contains academic keywords), treat as paper search
-        academic_keywords = ['paper', 'research', 'study', 'analysis', 'algorithm', 'model', 'neural', 'learning', 'deep', 'machine']
-        if any(keyword in parsed_args.topic.lower() for keyword in academic_keywords):
-            return {
-                "paper_description": parsed_args.topic,
-                "input_type": 3,  # Description/Search
-                "read_images": parsed_args.read_images,
-                "mode": parsed_args.mode,
-                "style": parsed_args.style,
-                "type": "paper",
-                "output_dir": parsed_args.output_dir,
-                "no_auto_create": parsed_args.no_auto_create,
-                "not_default": parsed_args.not_default
-            }
-        else:
-            # General topic
-            return {
-                "topic": parsed_args.topic,
-                "mode": parsed_args.mode,
-                "style": parsed_args.style,
-                "type": "general",
-                "output_dir": parsed_args.output_dir,
-                "no_auto_create": parsed_args.no_auto_create,
-                "not_default": parsed_args.not_default
-            }
-
-
-def generate_content_structure_prompt(params):
-    """Generate a detailed prompt for content structure planning."""
-    if params["type"] == "general":
-        # General topic prompt
-        topic = params["topic"]
-        mode = params["mode"]
-        style = params["style"]
-        
-        prompt = f"""请对"{topic}"这个主题进行全面的头脑风暴（brainstorming），为创建教程提供丰富的想法和建议。
-
-学习模式：{mode}
-解释风格：{style}
-
-请从以下角度提供尽可能多的建议：
-
-1. **核心概念和知识点**
-   - 这个主题包含哪些核心概念？
-   - 哪些是{mode}水平学习者必须掌握的？
-   - 哪些概念之间有依赖关系？
-
-2. **学习路径和章节结构**
-   - 建议的学习顺序是什么？
-   - 如何从基础到进阶循序渐进？
-   - 每个阶段的重点是什么？
-
-3. **实践和练习**
-   - 有哪些经典的练习题目？
-   - 哪些实际项目适合练习？
-   - 如何设计从简单到复杂的练习序列？
-
-4. **常见问题和难点**
-   - 学习者通常在哪些地方遇到困难？
-   - 有哪些常见的误解需要澄清？
-   - 如何帮助学习者克服这些难点？
-
-5. **资源和工具**
-   - 需要哪些工具或软件？
-   - 有哪些有用的参考资料？
-   - 推荐哪些在线资源？
-
-6. **应用场景**
-   - 这个主题在实际中有哪些应用？
-   - 有哪些具体的应用案例？
-   - 如何将理论与实践结合？
-
-请提供详细、全面的建议，越多越好！这些建议将用于构建一个完整的学习教程。"""
-
-        return prompt
-
-    else:
-        # Paper-based prompt - need to prepare paper content first
-        print("\n📄 准备论文内容...")
-        
-        # Prepare paper content based on input type
-        paper_result = prepare_paper_content(params)
-        if paper_result is None:
-            return None
-            
-        paper_content, paper_path, token_count = paper_result
-        
-        # Store paper content in params for later use
-        params["paper_content"] = paper_content
-        params["paper_path"] = paper_path
-        params["token_count"] = token_count
-        
-        # Ask user about brainstorming
-        print(f"\n🧠 论文内容已准备完毕 (预估 {token_count:,} tokens)")
-        
-        # Auto-proceed with brainstorming if:
-        # 1. Not using --not-default (default mode), OR
-        # 2. Using free model and content fits within context
-        should_auto_proceed = False
-        
-        if not params.get('not_default', False):
-            # Default mode - auto proceed
-            should_auto_proceed = True
-            print("🚀 默认模式：自动开始AI头脑风暴分析...")
-        else:
-            # Check if using free model and content fits
-            models, model_details = get_openrouter_models()
-            if models and params.get("selected_model"):
-                selected_model = params["selected_model"]
-                details = model_details.get(selected_model, {})
-                is_free_model = details.get('input_cost_per_1m', 0) == 0
-                context_length = details.get('context_length', 0)
-                
-                if is_free_model and context_length and token_count < context_length * 0.8:  # Use 80% of context as safe limit
-                    should_auto_proceed = True
-                    print("🚀 免费模型且内容适量：自动开始AI头脑风暴分析...")
-        
-        if not should_auto_proceed:
-            while True:
-                try:
-                    choice = input("是否要进行AI头脑风暴分析？ (Y/n): ").strip().lower()
-                    if choice in ['y', 'yes', '']:
-                        break
-                    elif choice in ['n', 'no']:
-                        print("跳过头脑风暴，直接进入教程生成...")
-                        return None  # Skip brainstorming
-                    else:
-                        print("请输入 y 或 n")
-                except KeyboardInterrupt:
-                    print("\n操作已取消")
-                    return None
-        
-        # Get OpenRouter models and check token limits
-        print("\n🤖 检查模型token限制...")
-        models, model_details = get_openrouter_models()
-        if not models:
-            print("❌ 无法获取可用模型列表")
-            return None
-        
-        # Use already selected model from params if available
-        if params.get("selected_model") and params.get("max_tokens") is not None:
-            selected_model = params["selected_model"]
-            max_tokens = params["max_tokens"]
-            print(f"✅ 使用已选择的模型: {selected_model}")
-        else:
-            # This shouldn't happen in normal flow, but as fallback
-            selected_model, max_tokens = select_openrouter_model(params)
-            if not selected_model:
-                print("❌ 未选择模型")
-                return None
-        
-        # Check if content will be truncated
-        estimated_prompt_tokens = count_tokens("基于论文进行头脑风暴分析...") + token_count
-        
-        if max_tokens and estimated_prompt_tokens > max_tokens:
-            print(f"\n⚠️  警告：输入内容可能会被截断")
-            print(f"   论文内容: {token_count:,} tokens")
-            print(f"   模型限制: {max_tokens:,} tokens") 
-            print(f"   预估总输入: {estimated_prompt_tokens:,} tokens")
-            
-            # Calculate truncation point
-            available_tokens = max_tokens - 1000  # Reserve 1000 tokens for prompt structure
-            if available_tokens > 0:
-                truncation_chars = available_tokens * 4  # Approximate characters
-                print(f"   内容将被截断到约 {available_tokens:,} tokens ({truncation_chars:,} 字符)")
-                
-                while True:
-                    try:
-                        choice = input("\n继续处理 (使用截断的内容) 还是取消？ (c/Q): ").strip().lower()
-                        if choice in ['c', 'continue']:
-                            # Truncate content
-                            paper_content = paper_content[:truncation_chars]
-                            params["paper_content"] = paper_content
-                            params["token_count"] = count_tokens(paper_content)
-                            print(f"✂️  内容已截断到 {params['token_count']:,} tokens")
-                            break
-                        elif choice in ['q', 'quit', '']:
-                            print("操作已取消")
-                            return None
-                        else:
-                            print("请输入 c (继续) 或 q (退出)")
-                    except KeyboardInterrupt:
-                        print("\n操作已取消")
-                        return None
-            else:
-                print("❌ 内容过长，无法处理")
-                return None
-        elif max_tokens is None:
-            print(f"✅ 使用免费模型，无token限制 (论文内容: {token_count:,} tokens)")
-        else:
-            print(f"✅ 内容大小合适 (论文: {token_count:,} tokens, 限制: {max_tokens:,} tokens)")
-        
-        # Store selected model info
-        params["selected_model"] = selected_model
-        params["max_tokens"] = max_tokens
-        
-        mode = params["mode"]
-        style = params["style"]
-        read_images = params.get("read_images", False)
-        
-        # Generate prompt with paper content
-        prompt = f"""请基于以下学术论文内容进行全面的头脑风暴分析，为创建学习教程提供详细建议。
-
-**论文内容：**
-{paper_content}
-
-**教程要求：**
-- 学习模式：{mode}
-- 解释风格：{style}
-- 图片分析：{"已启用" if read_images else "未启用"}
-
-请从以下角度提供详细的教程设计建议：
-
-1. **论文核心内容分析**
-   - 论文的主要贡献和创新点是什么？
-   - 关键概念和技术有哪些？
-   - 论文解决了什么问题？
-
-2. **教程章节结构建议**
-   - 如何将论文内容转化为{mode}水平的教程章节？
-   - 建议的学习顺序和章节划分？
-   - 每个章节应该重点讲解什么内容？
-
-3. **概念解释策略**
-   - 哪些概念需要详细解释？
-   - 如何用{style}的风格解释复杂概念？
-   - 需要哪些背景知识铺垫？
-
-4. **实践练习设计**
-   - 基于论文内容可以设计哪些理解题？
-   - 有哪些实际应用练习？
-   - 如何设计批判性思考题？
-
-5. **教学重点和难点**
-   - 学习者可能在哪些地方遇到困难？
-   - 如何帮助理解论文中的创新点？
-   - 需要特别强调哪些内容？
-
-请提供详细、具体的建议，这将用于生成完整的学习教程！"""
-
-        return prompt
+        print("错误：必须指定学习主题或论文信息")
+        return None
+    
+    return params
 
 
 def get_openrouter_models():
-    """Get available OpenRouter models with details (only useable ones)."""
+    """Get available OpenRouter models."""
     try:
-        # 直接调用OPENROUTER --list，设置RUN_DATA_FILE环境变量
-        env = os.environ.copy()
-        env['RUN_DATA_FILE'] = '/tmp/dummy_run_data.json'
-        
         script_dir = Path(__file__).parent
-        openrouter_path = script_dir / "OPENROUTER.py"
+        openrouter_data_file = script_dir / "OPENROUTER_DATA" / "openrouter_models.json"
         
-        result = subprocess.run([
-            sys.executable, str(openrouter_path), "--list"
-        ], capture_output=True, text=True, timeout=30, env=env)
-        
-        if result.returncode == 0:
-            try:
-                import json
-                import re
-                
-                # 清理ANSI转义序列
-                clean_output = re.sub(r'\x1b\[[0-9;]*[mJHK]', '', result.stdout)
-                
-                response_data = json.loads(clean_output)
-                
-                if response_data.get('success'):
-                    # 从JSON中直接获取模型列表和详细信息
-                    models = response_data.get('models', [])
-                    model_details = response_data.get('model_details', {})
-                    
-                    if models:
-                        return models, model_details
-                    else:
-                        print("⚠️  没有找到可用的OpenRouter模型", file=sys.stderr)
-                        return [], {}
+        if openrouter_data_file.exists():
+            import json
+            with open(openrouter_data_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                models_dict = data.get('models', {})
+                if isinstance(models_dict, dict):
+                    # Extract model names from dictionary format
+                    models = list(models_dict.keys())
+                    model_details = models_dict
                 else:
-                    print(f"⚠️  获取模型列表失败: {response_data.get('message', 'Unknown error')}", file=sys.stderr)
-                    return [], {}
-                    
-            except json.JSONDecodeError:
-                print("⚠️  解析模型列表JSON失败", file=sys.stderr)
-                return [], {}
+                    # Handle list format (legacy)
+                    models = models_dict
+                    model_details = data.get('model_details', {})
+                return models, model_details
         else:
-            print(f"⚠️  调用OPENROUTER --list失败: {result.stderr}", file=sys.stderr)
-            return [], {}
-            
+            # Fallback to default models
+            default_models = [
+                "deepseek/deepseek-r1:free",
+                "deepseek/deepseek-chat",
+                "openai/gpt-4o-mini",
+                "anthropic/claude-3-haiku"
+            ]
+            return default_models, {}
     except Exception as e:
-        print(f"⚠️  获取OpenRouter模型列表时出错: {e}", file=sys.stderr)
-        return [], {}
+        print(f"⚠️  获取模型列表失败: {e}")
+        # Return minimal fallback
+        return ["deepseek/deepseek-r1:free"], {}
 
 
-def select_openrouter_model(params=None):
-    """Let user select OpenRouter model."""
-    print("\n🤖 选择AI模型...")
-    
-    # 获取可用模型和详细信息
+def select_openrouter_model(params):
+    """Select OpenRouter model with token limits."""
     models, model_details = get_openrouter_models()
     
     if not models:
-        print("❌ 没有可用的OpenRouter模型", file=sys.stderr)
-        models, model_details = get_openrouter_models()  # 重试一次
-        if not models:
-            print("❌ 重试后仍然没有可用的OpenRouter模型", file=sys.stderr)
+        print("❌ 没有可用的模型")
+        return None, None
+    
+    # Check if model is already specified
+    if params.get("selected_model"):
+        selected_model = params["selected_model"]
+        max_tokens = params.get("max_tokens", 4000)
+        print(f"✅ 使用指定模型: {selected_model}")
+        return selected_model, max_tokens
+    
+    # Auto-select for default mode
+    if not params.get('not_default', False):
+        selected_model = models[0]  # Use first available model
+        max_tokens = 4000
+        print(f"🚀 默认模式：自动选择模型 {selected_model}")
+        return selected_model, max_tokens
+    
+    # Interactive model selection
+    print(f"\n🤖 选择OpenRouter模型")
+    print("可用模型:")
+    
+    # Categorize models
+    free_models = []
+    paid_models = []
+    
+    for model in models:
+        details = model_details.get(model, {})
+        if ":free" in model or details.get('input_cost_per_1m', 0) == 0:
+            free_models.append(model)
+        else:
+            paid_models.append(model)
+    
+    all_models = []
+    
+    if free_models:
+        print("\n免费模型:")
+        for model in free_models:
+            print(f"  {len(all_models) + 1}. {model}")
+            all_models.append(model)
+    
+    if paid_models:
+        print("\n付费模型:")
+        for model in paid_models:
+            details = model_details.get(model, {})
+            cost = details.get('input_cost_per_1m', 0)
+            cost_str = f" (${cost:.2f}/1M tokens)" if cost > 0 else ""
+            print(f"  {len(all_models) + 1}. {model}{cost_str}")
+            all_models.append(model)
+    
+    # Select model
+    while True:
+        try:
+            choice = input(f"\n选择模型 (1-{len(all_models)}, 默认: 1): ").strip()
+            if not choice:
+                selected_model = all_models[0]
+                break
+            
+            choice_idx = int(choice) - 1
+            if 0 <= choice_idx < len(all_models):
+                selected_model = all_models[choice_idx]
+                break
+            else:
+                print(f"请输入 1-{len(all_models)} 之间的数字")
+        except ValueError:
+            print("请输入有效数字")
+        except KeyboardInterrupt:
+            print("\n操作取消")
             return None, None
     
-    # 检查是否使用默认设置
-    if params and not params.get('not_default', False):
-        selected_model = models[0]
-        print(f"🤖 使用默认模型: {selected_model}")
-    else:
-        # 交互式选择
-        print("可用模型:")
-        for i, model in enumerate(models):
-            # 显示模型信息包括context length
-            details = model_details.get(model, {})
-            context_length = details.get('context_length', 'Unknown')
-            cost_info = ""
-            if details.get('input_cost_per_1m', 0) == 0:
-                cost_info = " (免费)"
-            else:
-                cost_info = f" (${details.get('input_cost_per_1m', 0):.1f}/$M)"
-            print(f"  {i+1}. {model} [Context: {context_length:,}]{cost_info}")
-        
-        while True:
-            try:
-                choice = input(f"选择模型 (1-{len(models)}, 默认: 1): ").strip()
-                if not choice:
-                    selected_model = models[0]
-                    break
-                
-                choice_num = int(choice) - 1
-                if 0 <= choice_num < len(models):
-                    selected_model = models[choice_num]
-                    break
-                else:
-                    print(f"请输入 1 到 {len(models)} 之间的数字")
-            except ValueError:
-                print(f"请输入有效的数字")
-            except KeyboardInterrupt:
-                print("\n取消选择，使用默认模型")
-                # 获取第一个可用模型
-                models, model_details = get_openrouter_models()
-                if models:
-                    return models[0], None
-                return None, None
-        
-        print(f"选择的模型: {selected_model}")
-    
-    # 获取模型详细信息
+    # Set token limit based on model
     details = model_details.get(selected_model, {})
-    context_length = details.get('context_length')
+    context_length = details.get('context_length', 8000)
     
-    # 计算max_tokens为context_length的1/4
-    max_tokens = None
-    if context_length:
-        max_tokens = context_length // 4
-        print(f"📊 模型信息: Context Length: {context_length:,}, Max Tokens: {max_tokens:,}")
+    # Conservative token limit (reserve space for output)
+    if context_length > 100000:
+        max_tokens = 8000
+    elif context_length > 32000:
+        max_tokens = 4000
+    else:
+        max_tokens = 2000
     
-    # 检查是否为免费模型
-    is_free_model = details.get('input_cost_per_1m', 0) == 0
-    
-    if not is_free_model and max_tokens:
-        # 检查是否是默认模型（第一个模型）
-        is_default_model = selected_model == models[0]
-        
-        # 只有非默认模型才显示付费提示
-        if not is_default_model:
-            print(f"\n💰 这是付费模型，当前max_tokens设置为: {max_tokens:,}")
-            while True:
-                try:
-                    choice = input(f"是否要修改max_tokens设置？ (y/N): ").strip().lower()
-                    if choice in ['y', 'yes']:
-                        while True:
-                            try:
-                                new_max_tokens = input(f"请输入max_tokens (当前: {max_tokens:,}, 最大: {context_length:,}): ").strip()
-                                if not new_max_tokens:
-                                    break  # 使用默认值
-                                
-                                new_max_tokens = int(new_max_tokens)
-                                if 1 <= new_max_tokens <= context_length:
-                                    max_tokens = new_max_tokens
-                                    print(f"✅ Max tokens设置为: {max_tokens:,}")
-                                    break
-                                else:
-                                    print(f"请输入 1 到 {context_length:,} 之间的数字")
-                            except ValueError:
-                                print("请输入有效的数字")
-                        break
-                    elif choice in ['n', 'no', '']:
-                        break
-                    else:
-                        print("请输入 y 或 n")
-                except KeyboardInterrupt:
-                    print("\n使用默认设置")
-                    break
+    print(f"✅ 选择模型: {selected_model}")
+    print(f"📊 Token限制: {max_tokens}")
     
     return selected_model, max_tokens
 
 
+def generate_content_structure_prompt(params):
+    """Generate prompt for content structure brainstorming."""
+    if params["type"] == "general":
+        topic = params['topic']
+        mode = params['mode']
+        style = params['style']
+        
+        return f"""请为"{topic}"这个学习主题进行头脑风暴分析。
+
+学习水平：{mode}
+解释风格：{style}
+
+请分析以下内容：
+1. 核心概念和知识点
+2. 学习的重点和难点
+3. 适合的学习顺序
+4. 实践练习建议
+5. 常见问题和误区
+
+请提供结构化的分析，为后续创建详细教程做准备。"""
+
+    elif params["type"] == "paper":
+        mode = params['mode']
+        style = params['style']
+        
+        # For paper type, prepare content first
+        paper_content, paper_path, token_count = prepare_paper_content(params)
+        if not paper_content:
+            return None
+            
+        # Store prepared content in params
+        params['paper_content'] = paper_content
+        params['paper_path'] = paper_path
+        params['token_count'] = token_count
+        
+        # Check if content is too long and needs summarization
+        if token_count > 15000:
+            print(f"⚠️  论文内容较长 ({token_count:,} tokens)，建议进行内容总结")
+            
+            # Ask user about processing approach
+            approach_choice = interactive_select(
+                "内容处理方式:",
+                ["直接使用 (可能超出模型限制)", "智能摘要 (推荐)", "手动截取前部分"]
+            )
+            
+            if approach_choice == 1:  # Smart summary
+                print("📝 正在生成论文摘要...")
+                # Generate summary prompt
+                summary_prompt = f"""请为以下学术论文生成详细摘要，保留关键技术细节：
+
+{paper_content[:20000]}
+
+请包含：
+1. 研究背景和问题
+2. 主要方法和技术
+3. 关键创新点
+4. 实验结果
+5. 结论和意义
+
+摘要应该详细但简洁，适合后续教程创建。"""
+                
+                # Call API for summary
+                summary_response, summary_token_info, _ = call_openrouter_with_retry(
+                    summary_prompt, 
+                    params.get("selected_model", "deepseek/deepseek-r1:free"), 
+                    params.get("max_tokens", 4000), 
+                    "论文摘要生成",
+                    params=params
+                )
+                
+                if summary_response:
+                    paper_content = summary_response
+                    print(f"✅ 摘要生成完成 ({count_tokens(paper_content)} tokens)")
+                else:
+                    print("❌ 摘要生成失败，使用原始内容")
+                    
+            elif approach_choice == 2:  # Manual truncate
+                paper_content = paper_content[:60000]  # Keep first 60k characters
+                print(f"✅ 截取前部分内容 ({count_tokens(paper_content)} tokens)")
+        
+        # Update params with processed content
+        params['paper_content'] = paper_content
+        
+        # Generate brainstorming prompt for paper
+        return f"""请分析这篇学术论文的内容，为创建教程做准备：
+
+论文路径：{paper_path}
+学习水平：{mode}
+解释风格：{style}
+
+论文内容：
+{paper_content}
+
+请分析：
+1. 论文的核心贡献和创新点
+2. 关键概念和技术方法
+3. 适合{mode}水平学习者的重点内容
+4. 可能的难点和解释策略
+5. 实践应用和扩展思考
+
+请提供结构化分析，为后续创建详细教程做准备。"""
+    
+    return None
+
+
 def call_openrouter_for_structure(prompt, model=None, max_tokens=None, retry_count=0):
-    """Call OpenRouter API to get content structure suggestions with retry mechanism."""
+    """Call OpenRouter API for structure generation with improved error handling."""
     import time
+    import json
+    import re
     
     try:
         script_dir = Path(__file__).parent
@@ -1001,7 +623,7 @@ def call_openrouter_for_structure(prompt, model=None, max_tokens=None, retry_cou
         # 如果没有指定模型，使用第一个可用模型
         if not model:
             print("🔄 正在连接OpenRouter API...", file=sys.stderr)
-            models = get_openrouter_models()
+            models, model_details = get_openrouter_models()
             if not models:
                 return None, {"error": "No useable models available"}
             model = models[0]
@@ -1011,8 +633,11 @@ def call_openrouter_for_structure(prompt, model=None, max_tokens=None, retry_cou
             print(f"🔢 最大tokens: {max_tokens}", file=sys.stderr)
         print("⏳ 这可能需要一会，请耐心等待...", file=sys.stderr)
         
-        # 构建命令 - 使用RUN --show调用OPENROUTER工具
-        cmd = [sys.executable, str(run_path), "--show", "OPENROUTER", prompt]
+        # 记录开始时间
+        start_time = time.time()
+        
+        # 构建命令 - 使用RUN --show调用OPENROUTER工具，通过stdin传递prompt
+        cmd = [sys.executable, str(run_path), "--show", "OPENROUTER"]
         
         if model:
             cmd.extend(["--model", model])
@@ -1021,14 +646,12 @@ def call_openrouter_for_structure(prompt, model=None, max_tokens=None, retry_cou
         if max_tokens:
             cmd.extend(["--max-tokens", str(max_tokens)])
         
-        # 记录开始时间
-        start_time = time.time()
-        
         # 使用RUN --show模式调用OPENROUTER工具，避免响应被截断
         try:
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            process = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, 
+                                     stderr=subprocess.PIPE, text=True)
             try:
-                stdout, stderr = process.communicate(timeout=60)
+                stdout, stderr = process.communicate(input=prompt, timeout=120)  # 增加超时时间
                 
                 # 创建一个result对象来模拟subprocess.run的返回值
                 class Result:
@@ -1064,89 +687,31 @@ def call_openrouter_for_structure(prompt, model=None, max_tokens=None, retry_cou
             
             # 解析JSON响应
             try:
-                import json
-                import re
-                
                 # 清理ANSI转义序列
                 clean_output = re.sub(r'\x1b\[[0-9;]*[mJKH]', '', result.stdout)
                 
                 response_data = json.loads(clean_output)
                 
                 if response_data.get('success'):
-                    # 检查是否是RUN --show的包装格式
-                    if 'output' in response_data:
-                        # 尝试解析output字段中的JSON
-                        try:
-                            output_content = response_data['output']
-                            if output_content.strip().startswith('{'):
-                                # output是JSON格式
-                                inner_data = json.loads(output_content)
-                                if inner_data.get('success'):
-                                    response_content = inner_data.get('content', '')
-                                    usage = inner_data.get('usage', {})
-                                    prompt_tokens = usage.get('input_tokens', 0)
-                                    completion_tokens = usage.get('output_tokens', 0)
-                                    total_tokens = usage.get('total_tokens', 0)
-                                    cost = inner_data.get('cost', 0)
-                                else:
-                                    response_content = output_content
-                                    prompt_tokens = completion_tokens = total_tokens = cost = 0
-                            else:
-                                # output是纯文本，但检查是否有RUN_DATA_FILE
-                                response_content = output_content
-                                prompt_tokens = completion_tokens = total_tokens = cost = 0
-                                # 尝试从RUN_DATA_FILE中读取token信息
-                                if '_RUN_DATA_file' in response_data:
-                                    try:
-                                        with open(response_data['_RUN_DATA_file'], 'r', encoding='utf-8') as f:
-                                            run_data = json.load(f)
-                                            if 'usage' in run_data:
-                                                usage = run_data['usage']
-                                                prompt_tokens = usage.get('input_tokens', 0)
-                                                completion_tokens = usage.get('output_tokens', 0)
-                                                total_tokens = usage.get('total_tokens', 0)
-                                            # 读取cost信息
-                                            cost = run_data.get('cost', 0)
-                                    except (FileNotFoundError, json.JSONDecodeError, KeyError):
-                                        pass
-                        except json.JSONDecodeError:
-                            # 如果解析失败，直接使用output内容
-                            response_content = response_data['output']
-                            prompt_tokens = completion_tokens = total_tokens = cost = 0
-                    else:
-                        # 直接从response_data中提取
-                        response_content = response_data.get('content', response_data.get('response', response_data.get('message', '')))
-                        usage = response_data.get('usage', {})
-                        prompt_tokens = usage.get('input_tokens', 0)
-                        completion_tokens = usage.get('output_tokens', 0)
-                        total_tokens = usage.get('total_tokens', 0)
-                        cost = response_data.get('cost', 0)
+                    # 提取响应内容和token信息
+                    response_content, usage_info = extract_response_data(response_data)
                     
-                    # 检查响应是否为空或只包含空白字符
+                    # 检查响应是否为空
                     if not response_content or response_content.strip() == '':
                         print(f"⚠️  OpenRouter API返回空内容 (耗时: {api_duration:.2f}秒)", file=sys.stderr)
                         return None, None
                     
                     # 处理可能的markdown代码块包装
-                    if '```markdown' in response_content:
-                        # 使用```markdown分割内容
-                        parts = response_content.split('```markdown')
-                        if len(parts) >= 2:
-                            # 取第二部分（```markdown之后的内容）
-                            markdown_content = parts[1]
-                            # 移除最后的```（如果存在）
-                            if '```' in markdown_content:
-                                markdown_content = markdown_content.split('```')[0]
-                            response_content = markdown_content.strip()
+                    response_content = clean_markdown_wrapper(response_content)
                     
-                    # 返回响应内容和token信息
+                    # 构建token信息
                     token_info = {
-                        'prompt_tokens': prompt_tokens,
-                        'completion_tokens': completion_tokens,
-                        'total_tokens': total_tokens,
-                        'cost': cost,
+                        'prompt_tokens': usage_info.get('input_tokens', 0),
+                        'completion_tokens': usage_info.get('output_tokens', 0),
+                        'total_tokens': usage_info.get('total_tokens', 0),
+                        'cost': usage_info.get('cost', 0),
                         'api_duration': api_duration,
-                        'model': model  # 添加模型信息
+                        'model': model
                     }
                     
                     return response_content, token_info
@@ -1163,12 +728,89 @@ def call_openrouter_for_structure(prompt, model=None, max_tokens=None, retry_cou
         else:
             print(f"❌ RUN --show OPENROUTER执行失败: {result.stderr} (耗时: {api_duration:.2f}秒)", file=sys.stderr)
             return None, None
-            
+
     except Exception as e:
         end_time = time.time()
-        api_duration = end_time - start_time
+        api_duration = end_time - start_time if 'start_time' in locals() else 0
         print(f"❌ 调用OpenRouter API时出错: {e} (耗时: {api_duration:.2f}秒)", file=sys.stderr)
         return None, None
+
+
+def extract_response_data(response_data):
+    """Extract response content and usage info from API response."""
+    response_content = ""
+    usage_info = {}
+    
+    # 检查是否是RUN --show的包装格式
+    if 'output' in response_data:
+        try:
+            output_content = response_data['output']
+            if output_content.strip().startswith('{'):
+                # output是JSON格式
+                import json
+                inner_data = json.loads(output_content)
+                if inner_data.get('success'):
+                    response_content = inner_data.get('content', '')
+                    usage = inner_data.get('usage', {})
+                    usage_info = {
+                        'input_tokens': usage.get('input_tokens', 0),
+                        'output_tokens': usage.get('output_tokens', 0),
+                        'total_tokens': usage.get('total_tokens', 0),
+                        'cost': inner_data.get('cost', 0)
+                    }
+                else:
+                    response_content = output_content
+            else:
+                # output是纯文本，但检查是否有RUN_DATA_FILE
+                response_content = output_content
+                # 尝试从RUN_DATA_FILE中读取token信息
+                if '_RUN_DATA_file' in response_data:
+                    try:
+                        import json
+                        with open(response_data['_RUN_DATA_file'], 'r', encoding='utf-8') as f:
+                            run_data = json.load(f)
+                            if 'usage' in run_data:
+                                usage = run_data['usage']
+                                usage_info = {
+                                    'input_tokens': usage.get('input_tokens', 0),
+                                    'output_tokens': usage.get('output_tokens', 0),
+                                    'total_tokens': usage.get('total_tokens', 0),
+                                    'cost': run_data.get('cost', 0)
+                                }
+                    except (FileNotFoundError, json.JSONDecodeError, KeyError):
+                        pass
+        except json.JSONDecodeError:
+            # 如果解析失败，直接使用output内容
+            response_content = response_data['output']
+    else:
+        # 直接从response_data中提取
+        response_content = response_data.get('content', 
+                          response_data.get('response', 
+                          response_data.get('message', '')))
+        usage = response_data.get('usage', {})
+        usage_info = {
+            'input_tokens': usage.get('input_tokens', 0),
+            'output_tokens': usage.get('output_tokens', 0),
+            'total_tokens': usage.get('total_tokens', 0),
+            'cost': response_data.get('cost', 0)
+        }
+    
+    return response_content, usage_info
+
+
+def clean_markdown_wrapper(content):
+    """Clean markdown code block wrapper if present."""
+    if '```markdown' in content:
+        # 使用```markdown分割内容
+        parts = content.split('```markdown')
+        if len(parts) >= 2:
+            # 取第二部分（```markdown之后的内容）
+            markdown_content = parts[1]
+            # 移除最后的```（如果存在）
+            if '```' in markdown_content:
+                markdown_content = markdown_content.split('```')[0]
+            return markdown_content.strip()
+    return content
 
 
 def generate_tutorial_prompt(params, brainstorming_response):
@@ -1345,42 +987,6 @@ def generate_question_prompt(params, tutorial_content):
     return prompt
 
 
-def generate_file_creation_prompt(params, structure_response):
-    """Generate prompt for file creation instructions."""
-    topic = params['topic']
-    mode = params['mode']
-    style = params['style']
-    
-    prompt = f"""根据以下学习内容结构建议，请提供具体的文件创建指令和内容：
-
-学习主题：{topic}
-学习模式：{mode}
-解释风格：{style}
-
-结构建议：
-{structure_response}
-
-请提供：
-1. tutorial.md 的完整内容（使用markdown格式）
-2. question.md 的完整内容（包含练习题和答案）
-3. 如果需要，提供其他相关文件的内容
-
-请确保内容适合{mode}水平的学习者，并采用{style}的解释风格。
-每个文件的内容应该用明确的标记分隔，格式如下：
-
-===== tutorial.md =====
-[tutorial.md的完整内容]
-===== END tutorial.md =====
-
-===== question.md =====
-[question.md的完整内容]
-===== END question.md =====
-
-如果有其他文件，请使用相同的格式。"""
-    
-    return prompt
-
-
 def create_learning_files_from_responses(params, tutorial_response, question_response, prompts_and_responses=None):
     """Create learning files from separate tutorial and question responses."""
     output_dir = params['output_dir']
@@ -1450,449 +1056,6 @@ def create_learning_files_from_responses(params, tutorial_response, question_res
         return False
 
 
-def create_learning_files(params, creation_response):
-    """Create learning files based on AI response."""
-    try:
-        output_dir = Path(params['output_dir'])
-        output_dir.mkdir(parents=True, exist_ok=True)
-        
-        # 解析AI响应中的文件内容
-        files_content = parse_file_content(creation_response)
-        
-        if not files_content:
-            print("❌ 无法从AI响应中解析文件内容")
-            return False
-        
-        # 创建文件
-        created_files = []
-        for filename, content in files_content.items():
-            file_path = output_dir / filename
-            try:
-                with open(file_path, 'w', encoding='utf-8') as f:
-                    f.write(content)
-                created_files.append(str(file_path))
-                print(f"✅ 创建文件: {file_path}")
-            except Exception as e:
-                print(f"❌ 创建文件 {filename} 失败: {e}")
-                return False
-        
-        print(f"\n📁 创建了 {len(created_files)} 个文件:")
-        for file_path in created_files:
-            print(f"  - {file_path}")
-        
-        return True
-        
-    except Exception as e:
-        print(f"❌ 创建文件时出错: {e}")
-        return False
-
-
-def parse_file_content(response):
-    """Parse file content from AI response."""
-    import re
-    
-    files_content = {}
-    
-    # 首先尝试匹配标准格式
-    pattern = r'===== (.+?) =====\n(.*?)\n===== END \1 ====='
-    matches = re.findall(pattern, response, re.DOTALL)
-    
-    if matches:
-        for filename, content in matches:
-            files_content[filename] = content.strip()
-    else:
-        # 如果标准格式不匹配，尝试从响应中提取内容并创建默认文件
-        print("⚠️  AI响应格式不符合预期，尝试从响应中提取内容...")
-        
-        # 清理响应内容
-        clean_response = re.sub(r'\x1b\[[0-9;]*[mJHK]', '', response)
-        
-        # 如果响应包含教程内容，创建默认文件
-        if len(clean_response.strip()) > 100:  # 确保有足够的内容
-            # 创建 tutorial.md
-            tutorial_content = f"""# Python基础教程
-
-## 基于AI生成的学习内容
-
-{clean_response}
-
-## 注意
-这是基于AI响应自动生成的内容，建议进一步整理和完善。
-"""
-            files_content['tutorial.md'] = tutorial_content
-            
-            # 创建 question.md
-            question_content = f"""# Python基础练习题
-
-## 基础练习
-
-### 问题1：什么是Python？
-<details>
-<summary>点击查看答案</summary>
-
-Python是一种高级编程语言，以其简洁的语法和强大的功能而闻名。
-
-</details>
-
-### 问题2：Python的主要特点是什么？
-<details>
-<summary>点击查看答案</summary>
-
-Python的主要特点包括：
-- 简洁易读的语法
-- 强大的标准库
-- 跨平台兼容性
-- 面向对象编程支持
-
-</details>
-
-### 问题3：如何在Python中创建一个列表？
-<details>
-<summary>点击查看答案</summary>
-
-```python
-my_list = [1, 2, 3, 4, 5]
-```
-
-</details>
-
-## 注意
-这是基于AI响应自动生成的练习题，建议根据实际教程内容进行调整。
-"""
-            files_content['question.md'] = question_content
-    
-    return files_content
-
-
-def create_files_from_brainstorming(params, brainstorming_response):
-    """Create tutorial and question files based on brainstorming response."""
-    try:
-        output_dir = Path(params['output_dir'])
-        output_dir.mkdir(parents=True, exist_ok=True)
-        
-        topic = params['topic']
-        mode = params['mode']
-        style = params['style']
-        
-        # 清理brainstorming响应
-        import re
-        clean_response = re.sub(r'\x1b\[[0-9;]*[mJHK]', '', brainstorming_response)
-        
-        # 创建tutorial.md
-        tutorial_content = create_tutorial_content(topic, mode, style, clean_response)
-        tutorial_path = output_dir / "tutorial.md"
-        with open(tutorial_path, 'w', encoding='utf-8') as f:
-            f.write(tutorial_content)
-        print(f"✅ 创建文件: {tutorial_path}")
-        
-        # 创建question.md
-        question_content = create_question_content(topic, mode, style, clean_response)
-        question_path = output_dir / "question.md"
-        with open(question_path, 'w', encoding='utf-8') as f:
-            f.write(question_content)
-        print(f"✅ 创建文件: {question_path}")
-        
-        print(f"\n📁 创建了 2 个文件:")
-        print(f"  - {tutorial_path}")
-        print(f"  - {question_path}")
-        
-        return True
-        
-    except Exception as e:
-        print(f"❌ 创建文件时出错: {e}")
-        return False
-
-
-def create_tutorial_content(topic, mode, style, brainstorming_response):
-    """Create tutorial.md content based on brainstorming."""
-    content = f"""# {topic} 教程
-
-**学习模式**: {mode}  
-**解释风格**: {style}
-
-## 简介
-
-欢迎学习{topic}！这个教程将为您提供系统的学习路径和实践指导。
-
-## 目录
-
-1. [基础概念](#基础概念)
-2. [核心知识点](#核心知识点)
-3. [实践练习](#实践练习)
-4. [进阶应用](#进阶应用)
-5. [常见问题](#常见问题)
-6. [资源推荐](#资源推荐)
-
-## 基础概念
-
-### 什么是{topic}？
-
-{topic}是一个重要的学习主题。根据AI的建议，学习{topic}对于{mode}水平的学习者来说具有重要意义。
-
-### 核心概念
-
-基于brainstorming的结果，以下是{topic}的核心概念：
-
-"""
-
-    # 尝试从brainstorming响应中提取有用信息
-    if "核心概念" in brainstorming_response or "概念" in brainstorming_response:
-        content += f"""
-**从AI建议中提取的核心概念：**
-
-{brainstorming_response[:1000]}...
-
-*（完整的AI建议请参考原始响应）*
-
-"""
-
-    content += f"""
-## 核心知识点
-
-### 必须掌握的知识点
-
-针对{mode}水平的学习者，以下是必须掌握的知识点：
-
-1. **基础理论** - 理解{topic}的基本原理
-2. **实践技能** - 掌握基本的操作和应用
-3. **问题解决** - 能够分析和解决常见问题
-
-### 学习路径
-
-建议按照以下顺序学习：
-
-1. 基础概念理解
-2. 核心技能练习
-3. 实际项目应用
-4. 高级特性探索
-
-## 实践练习
-
-### 基础练习
-
-1. **入门练习** - 熟悉基本概念
-2. **技能练习** - 掌握核心技能
-3. **综合练习** - 整合所学知识
-
-### 项目实践
-
-建议完成以下项目来巩固学习：
-
-1. **基础项目** - 应用基本概念
-2. **进阶项目** - 结合多个知识点
-3. **实战项目** - 解决实际问题
-
-## 进阶应用
-
-### 高级特性
-
-当您掌握了基础知识后，可以探索：
-
-1. **高级技术** - 深入理解原理
-2. **最佳实践** - 学习行业标准
-3. **创新应用** - 探索新的可能性
-
-## 常见问题
-
-### 学习难点
-
-基于经验，学习者通常在以下方面遇到困难：
-
-1. **概念理解** - 抽象概念的理解
-2. **实践应用** - 理论到实践的转换
-3. **问题调试** - 遇到问题时的解决方法
-
-### 解决方案
-
-针对这些难点，建议：
-
-1. **多练习** - 通过大量练习加深理解
-2. **寻求帮助** - 及时向老师或同学求助
-3. **持续学习** - 保持学习的连续性
-
-## 资源推荐
-
-### 学习资源
-
-1. **官方文档** - 最权威的学习资料
-2. **在线教程** - 丰富的学习内容
-3. **实践项目** - 动手练习的机会
-
-### 工具推荐
-
-根据学习需要，推荐使用以下工具：
-
-1. **开发环境** - 提供良好的学习环境
-2. **调试工具** - 帮助解决问题
-3. **参考资料** - 随时查阅的手册
-
-## 总结
-
-{topic}是一个值得深入学习的主题。通过系统的学习和大量的实践，您将能够：
-
-1. 掌握核心概念和技能
-2. 解决实际问题
-3. 为进一步学习打下坚实基础
-
-祝您学习愉快！
-
----
-
-**注意**: 这份教程基于AI助手的brainstorming结果创建，建议结合其他学习资源一起使用。
-"""
-
-    return content
-
-
-def create_question_content(topic, mode, style, brainstorming_response):
-    """Create question.md content based on brainstorming."""
-    content = f"""# {topic} 练习题
-
-**学习模式**: {mode}  
-**解释风格**: {style}
-
-## 基础知识题
-
-### 问题1：什么是{topic}？
-<details>
-<summary>点击查看答案</summary>
-
-{topic}是一个重要的学习领域，涉及多个核心概念和实践技能。对于{mode}水平的学习者来说，理解{topic}的基本原理和应用是必要的。
-
-</details>
-
-### 问题2：学习{topic}需要什么前置知识？
-<details>
-<summary>点击查看答案</summary>
-
-学习{topic}通常需要：
-- 基础的理论知识
-- 一定的逻辑思维能力
-- 动手实践的意愿
-- 持续学习的态度
-
-</details>
-
-### 问题3：{topic}的核心概念有哪些？
-<details>
-<summary>点击查看答案</summary>
-
-基于AI的brainstorming建议，{topic}的核心概念包括多个方面。具体内容请参考tutorial.md中的详细介绍。
-
-</details>
-
-## 理解题
-
-### 问题4：请解释{topic}的基本原理
-<details>
-<summary>点击查看答案</summary>
-
-{topic}的基本原理涉及多个层面的理解。建议从基础概念开始，逐步深入理解其工作机制和应用场景。
-
-</details>
-
-### 问题5：{topic}有哪些实际应用？
-<details>
-<summary>点击查看答案</summary>
-
-{topic}在实际中有广泛的应用，包括：
-- 理论研究
-- 实际项目
-- 问题解决
-- 创新应用
-
-</details>
-
-## 实践题
-
-### 问题6：设计一个{topic}的入门练习
-<details>
-<summary>点击查看答案</summary>
-
-建议的入门练习应该：
-1. 从最基础的概念开始
-2. 提供明确的步骤指导
-3. 包含实践操作
-4. 有明确的预期结果
-
-</details>
-
-### 问题7：如何解决{topic}学习中的常见问题？
-<details>
-<summary>点击查看答案</summary>
-
-解决学习问题的方法：
-1. 仔细阅读教程和文档
-2. 寻求老师或同学的帮助
-3. 在线搜索相关资源
-4. 通过实践验证理解
-
-</details>
-
-## 应用题
-
-### 问题8：设计一个{topic}的实际项目
-<details>
-<summary>点击查看答案</summary>
-
-实际项目应该：
-- 有明确的目标
-- 体现{topic}的核心概念
-- 适合{mode}水平的学习者
-- 提供学习和实践的机会
-
-</details>
-
-### 问题9：如何评估{topic}的学习效果？
-<details>
-<summary>点击查看答案</summary>
-
-评估学习效果可以通过：
-1. 理论知识测试
-2. 实践技能展示
-3. 项目完成情况
-4. 问题解决能力
-
-</details>
-
-## 思考题
-
-### 问题10：{topic}的未来发展趋势是什么？
-<details>
-<summary>点击查看答案</summary>
-
-{topic}的发展趋势可能包括：
-- 技术进步带来的新机会
-- 应用领域的扩展
-- 学习方法的改进
-- 工具和资源的丰富
-
-这需要学习者保持持续学习和关注行业动态。
-
-</details>
-
----
-
-**答题说明**:
-- 每个问题都对应tutorial.md中的相关知识点
-- 使用HTML的`<details>`和`<summary>`标签实现答案的显示/隐藏
-- 建议先独立思考再查看答案
-- 可以结合实践来验证理解
-
-**学习建议**:
-1. 按顺序完成练习题
-2. 每完成一组题目后回顾相关教程内容
-3. 遇到不理解的地方及时查阅资料
-4. 通过实践项目巩固所学知识
-
----
-
-**注意**: 这份练习题基于AI助手的brainstorming结果创建，建议结合实际学习进度调整难度和内容。
-"""
-
-    return content
-
-
 def call_openrouter_with_retry(prompt, model, max_tokens, step_name, max_retries=3, params=None):
     """Call OpenRouter API with retry mechanism and model switching."""
     current_model = model
@@ -1906,157 +1069,97 @@ def call_openrouter_with_retry(prompt, model, max_tokens, step_name, max_retries
         
         print(f"❌ {step_name}失败 (第{attempt + 1}次尝试)", file=sys.stderr)
         
-        # 检查是否是429错误（速率限制）
-        if response and isinstance(response, str) and ("429" in response or "rate-limited" in response):
-            print("⚠️  检测到速率限制错误，立即切换模型", file=sys.stderr)
-            # 立即切换到下一个模型
-            if attempt == 0:  # 只在第一次失败时切换
-                # 获取所有可用模型
-                all_models = get_openrouter_models()
-                if not all_models:
-                    print("❌ 无法获取模型列表", file=sys.stderr)
-                    break
-                
-                # 移除当前失败的模型
-                available_models = [m for m in all_models if m != current_model]
-                
-                if not available_models:
-                    print("❌ 没有其他可用模型", file=sys.stderr)
-                    break
-                
-                # 分类模型
-                free_models = [m for m in available_models if ":free" in m]
-                paid_models = [m for m in available_models if ":free" not in m]
-                
-                # 如果使用了--not-default，让用户选择
-                if params and not params.get('not_default', False):
-                    # 默认模式：如果当前是免费模型，尝试下一个免费模型
-                    if current_model and ":free" in current_model and free_models:
-                        current_model = free_models[0]
-                        print(f"🔄 自动切换到下一个免费模型: {current_model}", file=sys.stderr)
-                        continue
-                    elif paid_models:
-                        current_model = paid_models[0]
-                        print(f"🔄 自动切换到付费模型: {current_model}", file=sys.stderr)
-                        continue
-                else:
-                    # 交互模式：显示所有可用模型让用户选择
-                    print(f"\n⚠️  模型 '{current_model}' 调用失败", file=sys.stderr)
-                    print("可用的替代模型：", file=sys.stderr)
-                    
-                    all_available = []
-                    if free_models:
-                        print("免费模型：", file=sys.stderr)
-                        for i, model_name in enumerate(free_models):
-                            print(f"  {len(all_available) + 1}. {model_name}", file=sys.stderr)
-                            all_available.append(model_name)
-                    
-                    if paid_models:
-                        print("付费模型：", file=sys.stderr)
-                        for i, model_name in enumerate(paid_models):
-                            print(f"  {len(all_available) + 1}. {model_name}", file=sys.stderr)
-                            all_available.append(model_name)
-                    
-                    try:
-                        choice = input(f"\n选择模型 (1-{len(all_available)}) 或按回车跳过: ").strip()
-                        if choice and choice.isdigit():
-                            choice_idx = int(choice) - 1
-                            if 0 <= choice_idx < len(all_available):
-                                current_model = all_available[choice_idx]
-                                print(f"✅ 切换到模型: {current_model}", file=sys.stderr)
-                                # 重新尝试一次
-                                response, token_info = call_openrouter_for_structure(prompt, current_model, max_tokens, 0)
-                                if response is not None and not (isinstance(response, str) and response.startswith("ERROR:")):
-                                    return response, token_info, current_model
-                    except (KeyboardInterrupt, EOFError):
-                        print("\n用户取消操作", file=sys.stderr)
-                        break
-            
-            # 如果到这里说明429错误处理失败
-            break
-        
-        # 对于其他错误，在最后一次重试后才进行模型切换
-        if attempt == max_retries - 1:
-            # 获取所有可用模型
-            all_models = get_openrouter_models()
-            if not all_models:
-                print("❌ 无法获取模型列表", file=sys.stderr)
+        # 检查是否是429错误（速率限制）或其他错误需要切换模型
+        if should_switch_model(response, attempt, max_retries):
+            current_model = handle_model_switching(current_model, params, step_name)
+            if not current_model:
                 break
             
-            # 移除当前失败的模型
-            available_models = [m for m in all_models if m != current_model]
-            
-            if not available_models:
-                print("❌ 没有其他可用模型", file=sys.stderr)
-                break
-            
-            # 分类模型
-            free_models = [m for m in available_models if ":free" in m]
-            paid_models = [m for m in available_models if ":free" not in m]
-            
-            # 如果使用了--not-default，让用户选择
-            if params and not params.get('not_default', False):
-                # 默认模式：如果当前是免费模型，尝试下一个免费模型
-                if current_model and ":free" in current_model and free_models:
-                    current_model = free_models[0]
-                    print(f"🔄 自动切换到下一个免费模型: {current_model}", file=sys.stderr)
-                    # 重新尝试一次
-                    response, token_info = call_openrouter_for_structure(prompt, current_model, max_tokens, 0)
-                    if response is not None and not (isinstance(response, str) and response.startswith("ERROR:")):
-                        return response, token_info, current_model
-                elif paid_models:
-                    current_model = paid_models[0]
-                    print(f"🔄 自动切换到付费模型: {current_model}", file=sys.stderr)
-                    # 重新尝试一次
-                    response, token_info = call_openrouter_for_structure(prompt, current_model, max_tokens, 0)
-                    if response is not None and not (isinstance(response, str) and response.startswith("ERROR:")):
-                        return response, token_info, current_model
-            else:
-                # 交互模式：显示所有可用模型让用户选择
-                print(f"\n⚠️  模型 '{current_model}' 调用失败", file=sys.stderr)
-                print("可用的替代模型：", file=sys.stderr)
-                
-                all_available = []
-                if free_models:
-                    print("免费模型：", file=sys.stderr)
-                    for i, model_name in enumerate(free_models):
-                        print(f"  {len(all_available) + 1}. {model_name}", file=sys.stderr)
-                        all_available.append(model_name)
-                
-                if paid_models:
-                    print("付费模型：", file=sys.stderr)
-                    for i, model_name in enumerate(paid_models):
-                        print(f"  {len(all_available) + 1}. {model_name}", file=sys.stderr)
-                        all_available.append(model_name)
-                
-                try:
-                    choice = input(f"\n选择模型 (1-{len(all_available)}) 或按回车跳过: ").strip()
-                    if choice and choice.isdigit():
-                        choice_idx = int(choice) - 1
-                        if 0 <= choice_idx < len(all_available):
-                            current_model = all_available[choice_idx]
-                            print(f"✅ 切换到模型: {current_model}", file=sys.stderr)
-                            # 重新尝试一次
-                            response, token_info = call_openrouter_for_structure(prompt, current_model, max_tokens, 0)
-                            if response is not None and not (isinstance(response, str) and response.startswith("ERROR:")):
-                                return response, token_info, current_model
-                except (KeyboardInterrupt, EOFError):
-                    print("\n用户取消操作", file=sys.stderr)
-                    break
-            
-            # 如果到这里说明模型切换也失败了
-            break
+            # 用新模型重试
+            response, token_info = call_openrouter_for_structure(prompt, current_model, max_tokens, 0)
+            if response is not None and not (isinstance(response, str) and response.startswith("ERROR:")):
+                return response, token_info, current_model
     
     return None, None, current_model
 
 
-def get_non_free_models():
-    """Get list of non-free models from OpenRouter."""
+def should_switch_model(response, attempt, max_retries):
+    """Determine if we should switch models based on error type and attempt."""
+    if response and isinstance(response, str):
+        # 立即切换的情况：429错误
+        if "429" in response or "rate-limited" in response:
+            return True
+        # 最后一次重试时切换的情况：其他错误
+        if attempt == max_retries - 1:
+            return True
+    return False
+
+
+def handle_model_switching(current_model, params, step_name):
+    """Handle model switching logic."""
+    # 获取所有可用模型
+    all_models, model_details = get_openrouter_models()
+    if not all_models:
+        print("❌ 无法获取模型列表", file=sys.stderr)
+        return None
+    
+    # 移除当前失败的模型
+    available_models = [m for m in all_models if m != current_model]
+    if not available_models:
+        print("❌ 没有其他可用模型", file=sys.stderr)
+        return None
+    
+    # 分类模型
+    free_models = [m for m in available_models if ":free" in m]
+    paid_models = [m for m in available_models if ":free" not in m]
+    
+    # 默认模式：自动切换
+    if params and not params.get('not_default', False):
+        if current_model and ":free" in current_model and free_models:
+            new_model = free_models[0]
+            print(f"🔄 自动切换到下一个免费模型: {new_model}", file=sys.stderr)
+            return new_model
+        elif paid_models:
+            new_model = paid_models[0]
+            print(f"🔄 自动切换到付费模型: {new_model}", file=sys.stderr)
+            return new_model
+    else:
+        # 交互模式：让用户选择
+        return interactive_model_selection(current_model, free_models, paid_models, step_name)
+    
+    return None
+
+
+def interactive_model_selection(failed_model, free_models, paid_models, step_name):
+    """Interactive model selection when switching models."""
+    print(f"\n⚠️  模型 '{failed_model}' 调用失败", file=sys.stderr)
+    print("可用的替代模型：", file=sys.stderr)
+    
+    all_available = []
+    if free_models:
+        print("免费模型：", file=sys.stderr)
+        for i, model_name in enumerate(free_models):
+            print(f"  {len(all_available) + 1}. {model_name}", file=sys.stderr)
+            all_available.append(model_name)
+    
+    if paid_models:
+        print("付费模型：", file=sys.stderr)
+        for i, model_name in enumerate(paid_models):
+            print(f"  {len(all_available) + 1}. {model_name}", file=sys.stderr)
+            all_available.append(model_name)
+    
     try:
-        models = get_openrouter_models()
-        return [model for model in models if ":free" not in model]
-    except:
-        return []
+        choice = input(f"\n选择模型 (1-{len(all_available)}) 或按回车跳过: ").strip()
+        if choice and choice.isdigit():
+            choice_idx = int(choice) - 1
+            if 0 <= choice_idx < len(all_available):
+                new_model = all_available[choice_idx]
+                print(f"✅ 切换到模型: {new_model}", file=sys.stderr)
+                return new_model
+    except (KeyboardInterrupt, EOFError):
+        print("\n用户取消操作", file=sys.stderr)
+    
+    return None
 
 
 def generate_learning_content(params):
@@ -2123,37 +1226,9 @@ def generate_learning_content(params):
         
         # For paper type without brainstorming, check if we should continue
         if params["type"] == "paper":
-            # Auto-proceed in default mode or with free models
-            should_auto_proceed = False
-            
-            if not params.get('not_default', False):
-                # Default mode - auto proceed with automatic creation
-                should_auto_proceed = True
-                print("🚀 默认模式：自动选择创建模式...")
-                # Don't set no_auto_create, proceed with full auto creation
-            else:
-                # Check if using free model
-                if selected_model and max_tokens:
-                    models, model_details = get_openrouter_models()
-                    if models:
-                        details = model_details.get(selected_model, {})
-                        is_free_model = details.get('input_cost_per_1m', 0) == 0
-                        if is_free_model:
-                            should_auto_proceed = True
-                            print("🚀 免费模型：自动选择创建模式...")
-            
-            if not should_auto_proceed:
-                # Ask user about creation mode
-                print("\n🎯 选择创建模式:")
-                creation_choice = interactive_select(
-                    "创建模式:", 
-                    ["自动创建 (AI生成3次)", "手动创建 (AI生成1次，你来创建文件)"]
-                )
-                if creation_choice is None:
-                    return None
-                
-                if creation_choice == 1:  # Manual creation
-                    params["no_auto_create"] = True
+            creation_mode = determine_creation_mode(params, selected_model)
+            if creation_mode == "manual":
+                params["no_auto_create"] = True
     
     # Step 2: Generate tutorial.md
     print("\n📝 第2步：基于内容生成tutorial.md...")
@@ -2212,6 +1287,286 @@ def generate_learning_content(params):
         'brainstorming_response': brainstorming_response,
         'prompts_and_responses': prompts_and_responses
     }
+
+
+def determine_creation_mode(params, selected_model):
+    """Determine creation mode for paper type without brainstorming."""
+    # Auto-proceed in default mode or with free models
+    if not params.get('not_default', False):
+        print("🚀 默认模式：自动选择创建模式...")
+        return "auto"
+    
+    # Check if using free model
+    if selected_model:
+        models, model_details = get_openrouter_models()
+        if models:
+            details = model_details.get(selected_model, {})
+            is_free_model = details.get('input_cost_per_1m', 0) == 0
+            if is_free_model:
+                print("🚀 免费模型：自动选择创建模式...")
+                return "auto"
+    
+    # Ask user about creation mode
+    print("\n🎯 选择创建模式:")
+    creation_choice = interactive_select(
+        "创建模式:", 
+        ["自动创建 (AI生成3次)", "手动创建 (AI生成1次，你来创建文件)"]
+    )
+    
+    return "manual" if creation_choice == 1 else "auto"
+
+
+def count_tokens(text):
+    """Simple token counting approximation."""
+    # Rough approximation: 1 token ≈ 4 characters for Chinese/English mixed text
+    return len(text) // 4
+
+
+def prepare_paper_content(params):
+    """Prepare paper content based on input type."""
+    input_type = params.get("input_type", 1)
+    paper_content = None
+    paper_path = None
+    
+    if input_type == 0:  # Markdown file
+        paper_content = params.get("paper_content")
+        paper_path = params.get("paper_path")
+        print("✅ 使用已提供的Markdown内容")
+        
+    elif input_type == 1:  # PDF file
+        paper_path = params.get("paper_path")
+        read_images = params.get("read_images", False)
+        paper_content, processed_path = process_paper_with_extract_pdf(paper_path, read_images)
+        if processed_path:
+            paper_path = processed_path
+            
+    elif input_type == 2:  # URL
+        paper_url = params.get("paper_url")
+        print(f"📥 下载论文: {paper_url}")
+        
+        # Extract filename from URL or use generic name
+        import urllib.parse
+        parsed_url = urllib.parse.urlparse(paper_url)
+        filename = Path(parsed_url.path).name or "downloaded_paper.pdf"
+        
+        downloaded_path, title = download_paper(paper_url, filename.replace('.pdf', ''))
+        if downloaded_path:
+            read_images = params.get("read_images", False)
+            paper_content, processed_path = process_paper_with_extract_pdf(downloaded_path, read_images)
+            if processed_path:
+                paper_path = processed_path
+        else:
+            print("❌ 无法下载论文")
+            return None, None, 0
+            
+    elif input_type == 3:  # Description/Search
+        paper_description = params.get("paper_description")
+        downloaded_path, title = search_and_download_paper(paper_description)
+        if downloaded_path:
+            read_images = params.get("read_images", False)
+            paper_content, processed_path = process_paper_with_extract_pdf(downloaded_path, read_images)
+            if processed_path:
+                paper_path = processed_path
+        else:
+            print("❌ 无法找到或下载论文")
+            return None, None, 0
+    
+    if not paper_content:
+        print("❌ 无法获取论文内容")
+        return None, None, 0
+    
+    # Count tokens
+    token_count = count_tokens(paper_content)
+    print(f"\n📊 论文内容统计:")
+    print(f"   字符数: {len(paper_content):,}")
+    print(f"   预估token数: {token_count:,}")
+    
+    return paper_content, paper_path, token_count
+
+
+def search_and_download_paper(paper_description):
+    """Search for paper and download if found."""
+    print(f"\n🔍 搜索论文: {paper_description}")
+    
+    try:
+        script_dir = Path(__file__).parent
+        search_paper_path = script_dir / "SEARCH_PAPER"
+        
+        # Search for papers
+        result = subprocess.run([
+            str(search_paper_path), paper_description, "--max-results", "5"
+        ], capture_output=True, text=True)
+        
+        if result.returncode != 0:
+            print(f"❌ 搜索失败: {result.stderr}")
+            return None, None
+            
+        print("✅ 搜索完成，正在解析结果...")
+        
+        # Parse search results to find download URLs
+        search_results = parse_search_results()
+        if not search_results:
+            print("❌ 未找到相关论文")
+            return None, None
+        
+        # Show papers to user and let them select
+        selected_paper = interactive_paper_selection(search_results)
+        if not selected_paper:
+            return None, None
+        
+        # Try to download the paper
+        pdf_url = selected_paper.get('pdf_url')
+        if pdf_url:
+            print(f"\n📥 尝试下载论文: {selected_paper.get('title', 'Unknown')}")
+            return download_paper(pdf_url, selected_paper.get('title', 'paper'))
+        else:
+            print("❌ 未找到PDF下载链接")
+            return None, None
+            
+    except Exception as e:
+        print(f"❌ 搜索过程出错: {e}")
+        return None, None
+
+
+def parse_search_results():
+    """Parse search results from SEARCH_PAPER_DATA."""
+    try:
+        script_dir = Path(__file__).parent
+        search_data_dir = script_dir / "SEARCH_PAPER_DATA" / "results"
+        
+        if not search_data_dir.exists():
+            return None
+        
+        # Get the most recent search results file
+        result_files = list(search_data_dir.glob("search_results_*.json"))
+        if not result_files:
+            return None
+        
+        latest_file = max(result_files, key=lambda x: x.stat().st_mtime)
+        
+        import json
+        with open(latest_file, 'r', encoding='utf-8') as f:
+            search_results = json.load(f)
+        
+        return search_results if search_results else None
+        
+    except Exception as e:
+        print(f"❌ 解析搜索结果失败: {e}")
+        return None
+
+
+def interactive_paper_selection(search_results):
+    """Interactive paper selection from search results."""
+    if not search_results or len(search_results) == 0:
+        return None
+    
+    print(f"\n找到 {len(search_results)} 篇相关论文:")
+    for i, paper in enumerate(search_results[:5]):  # Show first 5
+        title = paper.get('title', 'Unknown')
+        authors = paper.get('authors', [])
+        author_str = ', '.join(authors[:3]) + ('...' if len(authors) > 3 else '')
+        print(f"  {i+1}. {title}")
+        print(f"     作者: {author_str}")
+    
+    # Let user select
+    while True:
+        try:
+            choice = input(f"\n选择论文 (1-{min(5, len(search_results))}, 或输入 'q' 退出): ").strip()
+            if choice.lower() == 'q':
+                return None
+            
+            choice_idx = int(choice) - 1
+            if 0 <= choice_idx < min(5, len(search_results)):
+                return search_results[choice_idx]
+            else:
+                print(f"请输入 1-{min(5, len(search_results))} 之间的数字")
+        except ValueError:
+            print("请输入有效的数字")
+        except KeyboardInterrupt:
+            return None
+
+
+def download_paper(pdf_url, paper_title):
+    """Download paper from URL."""
+    try:
+        script_dir = Path(__file__).parent
+        download_path = script_dir / "DOWNLOAD"
+        
+        # Create a safe filename
+        import re
+        safe_title = re.sub(r'[^\w\s-]', '', paper_title)
+        safe_title = re.sub(r'[-\s]+', '-', safe_title)
+        filename = f"{safe_title}.pdf"
+        
+        # Try to download
+        print(f"📥 下载中: {pdf_url}")
+        result = subprocess.run([
+            str(download_path), pdf_url, filename
+        ], capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            downloaded_path = Path.cwd() / filename
+            if downloaded_path.exists():
+                print(f"✅ 下载成功: {downloaded_path}")
+                return str(downloaded_path), paper_title
+            else:
+                print("❌ 下载的文件不存在")
+                return None, None
+        else:
+            print(f"❌ 下载失败: {result.stderr}")
+            print("🔄 尝试其他下载链接...")
+            return None, None
+            
+    except Exception as e:
+        print(f"❌ 下载过程出错: {e}")
+        return None, None
+
+
+def process_paper_with_extract_pdf(paper_path, read_images=False):
+    """Process PDF with EXTRACT_PDF tool."""
+    print(f"\n📄 处理PDF文件: {paper_path}")
+    
+    try:
+        script_dir = Path(__file__).parent
+        extract_pdf_path = script_dir / "EXTRACT_PDF_PROJ" / "pdf_extractor.py"
+        
+        # Build command
+        cmd = ["python", str(extract_pdf_path), paper_path]
+        if read_images:
+            cmd.append("--post")
+        else:
+            cmd.append("--no-image-api")
+        
+        print(f"🔄 执行命令: {' '.join(cmd)}")
+        result = subprocess.run(cmd, capture_output=True, text=True, cwd=str(script_dir))
+        
+        if result.returncode == 0:
+            print("✅ PDF处理完成")
+            
+            # Find the generated markdown file
+            paper_name = Path(paper_path).stem
+            possible_md_files = [
+                Path(paper_path).parent / f"{paper_name}.md",
+                Path.cwd() / f"{paper_name}.md",
+                script_dir / f"{paper_name}.md"
+            ]
+            
+            for md_file in possible_md_files:
+                if md_file.exists():
+                    print(f"📝 找到生成的Markdown文件: {md_file}")
+                    with open(md_file, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                    return content, str(md_file)
+            
+            print("⚠️  PDF处理完成，但未找到生成的Markdown文件")
+            return None, None
+        else:
+            print(f"❌ PDF处理失败: {result.stderr}")
+            return None, None
+            
+    except Exception as e:
+        print(f"❌ PDF处理过程出错: {e}")
+        return None, None
 
 
 def main():
@@ -2294,242 +1649,5 @@ def main():
         return 1
 
 
-def search_and_download_paper(paper_description):
-    """Search for paper and download if found."""
-    print(f"\n🔍 搜索论文: {paper_description}")
-    
-    try:
-        script_dir = Path(__file__).parent
-        search_paper_path = script_dir / "SEARCH_PAPER"
-        
-        # Search for papers
-        result = subprocess.run([
-            str(search_paper_path), paper_description, "--max-results", "5"
-        ], capture_output=True, text=True)
-        
-        if result.returncode != 0:
-            print(f"❌ 搜索失败: {result.stderr}")
-            return None, None
-            
-        print("✅ 搜索完成，正在解析结果...")
-        
-        # Parse search results to find download URLs
-        import json
-        import re
-        
-        # Try to find the search results file
-        search_data_dir = script_dir / "SEARCH_PAPER_DATA" / "results"
-        if search_data_dir.exists():
-            # Get the most recent search results file
-            result_files = list(search_data_dir.glob("search_results_*.json"))
-            if result_files:
-                latest_file = max(result_files, key=lambda x: x.stat().st_mtime)
-                
-                with open(latest_file, 'r', encoding='utf-8') as f:
-                    search_results = json.load(f)
-                
-                # Show papers to user
-                if search_results and len(search_results) > 0:
-                    print(f"\n找到 {len(search_results)} 篇相关论文:")
-                    for i, paper in enumerate(search_results[:5]):  # Show first 5
-                        title = paper.get('title', 'Unknown')
-                        authors = paper.get('authors', [])
-                        author_str = ', '.join(authors[:3]) + ('...' if len(authors) > 3 else '')
-                        print(f"  {i+1}. {title}")
-                        print(f"     作者: {author_str}")
-                    
-                    # Let user select
-                    while True:
-                        try:
-                            choice = input(f"\n选择论文 (1-{min(5, len(search_results))}, 或输入 'q' 退出): ").strip()
-                            if choice.lower() == 'q':
-                                return None, None
-                            
-                            choice_idx = int(choice) - 1
-                            if 0 <= choice_idx < min(5, len(search_results)):
-                                selected_paper = search_results[choice_idx]
-                                break
-                            else:
-                                print(f"请输入 1-{min(5, len(search_results))} 之间的数字")
-                        except ValueError:
-                            print("请输入有效的数字")
-                    
-                    # Try to download the paper
-                    pdf_url = selected_paper.get('pdf_url')
-                    if pdf_url:
-                        print(f"\n📥 尝试下载论文: {selected_paper.get('title', 'Unknown')}")
-                        return download_paper(pdf_url, selected_paper.get('title', 'paper'))
-                    else:
-                        print("❌ 未找到PDF下载链接")
-                        return None, None
-                else:
-                    print("❌ 未找到相关论文")
-                    return None, None
-            else:
-                print("❌ 未找到搜索结果文件")
-                return None, None
-        else:
-            print("❌ 搜索结果目录不存在")
-            return None, None
-            
-    except Exception as e:
-        print(f"❌ 搜索过程出错: {e}")
-        return None, None
-
-
-def download_paper(pdf_url, paper_title):
-    """Download paper from URL."""
-    try:
-        script_dir = Path(__file__).parent
-        download_path = script_dir / "DOWNLOAD"
-        
-        # Create a safe filename
-        import re
-        safe_title = re.sub(r'[^\w\s-]', '', paper_title)
-        safe_title = re.sub(r'[-\s]+', '-', safe_title)
-        filename = f"{safe_title}.pdf"
-        
-        # Try to download
-        print(f"📥 下载中: {pdf_url}")
-        result = subprocess.run([
-            str(download_path), pdf_url, filename
-        ], capture_output=True, text=True)
-        
-        if result.returncode == 0:
-            downloaded_path = Path.cwd() / filename
-            if downloaded_path.exists():
-                print(f"✅ 下载成功: {downloaded_path}")
-                return str(downloaded_path), paper_title
-            else:
-                print("❌ 下载的文件不存在")
-                return None, None
-        else:
-            print(f"❌ 下载失败: {result.stderr}")
-            
-            # Try alternative download methods if available
-            # This could include trying different PDF URLs from the paper metadata
-            print("🔄 尝试其他下载链接...")
-            return None, None
-            
-    except Exception as e:
-        print(f"❌ 下载过程出错: {e}")
-        return None, None
-
-
-def process_paper_with_extract_pdf(paper_path, read_images=False):
-    """Process PDF with EXTRACT_PDF tool."""
-    print(f"\n📄 处理PDF文件: {paper_path}")
-    
-    try:
-        script_dir = Path(__file__).parent
-        extract_pdf_path = script_dir / "EXTRACT_PDF_PROJ" / "pdf_extractor.py"
-        
-        # Build command
-        cmd = ["python", str(extract_pdf_path), paper_path]
-        if read_images:
-            cmd.append("--post")
-        else:
-            cmd.append("--no-image-api")
-        
-        print(f"🔄 执行命令: {' '.join(cmd)}")
-        result = subprocess.run(cmd, capture_output=True, text=True, cwd=str(script_dir))
-        
-        if result.returncode == 0:
-            print("✅ PDF处理完成")
-            
-            # Find the generated markdown file
-            paper_name = Path(paper_path).stem
-            possible_md_files = [
-                Path(paper_path).parent / f"{paper_name}.md",
-                Path.cwd() / f"{paper_name}.md",
-                script_dir / f"{paper_name}.md"
-            ]
-            
-            for md_file in possible_md_files:
-                if md_file.exists():
-                    print(f"📝 找到生成的Markdown文件: {md_file}")
-                    with open(md_file, 'r', encoding='utf-8') as f:
-                        content = f.read()
-                    return content, str(md_file)
-            
-            print("⚠️  PDF处理完成，但未找到生成的Markdown文件")
-            return None, None
-        else:
-            print(f"❌ PDF处理失败: {result.stderr}")
-            return None, None
-            
-    except Exception as e:
-        print(f"❌ PDF处理过程出错: {e}")
-        return None, None
-
-
-def count_tokens(text):
-    """Simple token counting approximation."""
-    # Rough approximation: 1 token ≈ 4 characters for Chinese/English mixed text
-    return len(text) // 4
-
-
-def prepare_paper_content(params):
-    """Prepare paper content based on input type."""
-    input_type = params.get("input_type", 1)
-    paper_content = None
-    paper_path = None
-    
-    if input_type == 0:  # Markdown file
-        paper_content = params.get("paper_content")
-        paper_path = params.get("paper_path")
-        print("✅ 使用已提供的Markdown内容")
-        
-    elif input_type == 1:  # PDF file
-        paper_path = params.get("paper_path")
-        read_images = params.get("read_images", False)
-        paper_content, processed_path = process_paper_with_extract_pdf(paper_path, read_images)
-        if processed_path:
-            paper_path = processed_path
-            
-    elif input_type == 2:  # URL
-        paper_url = params.get("paper_url")
-        print(f"📥 下载论文: {paper_url}")
-        
-        # Extract filename from URL or use generic name
-        import urllib.parse
-        parsed_url = urllib.parse.urlparse(paper_url)
-        filename = Path(parsed_url.path).name or "downloaded_paper.pdf"
-        
-        downloaded_path, title = download_paper(paper_url, filename.replace('.pdf', ''))
-        if downloaded_path:
-            read_images = params.get("read_images", False)
-            paper_content, processed_path = process_paper_with_extract_pdf(downloaded_path, read_images)
-            if processed_path:
-                paper_path = processed_path
-        else:
-            print("❌ 无法下载论文")
-            return None, None
-            
-    elif input_type == 3:  # Description/Search
-        paper_description = params.get("paper_description")
-        downloaded_path, title = search_and_download_paper(paper_description)
-        if downloaded_path:
-            read_images = params.get("read_images", False)
-            paper_content, processed_path = process_paper_with_extract_pdf(downloaded_path, read_images)
-            if processed_path:
-                paper_path = processed_path
-        else:
-            print("❌ 无法找到或下载论文")
-            return None, None
-    
-    if not paper_content:
-        print("❌ 无法获取论文内容")
-        return None, None
-    
-    # Count tokens
-    token_count = count_tokens(paper_content)
-    print(f"\n📊 论文内容统计:")
-    print(f"   字符数: {len(paper_content):,}")
-    print(f"   预估token数: {token_count:,}")
-    
-    return paper_content, paper_path, token_count
-
-
 if __name__ == "__main__":
-    sys.exit(main()) 
+    sys.exit(main())

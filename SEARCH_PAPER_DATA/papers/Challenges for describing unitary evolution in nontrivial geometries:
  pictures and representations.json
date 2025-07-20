@@ -1,0 +1,14 @@
+{
+  "title": "Challenges for describing unitary evolution in nontrivial geometries:\n  pictures and representations",
+  "authors": [
+    "Steven B. Giddings",
+    "Julie Perkins"
+  ],
+  "abstract": "Description of evolution between spatial slices in a general spacetime\nsuffers from a significant difficulty: the states on the slices, in a given\nbasis, are not related by a unitary transformation. This problem, which occurs\nin spacetime dimensions above two, is directly related to the infinite number\nof inequivalent representations of the canonical commutators, and in particular\nwill arise for interacting theories in time-dependent spacetimes. We connect\ndifferent facets of this issue, and discuss its possible resolution. It is\ndirectly related to discussions of failure of a standard Schr\\\"odinger picture\nof evolution, and of evolution via \"many-fingered time.\" One requires a\ncondition specifying a physical unitary equivalence class of states; in general\nthis equivalence class evolves with time, and an important question is how it\nis determined. One approach to this in free theories is by imposing a Hadamard\ncondition on the two point function. We explore a different approach, which\nalso may be helpful for interacting theories, analyzing the structure of the\nstate in a local limit, and relate these approaches. We also elucidate the\nnon-Hadamard behavior of unphysical vacua, and discuss concrete examples of\nthese approaches involving cosmological and black hole evolution. The issues\nare extended in the context of quantum dynamical geometry, and raise important\nquestions for the proper description of the wavefunction of the universe and\nfor the role of the Wheeler-DeWitt equation.",
+  "url": "http://arxiv.org/abs/2507.13351v1",
+  "pdf_url": "http://arxiv.org/pdf/2507.13351v1.pdf",
+  "publication_date": "2025-07-17",
+  "venue": "arXiv preprint",
+  "citation_count": null,
+  "source": "arxiv"
+}

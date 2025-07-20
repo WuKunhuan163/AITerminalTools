@@ -1,0 +1,5 @@
+{
+  "success": true,
+  "message": "Command executed successfully",
+  "output": "✅ Local UnimerNet components loaded successfully\n📁 Using local model path: /Users/wukunhuan/.local/bin/UNIMERNET_PROJ/unimernet_models/unimernet_hf_small_2503\n🔄 Loading UnimerNet model from /Users/wukunhuan/.local/bin/UNIMERNET_PROJ/unimernet_models/unimernet_hf_small_2503\n📱 Using device: mps\n✅ UnimerNet model loaded successfully\n✅ Recognition successful: \\begin{array} { r } { \\mathcal { L } _ { 1 } = \\Ve...\n{\n  \"success\": true,\n  \"result\": \"\\\\begin{array} { r } { \\\\mathcal { L } _ { 1 } = \\\\Vert x - x ^ { \\\\mathrm { { r e f } } } \\\\Vert _ { 1 } , \\\\quad \\\\mathcal { L } _ { \\\\mathrm { { D } - S S I M } } = 1 - \\\\mathrm { { S S I M } } ( x , x ^ { \\\\mathrm { { r e f } } } ) , } \\\\end{array}\",\n  \"image_path\": \"/var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/padded_13027b8d78f50ae600e53e0a542adadb3a9b9d27c594c2c249223b4dc3d78193_9632.jpg\",\n  \"content_type\": \"formula\",\n  \"processor\": \"unimernet\",\n  \"timestamp\": \"2025-07-20T19:43:45.040947\",\n  \"from_cache\": false\n}"
+}

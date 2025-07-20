@@ -399,8 +399,34 @@ Note: 只有标记为可用(useable=true)的模型才会显示在列表中。
     
     # 调用API
     if args.query:
+        # 检查是否是文件路径（以@开头）
+        if args.query.startswith('@'):
+            file_path = args.query[1:]  # 移除@前缀
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    query_content = f.read()
+            except Exception as e:
+                print(f"❌ 无法读取文件 {file_path}: {e}", file=sys.stderr)
+                sys.exit(1)
+        else:
+            query_content = args.query
+    else:
+        # 如果没有提供query参数，尝试从stdin读取
+        if not sys.stdin.isatty():
+            try:
+                query_content = sys.stdin.read().strip()
+                if not query_content:
+                    print("❌ 从stdin读取的内容为空", file=sys.stderr)
+                    sys.exit(1)
+            except Exception as e:
+                print(f"❌ 从stdin读取内容失败: {e}", file=sys.stderr)
+                sys.exit(1)
+        else:
+            print("❌ 没有提供查询内容", file=sys.stderr)
+            sys.exit(1)
+        
         result = call_openrouter_api(
-            args.query,
+            query_content,
             args.model,
             args.key,
             args.max_tokens,

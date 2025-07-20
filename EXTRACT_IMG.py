@@ -560,7 +560,12 @@ class UnifiedImageProcessor:
             result = self.process_with_img2text(image_path, mode)
         
         process_elapsed = (datetime.now() - process_start).total_seconds()
-        logger.info(f"⏱️  Processing completed in {process_elapsed:.2f}s")
+        total_elapsed = (datetime.now() - start_time).total_seconds()
+        logger.info(f"⏱️  Processing completed in {process_elapsed:.2f}s (total: {total_elapsed:.2f}s)")
+        
+        # Add processing time to result
+        if result.get('success'):
+            result['processing_time'] = total_elapsed
         
         # Clean up temporary padded image if created
         if temp_image_path and temp_image_path != image_path:

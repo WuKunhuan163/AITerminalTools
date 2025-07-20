@@ -35,7 +35,7 @@ def create_json_output(success, message, result=None, image_path=None, api=None,
         "timestamp": datetime.datetime.now().isoformat()
     }
 
-def get_image_analysis(image_path: str, mode: str = "general", api: str = "google", key: str = None, custom_prompt: str = None) -> str:
+def get_image_analysis(image_path: str, mode: str = "general", api: str = "google", key: str = None, custom_prompt: str = None, command_identifier: str = None) -> str:
     """
     调用指定API分析图片，支持Google Gemini Vision。
     Args:
@@ -101,6 +101,8 @@ def get_image_analysis(image_path: str, mode: str = "general", api: str = "googl
             prompt_instruction = "Accurately transcribe the code in the image into a raw code block. No explanations."
         else:
             prompt_instruction = "Please describe the following image:"
+    # 收集失败原因
+    failed_reasons = []
     for key_type, api_key in api_keys.items():
         if not api_key:
             continue
@@ -110,22 +112,27 @@ def get_image_analysis(image_path: str, mode: str = "general", api: str = "googl
             response = model.generate_content([prompt_instruction, img], stream=False)
             response.resolve()
             print(f"✅ 成功！使用 {key_type} 密钥获得回复。", file=sys.stderr)
-            if is_run_environment():
+            if is_run_environment(command_identifier):
                 output = create_json_output(True, "Success", response.text, image_path, api)
                 with open(os.environ['RUN_DATA_FILE'], 'w', encoding='utf-8') as f:
                     json.dump(output, f, ensure_ascii=False, indent=2)
                 return json.dumps(output, ensure_ascii=False)
             return response.text
         except (exceptions.ResourceExhausted, exceptions.PermissionDenied, Exception) as e:
-            print(f"⚠️ 警告: 使用 {key_type} 密钥时失败: {str(e)[:100]}... 正在尝试下一个...", file=sys.stderr)
+            error_detail = f"使用 {key_type} 密钥时失败: {str(e)}"
+            failed_reasons.append(error_detail)
+            print(f"⚠️ 警告: {error_detail[:100]}... 正在尝试下一个...", file=sys.stderr)
             continue
-    reason = "所有配置的API密钥都无法成功获取回复。"
-    if is_run_environment():
-        output = create_json_output(False, "All API keys failed", None, image_path, api, reason)
+    
+    # 构建详细的失败原因
+    detailed_reason = "所有配置的API密钥都无法成功获取回复。详细信息:\n" + "\n".join([f"- {reason}" for reason in failed_reasons])
+    
+    if is_run_environment(command_identifier):
+        output = create_json_output(False, "All API keys failed", None, image_path, api, detailed_reason)
         with open(os.environ['RUN_DATA_FILE'], 'w', encoding='utf-8') as f:
             json.dump(output, f, ensure_ascii=False, indent=2)
         return json.dumps(output, ensure_ascii=False)
-    return f"*[API调用失败：{reason}]*"
+    return f"*[API调用失败：{detailed_reason}]*"
 
 def main():
     """命令行接口"""
@@ -166,7 +173,7 @@ def main():
     
     args.image_path = image_path
     
-    result = get_image_analysis(args.image_path, args.mode, args.api, args.key, args.prompt)
+    result = get_image_analysis(args.image_path, args.mode, args.api, args.key, args.prompt, command_identifier)
     
     # 如果在RUN环境下，直接输出JSON格式
     if is_run_environment(command_identifier):

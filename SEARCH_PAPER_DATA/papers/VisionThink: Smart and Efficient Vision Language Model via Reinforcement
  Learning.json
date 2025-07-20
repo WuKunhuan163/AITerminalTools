@@ -1,0 +1,18 @@
+{
+  "title": "VisionThink: Smart and Efficient Vision Language Model via Reinforcement\n  Learning",
+  "authors": [
+    "Senqiao Yang",
+    "Junyi Li",
+    "Xin Lai",
+    "Bei Yu",
+    "Hengshuang Zhao",
+    "Jiaya Jia"
+  ],
+  "abstract": "Recent advancements in vision-language models (VLMs) have improved\nperformance by increasing the number of visual tokens, which are often\nsignificantly longer than text tokens. However, we observe that most real-world\nscenarios do not require such an extensive number of visual tokens. While the\nperformance drops significantly in a small subset of OCR-related tasks, models\nstill perform accurately in most other general VQA tasks with only 1/4\nresolution. Therefore, we propose to dynamically process distinct samples with\ndifferent resolutions, and present a new paradigm for visual token compression,\nnamely, VisionThink. It starts with a downsampled image and smartly decides\nwhether it is sufficient for problem solving. Otherwise, the model could output\na special token to request the higher-resolution image. Compared to existing\nEfficient VLM methods that compress tokens using fixed pruning ratios or\nthresholds, VisionThink autonomously decides whether to compress tokens case by\ncase. As a result, it demonstrates strong fine-grained visual understanding\ncapability on OCR-related tasks, and meanwhile saves substantial visual tokens\non simpler tasks. We adopt reinforcement learning and propose the LLM-as-Judge\nstrategy to successfully apply RL to general VQA tasks. Moreover, we carefully\ndesign a reward function and penalty mechanism to achieve a stable and\nreasonable image resize call ratio. Extensive experiments demonstrate the\nsuperiority, efficiency, and effectiveness of our method. Our code is available\nat https://github.com/dvlab-research/VisionThink.",
+  "url": "http://arxiv.org/abs/2507.13348v1",
+  "pdf_url": "http://arxiv.org/pdf/2507.13348v1.pdf",
+  "publication_date": "2025-07-17",
+  "venue": "arXiv preprint",
+  "citation_count": null,
+  "source": "arxiv"
+}

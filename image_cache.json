@@ -97,5 +97,86 @@
     "image_path": "/Users/wukunhuan/.local/bin/images/f2edfad18ec93313f652b6306d30854529115e072fc99a7731cce6cd29a79b3c.jpg",
     "source_path": null,
     "file_size": 7267
+  },
+  "1cf0a4b32044ccca30e872b94a1544b16f60a405c267d9bd803723c6eeff47c4": {
+    "description": "\\mathcal { L } _ { C o n d } = \\mathbb { E } _ { Z _ { 0 } , t , \\epsilon } [ \\| \\epsilon _ { \\theta } ( \\sqrt { \\bar { \\alpha } _ { t } } Z _ { 0 } + \\sqrt { 1 - \\bar { \\alpha } _ { t } } \\epsilon , t , c ^ { \\mathrm { t e x } } , c ^ { \\mathrm { i m g } } ) - \\epsilon \\| _ { 2 } ^ { 2 }",
+    "timestamp": "2025-07-20T19:34:14.721342",
+    "sha256": "1cf0a4b32044ccca30e872b94a1544b1803723c6eeff47c49d1e5c84d122d8c4",
+    "md5": "6f60a405c267d9bd8207657785daaf08",
+    "image_path": "/Users/wukunhuan/.local/bin/images/1cf0a4b32044ccca30e872b94a1544b16f60a405c267d9bd803723c6eeff47c4.jpg",
+    "source_path": null,
+    "file_size": 12846
+  },
+  "c85301fd388f3be886fbf5e5c160b51273379d1a2caa2e623a694142c64e7e66": {
+    "description": "\\begin{array} { r } { \\mathcal { L } _ { 1 } = \\Vert x - x ^ { \\mathrm { { r e f } } } \\Vert _ { 1 } , \\quad \\mathcal { L } _ { \\mathrm { { D } - S S I M } } = 1 - \\mathrm { { S S I M } } ( x , x ^ { \\mathrm { { r e f } } } ) , } \\end{array}",
+    "timestamp": "2025-07-20T19:43:45.043404",
+    "sha256": "c85301fd388f3be886fbf5e5c160b5123a694142c64e7e662e2e1c904593c4a7",
+    "md5": "73379d1a2caa2e6260ac822e8bbc5db2",
+    "image_path": "/Users/wukunhuan/.local/bin/images/c85301fd388f3be886fbf5e5c160b51273379d1a2caa2e623a694142c64e7e66.jpg",
+    "source_path": null,
+    "file_size": 9362
+  },
+  "f8020dbc0e4e813bfdfda9158f413a57f9d8d43e74e095c3e25c7e927f12bc41": {
+    "description": "\\mathcal { L } _ { \\mathrm { m } } = - ( m ^ { \\mathrm { r e f } } \\log m + ( 1 - m ^ { \\mathrm { r e f } } ) \\log ( 1 - m ) ) ,",
+    "timestamp": "2025-07-20T19:44:01.677776",
+    "sha256": "f8020dbc0e4e813bfdfda9158f413a57e25c7e927f12bc41c65e4ef32c09f394",
+    "md5": "f9d8d43e74e095c3788c00a144b3345b",
+    "image_path": "/Users/wukunhuan/.local/bin/images/f8020dbc0e4e813bfdfda9158f413a57f9d8d43e74e095c3e25c7e927f12bc41.jpg",
+    "source_path": null,
+    "file_size": 9145
+  },
+  "493080a619f7ffec34a3b6cbdd896488e1904bd52ec387367a9667f0019cdce4": {
+    "description": "\\mathcal { L } _ { \\mathrm { d } } = \\Vert D ^ { * } - D _ { \\mathrm { p r e d } } ^ { * } \\Vert _ { 1 } ,",
+    "timestamp": "2025-07-20T19:44:17.182196",
+    "sha256": "493080a619f7ffec34a3b6cbdd8964887a9667f0019cdce40c4e2d3e89e401a2",
+    "md5": "e1904bd52ec3873662e47bbbe811d2ac",
+    "image_path": "/Users/wukunhuan/.local/bin/images/493080a619f7ffec34a3b6cbdd896488e1904bd52ec387367a9667f0019cdce4.jpg",
+    "source_path": null,
+    "file_size": 4534
+  },
+  "1e937a8a4b449fd6c91d36e8fbf866269cc7d9f1eb3e500b26e150f591885908": {
+    "description": "D ^ { * } = \\frac { D - \\mathrm { m e d i a n } ( D ) } { \\frac { 1 } { M } \\sum _ { i = 1 } ^ { M } \\left| D - \\mathrm { m e d i a n } ( D ) \\right| } ,",
+    "timestamp": "2025-07-20T19:44:32.997706",
+    "sha256": "1e937a8a4b449fd6c91d36e8fbf8662626e150f591885908944b786f2365fb28",
+    "md5": "9cc7d9f1eb3e500b408ba097c3e9c090",
+    "image_path": "/Users/wukunhuan/.local/bin/images/1e937a8a4b449fd6c91d36e8fbf866269cc7d9f1eb3e500b26e150f591885908.jpg",
+    "source_path": null,
+    "file_size": 11233
+  },
+  "135cbc268cf9355e8529a9ac39d9304ad5bebbf2ca36f8b5f34cd43865282cab": {
+    "description": "\\mathcal { L } _ { \\mathrm { r e f } } = \\left( 1 - \\lambda _ { \\mathrm { S S I M } } \\right) \\mathcal { L } _ { 1 } + \\lambda _ { \\mathrm { S S I M } } \\mathcal { L } _ { \\mathrm { D - S S I M } } + \\lambda _ { \\mathrm { m } } \\mathcal { L } _ { \\mathrm { m } } + \\lambda _ { \\mathrm { d } } \\mathcal { L } _ { \\mathrm { d } } .",
+    "timestamp": "2025-07-20T19:44:54.662133",
+    "sha256": "135cbc268cf9355e8529a9ac39d9304af34cd43865282cab0e21f6512cf8f3db",
+    "md5": "d5bebbf2ca36f8b5e212b3be28e76dc9",
+    "image_path": "/Users/wukunhuan/.local/bin/images/135cbc268cf9355e8529a9ac39d9304ad5bebbf2ca36f8b5f34cd43865282cab.jpg",
+    "source_path": null,
+    "file_size": 12388
+  },
+  "c485fbacbe3ef803b7e7db8c875788c2831c96910bf9a80712a143230b78bb4e": {
+    "description": "\\hat { \\pi } ^ { \\mathrm { r e f * } } = \\underset { \\hat { \\pi } ^ { \\mathrm { r e f } } } { \\arg \\operatorname* { m i n } } \\| \\mathcal { G } _ { c } ( \\hat { \\pi } ^ { \\mathrm { r e f } } ) - x ^ { \\mathrm { r e f } } \\| _ { 1 } + \\lambda _ { \\mathrm { p o s e } } \\| \\hat { \\pi } ^ { \\mathrm { r e f } } - \\hat { \\pi } _ { 0 } ^ { \\mathrm { r e f } } \\| _ { 1 } ,",
+    "timestamp": "2025-07-20T19:45:19.427186",
+    "sha256": "c485fbacbe3ef803b7e7db8c875788c212a143230b78bb4e61782c7297249d0b",
+    "md5": "831c96910bf9a807acf677b9f3206e17",
+    "image_path": "/Users/wukunhuan/.local/bin/images/c485fbacbe3ef803b7e7db8c875788c2831c96910bf9a80712a143230b78bb4e.jpg",
+    "source_path": null,
+    "file_size": 13079
+  },
+  "5d825fa54b24f1b0b9ba0c4d1ed52e2641ce5902691ac93f6f5d7ed6f40c9f84": {
+    "description": "N _ { \\mathrm { p i c k } } = \\operatorname* { m a x } \\left( 1 5 0 , \\frac { k _ { \\mathrm { s p a r s e } } } { k _ { \\mathrm { a l l } } } N _ { \\mathrm { a l l } } \\right) ,",
+    "timestamp": "2025-07-20T19:45:42.195693",
+    "sha256": "5d825fa54b24f1b0b9ba0c4d1ed52e266f5d7ed6f40c9f84570a532fcf4504c6",
+    "md5": "41ce5902691ac93f0d486c13fe5e585d",
+    "image_path": "/Users/wukunhuan/.local/bin/images/5d825fa54b24f1b0b9ba0c4d1ed52e2641ce5902691ac93f6f5d7ed6f40c9f84.jpg",
+    "source_path": null,
+    "file_size": 8693
+  },
+  "552b635edffbc708d6e90b1913325f0b83958edea640c3b135db7b51b4ac9ef6": {
+    "description": "\\begin{array} { r l } { \\frac { \\partial ^ { 2 } } { \\partial t } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } } & { = \\frac { \\partial ^ { 2 } } { \\partial t } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } } \\\\ & { \\frac { \\partial ^ { 2 } } { \\partial t } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } } \\\\ & { \\frac { \\partial ^ { 2 } } { \\partial t } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } } \\\\ & { \\frac { \\partial ^ { 2 } } { \\partial t } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } } \\\\ & { \\frac { \\partial ^ { 2 } } { \\partial t } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } } \\\\ & { \\frac { \\partial ^ { 2 } } { \\partial t } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } } \\end{array} \\frac { \\partial ^ { 2 } } { \\partial t } \\rho _ { \\mathrm { t o t o } } ^ { ( 2 ) } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) }  \\\\ & { \\frac { \\partial ^ { 2 } } { \\partial t } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } \\frac { \\partial ^ { 2 } } { \\partial t } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } \\frac { \\partial ^ { 2 } } { \\partial t } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } } \\\\ & { \\frac { \\partial ^ { 2 } } { \\partial t } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } \\frac { \\partial ^ { 2 } } { \\partial t } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } \\frac { \\partial ^ { 2 } } { \\partial t } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } } \\\\ &  \\frac { \\partial ^ { 2 } } { \\partial t } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } \\frac { \\partial ^ { 2 } } { \\partial t } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } \\frac { \\partial ^ { 2 } } { \\partial t } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } \\\\ &  \\frac { \\partial ^ { 2 } } { \\partial t } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } \\\\ &  \\frac { \\partial ^ { 2 } } { \\partial t } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } \\\\ &  \\frac { \\partial ^ { 2 } } { \\partial t } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } \\rho _ { \\mathrm { p r i d } } ^ { ( 2 ) } \\rho _ ",
+    "timestamp": "2025-07-20T19:58:07.909782",
+    "sha256": "552b635edffbc708d6e90b1913325f0b35db7b51b4ac9ef604b54cebef5ac5e9",
+    "md5": "83958edea640c3b186c1a8d694905a7b",
+    "image_path": "/Users/wukunhuan/.local/bin/images/552b635edffbc708d6e90b1913325f0b83958edea640c3b135db7b51b4ac9ef6.jpg",
+    "source_path": null,
+    "file_size": 188212
   }
 }

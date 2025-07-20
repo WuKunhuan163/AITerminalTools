@@ -1,0 +1,798 @@
+{
+  "pdf_file": "test_extract_paper.pdf",
+  "created_at": "2025-07-19T19:15:21.104870",
+  "total_items": 52,
+  "counts": {
+    "images": 19,
+    "formulas": 13,
+    "tables": 20
+  },
+  "items": [
+    {
+      "id": "2d9ad8e3e84e0ceabbd9075f3232ca7fcb1bd2d1ea36a413088970c612d06809",
+      "type": "image",
+      "page": 1,
+      "block_index": 2,
+      "image_path": "2d9ad8e3e84e0ceabbd9075f3232ca7fcb1bd2d1ea36a413088970c612d06809.jpg",
+      "bbox": [
+        50,
+        244,
+        560,
+        426
+      ],
+      "processed": false,
+      "processor": "Google API"
+    },
+    {
+      "id": "62e8284b8ab9a7f950b12b9750c11c062ab28f92d2e70b5709637e0a039b7293",
+      "type": "image",
+      "page": 3,
+      "block_index": 0,
+      "image_path": "62e8284b8ab9a7f950b12b9750c11c062ab28f92d2e70b5709637e0a039b7293.jpg",
+      "bbox": [
+        55,
+        77,
+        559,
+        227
+      ],
+      "processed": true,
+      "processor": "Google API"
+    },
+    {
+      "id": "a14b4cdd3c70f96e2310ecc6ecdcbe3a52981b6f88a453181bdedfa1210df041",
+      "type": "table",
+      "page": 3,
+      "block_index": 7,
+      "image_path": "a14b4cdd3c70f96e2310ecc6ecdcbe3a52981b6f88a453181bdedfa1210df041.jpg",
+      "bbox": [
+        321,
+        313,
+        554,
+        594
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "333ac67e908acadb10d5c94ea89c1ce08648098ed00ee783ee2592e034e94baa",
+      "type": "interline_equation",
+      "page": 4,
+      "block_index": 1,
+      "image_path": "333ac67e908acadb10d5c94ea89c1ce08648098ed00ee783ee2592e034e94baa.jpg",
+      "bbox": [
+        58,
+        106,
+        272,
+        120
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "13027b8d78f50ae600e53e0a542adadb3a9b9d27c594c2c249223b4dc3d78193",
+      "type": "interline_equation",
+      "page": 4,
+      "block_index": 12,
+      "image_path": "13027b8d78f50ae600e53e0a542adadb3a9b9d27c594c2c249223b4dc3d78193.jpg",
+      "bbox": [
+        350,
+        359,
+        528,
+        374
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "5b395e2179b5d6301bcf4738d9aa67ee1cdce0ca72edbf95022343fb96405f0d",
+      "type": "interline_equation",
+      "page": 4,
+      "block_index": 14,
+      "image_path": "5b395e2179b5d6301bcf4738d9aa67ee1cdce0ca72edbf95022343fb96405f0d.jpg",
+      "bbox": [
+        358,
+        415,
+        520,
+        428
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "f195ec2a58fa7a8ca50f68ec71712973bb62d87321acbb8f92ad5bb6368a3a2d",
+      "type": "interline_equation",
+      "page": 4,
+      "block_index": 16,
+      "image_path": "f195ec2a58fa7a8ca50f68ec71712973bb62d87321acbb8f92ad5bb6368a3a2d.jpg",
+      "bbox": [
+        399,
+        460,
+        477,
+        475
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "0affe0ab782e7d3d50753527ee5fdd00337b9b3ead9ffb1a339d30e90b970a9e",
+      "type": "interline_equation",
+      "page": 4,
+      "block_index": 18,
+      "image_path": "0affe0ab782e7d3d50753527ee5fdd00337b9b3ead9ffb1a339d30e90b970a9e.jpg",
+      "bbox": [
+        379,
+        518,
+        497,
+        545
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "c712a1674ed858d848eafae0803774f41927bd11916ebd89bc5a09d0c84edfaa",
+      "type": "interline_equation",
+      "page": 4,
+      "block_index": 20,
+      "image_path": "c712a1674ed858d848eafae0803774f41927bd11916ebd89bc5a09d0c84edfaa.jpg",
+      "bbox": [
+        335,
+        576,
+        540,
+        588
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "683dc7261b6963940c025abcb26b91f59818d0e24cd6b34780a338f53e3997f5",
+      "type": "image",
+      "page": 5,
+      "block_index": 0,
+      "image_path": "683dc7261b6963940c025abcb26b91f59818d0e24cd6b34780a338f53e3997f5.jpg",
+      "bbox": [
+        54,
+        77,
+        291,
+        192
+      ],
+      "processed": true,
+      "processor": "Google API"
+    },
+    {
+      "id": "f0f1981595496154a977d1d473925d5779c76f5895396d167014c27ceceec5a3",
+      "type": "interline_equation",
+      "page": 5,
+      "block_index": 5,
+      "image_path": "f0f1981595496154a977d1d473925d5779c76f5895396d167014c27ceceec5a3.jpg",
+      "bbox": [
+        83,
+        622,
+        262,
+        641
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "672b3cc6420ec31ffc1dd508c1c844f7ec2ae65ec23038ef5a1a3bdd293c28eb",
+      "type": "interline_equation",
+      "page": 5,
+      "block_index": 10,
+      "image_path": "672b3cc6420ec31ffc1dd508c1c844f7ec2ae65ec23038ef5a1a3bdd293c28eb.jpg",
+      "bbox": [
+        334,
+        262,
+        541,
+        274
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "bceee5b5ed8a11a69160998623ca39033ec7820a87c1ab5035ce82ef91d499f9",
+      "type": "interline_equation",
+      "page": 5,
+      "block_index": 12,
+      "image_path": "bceee5b5ed8a11a69160998623ca39033ec7820a87c1ab5035ce82ef91d499f9.jpg",
+      "bbox": [
+        388,
+        314,
+        489,
+        326
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "f5126d6b236f7d10c021d150db5ab87ffe366842b749a3c5a2b25af69fdbf537",
+      "type": "interline_equation",
+      "page": 5,
+      "block_index": 14,
+      "image_path": "f5126d6b236f7d10c021d150db5ab87ffe366842b749a3c5a2b25af69fdbf537.jpg",
+      "bbox": [
+        320,
+        365,
+        557,
+        407
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "4fdbf958599fdfbe437a1c6620538d3b20c816f24d529a4d86589e3317793e5e",
+      "type": "interline_equation",
+      "page": 5,
+      "block_index": 19,
+      "image_path": "4fdbf958599fdfbe437a1c6620538d3b20c816f24d529a4d86589e3317793e5e.jpg",
+      "bbox": [
+        384,
+        620,
+        492,
+        634
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "42d81142fed6eaeefbeae4abd57bf10130bf635a0bd5bf353e6077e65ae625d2",
+      "type": "image",
+      "page": 6,
+      "block_index": 0,
+      "image_path": "42d81142fed6eaeefbeae4abd57bf10130bf635a0bd5bf353e6077e65ae625d2.jpg",
+      "bbox": [
+        91,
+        77,
+        250,
+        164
+      ],
+      "processed": true,
+      "processor": "Google API"
+    },
+    {
+      "id": "e4725e0aefb869ab84e2577dcba85be072e7bf4bf6d82b51b5d5138c6679f36b",
+      "type": "image",
+      "page": 7,
+      "block_index": 0,
+      "image_path": "e4725e0aefb869ab84e2577dcba85be072e7bf4bf6d82b51b5d5138c6679f36b.jpg",
+      "bbox": [
+        66,
+        88,
+        547,
+        665
+      ],
+      "processed": true,
+      "processor": "Google API"
+    },
+    {
+      "id": "7da0708f65b3e251cd74a4756a0570fadbd940cc2f63588692845f934878bb1d",
+      "type": "table",
+      "page": 8,
+      "block_index": 0,
+      "image_path": "7da0708f65b3e251cd74a4756a0570fadbd940cc2f63588692845f934878bb1d.jpg",
+      "bbox": [
+        63,
+        93,
+        548,
+        336
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "980ee4742c78b5ab0f6834a45e6163a62833f032e7f06ece0d32c112adc32230",
+      "type": "table",
+      "page": 8,
+      "block_index": 1,
+      "image_path": "980ee4742c78b5ab0f6834a45e6163a62833f032e7f06ece0d32c112adc32230.jpg",
+      "bbox": [
+        51,
+        373,
+        300,
+        484
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "4d6ae5dada83fed73309551e76c63e7119c7bbe8c3de32fccb94de655c248003",
+      "type": "image",
+      "page": 8,
+      "block_index": 5,
+      "image_path": "4d6ae5dada83fed73309551e76c63e7119c7bbe8c3de32fccb94de655c248003.jpg",
+      "bbox": [
+        322,
+        352,
+        557,
+        494
+      ],
+      "processed": true,
+      "processor": "Google API"
+    },
+    {
+      "id": "6af5374918c1379fe35743fe9bc3d22b55c3ffc63c75c28a9e84ecbcac59e53b",
+      "type": "image",
+      "page": 9,
+      "block_index": 0,
+      "image_path": "6af5374918c1379fe35743fe9bc3d22b55c3ffc63c75c28a9e84ecbcac59e53b.jpg",
+      "bbox": [
+        51,
+        79,
+        294,
+        189
+      ],
+      "processed": true,
+      "processor": "Google API"
+    },
+    {
+      "id": "ed168aa155103ed2e3f1c6ff06388fc9469319b375ecfa91ad3fc2928df89a2e",
+      "type": "image",
+      "page": 9,
+      "block_index": 1,
+      "image_path": "ed168aa155103ed2e3f1c6ff06388fc9469319b375ecfa91ad3fc2928df89a2e.jpg",
+      "bbox": [
+        55,
+        257,
+        291,
+        412
+      ],
+      "processed": true,
+      "processor": "Google API"
+    },
+    {
+      "id": "67cd62dd7e801c3dc916526af667a854cde8cbe44ac4fbc66e55c04c01cca79b",
+      "type": "image",
+      "page": 9,
+      "block_index": 2,
+      "image_path": "67cd62dd7e801c3dc916526af667a854cde8cbe44ac4fbc66e55c04c01cca79b.jpg",
+      "bbox": [
+        53,
+        480,
+        292,
+        561
+      ],
+      "processed": true,
+      "processor": "Google API"
+    },
+    {
+      "id": "607f6f519c19fc7e51f0abcca64903aaec9f5da432331446cfdd51b82fb4c307",
+      "type": "table",
+      "page": 9,
+      "block_index": 5,
+      "image_path": "607f6f519c19fc7e51f0abcca64903aaec9f5da432331446cfdd51b82fb4c307.jpg",
+      "bbox": [
+        316,
+        90,
+        560,
+        262
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "1d5b8b4b6f3bcd3887273c1377063debca45928d4098eb5a498070be0bd66957",
+      "type": "table",
+      "page": 9,
+      "block_index": 6,
+      "image_path": "1d5b8b4b6f3bcd3887273c1377063debca45928d4098eb5a498070be0bd66957.jpg",
+      "bbox": [
+        317,
+        324,
+        558,
+        432
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "4f6f6d4837d1e55193f00272fa0a72d48160c7acdd40b2c752e0497d1f99ff72",
+      "type": "image",
+      "page": 10,
+      "block_index": 0,
+      "image_path": "4f6f6d4837d1e55193f00272fa0a72d48160c7acdd40b2c752e0497d1f99ff72.jpg",
+      "bbox": [
+        55,
+        78,
+        286,
+        171
+      ],
+      "processed": true,
+      "processor": "Google API"
+    },
+    {
+      "id": "02d4912878a836d1c5890d9a4cadfe2a45b8bbc418788d41f6cda69d4d776265",
+      "type": "table",
+      "page": 10,
+      "block_index": 1,
+      "image_path": "02d4912878a836d1c5890d9a4cadfe2a45b8bbc418788d41f6cda69d4d776265.jpg",
+      "bbox": [
+        51,
+        222,
+        294,
+        304
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "8c5b199362ea7538e1f525305aa3951ad3a97b8509764ea0e4dfe7c569e4a957",
+      "type": "image",
+      "page": 10,
+      "block_index": 6,
+      "image_path": "8c5b199362ea7538e1f525305aa3951ad3a97b8509764ea0e4dfe7c569e4a957.jpg",
+      "bbox": [
+        336,
+        79,
+        538,
+        161
+      ],
+      "processed": true,
+      "processor": "Google API"
+    },
+    {
+      "id": "4edf23de78f80bedade9e9628d7de04677faf669c945a7438bc5741c054af036",
+      "type": "image",
+      "page": 10,
+      "block_index": 7,
+      "image_path": "4edf23de78f80bedade9e9628d7de04677faf669c945a7438bc5741c054af036.jpg",
+      "bbox": [
+        336,
+        210,
+        538,
+        292
+      ],
+      "processed": true,
+      "processor": "Google API"
+    },
+    {
+      "id": "e345aebafe3c90dc89b4ba0a3e17ca22b1c402a68d0aff6f9f86e8a57b9b38fb",
+      "type": "image",
+      "page": 14,
+      "block_index": 0,
+      "image_path": "e345aebafe3c90dc89b4ba0a3e17ca22b1c402a68d0aff6f9f86e8a57b9b38fb.jpg",
+      "bbox": [
+        64,
+        95,
+        549,
+        655
+      ],
+      "processed": true,
+      "processor": "Google API"
+    },
+    {
+      "id": "620d39efa7ab535547c37917e7479fe08e3c68fdaa7d3f1a68e5effd39583f23",
+      "type": "image",
+      "page": 15,
+      "block_index": 0,
+      "image_path": "620d39efa7ab535547c37917e7479fe08e3c68fdaa7d3f1a68e5effd39583f23.jpg",
+      "bbox": [
+        160,
+        82,
+        452,
+        314
+      ],
+      "processed": true,
+      "processor": "Google API"
+    },
+    {
+      "id": "ba8eacfed862f2da7fb6fef5c3c28f31ee8c6543e064b2c4f843be86b66fd5f3",
+      "type": "interline_equation",
+      "page": 15,
+      "block_index": 6,
+      "image_path": "ba8eacfed862f2da7fb6fef5c3c28f31ee8c6543e064b2c4f843be86b66fd5f3.jpg",
+      "bbox": [
+        328,
+        632,
+        535,
+        653
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "4d557f265096d1f027ca6eb8eea6e9d1478028181f3ce986491fc3d10d3f33a6",
+      "type": "image",
+      "page": 16,
+      "block_index": 0,
+      "image_path": "4d557f265096d1f027ca6eb8eea6e9d1478028181f3ce986491fc3d10d3f33a6.jpg",
+      "bbox": [
+        53,
+        81,
+        291,
+        172
+      ],
+      "processed": true,
+      "processor": "Google API"
+    },
+    {
+      "id": "88ceecf51eb62ee5f87e7a60280c9788b2ca0998a3eee9a636c14f46d33fbb69",
+      "type": "interline_equation",
+      "page": 16,
+      "block_index": 4,
+      "image_path": "88ceecf51eb62ee5f87e7a60280c9788b2ca0998a3eee9a636c14f46d33fbb69.jpg",
+      "bbox": [
+        114,
+        337,
+        230,
+        361
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "0c79c922849cf22ee5b108406b922d4c3edcd8e412f5311c82d80c9b67d21887",
+      "type": "image",
+      "page": 16,
+      "block_index": 10,
+      "image_path": "0c79c922849cf22ee5b108406b922d4c3edcd8e412f5311c82d80c9b67d21887.jpg",
+      "bbox": [
+        318,
+        78,
+        558,
+        212
+      ],
+      "processed": true,
+      "processor": "Google API"
+    },
+    {
+      "id": "44b5b78d1c39f422bc75093293e1458279ad9ee3bf9f4d16d30ddb9090b4cdfb",
+      "type": "table",
+      "page": 16,
+      "block_index": 12,
+      "image_path": "44b5b78d1c39f422bc75093293e1458279ad9ee3bf9f4d16d30ddb9090b4cdfb.jpg",
+      "bbox": [
+        345,
+        376,
+        529,
+        488
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "511423fe09360dbf0fd5801e1e8220137366d0764beea702c745b2fffb8c8d95",
+      "type": "table",
+      "page": 17,
+      "block_index": 0,
+      "image_path": "511423fe09360dbf0fd5801e1e8220137366d0764beea702c745b2fffb8c8d95.jpg",
+      "bbox": [
+        82,
+        99,
+        262,
+        144
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "6df6c40d1dafa3b5dded05e2ccc8e3c5ab17bb0658ee6cef8b60f86d1b2acdfd",
+      "type": "table",
+      "page": 17,
+      "block_index": 6,
+      "image_path": "6df6c40d1dafa3b5dded05e2ccc8e3c5ab17bb0658ee6cef8b60f86d1b2acdfd.jpg",
+      "bbox": [
+        324,
+        98,
+        553,
+        166
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "0ff29fced988b3291b5f7693519d22bb009e5be98f8e5252da335265a4304c1a",
+      "type": "image",
+      "page": 18,
+      "block_index": 0,
+      "image_path": "0ff29fced988b3291b5f7693519d22bb009e5be98f8e5252da335265a4304c1a.jpg",
+      "bbox": [
+        48,
+        75,
+        555,
+        263
+      ],
+      "processed": true,
+      "processor": "Google API"
+    },
+    {
+      "id": "7246ae7773cebb29411869e45c933d56be0ea507795d286639e5b9bf1f95cbb6",
+      "type": "image",
+      "page": 19,
+      "block_index": 0,
+      "image_path": "7246ae7773cebb29411869e45c933d56be0ea507795d286639e5b9bf1f95cbb6.jpg",
+      "bbox": [
+        79,
+        69,
+        534,
+        675
+      ],
+      "processed": true,
+      "processor": "Google API"
+    },
+    {
+      "id": "b4e997fe77e7bc94268b28b4197eaa65d0fa54b1cb95f1c0464602278bbd0c80",
+      "type": "image",
+      "page": 20,
+      "block_index": 0,
+      "image_path": "b4e997fe77e7bc94268b28b4197eaa65d0fa54b1cb95f1c0464602278bbd0c80.jpg",
+      "bbox": [
+        80,
+        93,
+        545,
+        657
+      ],
+      "processed": true,
+      "processor": "Google API"
+    },
+    {
+      "id": "5e414208e1493268c9d9642c8d491e56fa1bf4295cffc7cb575b4c671778629a",
+      "type": "table",
+      "page": 21,
+      "block_index": 0,
+      "image_path": "5e414208e1493268c9d9642c8d491e56fa1bf4295cffc7cb575b4c671778629a.jpg",
+      "bbox": [
+        68,
+        99,
+        544,
+        230
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "5ed39eb81cf8276a126956d9d795a6f187c7a4991b67799b4301fdebf96fb4bd",
+      "type": "table",
+      "page": 21,
+      "block_index": 1,
+      "image_path": "5ed39eb81cf8276a126956d9d795a6f187c7a4991b67799b4301fdebf96fb4bd.jpg",
+      "bbox": [
+        68,
+        260,
+        543,
+        391
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "3ed484dc1c0ebae7020e29b8cae08eb38e0328c94ad815f26f5f4ecaf619f4ae",
+      "type": "table",
+      "page": 21,
+      "block_index": 2,
+      "image_path": "3ed484dc1c0ebae7020e29b8cae08eb38e0328c94ad815f26f5f4ecaf619f4ae.jpg",
+      "bbox": [
+        68,
+        420,
+        544,
+        551
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "4dda5803c03fa20ddea70c681ea8e11cfb2aa3bfd45ab537be8fd3c41178743e",
+      "type": "table",
+      "page": 22,
+      "block_index": 0,
+      "image_path": "4dda5803c03fa20ddea70c681ea8e11cfb2aa3bfd45ab537be8fd3c41178743e.jpg",
+      "bbox": [
+        104,
+        97,
+        506,
+        491
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "039caf47847226aebcfcdc23109ed98019e0bd76a90b7c32160d3028895dccf5",
+      "type": "table",
+      "page": 23,
+      "block_index": 0,
+      "image_path": "039caf47847226aebcfcdc23109ed98019e0bd76a90b7c32160d3028895dccf5.jpg",
+      "bbox": [
+        49,
+        99,
+        562,
+        360
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "5796783da9ca73db0c8003b878b8b6181be0b33362d10a5e013209e24b28ae3b",
+      "type": "table",
+      "page": 24,
+      "block_index": 0,
+      "image_path": "5796783da9ca73db0c8003b878b8b6181be0b33362d10a5e013209e24b28ae3b.jpg",
+      "bbox": [
+        104,
+        97,
+        506,
+        491
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "9efed9fad2b3be4aa9913767a24fb640fd979a53a841aff12593f85a4e95d3ed",
+      "type": "table",
+      "page": 25,
+      "block_index": 0,
+      "image_path": "9efed9fad2b3be4aa9913767a24fb640fd979a53a841aff12593f85a4e95d3ed.jpg",
+      "bbox": [
+        49,
+        99,
+        562,
+        360
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "6f8c41936babd309c13ef7f3a760b96f3b4985f5ffb83c3be6004bb08c28a107",
+      "type": "table",
+      "page": 26,
+      "block_index": 0,
+      "image_path": "6f8c41936babd309c13ef7f3a760b96f3b4985f5ffb83c3be6004bb08c28a107.jpg",
+      "bbox": [
+        104,
+        97,
+        507,
+        491
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "46956a9795e8f4e6d79b67e7dfd145d223b80a977cc8b8d025026452dd2cff96",
+      "type": "table",
+      "page": 27,
+      "block_index": 0,
+      "image_path": "46956a9795e8f4e6d79b67e7dfd145d223b80a977cc8b8d025026452dd2cff96.jpg",
+      "bbox": [
+        49,
+        99,
+        562,
+        360
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "ceb64f1e11b82fbc4dcf08207f00a72de4063d15441ab775b86c0861b58eb548",
+      "type": "table",
+      "page": 27,
+      "block_index": 1,
+      "image_path": "ceb64f1e11b82fbc4dcf08207f00a72de4063d15441ab775b86c0861b58eb548.jpg",
+      "bbox": [
+        49,
+        399,
+        562,
+        642
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "3fc2b0c35c4b2cfe17af48b889ab0357b08596cf8d6138fb20289c65b119a005",
+      "type": "table",
+      "page": 28,
+      "block_index": 0,
+      "image_path": "3fc2b0c35c4b2cfe17af48b889ab0357b08596cf8d6138fb20289c65b119a005.jpg",
+      "bbox": [
+        49,
+        109,
+        562,
+        351
+      ],
+      "processed": false,
+      "processor": "UnimerNet"
+    }
+  ],
+  "processing_commands": {
+    "image_analysis": "EXTRACT_PDF_POST test_extract_paper.pdf --type image",
+    "formula_recognition": "EXTRACT_PDF_POST test_extract_paper.pdf --type formula",
+    "table_recognition": "EXTRACT_PDF_POST test_extract_paper.pdf --type table",
+    "process_all": "EXTRACT_PDF_POST test_extract_paper.pdf --type all"
+  }
+}

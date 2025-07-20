@@ -1,0 +1,5 @@
+{
+  "success": true,
+  "message": "Command executed successfully",
+  "output": "✅ Local UnimerNet components loaded successfully\n{\n  \"success\": true,\n  \"result\": \"\\\\mathcal { L } _ { \\\\mathrm { d } } = \\\\Vert D ^ { * } - D _ { \\\\mathrm { p r e d } } ^ { * } \\\\Vert _ { 1 } ,\",\n  \"image_path\": \"/var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/padded_f195ec2a58fa7a8ca50f68ec71712973bb62d87321acbb8f92ad5bb6368a3a2d_1839.jpg\",\n  \"content_type\": \"auto\",\n  \"processor\": \"unimernet\",\n  \"timestamp\": \"2025-07-20T19:50:18.085820\",\n  \"from_cache\": true\n}"
+}

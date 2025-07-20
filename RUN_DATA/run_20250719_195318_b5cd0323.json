@@ -1,0 +1,5 @@
+{
+  "success": true,
+  "message": "Command executed successfully",
+  "output": "✅ Local UnimerNet components loaded successfully\n{\n  \"success\": true,\n  \"result\": \"z _ { t } = \\\\sqrt { \\\\bar { \\\\alpha } _ { t } } \\\\mathcal { E } ( x _ { j } ) + \\\\sqrt { 1 - \\\\bar { \\\\alpha } _ { t } } \\\\epsilon , \\\\mathrm { ~ w h e r e ~ } \\\\epsilon \\\\sim \\\\mathcal { N } ( 0 , I ) , t \\\\in [ 0 , T ] ,\",\n  \"image_path\": \"/var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/padded_c28d2ad6b93ba944093ca755314b8bb30d5a50d9d54ad811cc200e10eebaea15_9953.jpg\",\n  \"content_type\": \"auto\",\n  \"processor\": \"unimernet\",\n  \"timestamp\": \"2025-07-19T19:53:20.455137\",\n  \"from_cache\": true\n}"
+}

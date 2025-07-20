@@ -1,0 +1,16 @@
+{
+  "title": "Effective field theory for superfluid vortex lattice from coset\n  construction",
+  "authors": [
+    "Aleksander Głódkowski",
+    "Sergej Moroz",
+    "Francisco Peña-Benítez",
+    "Piotr Surówka"
+  ],
+  "abstract": "Guided by symmetry principles, we construct an effective field theory that\ncaptures the long-wavelength dynamics of two-dimensional vortex crystals\nobserved in rotating Bose-Einstein condensates trapped in a harmonic potential.\nBy embedding the system into Newton--Cartan spacetime and analyzing its\nisometries, we identify the appropriate spacetime symmetry group for trapped\ncondensates at finite angular momentum. After introducing a coarse-grained\ndescription of the vortex lattice we consider a homogeneous equilibrium\nconfiguration and discuss the associated symmetry breaking pattern. We apply\nthe coset construction method to identify covariant structures that enter the\neffective action and discuss the physical interpretation of the inverse Higgs\nconstraints. We verify that Kohn's theorem is satisfied within our construction\nand subsequently focus on the gapless sector of the theory. In this regime, the\neffective theory accommodates a single gapless excitation--the Tkachenko\nmode--for which we construct both the leading-order and next-to-leading-order\nactions, the latter including cubic interaction terms.",
+  "url": "http://arxiv.org/abs/2507.13352v1",
+  "pdf_url": "http://arxiv.org/pdf/2507.13352v1.pdf",
+  "publication_date": "2025-07-17",
+  "venue": "arXiv preprint",
+  "citation_count": null,
+  "source": "arxiv"
+}

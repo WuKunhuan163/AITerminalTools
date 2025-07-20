@@ -370,8 +370,13 @@ class PDFPostProcessor:
                         if recognition_result:
                             # Check if it's from cache
                             cache_info = " (来自缓存)" if extract_result.get('from_cache') else ""
-                            print(f"✅ EXTRACT_IMG识别成功{cache_info}: {len(recognition_result)} 字符")
-                            return f"**公式识别结果:**\n\n```latex\n{recognition_result}\n```"
+                            # Get processing time if available
+                            processing_time = extract_result.get('processing_time', 0)
+                            time_info = f" (耗时: {processing_time:.2f}秒)" if processing_time > 0 else ""
+                            print(f"✅ EXTRACT_IMG识别成功{cache_info}{time_info}: {len(recognition_result)} 字符")
+                            # Directly format as $$ without description wrapper
+                            cleaned_result = recognition_result.strip()
+                            return f"$$\n{cleaned_result}\n$$"
                         else:
                             print("⚠️  EXTRACT_IMG返回空结果")
                             return f"**公式识别失败:**\n\n```\n错误信息: EXTRACT_IMG返回空结果\n```"
@@ -394,7 +399,7 @@ class PDFPostProcessor:
             return f"**公式识别失败:**\n\n```\n错误信息: UNIMERNET处理异常: {e}\n```"
     
     def _process_items_hybrid(self, pdf_file: str, md_file: str, status_data: dict, 
-                             items_to_process: list, process_type: str, custom_prompt: str = None) -> bool:
+                             items_to_process: list, process_type: str, custom_prompt: str = None, force: bool = False) -> bool:
         """使用混合方式处理项目：图像用传统API，公式表格用UNIMERNET"""
         try:
             # 读取markdown文件
@@ -422,9 +427,11 @@ class PDFPostProcessor:
                     print(f"⚠️  未找到项目: {item_id}")
                     continue
                 
-                if item.get('processed', False):
+                if item.get('processed', False) and not force:
                     print(f"⏭️  跳过已处理项目: {item_id}")
                     continue
+                elif item.get('processed', False) and force:
+                    print(f"🔄 强制重新处理项目: {item_id}")
                 
                 item_type = item.get('type')
                 image_path = item.get('image_path', '')
@@ -460,25 +467,38 @@ class PDFPostProcessor:
                     
                     # 构建图片路径的正则表达式（支持绝对和相对路径）
                     image_filename = Path(image_path).name
-                    placeholder_pattern = rf'\[placeholder:\s*{item_type}\]\s*\n!\[[^\]]*\]\([^)]*{re.escape(image_filename)}\)'
+                    # 匹配placeholder和图片，以及可能存在的description或reason
+                    # 使用更精确的匹配，考虑到reason块可能包含嵌套的方括号
+                    placeholder_pattern = rf'\[placeholder:\s*{item_type}\]\s*\n!\[[^\]]*\]\([^)]*{re.escape(image_filename)}\)(\s*\n\n\[(description|reason):.*?\n\n---+\])?'
                     
                     # Check if result_text contains error information
                     is_error = any(error_keyword in result_text for error_keyword in 
                                   ["失败", "错误信息", "处理异常", "执行失败", "解析失败"])
                     
-                    if is_error:
-                        # For errors, add error info below placeholder but keep placeholder
-                        # Escape special regex characters in result_text
-                        escaped_result_text = re.escape(result_text).replace(r'\n', '\n')
-                        replacement = f"[placeholder: {item_type}]\n\n{result_text}\n\n![](images/{image_filename})"
-                    else:
-                        # For successful processing, replace placeholder with result
-                        # Escape special regex characters in result_text  
-                        replacement = f"{result_text}\n![](images/{image_filename})"
+                    # Use absolute path for images
+                    abs_image_path = Path(__file__).parent / "EXTRACT_PDF_PROJ" / "pdf_extractor_data" / "images" / image_filename
                     
-                    if re.search(placeholder_pattern, md_content):
+                    if is_error:
+                        # For errors, keep placeholder and add error info below image
+                        replacement = f"[placeholder: {item_type}]\n![]({abs_image_path})\n\n[reason: {result_text}]"
+                    else:
+                        # For successful processing
+                        if item_type in ['formula', 'interline_equation'] and result_text.strip().startswith('$$') and result_text.strip().endswith('$$'):
+                            # For formulas already in $$ format, don't add description wrapper
+                            replacement = f"[placeholder: {item_type}]\n![]({abs_image_path})\n\n{result_text}"
+                        else:
+                            # For other content, keep placeholder and add description below image
+                            replacement = f"[placeholder: {item_type}]\n![]({abs_image_path})\n\n[description: {result_text}]"
+                    
+                    if re.search(placeholder_pattern, md_content, re.DOTALL):
                         # Use lambda to avoid regex interpretation of replacement string
-                        md_content = re.sub(placeholder_pattern, lambda m: replacement, md_content)
+                        md_content = re.sub(placeholder_pattern, lambda m: replacement, md_content, flags=re.DOTALL)
+                        
+                        # Additional cleanup: remove any remaining fragments of old reason/description blocks
+                        # This handles cases where the regex didn't capture the complete block
+                        cleanup_pattern = rf'----+\]\s*.*?使用.*?密钥时失败.*?\n\n---+\]'
+                        md_content = re.sub(cleanup_pattern, '', md_content, flags=re.DOTALL)
+                        
                         updated = True
                         
                         # 标记为已处理
@@ -576,27 +596,27 @@ class PDFPostProcessor:
                             # Check if it's from cache
                             cache_info = " (来自缓存)" if extract_result.get('from_cache') else ""
                             print(f"✅ EXTRACT_IMG分析完成{cache_info}: {len(analysis_result)} 字符")
-                            return f"--- 图像分析结果 ---\n\n{analysis_result}\n\n------------------"
+                            return f"--- 图像分析结果 ---\n\n{analysis_result}\n\n--------------------"
                         else:
                             print("⚠️  EXTRACT_IMG返回空结果")
-                            return f"--- 图像分析失败 ---\n\n**错误信息**: EXTRACT_IMG返回空结果\n\n------------------"
+                            return f"--- 图像分析失败 ---\n\n**错误信息**: EXTRACT_IMG返回空结果\n\n--------------------"
                     else:
                         error_msg = extract_result.get('error', 'Unknown error')
                         print(f"❌ EXTRACT_IMG处理失败: {error_msg}")
-                        return f"--- 图像分析失败 ---\n\n**错误信息**: {error_msg}\n\n------------------"
+                        return f"--- 图像分析失败 ---\n\n**错误信息**: {error_msg}\n\n-------------------"
                 except json.JSONDecodeError as e:
                     error_msg = f"JSON解析失败: {e}\n原始输出: {result.stdout[:200]}..."
                     print(f"❌ 无法解析EXTRACT_IMG JSON输出: {e}")
                     print(f"   原始输出: {result.stdout[:200]}...")
-                    return f"--- 图像分析失败 ---\n\n**错误信息**: {error_msg}\n\n------------------"
+                    return f"--- 图像分析失败 ---\n\n**错误信息**: {error_msg}\n\n--------------------"
             else:
                 error_msg = f"EXTRACT_IMG执行失败: {result.stderr}"
                 print(f"❌ EXTRACT_IMG执行失败: {result.stderr}")
-                return f"--- 图像分析失败 ---\n\n**错误信息**: {error_msg}\n\n------------------"
+                return f"--- 图像分析失败 ---\n\n**错误信息**: {error_msg}\n\n--------------------"
                 
         except Exception as e:
             print(f"❌ IMG2TEXT处理异常: {e}")
-            return f"--- 图像分析失败 ---\n\n**错误信息**: IMG2TEXT处理异常: {e}\n\n------------------"
+            return f"--- 图像分析失败 ---\n\n**错误信息**: IMG2TEXT处理异常: {e}\n\n--------------------"
     
     def _select_markdown_file_interactive(self) -> str:
         """交互式选择markdown文件"""
@@ -731,7 +751,7 @@ class PDFPostProcessor:
                 print("\n❌ 已取消")
                 return None
         
-    def process_file(self, file_path: str, process_type: str, specific_ids: str = None, custom_prompt: str = None) -> bool:
+    def process_file(self, file_path: str, process_type: str, specific_ids: str = None, custom_prompt: str = None, force: bool = False) -> bool:
         """
         处理PDF文件的后处理 - 使用高级selective processing
         
@@ -849,7 +869,7 @@ class PDFPostProcessor:
                     
                     # 使用混合处理：图像用传统API，公式表格用UNIMERNET
                     success = self._process_items_hybrid(
-                        str(pdf_file), str(md_file), status_data, items_to_process, process_type, custom_prompt
+                        str(pdf_file), str(md_file), status_data, items_to_process, process_type, custom_prompt, force
                     )
                     
                     if success:
@@ -1217,6 +1237,7 @@ Options:
   --ids <ids>          Specific hash IDs to process (comma-separated) or keywords:
                        all_images, all_formulas, all_tables, all
   --prompt <text>      Custom prompt for IMG2TEXT image analysis
+  --force              Force reprocessing even if items are marked as processed
   --full <file>        Full pipeline: extract PDF then post-process automatically
   --clean-data         Clean all cached markdown files and images from EXTRACT_PDF_PROJ
   --help, -h           Show this help message
@@ -1312,6 +1333,7 @@ def main():
     post_type = "all"
     post_ids = None
     post_prompt = None
+    post_force = False
     full_pipeline = False
     clean_data = False
     
@@ -1442,6 +1464,9 @@ def main():
                 else:
                     print(error_msg)
                 return 1
+        elif arg == '--force':
+            post_force = True
+            i += 1
         elif arg.startswith('-'):
             error_msg = f"❌ Unknown option: {arg}"
             if run_context['in_run_context']:
@@ -1574,7 +1599,7 @@ def main():
     # 处理后处理模式
     if post_file:
         processor = PDFPostProcessor(debug=False)
-        success = processor.process_file(post_file, post_type, post_ids, post_prompt)
+        success = processor.process_file(post_file, post_type, post_ids, post_prompt, force=post_force)
         
         if success:
             success_data = {
@@ -1637,5 +1662,40 @@ def main():
             print(f"❌ {message}")
         return 1
 
+def cleanup_images_folder():
+    """Clean up images folder created by MinerU module imports"""
+    images_path = Path("images")
+    if images_path.exists() and images_path.is_dir():
+        try:
+            # Only remove if it's empty or contains only MinerU-generated files
+            contents = list(images_path.iterdir())
+            if not contents:  # Empty folder
+                images_path.rmdir()
+                print("🧹 已清理空的 images 文件夹")
+            else:
+                # Check if all contents are image files (likely from MinerU)
+                image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff'}
+                all_images = all(
+                    item.is_file() and item.suffix.lower() in image_extensions 
+                    for item in contents
+                )
+                if all_images and len(contents) < 10:  # Safety check: only clean small image folders
+                    shutil.rmtree(images_path)
+                    print(f"🧹 已清理包含 {len(contents)} 个图片文件的 images 文件夹")
+        except Exception as e:
+            # Silently ignore cleanup errors
+            pass
+
 if __name__ == "__main__":
-    sys.exit(main()) 
+    try:
+        exit_code = main()
+        cleanup_images_folder()
+        sys.exit(exit_code)
+    except KeyboardInterrupt:
+        cleanup_images_folder()
+        print("\n❌ 已取消")
+        sys.exit(1)
+    except Exception as e:
+        cleanup_images_folder()
+        print(f"❌ 程序异常: {e}")
+        sys.exit(1) 
