@@ -1,0 +1,63 @@
+{
+  "pdf_file": "test_extract_paper2.pdf",
+  "created_at": "2025-07-21T04:16:31.814816",
+  "total_items": 3,
+  "counts": {
+    "images": 0,
+    "formulas": 0,
+    "tables": 0
+  },
+  "items": [
+    {
+      "id": "c7c84f7bcf90c20b1784c35c628d3cb12bd4de7662735890a6b6b21bc3def7b9",
+      "type": "table",
+      "page": 1,
+      "block_index": 0,
+      "image_path": "c7c84f7bcf90c20b1784c35c628d3cb12bd4de7662735890a6b6b21bc3def7b9.jpg",
+      "bbox": [
+        124,
+        88,
+        486,
+        160
+      ],
+      "processed": true,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "9daed601931c7dc45e90545d5335e1cbcc58e382e377760ddc3033477cc096b8",
+      "type": "interline_equation",
+      "page": 1,
+      "block_index": 5,
+      "image_path": "9daed601931c7dc45e90545d5335e1cbcc58e382e377760ddc3033477cc096b8.jpg",
+      "bbox": [
+        240,
+        347,
+        371,
+        363
+      ],
+      "processed": true,
+      "processor": "UnimerNet"
+    },
+    {
+      "id": "4ccaa51b81a2fc2d42cb15374f1d03adc72c7a5e5622100441bd35cfd35964f8",
+      "type": "interline_equation",
+      "page": 1,
+      "block_index": 8,
+      "image_path": "4ccaa51b81a2fc2d42cb15374f1d03adc72c7a5e5622100441bd35cfd35964f8.jpg",
+      "bbox": [
+        115,
+        467,
+        483,
+        506
+      ],
+      "processed": true,
+      "processor": "UnimerNet"
+    }
+  ],
+  "processing_commands": {
+    "image_analysis": "EXTRACT_PDF_POST test_extract_paper2.pdf --type image",
+    "formula_recognition": "EXTRACT_PDF_POST test_extract_paper2.pdf --type formula",
+    "table_recognition": "EXTRACT_PDF_POST test_extract_paper2.pdf --type table",
+    "process_all": "EXTRACT_PDF_POST test_extract_paper2.pdf --type all"
+  }
+}

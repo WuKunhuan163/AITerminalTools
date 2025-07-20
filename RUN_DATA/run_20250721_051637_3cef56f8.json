@@ -1,0 +1,5 @@
+{
+  "success": false,
+  "error": "Command execution failed",
+  "output": "🤖 正在生成学习内容结构...\n🚀 默认模式：自动模型选择\n\n📝 第1步：询问AI进行头脑风暴...\n🔄 使用EXTRACT_PDF处理: test_extracted_paper.md\n❌ EXTRACT_PDF处理失败: \n❌ 无法获取论文内容\n❌ 内容准备失败，无法继续生成学习材料"
+}

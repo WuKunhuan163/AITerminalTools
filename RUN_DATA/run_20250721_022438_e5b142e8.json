@@ -1,0 +1,4 @@
+{
+  "success": false,
+  "error": "Command execution failed: [Errno 32] Broken pipe"
+}

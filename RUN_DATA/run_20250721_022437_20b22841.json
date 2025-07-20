@@ -1,0 +1,11 @@
+{
+  "success": true,
+  "result": "The provided image is not a scientific plot or figure suitable for quantitative or qualitative analysis in an academic research context.  It's a digital rendering of four dice of different colors (red, blue, green, and yellow) against a multicolored background.  There is no data to extract or trend to describe.  The image lacks the necessary elements for scientific interpretation:\n\n* **Type of plot/figure:** None. This is a digital illustration, not a scientific figure.\n\n* **Main finding or conclusion:**  No scientific finding or conclusion can be derived.\n\n* **Key data points or significant numbers:**  None. The numbers on the dice are not presented in a way that allows for quantitative analysis.  Their presence is merely illustrative.\n\n* **Trend or relationship:** No relationship or trend is shown. The placement of the dice is arbitrary and does not represent any scientific data.\n\n\nIn summary, this image is inappropriate for academic analysis within a scientific framework.  It lacks the characteristics of a scientific plot or figure.\n",
+  "image_path": "/Users/wukunhuan/.local/bin/_UNITTEST/_DATA/test_img.png",
+  "content_type": "image",
+  "processor": "img2text",
+  "mode": "academic",
+  "timestamp": "2025-07-21T02:24:37.627389",
+  "processing_time": 7.557104,
+  "from_cache": true
+}

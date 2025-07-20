@@ -1,0 +1,4 @@
+{
+  "success": false,
+  "error": "No URL provided. Usage: DOWNLOAD <url> [destination]"
+}

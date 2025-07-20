@@ -1,0 +1,5 @@
+{
+  "success": true,
+  "message": "Command executed successfully",
+  "output": "✅ Local UnimerNet components loaded successfully\n📁 Using local model path: /Users/wukunhuan/.local/bin/UNIMERNET_PROJ/unimernet_models/unimernet_hf_small_2503\n🔄 Loading UnimerNet model from /Users/wukunhuan/.local/bin/UNIMERNET_PROJ/unimernet_models/unimernet_hf_small_2503\n📱 Using device: mps\n✅ UnimerNet model loaded successfully\n✅ Recognition successful: \\boldsymbol { z } ^ { ( k ) } \\sim p ( \\boldsymbol...\n{\n  \"success\": true,\n  \"result\": \"\\\\boldsymbol { z } ^ { ( k ) } \\\\sim p ( \\\\boldsymbol { z } ^ { ( k ) } | \\\\tilde { \\\\boldsymbol { z } } , \\\\boldsymbol { z } ^ { ( 1 , \\\\dots , k - 1 ) } , y ) ,\",\n  \"image_path\": \"/var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/padded_9daed601931c7dc45e90545d5335e1cbcc58e382e377760ddc3033477cc096b8_5571.jpg\",\n  \"content_type\": \"formula\",\n  \"processor\": \"unimernet\",\n  \"timestamp\": \"2025-07-21T04:48:35.341179\",\n  \"from_cache\": false\n}"
+}

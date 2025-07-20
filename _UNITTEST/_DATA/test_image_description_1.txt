@@ -1,0 +1,3 @@
+*[API调用失败：所有配置的API密钥都无法成功获取回复。详细信息:
+- 使用 FREE 密钥时失败: 400 User location is not supported for the API use.
+- 使用 PAID 密钥时失败: 400 User location is not supported for the API use.]*

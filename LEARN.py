@@ -395,8 +395,21 @@ def parse_direct_command(args):
     # Determine type based on arguments
     if parsed_args.paper:
         params['type'] = 'paper'
-        params['input_type'] = 1  # PDF file
-        params['paper_path'] = parsed_args.paper
+        paper_path = parsed_args.paper
+        # 根据文件扩展名判断类型
+        if paper_path.endswith('.md'):
+            params['input_type'] = 0  # Markdown file
+            # 读取markdown文件内容
+            try:
+                with open(paper_path, 'r', encoding='utf-8') as f:
+                    params['paper_content'] = f.read()
+                params['paper_path'] = paper_path
+            except Exception as e:
+                print(f"❌ 读取markdown文件失败: {e}")
+                return 1
+        else:
+            params['input_type'] = 1  # PDF file
+            params['paper_path'] = paper_path
         params['read_images'] = parsed_args.read_images
     elif parsed_args.pdf:
         params['type'] = 'paper'
@@ -1633,6 +1646,55 @@ def select_best_papers_with_ai(search_results, user_description, max_papers=3, n
     except Exception as e:
         print(f"⚠️  AI筛选出错，返回前{max_papers}篇: {e}")
         return search_results[:max_papers]
+
+
+def process_paper_with_extract_pdf(paper_path, read_images=False):
+    """使用EXTRACT_PDF处理PDF文件，返回内容和处理后的路径"""
+    try:
+        import subprocess
+        from pathlib import Path
+        
+        paper_path = Path(paper_path)
+        if not paper_path.exists():
+            print(f"❌ PDF文件不存在: {paper_path}")
+            return None, None
+        
+        # 使用EXTRACT_PDF处理PDF
+        extract_pdf_path = Path(__file__).parent / "EXTRACT_PDF.py"
+        if not extract_pdf_path.exists():
+            print("❌ EXTRACT_PDF.py不存在")
+            return None, None
+        
+        print(f"🔄 使用EXTRACT_PDF处理: {paper_path.name}")
+        
+        # 构建命令
+        cmd = ["/usr/bin/python3", str(extract_pdf_path)]
+        cmd.append(str(paper_path))
+        
+        if not read_images:
+            cmd.extend(["--engine", "basic-asyn"])
+        
+        # 执行命令
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        
+        if result.returncode != 0:
+            print(f"❌ EXTRACT_PDF处理失败: {result.stderr}")
+            return None, None
+        
+        # 查找生成的markdown文件
+        md_path = paper_path.with_suffix('.md')
+        if md_path.exists():
+            with open(md_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            print(f"✅ PDF处理完成: {md_path.name}")
+            return content, str(md_path)
+        else:
+            print("❌ 未找到生成的markdown文件")
+            return None, None
+            
+    except Exception as e:
+        print(f"❌ 处理PDF时发生错误: {e}")
+        return None, None
 
 
 def search_and_download_paper(paper_description, params=None):

@@ -1,0 +1,2483 @@
+{
+    "pdf_info": [
+        {
+            "preproc_blocks": [
+                {
+                    "type": "table",
+                    "bbox": [
+                        124,
+                        88,
+                        486,
+                        160
+                    ],
+                    "blocks": [
+                        {
+                            "type": "table_caption",
+                            "bbox": [
+                                110,
+                                76,
+                                500,
+                                88
+                            ],
+                            "group_id": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        109,
+                                        75,
+                                        501,
+                                        89
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                109,
+                                                75,
+                                                501,
+                                                89
+                                            ],
+                                            "score": 1.0,
+                                            "content": "Table 1: 3D part completion. Reconstruction quality of the parts and whole object. →reproduced.",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "index": 0
+                                }
+                            ],
+                            "index": 0
+                        },
+                        {
+                            "type": "table_body",
+                            "bbox": [
+                                124,
+                                88,
+                                486,
+                                160
+                            ],
+                            "group_id": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        124,
+                                        88,
+                                        486,
+                                        160
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                124,
+                                                88,
+                                                486,
+                                                160
+                                            ],
+                                            "score": 0.979,
+                                            "type": "table",
+                                            "image_path": "c7c84f7bcf90c20b1784c35c628d3cb12bd4de7662735890a6b6b21bc3def7b9.jpg"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 2,
+                            "virtual_lines": [
+                                {
+                                    "bbox": [
+                                        124,
+                                        88,
+                                        486,
+                                        112.0
+                                    ],
+                                    "spans": [],
+                                    "index": 1
+                                },
+                                {
+                                    "bbox": [
+                                        124,
+                                        112.0,
+                                        486,
+                                        136.0
+                                    ],
+                                    "spans": [],
+                                    "index": 2
+                                },
+                                {
+                                    "bbox": [
+                                        124,
+                                        136.0,
+                                        486,
+                                        160.0
+                                    ],
+                                    "spans": [],
+                                    "index": 3
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 1.0
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        108,
+                        178,
+                        504,
+                        201
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                104,
+                                175,
+                                506,
+                                194
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        104,
+                                        175,
+                                        506,
+                                        194
+                                    ],
+                                    "score": 1.0,
+                                    "content": "masks-to-part scenario, y is the image I as well as the masked image J(k) = M (k) ↓ I, denoting",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 4
+                        },
+                        {
+                            "bbox": [
+                                107,
+                                191,
+                                259,
+                                201
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        107,
+                                        191,
+                                        259,
+                                        201
+                                    ],
+                                    "score": 1.0,
+                                    "content": "which parts should be generated next.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 5
+                        }
+                    ],
+                    "index": 4.5
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        107,
+                        206,
+                        505,
+                        290
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                104,
+                                205,
+                                507,
+                                220
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        104,
+                                        205,
+                                        507,
+                                        220
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Knowledge of the previously generated parts z(1), . . . , z(k↑1) is essential as this allows the model to",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 6
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                218,
+                                506,
+                                231
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        218,
+                                        506,
+                                        231
+                                    ],
+                                    "score": 1.0,
+                                    "content": "ensure that the next part fits together well with the previously generated ones. Furthermore, in all",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 7
+                        },
+                        {
+                            "bbox": [
+                                106,
+                                230,
+                                506,
+                                243
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        106,
+                                        230,
+                                        506,
+                                        243
+                                    ],
+                                    "score": 1.0,
+                                    "content": "cases we consider, the evidence y also provides some evidence on the overall shape of the object.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 8
+                        },
+                        {
+                            "bbox": [
+                                106,
+                                241,
+                                506,
+                                253
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        106,
+                                        241,
+                                        506,
+                                        253
+                                    ],
+                                    "score": 1.0,
+                                    "content": "As suggested in Fig. 3, we can represent the union of parts by simply concatenating their latent",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 9
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                252,
+                                506,
+                                263
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        252,
+                                        506,
+                                        263
+                                    ],
+                                    "score": 1.0,
+                                    "content": "representations. However, for compactness, we found it useful to fuse their codes into one, which we",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 10
+                        },
+                        {
+                            "bbox": [
+                                102,
+                                259,
+                                508,
+                                281
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        102,
+                                        259,
+                                        508,
+                                        281
+                                    ],
+                                    "score": 1.0,
+                                    "content": "obtain as: z(1,...,k↑1) = E ! ↔k↑1j=1 sampleN D(· | z(j) ) \" , where sampleN is a function that samples",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 11
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                276,
+                                505,
+                                290
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        276,
+                                        505,
+                                        290
+                                    ],
+                                    "score": 1.0,
+                                    "content": "N points from the surface of the object defined by the zero level set of the SDF function D(·|z(k) ).",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 12
+                        }
+                    ],
+                    "index": 9
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        107,
+                        294,
+                        505,
+                        328
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                106,
+                                294,
+                                505,
+                                306
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        106,
+                                        294,
+                                        505,
+                                        306
+                                    ],
+                                    "score": 1.0,
+                                    "content": "We found it optional but useful to pin down the overall object by adding to the evidence y a code z˜",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 13
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                304,
+                                506,
+                                318
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        304,
+                                        506,
+                                        318
+                                    ],
+                                    "score": 1.0,
+                                    "content": "for the object as a whole, which is either given outright (object-to-part, z˜ = E(sampleN xˆ)) or can",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 14
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                316,
+                                428,
+                                329
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        316,
+                                        428,
+                                        329
+                                    ],
+                                    "score": 1.0,
+                                    "content": "be obtained by the model itself (image-to-part and masks-to-part, z˜ ↗ p(z | I)).",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 15
+                        }
+                    ],
+                    "index": 14
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        107,
+                        332,
+                        318,
+                        344
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                105,
+                                331,
+                                318,
+                                345
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        331,
+                                        318,
+                                        345
+                                    ],
+                                    "score": 1.0,
+                                    "content": "With all this, we learn a conditional generator model",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 16
+                        }
+                    ],
+                    "index": 16
+                },
+                {
+                    "type": "interline_equation",
+                    "bbox": [
+                        240,
+                        347,
+                        371,
+                        363
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                240,
+                                347,
+                                371,
+                                363
+                            ],
+                            "spans": [
+                                {
+                                    "type": "interline_equation",
+                                    "score": 0.947,
+                                    "bbox": [
+                                        240,
+                                        347,
+                                        371,
+                                        363
+                                    ],
+                                    "image_path": "9daed601931c7dc45e90545d5335e1cbcc58e382e377760ddc3033477cc096b8.jpg"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 17,
+                    "virtual_lines": [
+                        {
+                            "bbox": [
+                                240,
+                                347,
+                                371,
+                                363
+                            ],
+                            "spans": [],
+                            "index": 17
+                        }
+                    ]
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        108,
+                        368,
+                        505,
+                        401
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                104,
+                                367,
+                                506,
+                                380
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        104,
+                                        367,
+                                        506,
+                                        380
+                                    ],
+                                    "score": 1.0,
+                                    "content": "where y = ω for the object-to-part scenario, y = I for the image-to-part scenario, and y = (I, M (k) )",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 18
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                378,
+                                505,
+                                391
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        378,
+                                        505,
+                                        391
+                                    ],
+                                    "score": 1.0,
+                                    "content": "for the masks-to-part scenario. The generation process stops when all the input masks have been",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 19
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                389,
+                                507,
+                                403
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        389,
+                                        507,
+                                        403
+                                    ],
+                                    "score": 1.0,
+                                    "content": "processed, if available, or when the model outputs a special [EoT] token, representing empty shape.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 20
+                        }
+                    ],
+                    "index": 19
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        108,
+                        404,
+                        504,
+                        461
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                105,
+                                403,
+                                505,
+                                419
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        403,
+                                        505,
+                                        419
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Based on Section 3.2, learning the distribution Eq. (1) amounts to learning a velocity field vˆ(t, zt |",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 21
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                414,
+                                507,
+                                433
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        414,
+                                        507,
+                                        433
+                                    ],
+                                    "score": 1.0,
+                                    "content": "z˜, z(1,...,k↑1), y). During inference, we use classifier-free guidance (CFG) [18] to modulate the",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 22
+                        },
+                        {
+                            "bbox": [
+                                106,
+                                427,
+                                505,
+                                440
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        106,
+                                        427,
+                                        505,
+                                        440
+                                    ],
+                                    "score": 1.0,
+                                    "content": "strength of the conditioning. In the most general case, the model is conditioned by the overall (partial)",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 23
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                436,
+                                507,
+                                454
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        436,
+                                        507,
+                                        454
+                                    ],
+                                    "score": 1.0,
+                                    "content": "object z˜, the previously generated parts z(1,...,k↑1), and a masked image pair y = (I, J(k) ). We",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 24
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                449,
+                                418,
+                                462
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        449,
+                                        418,
+                                        462
+                                    ],
+                                    "score": 1.0,
+                                    "content": "modulate the importance of the geometric and visual conditioning as follows:",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 25
+                        }
+                    ],
+                    "index": 23
+                },
+                {
+                    "type": "interline_equation",
+                    "bbox": [
+                        115,
+                        467,
+                        483,
+                        506
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                115,
+                                467,
+                                483,
+                                506
+                            ],
+                            "spans": [
+                                {
+                                    "type": "interline_equation",
+                                    "score": 0.96,
+                                    "bbox": [
+                                        115,
+                                        467,
+                                        483,
+                                        506
+                                    ],
+                                    "image_path": "4ccaa51b81a2fc2d42cb15374f1d03adc72c7a5e5622100441bd35cfd35964f8.jpg"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 27,
+                    "virtual_lines": [
+                        {
+                            "bbox": [
+                                115,
+                                467,
+                                483,
+                                480.0
+                            ],
+                            "spans": [],
+                            "index": 26
+                        },
+                        {
+                            "bbox": [
+                                115,
+                                480.0,
+                                483,
+                                493.0
+                            ],
+                            "spans": [],
+                            "index": 27
+                        },
+                        {
+                            "bbox": [
+                                115,
+                                493.0,
+                                483,
+                                506.0
+                            ],
+                            "spans": [],
+                            "index": 28
+                        }
+                    ]
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        108,
+                        509,
+                        506,
+                        564
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                108,
+                                508,
+                                506,
+                                523
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        108,
+                                        508,
+                                        506,
+                                        523
+                                    ],
+                                    "score": 1.0,
+                                    "content": "where wimg and wgeom modulate, respectively, image and geometry conditioning. The different inputs",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 29
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                519,
+                                506,
+                                532
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        519,
+                                        506,
+                                        532
+                                    ],
+                                    "score": 1.0,
+                                    "content": "are implemented by appending tokens, which are then cross-attended by a transformer neural network",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 30
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                530,
+                                507,
+                                543
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        530,
+                                        507,
+                                        543
+                                    ],
+                                    "score": 1.0,
+                                    "content": "computing the flow velocity. Hence, to suppress an input we simply replace it with dummy tokens.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 31
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                540,
+                                506,
+                                556
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        540,
+                                        506,
+                                        556
+                                    ],
+                                    "score": 1.0,
+                                    "content": "In the same way, we randomly drop some input at training time to allow the model to learn to use any",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 32
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                553,
+                                225,
+                                566
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        553,
+                                        225,
+                                        566
+                                    ],
+                                    "score": 1.0,
+                                    "content": "required subset of the inputs.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 33
+                        }
+                    ],
+                    "index": 31
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        106,
+                        570,
+                        505,
+                        674
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                105,
+                                570,
+                                506,
+                                584
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        570,
+                                        506,
+                                        584
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Discussion Here, we contrast our model to prior works and justify its design. The most straight-",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 34
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                582,
+                                506,
+                                596
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        582,
+                                        506,
+                                        596
+                                    ],
+                                    "score": 1.0,
+                                    "content": "forward approach to part generation is to sample each part x(k) independently from a ‘marginal’",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 35
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                594,
+                                506,
+                                608
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        594,
+                                        506,
+                                        608
+                                    ],
+                                    "score": 1.0,
+                                    "content": "distribution p(x(k) ). However, this model lacks a mechanism to tie the parts together and would",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 36
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                606,
+                                505,
+                                618
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        606,
+                                        505,
+                                        618
+                                    ],
+                                    "score": 1.0,
+                                    "content": "result in a soup of random, uncoordinated parts. The simplest such mechanism is to provide evidence",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 37
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                617,
+                                505,
+                                629
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        617,
+                                        505,
+                                        629
+                                    ],
+                                    "score": 1.0,
+                                    "content": "y for the overall shape of the 3D object. For instance, in the image-to-3D case, y = I could be a 2D",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 38
+                        },
+                        {
+                            "bbox": [
+                                104,
+                                628,
+                                506,
+                                642
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        104,
+                                        628,
+                                        506,
+                                        642
+                                    ],
+                                    "score": 1.0,
+                                    "content": "image of the object, and we may sample parts from the conditional distribution p(x(k) | I). While I",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 39
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                640,
+                                506,
+                                653
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        640,
+                                        506,
+                                        653
+                                    ],
+                                    "score": 1.0,
+                                    "content": "constrains the shape and position of the possible parts, these are still quite ambiguous. This explains",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 40
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                650,
+                                506,
+                                664
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        650,
+                                        506,
+                                        664
+                                    ],
+                                    "score": 1.0,
+                                    "content": "why PartGen [5] conditions part generation on a multi-view image y = IMV of the 3D object x, and",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 41
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                660,
+                                430,
+                                675
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        660,
+                                        430,
+                                        675
+                                    ],
+                                    "score": 1.0,
+                                    "content": "HoloPart [58] starts from a (partial) 3D reconstruction y = xˆ of the object itself.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 42
+                        }
+                    ],
+                    "index": 38
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        107,
+                        677,
+                        504,
+                        722
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                106,
+                                678,
+                                505,
+                                690
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        106,
+                                        678,
+                                        505,
+                                        690
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Even then, the reconstruction context y is likely insufficient because there is no indication of which",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 43
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                688,
+                                506,
+                                701
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        688,
+                                        506,
+                                        701
+                                    ],
+                                    "score": 1.0,
+                                    "content": "part should be reconstructed next. We could sample the parts in a random order, but this would not",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 44
+                        },
+                        {
+                            "bbox": [
+                                106,
+                                700,
+                                505,
+                                712
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        106,
+                                        700,
+                                        505,
+                                        712
+                                    ],
+                                    "score": 1.0,
+                                    "content": "be very efficient. Furthermore, because the part decomposition is not unique, we would still need to",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 45
+                        },
+                        {
+                            "bbox": [
+                                106,
+                                711,
+                                372,
+                                723
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        106,
+                                        711,
+                                        372,
+                                        723
+                                    ],
+                                    "score": 1.0,
+                                    "content": "extract a coherent subset of parts from the ‘part soup’ so obtained.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 46
+                        }
+                    ],
+                    "index": 44.5
+                }
+            ],
+            "page_idx": 0,
+            "page_size": [
+                612,
+                792
+            ],
+            "discarded_blocks": [
+                {
+                    "type": "discarded",
+                    "bbox": [
+                        302,
+                        742,
+                        309,
+                        750
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                302,
+                                741,
+                                310,
+                                753
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        302,
+                                        741,
+                                        310,
+                                        753
+                                    ],
+                                    "score": 1.0,
+                                    "content": "6",
+                                    "type": "text"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "para_blocks": [
+                {
+                    "type": "table",
+                    "bbox": [
+                        124,
+                        88,
+                        486,
+                        160
+                    ],
+                    "blocks": [
+                        {
+                            "type": "table_caption",
+                            "bbox": [
+                                110,
+                                76,
+                                500,
+                                88
+                            ],
+                            "group_id": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        109,
+                                        75,
+                                        501,
+                                        89
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                109,
+                                                75,
+                                                501,
+                                                89
+                                            ],
+                                            "score": 1.0,
+                                            "content": "Table 1: 3D part completion. Reconstruction quality of the parts and whole object. →reproduced.",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "index": 0
+                                }
+                            ],
+                            "index": 0
+                        },
+                        {
+                            "type": "table_body",
+                            "bbox": [
+                                124,
+                                88,
+                                486,
+                                160
+                            ],
+                            "group_id": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        124,
+                                        88,
+                                        486,
+                                        160
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                124,
+                                                88,
+                                                486,
+                                                160
+                                            ],
+                                            "score": 0.979,
+                                            "type": "table",
+                                            "image_path": "c7c84f7bcf90c20b1784c35c628d3cb12bd4de7662735890a6b6b21bc3def7b9.jpg"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 2,
+                            "virtual_lines": [
+                                {
+                                    "bbox": [
+                                        124,
+                                        88,
+                                        486,
+                                        112.0
+                                    ],
+                                    "spans": [],
+                                    "index": 1
+                                },
+                                {
+                                    "bbox": [
+                                        124,
+                                        112.0,
+                                        486,
+                                        136.0
+                                    ],
+                                    "spans": [],
+                                    "index": 2
+                                },
+                                {
+                                    "bbox": [
+                                        124,
+                                        136.0,
+                                        486,
+                                        160.0
+                                    ],
+                                    "spans": [],
+                                    "index": 3
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 1.0
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        108,
+                        178,
+                        504,
+                        201
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                104,
+                                175,
+                                506,
+                                194
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        104,
+                                        175,
+                                        506,
+                                        194
+                                    ],
+                                    "score": 1.0,
+                                    "content": "masks-to-part scenario, y is the image I as well as the masked image J(k) = M (k) ↓ I, denoting",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 4
+                        },
+                        {
+                            "bbox": [
+                                107,
+                                191,
+                                259,
+                                201
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        107,
+                                        191,
+                                        259,
+                                        201
+                                    ],
+                                    "score": 1.0,
+                                    "content": "which parts should be generated next.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 5
+                        }
+                    ],
+                    "index": 4.5,
+                    "bbox_fs": [
+                        104,
+                        175,
+                        506,
+                        201
+                    ]
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        107,
+                        206,
+                        505,
+                        290
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                104,
+                                205,
+                                507,
+                                220
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        104,
+                                        205,
+                                        507,
+                                        220
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Knowledge of the previously generated parts z(1), . . . , z(k↑1) is essential as this allows the model to",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 6
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                218,
+                                506,
+                                231
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        218,
+                                        506,
+                                        231
+                                    ],
+                                    "score": 1.0,
+                                    "content": "ensure that the next part fits together well with the previously generated ones. Furthermore, in all",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 7
+                        },
+                        {
+                            "bbox": [
+                                106,
+                                230,
+                                506,
+                                243
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        106,
+                                        230,
+                                        506,
+                                        243
+                                    ],
+                                    "score": 1.0,
+                                    "content": "cases we consider, the evidence y also provides some evidence on the overall shape of the object.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 8
+                        },
+                        {
+                            "bbox": [
+                                106,
+                                241,
+                                506,
+                                253
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        106,
+                                        241,
+                                        506,
+                                        253
+                                    ],
+                                    "score": 1.0,
+                                    "content": "As suggested in Fig. 3, we can represent the union of parts by simply concatenating their latent",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 9
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                252,
+                                506,
+                                263
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        252,
+                                        506,
+                                        263
+                                    ],
+                                    "score": 1.0,
+                                    "content": "representations. However, for compactness, we found it useful to fuse their codes into one, which we",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 10
+                        },
+                        {
+                            "bbox": [
+                                102,
+                                259,
+                                508,
+                                281
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        102,
+                                        259,
+                                        508,
+                                        281
+                                    ],
+                                    "score": 1.0,
+                                    "content": "obtain as: z(1,...,k↑1) = E ! ↔k↑1j=1 sampleN D(· | z(j) ) \" , where sampleN is a function that samples",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 11
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                276,
+                                505,
+                                290
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        276,
+                                        505,
+                                        290
+                                    ],
+                                    "score": 1.0,
+                                    "content": "N points from the surface of the object defined by the zero level set of the SDF function D(·|z(k) ).",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 12
+                        }
+                    ],
+                    "index": 9,
+                    "bbox_fs": [
+                        102,
+                        205,
+                        508,
+                        290
+                    ]
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        107,
+                        294,
+                        505,
+                        328
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                106,
+                                294,
+                                505,
+                                306
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        106,
+                                        294,
+                                        505,
+                                        306
+                                    ],
+                                    "score": 1.0,
+                                    "content": "We found it optional but useful to pin down the overall object by adding to the evidence y a code z˜",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 13
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                304,
+                                506,
+                                318
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        304,
+                                        506,
+                                        318
+                                    ],
+                                    "score": 1.0,
+                                    "content": "for the object as a whole, which is either given outright (object-to-part, z˜ = E(sampleN xˆ)) or can",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 14
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                316,
+                                428,
+                                329
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        316,
+                                        428,
+                                        329
+                                    ],
+                                    "score": 1.0,
+                                    "content": "be obtained by the model itself (image-to-part and masks-to-part, z˜ ↗ p(z | I)).",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 15
+                        }
+                    ],
+                    "index": 14,
+                    "bbox_fs": [
+                        105,
+                        294,
+                        506,
+                        329
+                    ]
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        107,
+                        332,
+                        318,
+                        344
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                105,
+                                331,
+                                318,
+                                345
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        331,
+                                        318,
+                                        345
+                                    ],
+                                    "score": 1.0,
+                                    "content": "With all this, we learn a conditional generator model",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 16
+                        }
+                    ],
+                    "index": 16,
+                    "bbox_fs": [
+                        105,
+                        331,
+                        318,
+                        345
+                    ]
+                },
+                {
+                    "type": "interline_equation",
+                    "bbox": [
+                        240,
+                        347,
+                        371,
+                        363
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                240,
+                                347,
+                                371,
+                                363
+                            ],
+                            "spans": [
+                                {
+                                    "type": "interline_equation",
+                                    "score": 0.947,
+                                    "bbox": [
+                                        240,
+                                        347,
+                                        371,
+                                        363
+                                    ],
+                                    "image_path": "9daed601931c7dc45e90545d5335e1cbcc58e382e377760ddc3033477cc096b8.jpg"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 17,
+                    "virtual_lines": [
+                        {
+                            "bbox": [
+                                240,
+                                347,
+                                371,
+                                363
+                            ],
+                            "spans": [],
+                            "index": 17
+                        }
+                    ]
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        108,
+                        368,
+                        505,
+                        401
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                104,
+                                367,
+                                506,
+                                380
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        104,
+                                        367,
+                                        506,
+                                        380
+                                    ],
+                                    "score": 1.0,
+                                    "content": "where y = ω for the object-to-part scenario, y = I for the image-to-part scenario, and y = (I, M (k) )",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 18
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                378,
+                                505,
+                                391
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        378,
+                                        505,
+                                        391
+                                    ],
+                                    "score": 1.0,
+                                    "content": "for the masks-to-part scenario. The generation process stops when all the input masks have been",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 19
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                389,
+                                507,
+                                403
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        389,
+                                        507,
+                                        403
+                                    ],
+                                    "score": 1.0,
+                                    "content": "processed, if available, or when the model outputs a special [EoT] token, representing empty shape.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 20
+                        }
+                    ],
+                    "index": 19,
+                    "bbox_fs": [
+                        104,
+                        367,
+                        507,
+                        403
+                    ]
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        108,
+                        404,
+                        504,
+                        461
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                105,
+                                403,
+                                505,
+                                419
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        403,
+                                        505,
+                                        419
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Based on Section 3.2, learning the distribution Eq. (1) amounts to learning a velocity field vˆ(t, zt |",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 21
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                414,
+                                507,
+                                433
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        414,
+                                        507,
+                                        433
+                                    ],
+                                    "score": 1.0,
+                                    "content": "z˜, z(1,...,k↑1), y). During inference, we use classifier-free guidance (CFG) [18] to modulate the",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 22
+                        },
+                        {
+                            "bbox": [
+                                106,
+                                427,
+                                505,
+                                440
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        106,
+                                        427,
+                                        505,
+                                        440
+                                    ],
+                                    "score": 1.0,
+                                    "content": "strength of the conditioning. In the most general case, the model is conditioned by the overall (partial)",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 23
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                436,
+                                507,
+                                454
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        436,
+                                        507,
+                                        454
+                                    ],
+                                    "score": 1.0,
+                                    "content": "object z˜, the previously generated parts z(1,...,k↑1), and a masked image pair y = (I, J(k) ). We",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 24
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                449,
+                                418,
+                                462
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        449,
+                                        418,
+                                        462
+                                    ],
+                                    "score": 1.0,
+                                    "content": "modulate the importance of the geometric and visual conditioning as follows:",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 25
+                        }
+                    ],
+                    "index": 23,
+                    "bbox_fs": [
+                        105,
+                        403,
+                        507,
+                        462
+                    ]
+                },
+                {
+                    "type": "interline_equation",
+                    "bbox": [
+                        115,
+                        467,
+                        483,
+                        506
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                115,
+                                467,
+                                483,
+                                506
+                            ],
+                            "spans": [
+                                {
+                                    "type": "interline_equation",
+                                    "score": 0.96,
+                                    "bbox": [
+                                        115,
+                                        467,
+                                        483,
+                                        506
+                                    ],
+                                    "image_path": "4ccaa51b81a2fc2d42cb15374f1d03adc72c7a5e5622100441bd35cfd35964f8.jpg"
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 27,
+                    "virtual_lines": [
+                        {
+                            "bbox": [
+                                115,
+                                467,
+                                483,
+                                480.0
+                            ],
+                            "spans": [],
+                            "index": 26
+                        },
+                        {
+                            "bbox": [
+                                115,
+                                480.0,
+                                483,
+                                493.0
+                            ],
+                            "spans": [],
+                            "index": 27
+                        },
+                        {
+                            "bbox": [
+                                115,
+                                493.0,
+                                483,
+                                506.0
+                            ],
+                            "spans": [],
+                            "index": 28
+                        }
+                    ]
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        108,
+                        509,
+                        506,
+                        564
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                108,
+                                508,
+                                506,
+                                523
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        108,
+                                        508,
+                                        506,
+                                        523
+                                    ],
+                                    "score": 1.0,
+                                    "content": "where wimg and wgeom modulate, respectively, image and geometry conditioning. The different inputs",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 29
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                519,
+                                506,
+                                532
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        519,
+                                        506,
+                                        532
+                                    ],
+                                    "score": 1.0,
+                                    "content": "are implemented by appending tokens, which are then cross-attended by a transformer neural network",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 30
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                530,
+                                507,
+                                543
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        530,
+                                        507,
+                                        543
+                                    ],
+                                    "score": 1.0,
+                                    "content": "computing the flow velocity. Hence, to suppress an input we simply replace it with dummy tokens.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 31
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                540,
+                                506,
+                                556
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        540,
+                                        506,
+                                        556
+                                    ],
+                                    "score": 1.0,
+                                    "content": "In the same way, we randomly drop some input at training time to allow the model to learn to use any",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 32
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                553,
+                                225,
+                                566
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        553,
+                                        225,
+                                        566
+                                    ],
+                                    "score": 1.0,
+                                    "content": "required subset of the inputs.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 33
+                        }
+                    ],
+                    "index": 31,
+                    "bbox_fs": [
+                        105,
+                        508,
+                        507,
+                        566
+                    ]
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        106,
+                        570,
+                        505,
+                        674
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                105,
+                                570,
+                                506,
+                                584
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        570,
+                                        506,
+                                        584
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Discussion Here, we contrast our model to prior works and justify its design. The most straight-",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 34
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                582,
+                                506,
+                                596
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        582,
+                                        506,
+                                        596
+                                    ],
+                                    "score": 1.0,
+                                    "content": "forward approach to part generation is to sample each part x(k) independently from a ‘marginal’",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 35
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                594,
+                                506,
+                                608
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        594,
+                                        506,
+                                        608
+                                    ],
+                                    "score": 1.0,
+                                    "content": "distribution p(x(k) ). However, this model lacks a mechanism to tie the parts together and would",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 36
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                606,
+                                505,
+                                618
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        606,
+                                        505,
+                                        618
+                                    ],
+                                    "score": 1.0,
+                                    "content": "result in a soup of random, uncoordinated parts. The simplest such mechanism is to provide evidence",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 37
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                617,
+                                505,
+                                629
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        617,
+                                        505,
+                                        629
+                                    ],
+                                    "score": 1.0,
+                                    "content": "y for the overall shape of the 3D object. For instance, in the image-to-3D case, y = I could be a 2D",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 38
+                        },
+                        {
+                            "bbox": [
+                                104,
+                                628,
+                                506,
+                                642
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        104,
+                                        628,
+                                        506,
+                                        642
+                                    ],
+                                    "score": 1.0,
+                                    "content": "image of the object, and we may sample parts from the conditional distribution p(x(k) | I). While I",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 39
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                640,
+                                506,
+                                653
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        640,
+                                        506,
+                                        653
+                                    ],
+                                    "score": 1.0,
+                                    "content": "constrains the shape and position of the possible parts, these are still quite ambiguous. This explains",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 40
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                650,
+                                506,
+                                664
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        650,
+                                        506,
+                                        664
+                                    ],
+                                    "score": 1.0,
+                                    "content": "why PartGen [5] conditions part generation on a multi-view image y = IMV of the 3D object x, and",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 41
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                660,
+                                430,
+                                675
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        660,
+                                        430,
+                                        675
+                                    ],
+                                    "score": 1.0,
+                                    "content": "HoloPart [58] starts from a (partial) 3D reconstruction y = xˆ of the object itself.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 42
+                        }
+                    ],
+                    "index": 38,
+                    "bbox_fs": [
+                        104,
+                        570,
+                        506,
+                        675
+                    ]
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        107,
+                        677,
+                        504,
+                        722
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                106,
+                                678,
+                                505,
+                                690
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        106,
+                                        678,
+                                        505,
+                                        690
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Even then, the reconstruction context y is likely insufficient because there is no indication of which",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 43
+                        },
+                        {
+                            "bbox": [
+                                105,
+                                688,
+                                506,
+                                701
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        105,
+                                        688,
+                                        506,
+                                        701
+                                    ],
+                                    "score": 1.0,
+                                    "content": "part should be reconstructed next. We could sample the parts in a random order, but this would not",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 44
+                        },
+                        {
+                            "bbox": [
+                                106,
+                                700,
+                                505,
+                                712
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        106,
+                                        700,
+                                        505,
+                                        712
+                                    ],
+                                    "score": 1.0,
+                                    "content": "be very efficient. Furthermore, because the part decomposition is not unique, we would still need to",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 45
+                        },
+                        {
+                            "bbox": [
+                                106,
+                                711,
+                                372,
+                                723
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        106,
+                                        711,
+                                        372,
+                                        723
+                                    ],
+                                    "score": 1.0,
+                                    "content": "extract a coherent subset of parts from the ‘part soup’ so obtained.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 46
+                        }
+                    ],
+                    "index": 44.5,
+                    "bbox_fs": [
+                        105,
+                        678,
+                        506,
+                        723
+                    ]
+                }
+            ]
+        }
+    ],
+    "_backend": "pipeline",
+    "_version_name": "2.1.0"
+}

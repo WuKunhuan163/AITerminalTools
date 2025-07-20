@@ -143,7 +143,7 @@
         "markdown": "FILEDIALOG.md"
       },
       "run_compatible": true,
-      "testable": true,
+      "testable": false,
       "test_passed": true,
       "ai_usable": true,
       "tool_use_scenario": "When user needs to select specific file types through a GUI dialog",

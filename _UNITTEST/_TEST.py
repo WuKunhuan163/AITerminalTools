@@ -155,7 +155,7 @@ This document contains various elements that should be extractable from PDF form
         
         expected_tools = [
             'OVERLEAF', 'EXTRACT_PDF', 'GOOGLE_DRIVE', 'SEARCH_PAPER',
-            'EXPORT', 'DOWNLOAD', 'RUN', 'FILEDIALOG'
+            'EXPORT', 'DOWNLOAD', 'RUN'
         ]
         
         for tool in expected_tools:
@@ -780,104 +780,7 @@ This document contains various elements that should be extractable from PDF form
                 self.assertEqual(result.returncode, 0, 
                                f"RUN --show {tool} should succeed")
     
-    def test_12_FILEDIALOG(self):
-        """Test FILEDIALOG tool"""
-        if not self.should_run_test('FILEDIALOG'):
-            self.skipTest("FILEDIALOG not in tools_to_test")
-            
-        print("\n" + "="*50)
-        print("TESTING FILEDIALOG")
-        print("="*50)
-        
-        # Test 1: Help output
-        result = subprocess.run([
-            sys.executable,
-            str(self.base_dir / 'FILEDIALOG.py'),
-            '--help'
-        ], capture_output=True, text=True, timeout=30)
-        
-        self.assertEqual(result.returncode, 0, "FILEDIALOG --help should succeed")
-        self.assertIn('FILEDIALOG', result.stdout, "Help should mention FILEDIALOG")
-        self.assertIn('Usage:', result.stdout, "Help should show usage")
-        self.assertIn('Examples:', result.stdout, "Help should show examples")
-        self.assertIn('File Types:', result.stdout, "Help should show file types")
-        
-        print("✅ FILEDIALOG - Help output successful")
-        
-        # Test 2: Error handling - Invalid directory
-        result = subprocess.run([
-            sys.executable,
-            str(self.base_dir / 'FILEDIALOG.py'),
-            '--dir', '/nonexistent/directory'
-        ], capture_output=True, text=True, timeout=30)
-        
-        self.assertEqual(result.returncode, 1, "FILEDIALOG with invalid directory should fail")
-        self.assertIn('Error', result.stdout, "Should show error message")
-        self.assertIn('does not exist', result.stdout, "Should mention directory doesn't exist")
-        
-        print("✅ FILEDIALOG - Error handling for invalid directory")
-        
-        # Test 3: Error handling - Invalid argument
-        result = subprocess.run([
-            sys.executable,
-            str(self.base_dir / 'FILEDIALOG.py'),
-            '--invalid-arg'
-        ], capture_output=True, text=True, timeout=30)
-        
-        self.assertEqual(result.returncode, 1, "FILEDIALOG with invalid argument should fail")
-        self.assertIn('Error', result.stdout, "Should show error for invalid argument")
-        
-        print("✅ FILEDIALOG - Error handling for invalid argument")
-        
-        # Test 4: RUN integration test with help
-        result = subprocess.run([
-            sys.executable,
-            str(self.base_dir / 'RUN.py'),
-            '--show', 'FILEDIALOG', '--help'
-        ], capture_output=True, text=True, timeout=30, cwd=self.base_dir)
-        
-        self.assertEqual(result.returncode, 0, "RUN --show FILEDIALOG --help should succeed")
-        
-        # Parse JSON output to verify structure
-        json_start = result.stdout.find('{')
-        json_end = result.stdout.rfind('}') + 1
-        if json_start != -1 and json_end > json_start:
-            json_output = result.stdout[json_start:json_end]
-            try:
-                data = json.loads(json_output)
-                self.assertTrue(data.get('success', False), "JSON should indicate success")
-                self.assertIn('help', data, "JSON should contain help field")
-            except json.JSONDecodeError:
-                self.fail("Should produce valid JSON output")
-        
-        print("✅ FILEDIALOG - RUN integration test successful")
-        
-        # Test 5: Test argument validation without opening GUI
-        # Test with missing value for --types
-        result = subprocess.run([
-            sys.executable,
-            str(self.base_dir / 'FILEDIALOG.py'),
-            '--types'
-        ], capture_output=True, text=True, timeout=5)
-        
-        self.assertEqual(result.returncode, 1, "FILEDIALOG with missing --types value should fail")
-        self.assertIn('requires a value', result.stdout, "Should show error for missing --types value")
-        
-        # Test with missing value for --title
-        result = subprocess.run([
-            sys.executable,
-            str(self.base_dir / 'FILEDIALOG.py'),
-            '--title'
-        ], capture_output=True, text=True, timeout=5)
-        
-        self.assertEqual(result.returncode, 1, "FILEDIALOG with missing --title value should fail")
-        self.assertIn('requires a value', result.stdout, "Should show error for missing --title value")
-        
-        print("✅ FILEDIALOG - Argument validation test successful")
-        
-        print("✅ FILEDIALOG - All tests completed")
-
-    def test_13_run_tool_itself(self):
+    def test_12_run_tool_itself(self):
         """Test RUN tool itself and compare --show vs normal execution"""
         print("\n" + "="*50)
         print("TESTING RUN TOOL ITSELF")

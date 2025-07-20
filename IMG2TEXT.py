@@ -35,6 +35,61 @@ def create_json_output(success, message, result=None, image_path=None, api=None,
         "timestamp": datetime.datetime.now().isoformat()
     }
 
+def test_connection(api: str = "google", key: str = None) -> str:
+    """测试API连接状态，不处理任何图片"""
+    # 检查和加载密钥
+    if key:
+        api_keys = {"USER": key}
+    else:
+        api_keys = {
+            "FREE": os.getenv("GOOGLE_API_KEY_FREE"),
+            "PAID": os.getenv("GOOGLE_API_KEY_PAID")
+        }
+    
+    if not any(api_keys.values()):
+        return "❌ 连接测试失败：未设置API密钥"
+    
+    # 测试每个可用的API密钥
+    results = []
+    for key_name, api_key in api_keys.items():
+        if not api_key:
+            continue
+            
+        try:
+            # 配置Google API
+            genai.configure(api_key=api_key)
+            
+            # 尝试列出可用模型（轻量级API调用）
+            try:
+                models = list(genai.list_models())
+                vision_models = [m for m in models if 'vision' in m.name.lower() or 'gemini-1.5' in m.name.lower()]
+                
+                if vision_models:
+                    results.append(f"✅ {key_name} 密钥: 连接成功，找到视觉模型: {vision_models[0].name}")
+                else:
+                    results.append(f"⚠️  {key_name} 密钥: 连接成功但未找到视觉模型")
+                    
+            except exceptions.Forbidden as e:
+                results.append(f"❌ {key_name} 密钥: 访问被禁止（可能是地区限制）")
+            except Exception as e:
+                results.append(f"❌ {key_name} 密钥: API调用失败: {str(e)}")
+                
+        except Exception as e:
+            results.append(f"❌ {key_name} 密钥: 连接失败: {str(e)}")
+    
+    # 生成结果报告
+    report = ["🔍 API连接测试结果:", ""]
+    report.extend(results)
+    report.append("")
+    
+    success_count = sum(1 for r in results if r.startswith("✅"))
+    if success_count > 0:
+        report.append(f"✅ 总结: {success_count}/{len(results)} 个密钥可用")
+    else:
+        report.append(f"❌ 总结: 所有 {len(results)} 个密钥都无法使用")
+        
+    return "\n".join(report)
+
 def get_image_analysis(image_path: str, mode: str = "general", api: str = "google", key: str = None, custom_prompt: str = None, command_identifier: str = None) -> str:
     """
     调用指定API分析图片，支持Google Gemini Vision。
@@ -145,11 +200,18 @@ def main():
     parser.add_argument("--key", default=None, help="手动指定API key，优先级高于环境变量")
     parser.add_argument("--prompt", default=None, help="自定义分析指令，会覆盖默认的模式提示")
     parser.add_argument("--output", help="输出结果到文件")
+    parser.add_argument("--output-dir", help="输出结果到指定目录（自动生成文件名）")
+    parser.add_argument("--test-connection", action="store_true", help="测试API连接状态，不处理任何图片")
     args = parser.parse_args()
     
     # Handle positional arguments (command_identifier and/or image_path)
     command_identifier = None
     image_path = None
+    
+    # 如果是测试连接模式，不需要图片路径
+    if args.test_connection:
+        print(test_connection(args.api, args.key))
+        return
     
     if len(args.positional_args) == 0:
         parser.error("Image path is required")
@@ -174,7 +236,7 @@ def main():
     args.image_path = image_path
     
     result = get_image_analysis(args.image_path, args.mode, args.api, args.key, args.prompt, command_identifier)
-    
+        
     # 如果在RUN环境下，直接输出JSON格式
     if is_run_environment(command_identifier):
         try:
@@ -191,6 +253,12 @@ def main():
             with open(args.output, 'w', encoding='utf-8') as f:
                 f.write(result)
             print(f"✅ 分析结果已保存到: {args.output}")
+        elif args.output_dir:
+            # 如果指定了输出目录，则将结果保存到该目录
+            output_file = os.path.join(args.output_dir, f"{os.path.splitext(os.path.basename(args.image_path))[0]}.json")
+            with open(output_file, 'w', encoding='utf-8') as f:
+                f.write(result)
+            print(f"✅ 分析结果已保存到: {output_file}")
         else:
             print(result)
 
