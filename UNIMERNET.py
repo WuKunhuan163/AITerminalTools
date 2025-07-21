@@ -28,8 +28,8 @@ def is_run_environment(command_identifier=None):
 UNIMERNET_PROJ_PATH = Path(__file__).parent / "UNIMERNET_PROJ"
 sys.path.insert(0, str(UNIMERNET_PROJ_PATH))
 
-# Add EXTRACT_IMG_PROJ for cache system
-EXTRACT_IMG_PROJ_PATH = Path(__file__).parent / "EXTRACT_IMG_PROJ"
+# Add EXTRACT_IMG_DATA for cache system
+EXTRACT_IMG_PROJ_PATH = Path(__file__).parent / "EXTRACT_IMG_DATA"
 if str(EXTRACT_IMG_PROJ_PATH) not in sys.path:
     sys.path.insert(0, str(EXTRACT_IMG_PROJ_PATH))
 
@@ -64,8 +64,8 @@ class UnimerNetProcessor:
     def __init__(self):
         # Initialize cache system
         if CACHE_AVAILABLE:
-            # Use EXTRACT_IMG_PROJ as base directory for cache system
-            extract_img_proj_dir = Path(__file__).parent / "EXTRACT_IMG_PROJ"
+            # Use EXTRACT_IMG_DATA as base directory for cache system
+            extract_img_proj_dir = Path(__file__).parent / "EXTRACT_IMG_DATA"
             self.cache_system = ImageCacheSystem(base_dir=extract_img_proj_dir)
         else:
             self.cache_system = None

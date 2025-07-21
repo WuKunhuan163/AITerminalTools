@@ -21,10 +21,11 @@ def is_run_environment(command_identifier=None):
     """Check if running in RUN environment by checking environment variables"""
     if command_identifier:
         return os.environ.get(f'RUN_IDENTIFIER_{command_identifier}') == 'True'
-    return False
+    # 检查通用的RUN环境变量
+    return bool(os.environ.get('RUN_DATA_FILE') or os.environ.get('RUN_IDENTIFIER'))
 
 # 模型配置文件路径
-MODELS_CONFIG_FILE = Path(__file__).parent / "OPENROUTER_DATA" / "openrouter_models.json"
+MODELS_CONFIG_FILE = Path(__file__).parent / "OPENROUTER_PROJ" / "openrouter_models.json"
 
 
 def get_default_models() -> Dict[str, Dict[str, Any]]:
@@ -59,6 +60,172 @@ def get_default_models() -> Dict[str, Dict[str, Any]]:
             "output_cost_per_1m": 0,
             "context_length": 131072,
             "useable": True
+        }
+    }
+
+
+def test_connection(api_key=None, model=None):
+    """测试OpenRouter API连接状态"""
+    # 获取API密钥
+    if api_key:
+        test_api_key = api_key
+    else:
+        test_api_key = os.getenv("OPENROUTER_API_KEY")
+    
+    if not test_api_key:
+        return {
+            "success": False,
+            "message": "❌ 连接测试失败：未设置API密钥",
+            "results": [{
+                "test": "API密钥检查",
+                "status": "error",
+                "message": "❌ 连接测试失败：未设置API密钥"
+            }],
+            "summary": {
+                "total_tests": 1,
+                "successful": 0,
+                "warnings": 0,
+                "errors": 1
+            },
+            "details": "请设置环境变量OPENROUTER_API_KEY或使用--key参数"
+        }
+    
+    results = []
+    
+    # 准备API请求头
+    headers = {
+        "Authorization": f"Bearer {test_api_key}",
+        "HTTP-Referer": "https://github.com/your-app",
+        "X-Title": "OPENROUTER Test Connection"
+    }
+    
+    # 测试API连接和模型列表获取
+    try:
+        # 测试基本连接：获取模型列表
+        response = requests.get("https://openrouter.ai/api/v1/models", headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            models_data = response.json()
+            model_count = len(models_data.get('data', []))
+            results.append({
+                "test": "模型列表获取",
+                "status": "success",
+                "message": f"✅ 成功获取 {model_count} 个可用模型"
+            })
+            
+            # 如果指定了特定模型，检查其可用性
+            if model:
+                available_models = [m['id'] for m in models_data.get('data', [])]
+                if model in available_models:
+                    results.append({
+                        "test": f"模型 {model} 可用性",
+                        "status": "success", 
+                        "message": f"✅ 模型 {model} 可用"
+                    })
+                else:
+                    results.append({
+                        "test": f"模型 {model} 可用性",
+                        "status": "warning",
+                        "message": f"⚠️  模型 {model} 不在可用列表中"
+                    })
+                    
+        elif response.status_code == 401:
+            results.append({
+                "test": "API认证",
+                "status": "error",
+                "message": "❌ API密钥无效或已过期"
+            })
+        elif response.status_code == 429:
+            results.append({
+                "test": "API限制",
+                "status": "warning",
+                "message": "⚠️  请求过于频繁，请稍后再试"
+            })
+        else:
+            results.append({
+                "test": "API连接",
+                "status": "error",
+                "message": f"❌ API请求失败: HTTP {response.status_code}"
+            })
+            
+    except requests.exceptions.Timeout:
+        results.append({
+            "test": "网络连接",
+            "status": "error", 
+            "message": "❌ 连接超时，请检查网络连接"
+        })
+    except requests.exceptions.ConnectionError:
+        results.append({
+            "test": "网络连接",
+            "status": "error",
+            "message": "❌ 无法连接到OpenRouter服务器"
+        })
+    except Exception as e:
+        results.append({
+            "test": "未知错误",
+            "status": "error",
+            "message": f"❌ 连接测试失败: {str(e)}"
+        })
+    
+    # 如果连接成功，可以测试一个简单的API调用
+    if results and results[0]["status"] == "success":
+        try:
+            test_model = model if model else "deepseek/deepseek-chat:free"
+            test_payload = {
+                "model": test_model,
+                "messages": [{"role": "user", "content": "Hello"}],
+                "max_tokens": 5
+            }
+            
+            api_response = requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers=headers,
+                json=test_payload,
+                timeout=15
+            )
+            
+            if api_response.status_code == 200:
+                results.append({
+                    "test": "API调用测试",
+                    "status": "success",
+                    "message": f"✅ 成功调用模型 {test_model}"
+                })
+            elif api_response.status_code == 402:
+                results.append({
+                    "test": "API调用测试",
+                    "status": "warning",
+                    "message": "⚠️  账户余额不足或需要付费"
+                })
+            else:
+                error_data = api_response.json() if api_response.headers.get('content-type', '').startswith('application/json') else {}
+                error_msg = error_data.get('error', {}).get('message', f"HTTP {api_response.status_code}")
+                results.append({
+                    "test": "API调用测试",
+                    "status": "error",
+                    "message": f"❌ API调用失败: {error_msg}"
+                })
+                
+        except Exception as e:
+            results.append({
+                "test": "API调用测试",
+                "status": "error",
+                "message": f"❌ API调用测试失败: {str(e)}"
+            })
+    
+    # 生成总结
+    success_count = sum(1 for r in results if r["status"] == "success")
+    total_count = len(results)
+    overall_success = success_count > 0 and not any(r["status"] == "error" for r in results)
+    
+    return {
+        "success": overall_success,
+        "message": f"连接测试完成: {success_count}/{total_count} 项成功",
+        "results": results,
+        "summary": {
+            "total_tests": total_count,
+            "successful": success_count,
+            "warnings": sum(1 for r in results if r["status"] == "warning"),
+            "errors": sum(1 for r in results if r["status"] == "error")
         }
     }
 
@@ -245,8 +412,7 @@ def calculate_cost(input_tokens: int, output_tokens: int, model_id: str) -> floa
     return input_cost + output_cost
 
 
-def call_openrouter_api(query: str, model: str = None, api_key: str = None,
-                       max_tokens: int = None, temperature: float = 0.7) -> Dict[str, Any]:
+def call_openrouter_api(query: str, model: str = None, api_key: str = None, max_tokens: int = None, temperature: float = 0.7, output_dir: str = None, command_identifier: str = None) -> Union[str, Dict[str, Any]]:
     """
     调用OpenRouter API获取回复
     
@@ -373,6 +539,7 @@ def main():
 Usage: OPENROUTER <query> [options]
        OPENROUTER --list
        OPENROUTER --default <model>
+       OPENROUTER --test-connection
 
 Options:
   <query>                查询内容
@@ -383,6 +550,7 @@ Options:
   --output-dir <dir>     输出目录，保存模型回复到指定目录
   --list                 列出所有可用模型
   --default <model>      设置默认模型（将指定模型移到列表最上方）
+  --test-connection      测试API连接状态，不发送查询
   --help                 显示帮助信息
 
 Examples:
@@ -393,6 +561,8 @@ Examples:
 
   OPENROUTER --list
   OPENROUTER --default "deepseek/deepseek-chat"
+  OPENROUTER --test-connection
+  OPENROUTER --test-connection --model "deepseek/deepseek-chat" --key "sk-or-v1-..."
 
 Environment Variables:
   OPENROUTER_API_KEY    默认API密钥
@@ -410,12 +580,13 @@ Note: 只有标记为可用(useable=true)的模型才会显示在列表中。
     parser.add_argument('--list', action='store_true', help='列出所有可用模型')
     parser.add_argument('--default', help='设置默认模型')
     parser.add_argument('--output-dir', help='输出目录，保存模型回复到指定目录')
+    parser.add_argument('--test-connection', action='store_true', help='测试API连接状态，不发送查询')
     parser.add_argument('--help', action='store_true', help='显示帮助信息')
     
     args = parser.parse_args()
     
     # 显示帮助信息
-    if args.help or (not args.query and not args.list and not args.default):
+    if args.help or (not args.query and not args.list and not args.default and not args.test_connection):
         print(help_text)
         return
     
@@ -428,6 +599,33 @@ Note: 只有标记为可用(useable=true)的模型才会显示在列表中。
     if args.default:
         success = set_default_model(args.default)
         sys.exit(0 if success else 1)
+    
+    # 测试连接
+    if args.test_connection:
+        result = test_connection(args.key, args.model)
+        
+        # 检查是否在RUN环境中
+        if is_run_environment():
+            # RUN模式：输出JSON
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+        else:
+            # 普通模式：输出格式化文本
+            print("🔍 OpenRouter API连接测试结果:")
+            print()
+            
+            for test_result in result["results"]:
+                print(f"📊 {test_result['test']}: {test_result['message']}")
+            
+            print()
+            summary = result["summary"]
+            if result["success"]:
+                print(f"✅ 总结: 连接测试成功 - {summary['successful']}/{summary['total_tests']} 项通过")
+                if summary['warnings'] > 0:
+                    print(f"⚠️  警告: {summary['warnings']} 项需要注意")
+            else:
+                print(f"❌ 总结: 连接测试失败 - {summary['errors']} 个错误, {summary['warnings']} 个警告")
+                
+        return
     
     # 调用API
     if args.query:

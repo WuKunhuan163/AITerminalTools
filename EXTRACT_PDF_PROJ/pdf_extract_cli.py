@@ -202,8 +202,8 @@ def print_content_analysis(content_stats):
 
 
 def clean_data_directory():
-    """Clean the pdf_extractor_data directory."""
-    data_dir = Path(__file__).parent / "pdf_extractor_data"
+    """Clean the EXTRACT_PDF_DATA directory."""
+    data_dir = Path(__file__).parent.parent / "EXTRACT_PDF_DATA"
     
     if data_dir.exists():
         import shutil

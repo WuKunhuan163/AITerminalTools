@@ -1,6 +1,0 @@
-{
-  "success": true,
-  "message": "Google Drive opened successfully",
-  "url": "https://drive.google.com/",
-  "action": "browser_opened"
-}

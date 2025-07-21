@@ -1,5 +1,0 @@
-{
-  "success": true,
-  "message": "Command executed successfully",
-  "output": "🔍 API连接测试结果:\n\n✅ FREE 密钥: 连接成功，找到视觉模型: models/gemini-1.0-pro-vision-latest\n✅ PAID 密钥: 连接成功，找到视觉模型: models/gemini-1.0-pro-vision-latest\n\n✅ 总结: 2/2 个密钥可用"
-}

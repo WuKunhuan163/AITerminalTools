@@ -1,5 +1,0 @@
-{
-  "success": false,
-  "error": "Command execution failed",
-  "output": "🤖 正在生成学习内容结构...\n🚀 默认模式：自动模型选择\n\n📝 第1步：询问AI进行头脑风暴...\n错误: name 'process_paper_with_extract_pdf' is not defined"
-}

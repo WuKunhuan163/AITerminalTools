@@ -237,7 +237,7 @@ End of document.
             self.skipTest(f"Test image {self.test_formula} not found")
         
         # Clear cache to ensure we're testing from scratch
-        cache_dir = Path(__file__).parent.parent / "EXTRACT_IMG_PROJ"
+        cache_dir = Path(__file__).parent.parent / "EXTRACT_IMG_DATA"
         cache_file = cache_dir / "image_cache.json"
         images_dir = cache_dir / "images"
         

@@ -1,5 +1,0 @@
-{
-  "success": false,
-  "error": "Compilation failed: Latexmk: Sometimes, the -f option can be used to get latexmk\n  to try to force complete processing.\n  But normally, you will need to correct the file(s) that caused the\n  error, and then rerun latexmk.\n  In some cases, it is best to clean out generated files before rerunning\n  latexmk after you've corrected the files.\nLatexmk: Getting log file 'test_report.log'\nLatexmk: Examining 'test_report.fls'\nLatexmk: Examining 'test_report.log'\nLatexmk: References changed.\nLatexmk: References changed.\nLatexmk: Log file says output to 'test_report.pdf'\nLatexmk: Summary of warnings from last run of *latex:\n  Latex failed to resolve 17 reference(s)\nLatexmk: Errors, so I did not complete making targets\nCollected error summary (may duplicate other messages):\n  pdflatex: Command for 'pdflatex' gave return code 1\n      Refer to 'test_report.log' and/or above output for details\n\n",
-  "file": "/Users/wukunhuan/.local/bin/_UNITTEST/_DATA/test_report.tex"
-}

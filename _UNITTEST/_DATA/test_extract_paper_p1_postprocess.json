@@ -1,0 +1,25 @@
+{
+  "pdf_file": "/Users/wukunhuan/.local/bin/_UNITTEST/_DATA/test_extract_paper.pdf",
+  "created_at": "2025-07-21T16:55:14.765797",
+  "page_range": "1",
+  "total_items": 1,
+  "processed_items": 0,
+  "items": [
+    {
+      "id": "326bbc74999734fc6322d01c4b7a24ea",
+      "type": "image",
+      "filename": "326bbc74999734fc6322d01c4b7a24ea.png",
+      "image_path": "images/326bbc74999734fc6322d01c4b7a24ea.png",
+      "processor": "basic_extractor",
+      "processed": false,
+      "placeholder": "![](images/326bbc74999734fc6322d01c4b7a24ea.png)",
+      "bbox": [],
+      "page": 1
+    }
+  ],
+  "counts": {
+    "images": 1,
+    "formulas": 0,
+    "tables": 0
+  }
+}

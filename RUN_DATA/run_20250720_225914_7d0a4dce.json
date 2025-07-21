@@ -1,5 +1,0 @@
-{
-  "success": false,
-  "error": "Command execution failed",
-  "output": "❌ 程序异常: name 'get_run_context' is not defined"
-}

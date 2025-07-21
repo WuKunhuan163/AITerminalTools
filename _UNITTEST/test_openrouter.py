@@ -49,6 +49,78 @@ class TestOpenRouter(BaseTest):
         self.assertIn('OPENROUTER - OpenRouter API 调用工具', result.stdout)
         self.assertIn('Usage:', result.stdout)
 
+    def test_connection_test_no_api_key(self):
+        """Test --test-connection with no API key"""
+        with patch.dict(os.environ, {"OPENROUTER_API_KEY": ""}):
+            result = self.assertCommandSuccess([
+                sys.executable, str(self.openrouter_py), '--test-connection'
+            ])
+            self.assertIn('🔍 OpenRouter API连接测试结果:', result.stdout)
+            self.assertIn('❌ 连接测试失败：未设置API密钥', result.stdout)
+
+    def test_connection_test_with_fake_key(self):
+        """Test --test-connection with fake API key"""
+        with patch.dict(os.environ, {"OPENROUTER_API_KEY": "fake_key"}):
+            result = self.assertCommandSuccess([
+                sys.executable, str(self.openrouter_py), '--test-connection'
+            ], timeout=20)
+            self.assertIn('🔍 OpenRouter API连接测试结果:', result.stdout)
+            # Should show connection attempt results (even if failed due to fake key)
+            self.assertTrue(
+                '❌ API密钥无效或已过期' in result.stdout or 
+                '❌ API请求失败' in result.stdout or
+                '❌ 连接超时' in result.stdout
+            )
+
+    def test_connection_test_with_custom_key(self):
+        """Test --test-connection with custom key parameter"""
+        result = self.assertCommandSuccess([
+            sys.executable, str(self.openrouter_py), '--test-connection', '--key', 'custom_fake_key'
+        ], timeout=20)
+        self.assertIn('🔍 OpenRouter API连接测试结果:', result.stdout)
+        # Should attempt connection with custom key
+        self.assertTrue(
+            '❌ API密钥无效或已过期' in result.stdout or 
+            '❌ API请求失败' in result.stdout or
+            '❌ 连接超时' in result.stdout or
+            '❌ API调用失败: No auth credentials found' in result.stdout
+        )
+
+    def test_connection_test_with_model(self):
+        """Test --test-connection with specific model"""
+        with patch.dict(os.environ, {"OPENROUTER_API_KEY": "fake_key"}):
+            result = self.assertCommandSuccess([
+                sys.executable, str(self.openrouter_py), '--test-connection', '--model', 'deepseek/deepseek-chat'
+            ], timeout=20)
+            self.assertIn('🔍 OpenRouter API连接测试结果:', result.stdout)
+
+    def test_connection_test_run_mode(self):
+        """Test --test-connection in RUN mode"""
+        run_script = self.get_bin_path('RUN')
+        result = self.assertCommandSuccess([
+            str(run_script), '--show', 'OPENROUTER', '--test-connection'
+        ], timeout=25)
+        
+        # Should return valid JSON
+        try:
+            json_result = json.loads(result.stdout)
+            self.assertIn('success', json_result)
+            self.assertIn('message', json_result)
+            self.assertIn('results', json_result)
+            self.assertIn('summary', json_result)
+            self.assertIsInstance(json_result['results'], list)
+            self.assertIsInstance(json_result['summary'], dict)
+        except json.JSONDecodeError:
+            self.fail(f"RUN mode should return valid JSON, got: {result.stdout}")
+
+    def test_help_includes_test_connection(self):
+        """Test that help output includes --test-connection option"""
+        result = self.assertCommandSuccess([
+            sys.executable, str(self.openrouter_py), '--help'
+        ])
+        self.assertIn('--test-connection', result.stdout)
+        self.assertIn('测试API连接状态', result.stdout)
+
     def test_list_models(self):
         """Test --list option"""
         result = self.assertCommandSuccess([
@@ -367,7 +439,7 @@ class TestOpenRouterIntegration(APITest):
         import json
         
         # Backup current models config
-        models_config = Path(__file__).parent.parent / "OPENROUTER_DATA" / "openrouter_models.json"
+        models_config = Path(__file__).parent.parent / "OPENROUTER_PROJ" / "openrouter_models.json"
         backup_dir = Path(tempfile.mkdtemp())
         backup_file = backup_dir / "openrouter_models_backup.json"
         

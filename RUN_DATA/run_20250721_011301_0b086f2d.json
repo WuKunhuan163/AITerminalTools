@@ -1,9 +1,0 @@
-{
-  "success": true,
-  "result": "\\mathcal { L } _ { \\mathrm { t u n e } } = \\mathbb { E } _ { x ^ { \\mathrm { r e f } } , t , \\epsilon , x ^ { \\prime } } \\left[ \\| ( \\epsilon _ { \\theta } ( x _ { t } ^ { \\mathrm { r e f } } , t , x ^ { \\prime } , c ^ { \\mathrm { t e x } } ) - \\epsilon ) \\| _ { 2 } ^ { 2 } \\right]",
-  "image_path": "_UNITTEST/_DATA/test_formula.png",
-  "content_type": "auto",
-  "processor": "unimernet",
-  "timestamp": "2025-07-21T01:13:01.598672",
-  "from_cache": true
-}

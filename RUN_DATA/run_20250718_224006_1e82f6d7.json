@@ -1,5 +1,0 @@
-{
-  "success": false,
-  "error": "Command execution failed",
-  "output": "❌ 提取数据目录不存在: test_error_handling_extract_data\n❌ 后处理失败: test_error_handling.md"
-}

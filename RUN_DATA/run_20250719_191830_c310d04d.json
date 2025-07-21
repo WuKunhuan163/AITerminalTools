@@ -1,9 +1,0 @@
-{
-  "success": true,
-  "message": "Success",
-  "result": "*[API调用失败：所有配置的API密钥都无法成功获取回复。]*",
-  "image_path": "images/8c5b199362ea7538e1f525305aa3951ad3a97b8509764ea0e4dfe7c569e4a957.jpg",
-  "api": "google",
-  "reason": null,
-  "timestamp": "2025-07-19T19:18:34.744066"
-}

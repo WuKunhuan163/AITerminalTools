@@ -1,9 +1,0 @@
-{
-  "success": false,
-  "message": "All API keys failed",
-  "result": null,
-  "image_path": "_UNITTEST/_DATA/test_academic_image.png",
-  "api": "google",
-  "reason": "所有配置的API密钥都无法成功获取回复。",
-  "timestamp": "2025-07-18T23:53:42.538570"
-}

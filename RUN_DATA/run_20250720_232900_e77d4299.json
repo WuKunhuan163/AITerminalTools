@@ -1,8 +1,0 @@
-{
-  "success": true,
-  "message": "Download completed successfully",
-  "url": "https://httpbin.org/json",
-  "destination": "/private/tmp/concurrent_dl.json",
-  "size": 429,
-  "content_type": "application/json"
-}

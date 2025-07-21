@@ -1,9 +1,0 @@
-{
-  "success": false,
-  "message": "No valid API key",
-  "result": null,
-  "image_path": "test_api_error_extract_data/images/test_image.jpg",
-  "api": "google",
-  "reason": "API调用错误：环境变量 GOOGLE_API_KEY_FREE 或 GOOGLE_API_KEY_PAID 未设置，且未通过--key指定。",
-  "timestamp": "2025-07-18T22:42:10.450400"
-}

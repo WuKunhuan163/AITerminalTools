@@ -1,9 +1,0 @@
-{
-  "success": false,
-  "message": "All API keys failed",
-  "result": null,
-  "image_path": "images/2d9ad8e3e84e0ceabbd9075f3232ca7fcb1bd2d1ea36a413088970c612d06809.jpg",
-  "api": "google",
-  "reason": "所有配置的API密钥都无法成功获取回复。详细信息:\n- 使用 FREE 密钥时失败: 400 API key not valid. Please pass a valid API key. [reason: \"API_KEY_INVALID\"\ndomain: \"googleapis.com\"\nmetadata {\n  key: \"service\"\n  value: \"generativelanguage.googleapis.com\"\n}\n, locale: \"en-US\"\nmessage: \"API key not valid. Please pass a valid API key.\"\n]\n- 使用 PAID 密钥时失败: 400 API key not valid. Please pass a valid API key. [reason: \"API_KEY_INVALID\"\ndomain: \"googleapis.com\"\nmetadata {\n  key: \"service\"\n  value: \"generativelanguage.googleapis.com\"\n}\n, locale: \"en-US\"\nmessage: \"API key not valid. Please pass a valid API key.\"\n]",
-  "timestamp": "2025-07-19T19:21:32.699100"
-}

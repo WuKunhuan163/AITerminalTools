@@ -1,5 +1,0 @@
-{
-  "success": false,
-  "error": "Command execution failed",
-  "output": "EXTRACT_PDF output:\n⚠️  未找到对应的PDF文件: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/tmp5zqx_siy/test_formula.pdf\n🔄 使用传统处理方式...\n🔄 使用传统方式处理 test_formula.md...\n🧮 处理公式...\n⚠️  相对路径但没有提取数据目录: images/test_formula_hash.jpg\nℹ️  没有公式被成功处理\n✅ 后处理完成: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/tmp5zqx_siy/test_formula.md\n\nEXTRACT_PDF stderr:"
-}

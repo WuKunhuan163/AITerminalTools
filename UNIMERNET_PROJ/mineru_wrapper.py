@@ -25,14 +25,14 @@ if str(parent_dir) not in sys.path:
     sys.path.insert(0, str(parent_dir))
 
 try:
-    # Import centralized cache system from EXTRACT_IMG_PROJ
-    from EXTRACT_IMG_PROJ.cache_system import ImageCacheSystem
+    # Import centralized cache system from EXTRACT_IMG_DATA
+    from EXTRACT_IMG_DATA.cache_system import ImageCacheSystem
 except ImportError:
     try:
         # Fallback import path
         import sys
         from pathlib import Path
-        extract_img_proj = Path(__file__).parent.parent / "EXTRACT_IMG_PROJ"
+        extract_img_proj = Path(__file__).parent.parent / "EXTRACT_IMG_DATA"
         if str(extract_img_proj) not in sys.path:
             sys.path.insert(0, str(extract_img_proj))
         from cache_system import ImageCacheSystem
@@ -175,7 +175,7 @@ class MinerUWrapper:
             # Find the output markdown file
             output_file = self._find_output_file(self.temp_dir)
             if output_file:
-                # Move to pdf_extractor_data directory and process with API if requested
+                # Move to UNIMERNET_DATA directory and process with API if requested
                 target_file = self._move_to_data_directory(output_file, pdf_path, call_api, call_api_force, page_range)
                 
                 # If async mode, add placeholders for post-processing
@@ -345,13 +345,13 @@ class MinerUWrapper:
         return None
     
     def _move_to_data_directory(self, source_file: str, pdf_path: str, call_api: bool = False, call_api_force: bool = False, page_range: Optional[str] = None) -> str:
-        """Move output file to pdf_extractor_data directory and create same-name file in PDF directory."""
+        """Move output file to UNIMERNET_DATA directory and create same-name file in PDF directory."""
         # Create data directory structure
-        data_dir = Path(__file__).parent / "pdf_extractor_data"
+        data_dir = Path(__file__).parent.parent / "UNIMERNET_DATA" / "pdf_extractor_data"
         markdown_dir = data_dir / "markdown"
         markdown_dir.mkdir(parents=True, exist_ok=True)
         
-        # Find next available filename for pdf_extractor_data
+        # Find next available filename for UNIMERNET_DATA
         counter = 0
         while True:
             target_file = markdown_dir / f"{counter}.md"
@@ -359,10 +359,10 @@ class MinerUWrapper:
                 break
             counter += 1
         
-        # Copy file to pdf_extractor_data location
+        # Copy file to UNIMERNET_DATA location
         shutil.copy2(source_file, target_file)
         
-        # Copy images from MinerU temp directory to pdf_extractor_data/images
+        # Copy images from MinerU temp directory to UNIMERNET_DATA/images
         self._copy_mineru_images_to_data_directory(data_dir)
         
         # Post-process with image API if requested
@@ -382,11 +382,11 @@ class MinerUWrapper:
             
         same_name_md_file = pdf_directory / f"{pdf_stem_with_pages}.md"
         
-        # Read the content from the pdf_extractor_data file
+        # Read the content from the UNIMERNET_DATA file
         with open(target_file, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # Update image paths to reference pdf_extractor_data
+        # Update image paths to reference UNIMERNET_DATA
         updated_content = self._update_image_paths_for_paper_directory(content, str(data_dir))
         
         # Convert HTML tables to Markdown format
@@ -402,7 +402,7 @@ class MinerUWrapper:
         return str(target_file)
     
     def _update_image_paths_for_paper_directory(self, content: str, data_dir: str) -> str:
-        """Update image paths in markdown content to reference pdf_extractor_data directory."""
+        """Update image paths in markdown content to reference UNIMERNET_DATA directory."""
         import re
         
         # Find all image references in markdown
@@ -485,7 +485,7 @@ class MinerUWrapper:
         return result
     
     def _copy_mineru_images_to_data_directory(self, data_dir: Path):
-        """Copy images from MinerU temp directory to pdf_extractor_data/images."""
+        """Copy images from MinerU temp directory to UNIMERNET_DATA/images."""
         if not hasattr(self, 'temp_dir') or not self.temp_dir:
             return
         
@@ -673,7 +673,7 @@ class MinerUWrapper:
         """Create a basic output file with tokenizer error information."""
         try:
             # Create data directory structure
-            data_dir = Path(__file__).parent / "pdf_extractor_data"
+            data_dir = Path(__file__).parent.parent / "UNIMERNET_DATA" / "pdf_extractor_data"
             markdown_dir = data_dir / "markdown"
             markdown_dir.mkdir(parents=True, exist_ok=True)
             
@@ -1536,7 +1536,7 @@ Formula recognition is currently unavailable.
             pdf_directory / image_filename,
             pdf_directory / "images" / image_filename,
             pdf_directory / f"{pdf_directory.stem}_extract_data" / "images" / image_filename,
-            Path(__file__).parent / "pdf_extractor_data" / "images" / image_filename
+            Path(__file__).parent.parent / "UNIMERNET_DATA" / "pdf_extractor_data" / "images" / image_filename
         ]
         
         for location in possible_locations:
@@ -1771,7 +1771,7 @@ Formula recognition is currently unavailable.
     def _load_hash_mapping(self) -> dict:
         """Load global hash to type mapping."""
         try:
-            mapping_file = Path(__file__) / "hash_type_mapping.json"
+            mapping_file = Path(__file__).parent / "hash_type_mapping.json"
             if mapping_file.exists():
                 with open(mapping_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
@@ -1784,7 +1784,7 @@ Formula recognition is currently unavailable.
     def _save_hash_mapping(self, mappings: dict):
         """Save global hash to type mapping."""
         try:
-            mapping_file = Path(__file__) / "hash_type_mapping.json"
+            mapping_file = Path(__file__).parent / "hash_type_mapping.json"
             
             # Load existing data or create new
             if mapping_file.exists():
@@ -1834,7 +1834,7 @@ Formula recognition is currently unavailable.
             print(f"⚠️  更新hash映射失败: {e}", file=sys.stderr)
 
     def _update_image_cache_with_types(self, pdf_path: str):
-        """Update EXTRACT_IMG_PROJ/image_cache.json with type information from postprocess JSON."""
+        """Update EXTRACT_IMG_DATA/image_cache.json with type information from postprocess JSON."""
         try:
             pdf_path_obj = Path(pdf_path)
             pdf_directory = pdf_path_obj.parent
@@ -1850,7 +1850,7 @@ Formula recognition is currently unavailable.
                 status_data = json.load(f)
             
             # Load image cache
-            cache_file = Path(__file__).parent.parent / "EXTRACT_IMG_PROJ" / "image_cache.json"
+            cache_file = Path(__file__).parent.parent / "EXTRACT_IMG_DATA" / "image_cache.json"
             if not cache_file.exists():
                 print(f"⚠️  图片缓存文件不存在: {cache_file}")
                 return False

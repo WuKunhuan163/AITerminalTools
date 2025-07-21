@@ -339,8 +339,12 @@ class TestExtractPDFPreprocessing(BaseTest):
             output = result.stdout + result.stderr
             
             if result.returncode == 0:
-                # 检查生成的markdown文件
-                expected_md = Path(temp_dir) / "test_extract_preprocess.md"
+                # 检查生成的markdown文件（文件名基于实际PDF文件名）
+                expected_md = Path(temp_dir) / f"{self.test_pdf_preprocess.stem}.md"
+                if not expected_md.exists():
+                    # 如果是符号链接，尝试使用原始文件名
+                    expected_md = Path(temp_dir) / "test_extract_paper.md"
+                
                 self.assertTrue(expected_md.exists(), f"Markdown file not found: {expected_md}")
                 
                 # 读取markdown内容
@@ -412,7 +416,11 @@ class TestExtractPDFPreprocessing(BaseTest):
             if result.returncode != 0:
                 self.skipTest("Preprocessing failed, cannot test postprocessing")
             
-            expected_md = Path(temp_dir) / "test_extract_preprocess.md"
+            expected_md = Path(temp_dir) / f"{self.test_pdf_preprocess.stem}.md"
+            if not expected_md.exists():
+                # 如果是符号链接，尝试使用原始文件名
+                expected_md = Path(temp_dir) / "test_extract_paper.md"
+                
             if not expected_md.exists():
                 self.skipTest("Markdown file not generated, cannot test postprocessing")
             
@@ -1081,6 +1089,23 @@ class TestExtractPDFPaper2(BaseTest):
         step2_md = self.test_data_dir / "test_extract_paper2_step2.md"
         full_md = self.test_data_dir / "test_extract_paper2_full.md"
         
+        # 如果文件不存在，尝试运行依赖的测试
+        if not step2_md.exists() or not full_md.exists():
+            # 运行前面的测试来生成所需文件
+            try:
+                if not step2_md.exists():
+                    # 运行step1和step2测试
+                    self.test_01_preprocessing_paper2()
+                    self.test_02_postprocessing_paper2()
+                
+                if not full_md.exists():
+                    # 运行full pipeline测试
+                    self.test_04_full_pipeline_paper2()
+                    
+            except Exception as e:
+                self.skipTest(f"Could not generate required files: {e}")
+        
+        # 再次检查文件是否存在
         if not step2_md.exists():
             self.skipTest("Step2 result not found, run previous tests first")
         

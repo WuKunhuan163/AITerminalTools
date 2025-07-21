@@ -18,6 +18,155 @@ import io
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+
+def get_pdf_extractor_data_dir():
+    """Get the PDF extractor data directory path."""
+    script_dir = Path(__file__).parent
+    # 优先使用EXTRACT_PDF_DATA目录（数据与代码分离）
+    data_dir = script_dir / "EXTRACT_PDF_DATA"
+    if not data_dir.exists():
+        data_dir.mkdir(parents=True, exist_ok=True)
+        # 创建必要的子目录
+        (data_dir / "images").mkdir(exist_ok=True)
+        (data_dir / "markdown").mkdir(exist_ok=True)
+    return data_dir
+
+
+def save_to_unified_data_directory(content: str, pdf_path: Path, page_spec: str = None, images_data: list = None) -> Tuple[str, str]:
+    """
+    统一的数据存储接口，供basic和mineru模式共用
+    
+    Args:
+        content: markdown内容
+        pdf_path: 原PDF文件路径
+        page_spec: 页码规格 (如 "1", "1-5", "1,3,5")
+        images_data: 图片数据列表 [{'bytes': bytes, 'hash': str, 'filename': str}, ...]
+    
+    Returns:
+        tuple: (data_directory_md_path, pdf_directory_md_path)
+    """
+    import shutil
+    
+    # 获取数据目录
+    data_dir = get_pdf_extractor_data_dir()
+    markdown_dir = data_dir / "markdown"
+    images_dir = data_dir / "images"
+    
+    # 确保目录存在
+    markdown_dir.mkdir(parents=True, exist_ok=True)
+    images_dir.mkdir(parents=True, exist_ok=True)
+    
+    # 找到下一个可用的数字文件名
+    counter = 0
+    while True:
+        target_file = markdown_dir / f"{counter}.md"
+        if not target_file.exists():
+            break
+        counter += 1
+    
+    # 保存markdown到数据目录
+    with open(target_file, 'w', encoding='utf-8') as f:
+        f.write(content)
+    
+    # 保存图片到数据目录
+    if images_data:
+        for img_data in images_data:
+            img_file = images_dir / img_data['filename']
+            with open(img_file, 'wb') as f:
+                f.write(img_data['bytes'])
+    
+    # 创建PDF同层目录的文件
+    pdf_stem = pdf_path.stem
+    if page_spec:
+        pdf_stem_with_pages = f"{pdf_stem}_p{page_spec}"
+    else:
+        pdf_stem_with_pages = pdf_stem
+    
+    same_name_md_file = pdf_path.parent / f"{pdf_stem_with_pages}.md"
+    
+    # 更新图片路径到绝对路径 (指向EXTRACT_PDF_DATA)
+    updated_content = update_image_paths_to_data_directory(content, str(data_dir))
+    
+    # 保存到PDF同层目录
+    with open(same_name_md_file, 'w', encoding='utf-8') as f:
+        f.write(updated_content)
+    
+    # 复制图片到PDF同层目录的images文件夹
+    if images_data:
+        pdf_images_dir = pdf_path.parent / "images"
+        pdf_images_dir.mkdir(exist_ok=True)
+        
+        for img_data in images_data:
+            src_file = images_dir / img_data['filename']
+            dst_file = pdf_images_dir / img_data['filename']
+            if src_file.exists():
+                shutil.copy2(src_file, dst_file)
+    
+    return str(target_file), str(same_name_md_file)
+
+
+def update_image_paths_to_data_directory(content: str, data_dir: str) -> str:
+    """更新markdown内容中的图片路径，指向EXTRACT_PDF_DATA目录"""
+    import re
+    
+    # 将相对路径的图片引用更新为绝对路径
+    def replace_image_path(match):
+        image_filename = match.group(2)
+        abs_image_path = Path(data_dir) / "images" / image_filename
+        return f"![{match.group(1)}]({abs_image_path})"
+    
+    # 匹配 ![...](images/filename) 格式
+    updated_content = re.sub(r'!\[([^\]]*)\]\(images/([^)]+)\)', replace_image_path, content)
+    
+    return updated_content
+
+
+def create_postprocess_status_file(pdf_path: Path, page_spec: str = None, images_data: list = None) -> str:
+    """创建后处理状态文件，用于追踪placeholder处理状态"""
+    import json
+    from datetime import datetime
+    
+    pdf_stem = pdf_path.stem
+    if page_spec:
+        pdf_stem_with_pages = f"{pdf_stem}_p{page_spec}"
+    else:
+        pdf_stem_with_pages = pdf_stem
+    
+    status_file = pdf_path.parent / f"{pdf_stem_with_pages}_postprocess.json"
+    
+    # 创建状态数据
+    status_data = {
+        "pdf_file": str(pdf_path),
+        "created_at": datetime.now().isoformat(),
+        "page_range": page_spec,
+        "total_items": len(images_data) if images_data else 0,
+        "processed_items": 0,
+        "items": []
+    }
+    
+    # 添加图片项目
+    if images_data:
+        for img_data in images_data:
+            item = {
+                "id": img_data['hash'],
+                "type": "image",  # basic模式主要处理图片
+                "filename": img_data['filename'],
+                "image_path": f"images/{img_data['filename']}",  # 添加image_path字段
+                "processor": "basic_extractor",
+                "processed": False,
+                "placeholder": f"![](images/{img_data['filename']})",
+                "bbox": img_data.get('bbox', []),
+                "page": img_data.get('page', 1)
+            }
+            status_data["items"].append(item)
+    
+    # 保存状态文件
+    with open(status_file, 'w', encoding='utf-8') as f:
+        json.dump(status_data, f, ensure_ascii=False, indent=2)
+    
+    print(f"📄 后处理状态保存至: {status_file.name}")
+    return str(status_file)
+
 # 加载环境变量
 from dotenv import load_dotenv
 load_dotenv()
@@ -66,8 +215,9 @@ class PDFExtractor:
         self.proj_dir = self.script_dir / "EXTRACT_PDF_PROJ"
         
     def extract_pdf_basic(self, pdf_path: Path, page_spec: str = None, output_dir: Path = None) -> Tuple[bool, str]:
-        """基础PDF提取功能"""
+        """基础PDF提取功能 - 使用统一数据存储接口"""
         import time
+        import hashlib
         
         start_time = time.time()
         
@@ -78,49 +228,83 @@ class PDFExtractor:
             # 打开PDF文件
             doc = fitz.open(str(pdf_path))
             
-            # 确定输出目录
-            if output_dir is None:
-                output_dir = pdf_path.parent
-            else:
-                output_dir = Path(output_dir)
-                output_dir.mkdir(parents=True, exist_ok=True)
-            
             # 确定要处理的页面
             if page_spec:
                 pages = self._parse_page_spec(page_spec, doc.page_count)
             else:
                 pages = list(range(doc.page_count))
             
-            # 构建输出文件名，包含页码信息
-            base_name = pdf_path.stem
-            if page_spec:
-                # 格式化页码信息：例如 "1,3,5" -> "_p1,3,5"，"1-5" -> "_p1-5"
-                page_suffix = f"_p{page_spec}"
-                output_filename = f"{base_name}{page_suffix}.md"
-            else:
-                output_filename = f"{base_name}.md"
-            
-            output_file = output_dir / output_filename
             content = []
+            images_data = []
             
+            # 处理每一页
             for page_num in pages:
                 page = doc[page_num]
+                
+                # 提取文本
                 text = page.get_text()
                 content.append(f"# Page {page_num + 1}\n\n{text}\n\n")
-            
-            # 写入markdown文件
-            with open(output_file, 'w', encoding='utf-8') as f:
-                f.write('\n'.join(content))
+                
+                # 提取图片
+                image_list = page.get_images()
+                for img_index, img in enumerate(image_list):
+                    # 获取图片数据
+                    xref = img[0]
+                    pix = fitz.Pixmap(doc, xref)
+                    
+                    if pix.n - pix.alpha < 4:  # 确保是RGB或灰度图像
+                        # 转换为字节数据
+                        if pix.alpha:
+                            pix = fitz.Pixmap(fitz.csRGB, pix)
+                        
+                        img_bytes = pix.tobytes("jpeg")
+                        
+                        # 生成hash文件名
+                        img_hash = hashlib.md5(img_bytes).hexdigest()
+                        img_filename = f"{img_hash}.jpg"
+                        
+                        # 获取图片位置信息
+                        img_rects = page.get_image_rects(xref)
+                        bbox = list(img_rects[0]) if img_rects else []
+                        
+                        # 保存图片数据
+                        images_data.append({
+                            'bytes': img_bytes,
+                            'hash': img_hash,
+                            'filename': img_filename,
+                            'bbox': bbox,
+                            'page': page_num + 1
+                        })
+                        
+                        # 在markdown中添加图片引用
+                        content.append(f"![](images/{img_filename})\n\n")
+                    
+                    pix = None  # 释放内存
             
             doc.close()
+            
+            # 合并所有内容
+            full_content = '\n'.join(content)
+            
+            # 使用统一数据存储接口保存数据
+            data_md_path, pdf_md_path = save_to_unified_data_directory(
+                full_content, pdf_path, page_spec, images_data
+            )
+            
+            # 创建postprocess状态文件
+            if images_data:
+                create_postprocess_status_file(pdf_path, page_spec, images_data)
             
             # 计算处理时间
             end_time = time.time()
             processing_time = end_time - start_time
             
             print(f"⏱️  总处理时间: {processing_time:.2f} 秒")
+            print(f"📄 数据已保存到: {data_md_path}")
+            if images_data:
+                print(f"🖼️  提取了 {len(images_data)} 张图片")
             
-            return True, f"Basic extraction completed: {output_file}"
+            return True, f"Basic extraction completed: {pdf_md_path}"
             
         except Exception as e:
             return False, f"Basic extraction failed: {str(e)}"
@@ -209,7 +393,7 @@ class PDFExtractor:
                 output_dir.mkdir(parents=True, exist_ok=True)
             
             # 查找MinerU生成的markdown文件
-            mineru_data_dir = self.proj_dir / "pdf_extractor_data" / "markdown"
+            mineru_data_dir = get_pdf_extractor_data_dir() / "markdown"
             if mineru_data_dir.exists():
                 # 找到最新的markdown文件
                 md_files = list(mineru_data_dir.glob("*.md"))
@@ -222,7 +406,7 @@ class PDFExtractor:
                         content = f.read()
                     
                     # 修正图片路径：从相对路径改为绝对路径
-                    images_dir = self.proj_dir / "pdf_extractor_data" / "images"
+                    images_dir = get_pdf_extractor_data_dir() / "images"
                     content = self._fix_image_paths(content, images_dir)
                     
                     # 构建目标文件名，包含页码信息
@@ -265,7 +449,7 @@ class PDFExtractor:
     def clean_data(self) -> Tuple[bool, str]:
         """清理EXTRACT_PDF_PROJ中的缓存数据"""
         try:
-            data_dir = self.proj_dir / "pdf_extractor_data"
+            data_dir = get_pdf_extractor_data_dir()
             
             if not data_dir.exists():
                 return True, "No cached data found"
@@ -350,7 +534,7 @@ class PDFExtractor:
             return False, f"Unknown engine mode: {engine_mode}"
     
     def extract_pdf_basic_with_images(self, pdf_path: Path, page_spec: str = None, output_dir: Path = None) -> Tuple[bool, str]:
-        """基础PDF提取功能，包含图片提取和placeholder生成"""
+        """基础PDF提取功能，包含图片提取和placeholder生成 - 使用统一数据存储"""
         import time
         import hashlib
         from PIL import Image
@@ -364,35 +548,14 @@ class PDFExtractor:
             # 打开PDF文件
             doc = fitz.open(str(pdf_path))
             
-            # 确定输出目录
-            if output_dir is None:
-                output_dir = pdf_path.parent
-            else:
-                output_dir = Path(output_dir)
-                output_dir.mkdir(parents=True, exist_ok=True)
-            
-            # 创建images目录
-            images_dir = output_dir / "images"
-            images_dir.mkdir(exist_ok=True)
-            
             # 确定要处理的页面
             if page_spec:
                 pages = self._parse_page_spec(page_spec, doc.page_count)
             else:
                 pages = list(range(doc.page_count))
             
-            # 构建输出文件名，包含页码信息
-            base_name = pdf_path.stem
-            if page_spec:
-                # 格式化页码信息：例如 "1,3,5" -> "_p1,3,5"，"1-5" -> "_p1-5"
-                page_suffix = f"_p{page_spec}"
-                output_filename = f"{base_name}{page_suffix}.md"
-            else:
-                output_filename = f"{base_name}.md"
-            
-            output_file = output_dir / output_filename
             content = []
-            image_count = 0
+            images_data = []
             
             # 结束性标点符号列表
             ending_punctuations = {'。', '.', '!', '?', '！', '？', ':', '：', ';', '；'}
@@ -407,13 +570,15 @@ class PDFExtractor:
                 
                 # 图片合并处理：将临近的图片合并成一张大图
                 if image_list:
-                    merged_images = self._merge_nearby_images(doc, page, image_list, images_dir)
+                    merged_images_info = self._merge_nearby_images_to_data(doc, page, image_list, page_num + 1)
+                    
+                    # 收集图片数据
+                    images_data.extend(merged_images_info)
                     
                     # 为每个合并后的图片添加placeholder
-                    for merged_img_path in merged_images:
+                    for img_info in merged_images_info:
                         page_content += f"[placeholder: image]\n"
-                        page_content += f"![](images/{merged_img_path.name})\n\n"
-                        image_count += 1
+                        page_content += f"![](images/{img_info['filename']})\n\n"
                 
                 # 处理正文换行符
                 processed_text = self._process_text_linebreaks(text, ending_punctuations)
@@ -422,51 +587,47 @@ class PDFExtractor:
                 page_content += f"{processed_text}\n\n"
                 content.append(page_content)
             
-            # 写入markdown文件
-            with open(output_file, 'w', encoding='utf-8') as f:
-                f.write('\n'.join(content))
-            
             doc.close()
+            
+            # 合并所有内容
+            full_content = '\n'.join(content)
+            
+            # 使用统一数据存储接口保存数据
+            data_md_path, pdf_md_path = save_to_unified_data_directory(
+                full_content, pdf_path, page_spec, images_data
+            )
+            
+            # 创建postprocess状态文件
+            if images_data:
+                create_postprocess_status_file(pdf_path, page_spec, images_data)
             
             # 计算处理时间
             end_time = time.time()
             processing_time = end_time - start_time
             
-            # 清理空的images目录
-            if image_count == 0 and images_dir.exists():
-                try:
-                    images_dir.rmdir()
-                except:
-                    pass
-            
-            success_msg = f"Basic extraction completed: {output_file}"
-            if image_count > 0:
-                success_msg += f" (extracted {image_count} merged images)"
-            
             print(f"⏱️  总处理时间: {processing_time:.2f} 秒")
+            print(f"📄 数据已保存到: {data_md_path}")
+            if images_data:
+                print(f"🖼️  提取并合并了 {len(images_data)} 张图片")
             
-            return True, success_msg
+            return True, f"Basic extraction with images completed: {pdf_md_path}"
             
         except Exception as e:
             return False, f"Basic extraction with images failed: {str(e)}"
     
-    def _merge_nearby_images(self, doc, page, image_list, images_dir):
-        """合并临近的图片成一张大图"""
+    def _merge_nearby_images_to_data(self, doc, page, image_list, page_num):
+        """合并临近的图片成一张大图，返回图片数据"""
         from PIL import Image
         import hashlib
         import fitz
         import io
         
-        merged_images = []
+        images_data = []
         
         if not image_list:
-            return merged_images
+            return images_data
         
         try:
-            # 获取页面尺寸
-            page_rect = page.rect
-            page_width, page_height = page_rect.width, page_rect.height
-            
             # 提取所有图片的位置和数据
             image_data = []
             for img_index, img in enumerate(image_list):
@@ -489,7 +650,8 @@ class PDFExtractor:
                     image_data.append({
                         'index': img_index,
                         'pix': pix,
-                        'y_pos': y_position
+                        'y_pos': y_position,
+                        'page': page_num
                     })
                     
                 except Exception as e:
@@ -497,7 +659,7 @@ class PDFExtractor:
                     continue
             
             if not image_data:
-                return merged_images
+                return images_data
             
             # 按Y位置排序
             image_data.sort(key=lambda x: x['y_pos'])
@@ -529,17 +691,21 @@ class PDFExtractor:
                     merged_img.paste(pil_img, (x_offset, y_offset))
                     y_offset += pil_img.height
                 
-                # 生成合并图片的哈希文件名
-                import io
-                img_bytes = io.BytesIO()
-                merged_img.save(img_bytes, format='PNG')
-                img_hash = hashlib.sha256(img_bytes.getvalue()).hexdigest()
+                # 生成合并图片的字节数据和哈希文件名
+                img_bytes_io = io.BytesIO()
+                merged_img.save(img_bytes_io, format='PNG')
+                img_bytes = img_bytes_io.getvalue()
+                img_hash = hashlib.md5(img_bytes).hexdigest()  # 使用md5保持一致性
                 merged_filename = f"{img_hash}.png"
-                merged_path = images_dir / merged_filename
                 
-                # 保存合并后的图片
-                merged_img.save(str(merged_path))
-                merged_images.append(merged_path)
+                # 添加到图片数据列表
+                images_data.append({
+                    'bytes': img_bytes,
+                    'hash': img_hash,
+                    'filename': merged_filename,
+                    'bbox': [],  # 合并图片没有单一的bbox
+                    'page': page_num
+                })
                 
                 print(f"🖼️  合并了 {len(image_data)} 张图片成一张大图: {merged_filename}")
                 
@@ -549,55 +715,67 @@ class PDFExtractor:
                         img_info['pix'] = None
                         
             elif len(image_data) == 1:
-                # 只有一张图片，直接保存
+                # 只有一张图片，直接处理
                 pix = image_data[0]['pix']
-                img_data = pix.tobytes("png")
-                img_hash = hashlib.sha256(img_data).hexdigest()
-                img_filename = f"{img_hash}.png"
-                img_path = images_dir / img_filename
+                img_data = pix.tobytes("jpeg")
+                img_hash = hashlib.md5(img_data).hexdigest()
+                img_filename = f"{img_hash}.jpg"
                 
-                # 根据是否有alpha通道选择格式
-                if pix.alpha:
-                    img_filename = f"{img_hash}.png"
-                else:
-                    img_filename = f"{img_hash}.jpg"
-                    img_path = images_dir / img_filename
+                # 获取图片位置信息
+                try:
+                    xref = image_list[0][0]
+                    img_rects = page.get_image_rects(xref)
+                    bbox = list(img_rects[0]) if img_rects else []
+                except:
+                    bbox = []
                 
-                pix.save(str(img_path))
-                merged_images.append(img_path)
+                images_data.append({
+                    'bytes': img_data,
+                    'hash': img_hash,
+                    'filename': img_filename,
+                    'bbox': bbox,
+                    'page': page_num
+                })
+                
                 pix = None
                 
         except Exception as e:
             print(f"⚠️  图片合并过程出错: {e}")
-            # 如果合并失败，回退到单独保存每张图片
+            # 如果合并失败，回退到单独处理每张图片
             for img_index, img in enumerate(image_list):
                 try:
                     xref = img[0]
                     pix = fitz.Pixmap(doc, xref)
                     
                     if pix.n - pix.alpha < 4:
-                        img_data = pix.tobytes("png")
-                        img_hash = hashlib.sha256(img_data).hexdigest()
-                        
-                        if pix.alpha:
-                            img_filename = f"{img_hash}.png"
-                        else:
-                            img_filename = f"{img_hash}.jpg"
-                        
-                        img_path = images_dir / img_filename
-                        
                         if pix.n - pix.alpha == 1:
                             pix = fitz.Pixmap(fitz.csRGB, pix)
                         
-                        pix.save(str(img_path))
-                        merged_images.append(img_path)
+                        img_data = pix.tobytes("jpeg")
+                        img_hash = hashlib.md5(img_data).hexdigest()
+                        img_filename = f"{img_hash}.jpg"
+                        
+                        # 获取图片位置信息
+                        try:
+                            img_rects = page.get_image_rects(xref)
+                            bbox = list(img_rects[0]) if img_rects else []
+                        except:
+                            bbox = []
+                        
+                        images_data.append({
+                            'bytes': img_data,
+                            'hash': img_hash,
+                            'filename': img_filename,
+                            'bbox': bbox,
+                            'page': page_num
+                        })
                     
                     pix = None
                     
                 except Exception as e:
                     print(f"⚠️  保存单张图片 {img_index} 失败: {e}")
         
-        return merged_images
+        return images_data
     
     def _process_text_linebreaks(self, text, ending_punctuations):
         """处理正文换行符，智能合并句子和分段"""
@@ -651,6 +829,349 @@ class PDFExtractor:
         
         return '\n'.join(result)
 
+    def process_file_unified_moved_to_postprocessor(self, file_path: str, process_type: str, specific_ids: str = None, custom_prompt: str = None, force: bool = False) -> bool:
+        """
+        统一的后处理接口 - 不依赖于提取模式
+        
+        Args:
+            file_path: PDF文件路径或markdown文件路径
+            process_type: 处理类型 ('image', 'formula', 'table', 'all')
+            specific_ids: 特定ID列表或关键词
+            custom_prompt: 自定义提示词
+            force: 是否强制重新处理
+            
+        Returns:
+            是否处理成功
+        """
+        file_path = Path(file_path)
+        
+        # 确定PDF文件和markdown文件路径
+        if file_path.suffix == '.pdf':
+            pdf_file_path = file_path
+            md_file = file_path.parent / f"{file_path.stem}.md"
+        elif file_path.suffix == '.md':
+            md_file = file_path
+            # 尝试找到对应的PDF文件
+            pdf_file_path = file_path.parent / f"{file_path.stem}.pdf"
+        else:
+            print(f"❌ 不支持的文件类型: {file_path.suffix}")
+            return False
+            
+        if not md_file.exists():
+            print(f"❌ Markdown文件不存在: {md_file}")
+            return False
+            
+        print(f"🔄 开始统一后处理 {md_file.name}...")
+        
+        try:
+            # 第一步：确保有postprocess状态文件
+            status_file = self._ensure_postprocess_status_file(pdf_file_path, md_file)
+            if not status_file:
+                print("❌ 无法创建或找到状态文件")
+                return False
+            
+            # 第二步：读取状态文件
+            with open(status_file, 'r', encoding='utf-8') as f:
+                status_data = json.load(f)
+            
+            # 第三步：同步markdown和JSON中的placeholder信息
+            print("🔄 同步markdown和JSON中的placeholder信息...")
+            status_data = self._sync_placeholders_with_markdown(md_file, status_data, status_file)
+            
+            # 第四步：筛选要处理的项目
+            items_to_process = self._filter_items_to_process(status_data, process_type, specific_ids, force)
+            
+            if not items_to_process:
+                print("ℹ️  没有需要处理的项目")
+                return True
+            
+            # 第五步：使用统一的混合处理方式
+            success = self._process_items_unified(str(pdf_file_path), str(md_file), status_data, 
+                                                items_to_process, process_type, custom_prompt, force)
+            
+            return success
+            
+        except Exception as e:
+            print(f"❌ 统一后处理异常: {e}")
+            return False
+    
+    def _ensure_postprocess_status_file(self, pdf_file_path: Path, md_file: Path) -> Optional[Path]:
+        """确保存在postprocess状态文件，如果不存在则创建"""
+        status_file = pdf_file_path.parent / f"{pdf_file_path.stem}_postprocess.json"
+        
+        if status_file.exists():
+            return status_file
+        
+        print("📄 状态文件不存在，从markdown重新生成...")
+        
+        # 从markdown文件分析placeholder，创建状态文件
+        try:
+            with open(md_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # 查找所有placeholder和图片引用
+            import re
+            # 修复正则表达式以匹配包含分析结果的完整placeholder块
+            # 这个模式匹配：[placeholder: type]\n![...](path) 后面可能跟着分析结果
+            placeholder_pattern = r'\[placeholder:\s*(\w+)\]\s*\n!\[[^\]]*\]\(([^)]+)\)(?:\s*\n\n\*\*[^*]+\*\*.*?)?'
+            matches = re.findall(placeholder_pattern, content, re.DOTALL)
+            
+            if not matches:
+                print("ℹ️  未找到placeholder，无需后处理")
+                return None
+            
+            # 创建状态数据
+            from datetime import datetime
+            status_data = {
+                "pdf_file": str(pdf_file_path),
+                "created_at": datetime.now().isoformat(),
+                "page_range": None,
+                "total_items": len(matches),
+                "processed_items": 0,
+                "items": []
+            }
+            
+            # 添加项目
+            for item_type, image_path in matches:
+                # 从图片路径提取hash ID
+                image_filename = Path(image_path).name
+                hash_id = Path(image_path).stem
+                
+                item = {
+                    "id": hash_id,
+                    "type": item_type,
+                    "filename": image_filename,
+                    "image_path": image_path,
+                    "processor": "unified_processor",
+                    "processed": False,
+                    "placeholder": f"[placeholder: {item_type}]",
+                    "bbox": [],
+                    "page": 1  # 默认页码
+                }
+                status_data["items"].append(item)
+            
+            # 保存状态文件
+            with open(status_file, 'w', encoding='utf-8') as f:
+                json.dump(status_data, f, ensure_ascii=False, indent=2)
+            
+            print(f"✅ 创建状态文件: {status_file.name}")
+            return status_file
+            
+        except Exception as e:
+            print(f"❌ 创建状态文件失败: {e}")
+            return None
+    
+    def _filter_items_to_process(self, status_data: dict, process_type: str, specific_ids: str, force: bool) -> list:
+        """筛选需要处理的项目"""
+        items_to_process = []
+        
+        for item in status_data.get('items', []):
+            # 跳过已处理的项目（除非强制重新处理）
+            if item.get('processed', False) and not force:
+                continue
+            
+            item_type = item.get('type')
+            item_id = item.get('id')
+            
+            # 根据处理类型筛选
+            if process_type != 'all':
+                if process_type == 'image' and item_type != 'image':
+                    continue
+                elif process_type == 'formula' and item_type not in ['formula', 'interline_equation']:
+                    continue
+                elif process_type == 'table' and item_type != 'table':
+                    continue
+            
+            # 根据specific_ids筛选
+            if specific_ids:
+                if specific_ids in ['all_images', 'all_formulas', 'all_tables', 'all']:
+                    if specific_ids == 'all':
+                        pass  # 处理所有类型
+                    elif specific_ids == 'all_images' and item_type != 'image':
+                        continue
+                    elif specific_ids == 'all_formulas' and item_type not in ['formula', 'interline_equation']:
+                        continue
+                    elif specific_ids == 'all_tables' and item_type != 'table':
+                        continue
+                else:
+                    # 具体的hash ID列表
+                    target_ids = [id.strip() for id in specific_ids.split(',')]
+                    if item_id not in target_ids:
+                        continue
+            
+            items_to_process.append(item_id)
+        
+        return items_to_process
+    
+    def _process_items_unified(self, pdf_file: str, md_file: str, status_data: dict, 
+                             items_to_process: list, process_type: str, custom_prompt: str = None, force: bool = False) -> bool:
+        """统一的项目处理方法"""
+        try:
+            # 读取markdown文件
+            with open(md_file, 'r', encoding='utf-8') as f:
+                md_content = f.read()
+            
+            # 处理每个项目
+            updated = False
+            for item_id in items_to_process:
+                # 找到对应的项目
+                item = None
+                for status_item in status_data.get('items', []):
+                    if status_item.get('id') == item_id:
+                        item = status_item
+                        break
+                
+                if not item:
+                    print(f"⚠️  未找到项目: {item_id}")
+                    continue
+                
+                item_type = item.get('type')
+                image_path = item.get('image_path', '')
+                
+                if not image_path:
+                    print(f"⚠️  图片路径为空: {item_id}")
+                    continue
+                
+                # 查找实际的图片文件路径
+                actual_image_path = self._find_actual_image_path(pdf_file, image_path)
+                if not actual_image_path:
+                    print(f"⚠️  图片文件不存在: {image_path}")
+                    continue
+                
+                print(f"🔄 处理 {item_type} 项目: {item_id}")
+                
+                # 根据类型选择处理方式
+                result_text = ""
+                if item_type == 'image':
+                    result_text = self._process_image_with_api(actual_image_path, custom_prompt)
+                elif item_type in ['formula', 'interline_equation']:
+                    result_text = self._process_with_unimernet(actual_image_path, "formula", force)
+                elif item_type == 'table':
+                    result_text = self._process_with_unimernet(actual_image_path, "table", force)
+                
+                if result_text:
+                    # 更新markdown内容
+                    success = self._update_markdown_with_result(md_content, item, result_text)
+                    if success:
+                        md_content = success
+                        item['processed'] = True
+                        updated = True
+                        print(f"✅ 完成 {item_type} 处理: {item_id}")
+                    else:
+                        print(f"⚠️  更新markdown失败: {item_id}")
+                else:
+                    print(f"❌ 处理失败: {item_id}")
+            
+            if updated:
+                # 保存更新的markdown文件
+                with open(md_file, 'w', encoding='utf-8') as f:
+                    f.write(md_content)
+                
+                # 更新状态文件
+                status_file = Path(pdf_file).parent / f"{Path(pdf_file).stem}_postprocess.json"
+                with open(status_file, 'w', encoding='utf-8') as f:
+                    json.dump(status_data, f, indent=2, ensure_ascii=False)
+                
+                print(f"📝 已更新文件: {Path(md_file).name}")
+                return True
+            else:
+                print("ℹ️  没有内容需要更新")
+                return True
+                
+        except Exception as e:
+            print(f"❌ 统一处理异常: {e}")
+            return False
+    
+    def _update_markdown_with_result(self, md_content: str, item: dict, result_text: str) -> Optional[str]:
+        """更新markdown内容，保留placeholder，清除已有分析结果并替换为新结果"""
+        import re
+        
+        item_type = item.get('type')
+        image_path = item.get('image_path', '')
+        
+        # 构建更复杂的模式来匹配整个块（包括可能存在的分析结果）
+        # 先尝试匹配已经包含分析结果的完整块
+        image_filename = Path(image_path).name
+        escaped_filename = re.escape(image_filename)
+        escaped_type = re.escape(item_type)
+        
+        # 模式1: 匹配包含分析结果的完整块
+        # [placeholder: type]\n![...](path)\n\n**分析结果:**...\n 直到下一个空行或文件结束
+        complete_block_pattern = (
+            rf'\[placeholder:\s*{escaped_type}\]\s*\n'
+            rf'!\[[^\]]*\]\([^)]*{escaped_filename}\)[^)]*\)\s*\n'
+            rf'(?:\n\*\*图片分析:\*\*.*?(?=\n\n|\n#|\Z))?'
+            rf'(?:\n\n\*\*图片分析:\*\*.*?(?=\n\n|\n#|\Z))?'
+            rf'(?:\n\*\*表格内容:\*\*.*?(?=\n\n|\n#|\Z))?'
+            rf'(?:\n\*\*分析结果:\*\*.*?(?=\n\n|\n#|\Z))?'
+        )
+        
+        # 模式2: 简单匹配placeholder和图片（没有分析结果的情况）
+        simple_pattern = (
+            rf'\[placeholder:\s*{escaped_type}\]\s*\n'
+            rf'!\[[^\]]*\]\([^)]*{escaped_filename}\)[^)]*\)'
+        )
+        
+        # 先尝试完整块模式
+        if re.search(complete_block_pattern, md_content, re.DOTALL):
+            pattern_to_use = complete_block_pattern
+            flags = re.DOTALL
+        elif re.search(simple_pattern, md_content):
+            pattern_to_use = simple_pattern
+            flags = 0
+        else:
+            # 尝试更宽松的匹配（只匹配文件名）
+            loose_pattern = rf'\[placeholder:\s*{escaped_type}\]\s*\n!\[[^\]]*\]\([^)]*{escaped_filename}[^)]*\)'
+            if re.search(loose_pattern, md_content):
+                pattern_to_use = loose_pattern
+                flags = 0
+            else:
+                print(f"⚠️  未找到匹配的placeholder模式")
+                # 调试信息：显示markdown中实际存在的placeholder
+                debug_pattern = r'\[placeholder:\s*(\w+)\]\s*!\[[^\]]*\]\(([^)]+)\)'
+                debug_matches = re.findall(debug_pattern, md_content)
+                if debug_matches:
+                    print(f"📋 markdown中找到的placeholder: {debug_matches}")
+                return None
+        
+        def replace_with_new_result(match):
+            # 获取原始的placeholder和图片引用部分
+            matched_text = match.group(0)
+            
+            # 提取placeholder和图片引用（去掉可能存在的分析结果）
+            placeholder_img_pattern = rf'(\[placeholder:\s*{escaped_type}\]\s*\n!\[[^\]]*\]\([^)]*{escaped_filename}[^)]*\))'
+            placeholder_img_match = re.search(placeholder_img_pattern, matched_text)
+            
+            if placeholder_img_match:
+                placeholder_and_img = placeholder_img_match.group(1)
+            else:
+                # 如果提取失败，使用整个匹配的开头部分
+                lines = matched_text.split('\n')
+                if len(lines) >= 2:
+                    placeholder_and_img = f"{lines[0]}\n{lines[1]}"
+                else:
+                    placeholder_and_img = matched_text
+            
+            # 构建新的内容
+            if item_type == 'image':
+                return f"{placeholder_and_img}\n\n**图片分析:** {result_text}\n"
+            elif item_type in ['formula', 'interline_equation']:
+                return f"{placeholder_and_img}\n\n{result_text}\n"
+            elif item_type == 'table':
+                return f"{placeholder_and_img}\n\n**表格内容:**\n{result_text}\n"
+            else:
+                return f"{placeholder_and_img}\n\n**分析结果:**\n{result_text}\n"
+        
+        # 执行替换
+        updated_content = re.sub(pattern_to_use, replace_with_new_result, md_content, flags=flags)
+        
+        # 检查是否实际进行了替换
+        if updated_content != md_content:
+            return updated_content
+        else:
+            print(f"⚠️  没有进行任何替换，使用的模式: {pattern_to_use}")
+            return None
+
 class PDFPostProcessor:
     """PDF后处理器，用于处理图片、公式、表格的标签替换"""
     
@@ -665,6 +1186,464 @@ class PDFPostProcessor:
         sys.path.insert(0, str(self.script_dir / "EXTRACT_PDF_PROJ"))
         from mineru_wrapper import MinerUWrapper
         self.mineru_wrapper = MinerUWrapper()
+    
+    def process_file_unified(self, file_path: str, process_type: str, specific_ids: str = None, custom_prompt: str = None, force: bool = False) -> bool:
+        """
+        统一的后处理接口 - 不依赖于提取模式
+        
+        Args:
+            file_path: PDF文件路径或markdown文件路径
+            process_type: 处理类型 ('image', 'formula', 'table', 'all')
+            specific_ids: 特定ID列表或关键词
+            custom_prompt: 自定义提示词
+            force: 是否强制重新处理
+            
+        Returns:
+            是否处理成功
+        """
+        file_path = Path(file_path)
+        
+        # 确定PDF文件和markdown文件路径
+        if file_path.suffix == '.pdf':
+            pdf_file_path = file_path
+            md_file = file_path.parent / f"{file_path.stem}.md"
+        elif file_path.suffix == '.md':
+            md_file = file_path
+            # 尝试找到对应的PDF文件
+            pdf_file_path = file_path.parent / f"{file_path.stem}.pdf"
+        else:
+            print(f"❌ 不支持的文件类型: {file_path.suffix}")
+            return False
+            
+        if not md_file.exists():
+            print(f"❌ Markdown文件不存在: {md_file}")
+            return False
+            
+        print(f"🔄 开始统一后处理 {md_file.name}...")
+        
+        try:
+            # 第一步：确保有postprocess状态文件
+            status_file = self._ensure_postprocess_status_file(pdf_file_path, md_file)
+            if not status_file:
+                print("❌ 无法创建或找到状态文件")
+                return False
+            
+            # 第二步：读取状态文件
+            with open(status_file, 'r', encoding='utf-8') as f:
+                status_data = json.load(f)
+            
+            # 第三步：同步markdown和JSON中的placeholder信息
+            print("🔄 同步markdown和JSON中的placeholder信息...")
+            status_data = self._sync_placeholders_with_markdown(md_file, status_data, status_file)
+            
+            # 第四步：筛选要处理的项目
+            items_to_process = self._filter_items_to_process(status_data, process_type, specific_ids, force)
+            
+            if not items_to_process:
+                print("ℹ️  没有需要处理的项目")
+                return True
+            
+            # 第五步：使用统一的混合处理方式
+            success = self._process_items_unified(str(pdf_file_path), str(md_file), status_data, 
+                                                items_to_process, process_type, custom_prompt, force)
+            
+            return success
+            
+        except Exception as e:
+            print(f"❌ 统一后处理异常: {e}")
+            return False
+    
+    def _ensure_postprocess_status_file(self, pdf_file_path: Path, md_file: Path) -> Optional[Path]:
+        """确保存在postprocess状态文件，如果不存在则创建"""
+        status_file = pdf_file_path.parent / f"{pdf_file_path.stem}_postprocess.json"
+        
+        if status_file.exists():
+            return status_file
+        
+        print("📄 状态文件不存在，从markdown重新生成...")
+        
+        # 从markdown文件分析placeholder，创建状态文件
+        try:
+            with open(md_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # 查找所有placeholder和图片引用
+            import re
+            # 修复正则表达式以匹配包含分析结果的完整placeholder块
+            # 这个模式匹配：[placeholder: type]\n![...](path) 后面可能跟着分析结果
+            placeholder_pattern = r'\[placeholder:\s*(\w+)\]\s*\n!\[[^\]]*\]\(([^)]+)\)(?:\s*\n\n\*\*[^*]+\*\*.*?)?'
+            matches = re.findall(placeholder_pattern, content, re.DOTALL)
+            
+            if not matches:
+                print("ℹ️  未找到placeholder，无需后处理")
+                return None
+            
+            # 创建状态数据
+            from datetime import datetime
+            status_data = {
+                "pdf_file": str(pdf_file_path),
+                "created_at": datetime.now().isoformat(),
+                "page_range": None,
+                "total_items": len(matches),
+                "processed_items": 0,
+                "items": []
+            }
+            
+            # 添加项目
+            for item_type, image_path in matches:
+                # 从图片路径提取hash ID
+                image_filename = Path(image_path).name
+                hash_id = Path(image_path).stem
+                
+                item = {
+                    "id": hash_id,
+                    "type": item_type,
+                    "filename": image_filename,
+                    "image_path": image_path,
+                    "processor": "unified_processor",
+                    "processed": False,
+                    "placeholder": f"[placeholder: {item_type}]",
+                    "bbox": [],
+                    "page": 1  # 默认页码
+                }
+                status_data["items"].append(item)
+            
+            # 保存状态文件
+            with open(status_file, 'w', encoding='utf-8') as f:
+                json.dump(status_data, f, ensure_ascii=False, indent=2)
+            
+            print(f"✅ 创建状态文件: {status_file.name}")
+            return status_file
+            
+        except Exception as e:
+            print(f"❌ 创建状态文件失败: {e}")
+            return None
+    
+    def _filter_items_to_process(self, status_data: dict, process_type: str, specific_ids: str, force: bool) -> list:
+        """筛选需要处理的项目"""
+        items_to_process = []
+        
+        for item in status_data.get('items', []):
+            # 跳过已处理的项目（除非强制重新处理）
+            if item.get('processed', False) and not force:
+                continue
+            
+            item_type = item.get('type')
+            item_id = item.get('id')
+            
+            # 根据处理类型筛选
+            if process_type != 'all':
+                if process_type == 'image' and item_type != 'image':
+                    continue
+                elif process_type == 'formula' and item_type not in ['formula', 'interline_equation']:
+                    continue
+                elif process_type == 'table' and item_type != 'table':
+                    continue
+            
+            # 根据specific_ids筛选
+            if specific_ids:
+                if specific_ids in ['all_images', 'all_formulas', 'all_tables', 'all']:
+                    if specific_ids == 'all':
+                        pass  # 处理所有类型
+                    elif specific_ids == 'all_images' and item_type != 'image':
+                        continue
+                    elif specific_ids == 'all_formulas' and item_type not in ['formula', 'interline_equation']:
+                        continue
+                    elif specific_ids == 'all_tables' and item_type != 'table':
+                        continue
+                else:
+                    # 具体的hash ID列表
+                    target_ids = [id.strip() for id in specific_ids.split(',')]
+                    if item_id not in target_ids:
+                        continue
+            
+            items_to_process.append(item_id)
+        
+        return items_to_process
+    
+    def _process_items_unified(self, pdf_file: str, md_file: str, status_data: dict, 
+                             items_to_process: list, process_type: str, custom_prompt: str = None, force: bool = False) -> bool:
+        """统一的项目处理方法"""
+        try:
+            # 读取markdown文件
+            with open(md_file, 'r', encoding='utf-8') as f:
+                md_content = f.read()
+            
+            # 处理每个项目
+            updated = False
+            for item_id in items_to_process:
+                # 找到对应的项目
+                item = None
+                for status_item in status_data.get('items', []):
+                    if status_item.get('id') == item_id:
+                        item = status_item
+                        break
+                
+                if not item:
+                    print(f"⚠️  未找到项目: {item_id}")
+                    continue
+                
+                item_type = item.get('type')
+                image_path = item.get('image_path', '')
+                
+                if not image_path:
+                    print(f"⚠️  图片路径为空: {item_id}")
+                    continue
+                
+                # 查找实际的图片文件路径
+                actual_image_path = self._find_actual_image_path(pdf_file, image_path)
+                if not actual_image_path:
+                    print(f"⚠️  图片文件不存在: {image_path}")
+                    continue
+                
+                print(f"🔄 处理 {item_type} 项目: {item_id}")
+                
+                # 根据类型选择处理方式
+                result_text = ""
+                if item_type == 'image':
+                    result_text = self._process_image_with_api(actual_image_path, custom_prompt)
+                elif item_type in ['formula', 'interline_equation']:
+                    result_text = self._process_with_unimernet(actual_image_path, "formula", force)
+                elif item_type == 'table':
+                    result_text = self._process_with_unimernet(actual_image_path, "table", force)
+                
+                if result_text:
+                    # 更新markdown内容
+                    success = self._update_markdown_with_result(md_content, item, result_text)
+                    if success:
+                        md_content = success
+                        item['processed'] = True
+                        updated = True
+                        print(f"✅ 完成 {item_type} 处理: {item_id}")
+                    else:
+                        print(f"⚠️  更新markdown失败: {item_id}")
+                else:
+                    print(f"❌ 处理失败: {item_id}")
+            
+            if updated:
+                # 保存更新的markdown文件
+                with open(md_file, 'w', encoding='utf-8') as f:
+                    f.write(md_content)
+                
+                # 更新状态文件
+                status_file = Path(pdf_file).parent / f"{Path(pdf_file).stem}_postprocess.json"
+                with open(status_file, 'w', encoding='utf-8') as f:
+                    json.dump(status_data, f, indent=2, ensure_ascii=False)
+                
+                print(f"📝 已更新文件: {Path(md_file).name}")
+                return True
+            else:
+                print("ℹ️  没有内容需要更新")
+                return True
+                
+        except Exception as e:
+            print(f"❌ 统一处理异常: {e}")
+            return False
+    
+    def _update_markdown_with_result(self, md_content: str, item: dict, result_text: str) -> Optional[str]:
+        """更新markdown内容，保留placeholder，清除已有分析结果并替换为新结果"""
+        import re
+        
+        item_type = item.get('type')
+        image_path = item.get('image_path', '')
+        
+        # 构建更复杂的模式来匹配整个块（包括可能存在的分析结果）
+        # 先尝试匹配已经包含分析结果的完整块
+        image_filename = Path(image_path).name
+        escaped_filename = re.escape(image_filename)
+        escaped_type = re.escape(item_type)
+        
+        # 模式1: 匹配包含分析结果的完整块
+        # [placeholder: type]\n![...](path)\n\n**分析结果:**...\n 直到下一个空行或文件结束
+        complete_block_pattern = (
+            rf'\[placeholder:\s*{escaped_type}\]\s*\n'
+            rf'!\[[^\]]*\]\([^)]*{escaped_filename}\)[^)]*\)\s*\n'
+            rf'(?:\n\*\*图片分析:\*\*.*?(?=\n\n|\n#|\Z))?'
+            rf'(?:\n\n\*\*图片分析:\*\*.*?(?=\n\n|\n#|\Z))?'
+            rf'(?:\n\*\*表格内容:\*\*.*?(?=\n\n|\n#|\Z))?'
+            rf'(?:\n\*\*分析结果:\*\*.*?(?=\n\n|\n#|\Z))?'
+        )
+        
+        # 模式2: 简单匹配placeholder和图片（没有分析结果的情况）
+        simple_pattern = (
+            rf'\[placeholder:\s*{escaped_type}\]\s*\n'
+            rf'!\[[^\]]*\]\([^)]*{escaped_filename}\)[^)]*\)'
+        )
+        
+        # 先尝试完整块模式
+        if re.search(complete_block_pattern, md_content, re.DOTALL):
+            pattern_to_use = complete_block_pattern
+            flags = re.DOTALL
+        elif re.search(simple_pattern, md_content):
+            pattern_to_use = simple_pattern
+            flags = 0
+        else:
+            # 尝试更宽松的匹配（只匹配文件名）
+            loose_pattern = rf'\[placeholder:\s*{escaped_type}\]\s*\n!\[[^\]]*\]\([^)]*{escaped_filename}[^)]*\)'
+            if re.search(loose_pattern, md_content):
+                pattern_to_use = loose_pattern
+                flags = 0
+            else:
+                print(f"⚠️  未找到匹配的placeholder模式")
+                # 调试信息：显示markdown中实际存在的placeholder
+                debug_pattern = r'\[placeholder:\s*(\w+)\]\s*!\[[^\]]*\]\(([^)]+)\)'
+                debug_matches = re.findall(debug_pattern, md_content)
+                if debug_matches:
+                    print(f"📋 markdown中找到的placeholder: {debug_matches}")
+                return None
+        
+        def replace_with_new_result(match):
+            # 获取原始的placeholder和图片引用部分
+            matched_text = match.group(0)
+            
+            # 提取placeholder和图片引用（去掉可能存在的分析结果）
+            placeholder_img_pattern = rf'(\[placeholder:\s*{escaped_type}\]\s*\n!\[[^\]]*\]\([^)]*{escaped_filename}[^)]*\))'
+            placeholder_img_match = re.search(placeholder_img_pattern, matched_text)
+            
+            if placeholder_img_match:
+                placeholder_and_img = placeholder_img_match.group(1)
+            else:
+                # 如果提取失败，使用整个匹配的开头部分
+                lines = matched_text.split('\n')
+                if len(lines) >= 2:
+                    placeholder_and_img = f"{lines[0]}\n{lines[1]}"
+                else:
+                    placeholder_and_img = matched_text
+            
+            # 构建新的内容
+            if item_type == 'image':
+                return f"{placeholder_and_img}\n\n**图片分析:** {result_text}\n"
+            elif item_type in ['formula', 'interline_equation']:
+                return f"{placeholder_and_img}\n\n{result_text}\n"
+            elif item_type == 'table':
+                return f"{placeholder_and_img}\n\n**表格内容:**\n{result_text}\n"
+            else:
+                return f"{placeholder_and_img}\n\n**分析结果:**\n{result_text}\n"
+        
+        # 执行替换
+        updated_content = re.sub(pattern_to_use, replace_with_new_result, md_content, flags=flags)
+        
+        # 检查是否实际进行了替换
+        if updated_content != md_content:
+            return updated_content
+        else:
+            print(f"⚠️  没有进行任何替换，使用的模式: {pattern_to_use}")
+            return None
+    
+    def _find_actual_image_path(self, pdf_file: str, image_filename: str) -> Optional[str]:
+        """查找图片文件的实际路径"""
+        pdf_path = Path(pdf_file)
+        pdf_directory = pdf_path.parent
+        
+        # 检查可能的图片位置
+        possible_locations = [
+            Path(image_filename),  # 绝对路径
+            pdf_directory / image_filename,  # 相对于PDF的路径
+            pdf_directory / "images" / Path(image_filename).name,  # PDF目录下的images文件夹
+            get_pdf_extractor_data_dir() / "images" / Path(image_filename).name,  # 统一数据目录
+        ]
+        
+        for location in possible_locations:
+            if location.exists():
+                return str(location)
+        
+        return None
+    
+    def _process_image_with_api(self, image_path: str, custom_prompt: str = None) -> str:
+        """使用IMG2TEXT API处理图片"""
+        try:
+            # 调用IMG2TEXT工具
+            img2text_path = self.script_dir / "IMG2TEXT"
+            if not img2text_path.exists():
+                return "IMG2TEXT工具不可用"
+            
+            cmd = [str(img2text_path), image_path, "--json"]
+            if custom_prompt:
+                cmd.extend(["--prompt", custom_prompt])
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            
+            if result.returncode == 0:
+                try:
+                    # 尝试解析JSON输出
+                    output_data = json.loads(result.stdout)
+                    if output_data.get('success'):
+                        description = output_data.get('result', '图片分析完成')
+                        return description
+                    else:
+                        error_msg = output_data.get('error', 'Unknown error')
+                        return f"图片分析失败: {error_msg}"
+                except json.JSONDecodeError:
+                    # 如果不是JSON格式，直接使用输出
+                    return result.stdout.strip() if result.stdout.strip() else "图片分析完成"
+            else:
+                return f"IMG2TEXT执行失败: {result.stderr}"
+                
+        except Exception as e:
+            return f"图片处理异常: {e}"
+    
+    def _sync_placeholders_with_markdown(self, md_file: Path, status_data: dict, status_file: Path) -> dict:
+        """同步markdown和JSON文件中的placeholder信息"""
+        try:
+            # 读取markdown内容
+            with open(md_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # 查找所有placeholder和图片引用
+            import re
+            # 修复正则表达式以匹配包含分析结果的完整placeholder块
+            # 这个模式匹配：[placeholder: type]\n![...](path) 后面可能跟着分析结果
+            placeholder_pattern = r'\[placeholder:\s*(\w+)\]\s*\n!\[[^\]]*\]\(([^)]+)\)(?:\s*\n\n\*\*[^*]+\*\*.*?)?'
+            matches = re.findall(placeholder_pattern, content, re.DOTALL)
+            
+            # 更新状态数据中的项目
+            existing_items = {item.get('id'): item for item in status_data.get('items', [])}
+            updated_items = []
+            
+            for item_type, image_path in matches:
+                # 从图片路径提取hash ID
+                image_filename = Path(image_path).name
+                hash_id = Path(image_path).stem
+                
+                # 如果项目已存在，保持其processed状态
+                if hash_id in existing_items:
+                    existing_item = existing_items[hash_id]
+                    existing_item.update({
+                        "type": item_type,
+                        "filename": image_filename,
+                        "image_path": image_path,
+                        "placeholder": f"[placeholder: {item_type}]"
+                    })
+                    updated_items.append(existing_item)
+                else:
+                    # 新项目
+                    item = {
+                        "id": hash_id,
+                        "type": item_type,
+                        "filename": image_filename,
+                        "image_path": image_path,
+                        "processor": "unified_processor",
+                        "processed": False,
+                        "placeholder": f"[placeholder: {item_type}]",
+                        "bbox": [],
+                        "page": 1
+                    }
+                    updated_items.append(item)
+            
+            # 更新状态数据
+            status_data["items"] = updated_items
+            status_data["total_items"] = len(updated_items)
+            status_data["processed_items"] = sum(1 for item in updated_items if item.get('processed', False))
+            
+            # 保存更新的状态文件
+            with open(status_file, 'w', encoding='utf-8') as f:
+                json.dump(status_data, f, ensure_ascii=False, indent=2)
+            
+            return status_data
+            
+        except Exception as e:
+            print(f"❌ 同步placeholder信息失败: {e}")
+            return status_data
     
     def _process_with_unimernet(self, image_path: str, content_type: str = "auto", force: bool = False) -> str:
         """使用UNIMERNET工具处理公式或表格图片"""
@@ -803,7 +1782,7 @@ class PDFPostProcessor:
                                   ["失败", "错误信息", "处理异常", "执行失败", "解析失败"])
                     
                     # Use absolute path for images
-                    abs_image_path = Path(__file__).parent / "EXTRACT_PDF_PROJ" / "pdf_extractor_data" / "images" / image_filename
+                    abs_image_path = get_pdf_extractor_data_dir() / "images" / image_filename
                     
                     if is_error:
                         # For errors, keep placeholder and add error info below image
@@ -865,36 +1844,6 @@ class PDFPostProcessor:
         except Exception as e:
             print(f"❌ 混合处理异常: {e}")
             return False
-    
-    def _find_actual_image_path(self, pdf_file: str, image_filename: str) -> Optional[str]:
-        """查找图片文件的实际路径"""
-        pdf_path = Path(pdf_file)
-        pdf_directory = pdf_path.parent
-        
-        # 可能的图片位置
-        possible_locations = [
-            pdf_directory / image_filename,
-            pdf_directory / "images" / image_filename,
-            Path(__file__).parent / "EXTRACT_PDF_PROJ" / "pdf_extractor_data" / "images" / image_filename
-        ]
-        
-        # 搜索 *_extract_data 目录
-        for item in pdf_directory.iterdir():
-            if item.is_dir() and item.name.endswith("_extract_data"):
-                extract_data_images = item / "images" / image_filename
-                possible_locations.append(extract_data_images)
-        
-        for location in possible_locations:
-            if location.exists():
-                print(f"   📁 找到图片: {location}")
-                return str(location)
-        
-        print(f"   ❌ 图片未找到: {image_filename}")
-        print(f"   🔍 搜索路径:")
-        for loc in possible_locations:
-            print(f"      - {loc} ({'存在' if loc.exists() else '不存在'})")
-        
-        return None
     
     def _process_image_with_api(self, image_path: str, custom_prompt: str = None) -> str:
         """使用EXTRACT_IMG工具处理图像"""
@@ -1010,7 +1959,7 @@ class PDFPostProcessor:
         
         # 搜索当前目录及其子目录中的markdown文件
         md_files = []
-        search_dirs = [Path.cwd(), self.script_dir / "EXTRACT_PDF_PROJ" / "pdf_extractor_data"]
+        search_dirs = [Path.cwd(), get_pdf_extractor_data_dir()]
         
         for search_dir in search_dirs:
             if search_dir.exists():
@@ -1080,11 +2029,14 @@ class PDFPostProcessor:
         
     def process_file(self, file_path: str, process_type: str, specific_ids: str = None, custom_prompt: str = None, force: bool = False) -> bool:
         """
-        处理PDF文件的后处理 - 使用高级selective processing
+        处理PDF文件的后处理 - 使用统一接口（不依赖于提取模式）
         
         Args:
             file_path: PDF文件路径或markdown文件路径，或者"interactive"进入交互模式
             process_type: 处理类型 ('image', 'formula', 'table', 'all')
+            specific_ids: 特定ID列表或关键词
+            custom_prompt: 自定义提示词
+            force: 是否强制重新处理
             
         Returns:
             是否处理成功
@@ -1095,148 +2047,8 @@ class PDFPostProcessor:
             if not file_path:
                 return False
         
-        file_path = Path(file_path)
-        
-        # 确定PDF文件和markdown文件路径
-        if file_path.suffix == '.pdf':
-            pdf_file_path = file_path
-            md_file = file_path.parent / f"{file_path.stem}.md"
-        elif file_path.suffix == '.md':
-            md_file = file_path
-            # 尝试找到对应的PDF文件，优先使用--original-pdf-dir指定的目录
-            global original_pdf_dir
-            if original_pdf_dir:
-                pdf_file_path = Path(original_pdf_dir) / f"{file_path.stem}.pdf"
-                if not pdf_file_path.exists():
-                    print(f"⚠️  指定目录中未找到PDF文件: {pdf_file_path}")
-                    print("🔄 使用传统处理方式...")
-                    return self._process_file_traditional(md_file, process_type)
-            else:
-                pdf_file_path = file_path.parent / f"{file_path.stem}.pdf"
-                if not pdf_file_path.exists():
-                    print(f"⚠️  未找到对应的PDF文件: {pdf_file_path}")
-                    print("🔄 使用传统处理方式...")
-                    return self._process_file_traditional(md_file, process_type)
-        else:
-            print(f"❌ 不支持的文件类型: {file_path.suffix}")
-            return False
-            
-        if not md_file.exists():
-            print(f"❌ Markdown文件不存在: {md_file}")
-            return False
-        
-        if not pdf_file_path.exists():
-            print(f"❌ PDF文件不存在: {pdf_file_path}")
-            return False
-            
-        print(f"🔄 开始高级后处理 {md_file.name}...")
-        
-        try:
-            # 使用MinerU wrapper的selective processing功能
-            # 首先检查是否有postprocess JSON文件
-            status_file = pdf_file_path.parent / f"{pdf_file_path.stem}_postprocess.json"
-            
-            if status_file.exists():
-                print(f"📄 找到状态文件: {status_file.name}")
-                
-                # 读取状态文件，获取所有未处理的项目
-                with open(status_file, 'r', encoding='utf-8') as f:
-                    status_data = json.load(f)
-                
-                # 同步markdown和JSON文件中的placeholder信息
-                print("🔄 同步markdown和JSON中的placeholder信息...")
-                status_data = self._sync_placeholders_with_markdown(md_file, status_data, status_file)
-                
-                # 直接使用MinerU wrapper进行selective processing
-                # 它会处理ID生成和筛选逻辑
-                if specific_ids:
-                    # 处理specific_ids参数
-                    if specific_ids in ['all_images', 'all_formulas', 'all_tables', 'all']:
-                        # 将特殊关键词转换为具体的ID列表
-                        items_to_process = []
-                        for item in status_data.get('items', []):
-                            if item.get('processed', False) and not force:
-                                continue  # 跳过已处理的项目
-                            
-                            item_type = item.get('type')
-                            # Generate ID from image_path if no id field
-                            item_id = item.get('id')
-                            if not item_id:
-                                image_path = item.get('image_path', '')
-                                if image_path:
-                                    item_id = Path(image_path).stem
-                            
-                            if item_id:
-                                if specific_ids == 'all':
-                                    items_to_process.append(item_id)
-                                elif specific_ids == 'all_images' and item_type == 'image':
-                                    items_to_process.append(item_id)
-                                elif specific_ids == 'all_formulas' and item_type in ['formula', 'interline_equation']:
-                                    items_to_process.append(item_id)
-                                elif specific_ids == 'all_tables' and item_type == 'table':
-                                    items_to_process.append(item_id)
-                    else:
-                        # 处理具体的hash ID列表
-                        items_to_process = [id.strip() for id in specific_ids.split(',')]
-                else:
-                    # 根据process_type筛选需要处理的项目
-                    items_to_process = []
-                    for item in status_data.get('items', []):
-                        if item.get('processed', False) and not force:
-                            continue  # 跳过已处理的项目
-                        
-                        item_type = item.get('type')
-                        # Generate ID from image_path if no id field
-                        item_id = item.get('id')
-                        if not item_id:
-                            image_path = item.get('image_path', '')
-                            if image_path:
-                                item_id = Path(image_path).stem
-                        
-                        if item_id:
-                            if process_type == 'all':
-                                items_to_process.append(item_id)
-                            elif process_type == 'image' and item_type == 'image':
-                                items_to_process.append(item_id)
-                            elif process_type == 'formula' and item_type in ['formula', 'interline_equation']:
-                                items_to_process.append(item_id)
-                            elif process_type == 'table' and item_type == 'table':
-                                items_to_process.append(item_id)
-                
-                if items_to_process:
-                    print(f"🎯 找到 {len(items_to_process)} 个需要处理的项目")
-                    
-                    # 使用混合处理：图像用传统API，公式表格用UNIMERNET
-                    success = self._process_items_hybrid(
-                        str(pdf_file_path), str(md_file), status_data, items_to_process, process_type, custom_prompt, force
-                    )
-                    
-                    if success:
-                        print(f"✅ 混合后处理完成")
-                        return True
-                    else:
-                        print(f"❌ 混合后处理失败")
-                        return False
-                else:
-                    print(f"ℹ️  没有找到需要处理的 {process_type} 类型项目")
-                    return True
-            else:
-                print(f"⚠️  未找到状态文件: {status_file.name}")
-                print("🔄 尝试重新生成状态文件...")
-                
-                # 尝试重新生成状态文件
-                regenerated = self.mineru_wrapper._regenerate_status_from_markdown(str(pdf_file_path), str(md_file))
-                if regenerated:
-                    print("✅ 状态文件重新生成成功，请重新运行后处理命令")
-                    return True
-                else:
-                    print("🔄 使用传统处理方式...")
-                    return self._process_file_traditional(md_file, process_type)
-                    
-        except Exception as e:
-            print(f"❌ 高级后处理出错: {e}")
-            print("🔄 回退到传统处理方式...")
-            return self._process_file_traditional(md_file, process_type)
+        # 直接调用统一接口
+        return self.process_file_unified(file_path, process_type, specific_ids, custom_prompt, force)
     
     def _process_file_traditional(self, md_file: Path, process_type: str) -> bool:
         """传统的文件处理方式（备用方案）"""
@@ -1298,9 +2110,9 @@ class PDFPostProcessor:
                     success, description = self._analyze_image_with_img2text(str(full_image_path))
                     
                     if success:
-                        # 替换placeholder和图片引用
+                        # 保留placeholder，在下方添加分析结果
                         old_pattern = f"[placeholder: image]\n![{alt_text}]({image_path})"
-                        new_content = f"![{alt_text}]({image_path})\n\n**图片分析:** {description}\n"
+                        new_content = f"[placeholder: image]\n![{alt_text}]({image_path})\n\n**图片分析:** {description}\n"
                         
                         content = content.replace(old_pattern, new_content, 1)
                         processed_count += 1
@@ -1663,11 +2475,12 @@ class PDFPostProcessor:
         
         placeholders = {}
         
-        # 匹配 [placeholder: type] 后跟 ![](path/to/image_id.jpg) 的模式
-        pattern = r'\[placeholder:\s*(\w+)\]\s*\n!\[[^\]]*\]\([^)]*([a-f0-9]{64})\.jpg\)'
+        # 修复正则表达式以正确匹配完整的哈希文件名
+        # 匹配 [placeholder: type] 后跟 ![](path/to/hash.ext) 的模式
+        pattern = r'\[placeholder:\s*(\w+)\]\s*\n!\[[^\]]*\]\([^)]*\/([a-f0-9]{16,64})\.(jpg|jpeg|png|gif|webp)\)'
         
         matches = re.findall(pattern, md_content)
-        for placeholder_type, img_id in matches:
+        for placeholder_type, img_id, ext in matches:
             placeholders[img_id] = placeholder_type
         
         return placeholders

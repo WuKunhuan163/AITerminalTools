@@ -22,14 +22,14 @@ try:
     if str(parent_dir) not in sys.path:
         sys.path.insert(0, str(parent_dir))
     
-    # Import centralized cache system from EXTRACT_IMG_PROJ
+    # Import centralized cache system from EXTRACT_IMG_DATA
     try:
-        from EXTRACT_IMG_PROJ.cache_system import ImageCacheSystem
+        from EXTRACT_IMG_DATA.cache_system import ImageCacheSystem
     except ImportError:
         # Fallback import path
         import sys
         from pathlib import Path
-        extract_img_proj = parent_dir / "EXTRACT_IMG_PROJ"
+        extract_img_proj = parent_dir / "EXTRACT_IMG_DATA"
         if str(extract_img_proj) not in sys.path:
             sys.path.insert(0, str(extract_img_proj))
         from cache_system import ImageCacheSystem
@@ -51,7 +51,12 @@ except ImportError:
 
 # --- Configuration using Absolute Paths ---
 SCRIPT_DIR = Path(__file__).parent.resolve()
-DATA_DIR = SCRIPT_DIR / "pdf_extractor_data"
+# 使用UNIMERNET_DATA目录（数据与代码分离）
+DATA_DIR = SCRIPT_DIR.parent / "UNIMERNET_DATA" / "pdf_extractor_data"
+if not DATA_DIR.exists():
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    (DATA_DIR / "images").mkdir(exist_ok=True)
+    (DATA_DIR / "markdown").mkdir(exist_ok=True)
 MARKDOWN_DIR = DATA_DIR / "markdown"
 IMAGE_DIR = DATA_DIR / "images"
 
@@ -176,7 +181,7 @@ if __name__ == "__main__":
     parser.add_argument('--image-api', dest='call_api', action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument('--image-api-force', dest='call_api_force', action='store_true')
     parser.add_argument('--debug', action='store_true', help="Enable detailed debug logging for text merging.")
-    parser.add_argument('--clean', action='store_true', help="Clean pdf_extractor_data folder before processing.")
+    parser.add_argument('--clean', action='store_true', help="Clean UNIMERNET_DATA folder before processing.")
     args = parser.parse_args()
 
     pdf_path = args.path

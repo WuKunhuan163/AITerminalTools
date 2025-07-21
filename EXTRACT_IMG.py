@@ -12,10 +12,9 @@ import json
 import subprocess
 from pathlib import Path
 from datetime import datetime
-from typing import Optional, Dict, Any, List, Tuple
+from typing import Optional, Dict, Any
 import logging
 import tempfile
-import shutil
 
 # 加载环境变量
 from dotenv import load_dotenv
@@ -47,7 +46,7 @@ if str(current_dir) not in sys.path:
 
 # Import centralized cache system
 try:
-    from EXTRACT_IMG_PROJ.cache_system import ImageCacheSystem
+    from EXTRACT_IMG_DATA.cache_system import ImageCacheSystem
     CACHE_AVAILABLE = True
 except ImportError:
     logger.warning("Cache system not available")
@@ -65,7 +64,7 @@ class UnifiedImageProcessor:
         # Initialize cache system
         if CACHE_AVAILABLE:
             try:
-                cache_dir = self.script_dir / "EXTRACT_IMG_PROJ"
+                cache_dir = self.script_dir / "EXTRACT_IMG_DATA"
                 self.cache_system = ImageCacheSystem(cache_dir)
                 logger.info("Cache system initialized successfully")
             except Exception as e:
@@ -229,13 +228,14 @@ class UnifiedImageProcessor:
         except Exception as e:
             logger.warning(f"Failed to store result in cache: {e}")
     
-    def process_with_img2text(self, image_path: str, mode: str = "academic") -> Dict[str, Any]:
+    def process_with_img2text(self, image_path: str, mode: str = "academic", custom_prompt: str = None) -> Dict[str, Any]:
         """
         Process image using IMG2TEXT tool.
         
         Args:
             image_path: Path to the image file
             mode: Processing mode ("academic", "general", "code_snippet")
+            custom_prompt: Custom prompt for image analysis
             
         Returns:
             Processing result dictionary
@@ -251,6 +251,8 @@ class UnifiedImageProcessor:
             if self.run_available:
                 logger.info(f"🔄 Calling RUN --show IMG2TEXT for {Path(image_path).name}")
                 cmd = [str(self.run_tool), "--show", "IMG2TEXT", image_path, "--mode", mode]
+                if custom_prompt:
+                    cmd.extend(["--prompt", custom_prompt])
                 result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
                 
                 if result.returncode == 0:
@@ -302,6 +304,8 @@ class UnifiedImageProcessor:
                 if hasattr(self, 'command_identifier') and self.command_identifier:
                     cmd.append(self.command_identifier)
                 cmd.extend([image_path, "--mode", mode])
+                if custom_prompt:
+                    cmd.extend(["--prompt", custom_prompt])
                 result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
                 
                 if result.returncode == 0:
@@ -508,7 +512,7 @@ class UnifiedImageProcessor:
             }
     
     def process_image(self, image_path: str, content_type: str = "auto", mode: str = "academic", 
-                     use_cache: bool = True, force: bool = False) -> Dict[str, Any]:
+                     use_cache: bool = True, force: bool = False, custom_prompt: str = None) -> Dict[str, Any]:
         """
         Process image with appropriate tool based on content type.
         
@@ -518,6 +522,7 @@ class UnifiedImageProcessor:
             mode: Processing mode for IMG2TEXT
             use_cache: Whether to use cache
             force: Force reprocessing even if cached
+            custom_prompt: Custom prompt for image analysis (only for image type)
             
         Returns:
             Processing result dictionary
@@ -562,7 +567,7 @@ class UnifiedImageProcessor:
             result = self.process_with_unimernet(padded_image_path, detected_type)
         else:  # detected_type == "image"
             logger.info(f"🔄 Processing image with IMG2TEXT: {Path(image_path).name}")
-            result = self.process_with_img2text(image_path, mode)
+            result = self.process_with_img2text(image_path, mode, custom_prompt)
         
         process_elapsed = (datetime.now() - process_start).total_seconds()
         total_elapsed = (datetime.now() - start_time).total_seconds()
@@ -667,6 +672,7 @@ def main():
                        default="auto", help="Image content type hint")
     parser.add_argument("--mode", choices=["academic", "general", "code_snippet"], 
                        default="academic", help="Processing mode for general images")
+    parser.add_argument("--prompt", help="Custom prompt for image analysis (only for image type)")
     parser.add_argument("--force", action="store_true", help="Force reprocessing (ignore cache)")
     parser.add_argument("--batch", action="store_true", help="Process multiple images")
     parser.add_argument("--stats", action="store_true", help="Show cache statistics")
@@ -773,7 +779,8 @@ def main():
         content_type=args.type,
         mode=args.mode,
         use_cache=True,  # Always enable cache for storage, force only affects reading
-        force=args.force
+        force=args.force,
+        custom_prompt=args.prompt
     )
     
     # Output result

@@ -1,9 +1,0 @@
-{
-  "success": false,
-  "message": "All API keys failed",
-  "result": null,
-  "image_path": "/Users/wukunhuan/.local/bin/_UNITTEST/_DATA/images/c7c84f7bcf90c20b1784c35c628d3cb12bd4de7662735890a6b6b21bc3def7b9.jpg",
-  "api": "google",
-  "reason": "所有配置的API密钥都无法成功获取回复。详细信息:\n- 使用 FREE 密钥时失败: 400 User location is not supported for the API use.\n- 使用 PAID 密钥时失败: 400 User location is not supported for the API use.",
-  "timestamp": "2025-07-21T04:23:50.766288"
-}

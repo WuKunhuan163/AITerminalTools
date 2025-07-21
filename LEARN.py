@@ -78,8 +78,8 @@ def interactive_select(prompt, options, default_index=0):
             return None
 
 
-def check_and_confirm_overwrite(output_dir):
-    """Check if tutorial.md or question.md exists and confirm overwrite."""
+def check_and_confirm_overwrite(output_dir, not_default=False, no_override_material=False):
+    """Check if tutorial.md or question.md exists and handle overwrite based on options."""
     tutorial_path = Path(output_dir) / "tutorial.md"
     question_path = Path(output_dir) / "question.md"
     
@@ -90,24 +90,63 @@ def check_and_confirm_overwrite(output_dir):
         existing_files.append("question.md")
     
     if not existing_files:
-        return True  # No files to overwrite
+        return True, output_dir  # No files to overwrite, use original directory
     
+    # 如果指定了--no-override-material，自动重命名
+    if no_override_material:
+        return handle_auto_rename(output_dir)
+    
+    # 默认模式（--not-default未指明）：直接覆盖
+    if not not_default:
+        print(f"📝 默认模式：将覆盖 {output_dir} 中的现有文件: {', '.join(existing_files)}")
+        return True, output_dir
+    
+    # 交互模式：询问用户
     print(f"\n⚠️  以下文件已存在于 {output_dir}:")
     for file in existing_files:
         print(f"  - {file}")
     
     while True:
         try:
-            choice = input("\n是否覆盖这些文件？ (y/N): ").strip().lower()
-            if choice in ['y', 'yes']:
-                return True
-            elif choice in ['n', 'no', '']:
-                return False
+            choice = input("\n选择操作: (o)覆盖 / (r)重命名 / (c)取消 [o/r/c]: ").strip().lower()
+            if choice in ['o', 'overwrite', '覆盖']:
+                return True, output_dir
+            elif choice in ['r', 'rename', '重命名']:
+                return handle_auto_rename(output_dir)
+            elif choice in ['c', 'cancel', '取消', '']:
+                return False, None
             else:
-                print("请输入 y 或 n")
+                print("请输入 o (覆盖) / r (重命名) / c (取消)")
         except KeyboardInterrupt:
             print("\n操作已取消")
-            return False
+            return False, None
+
+
+def handle_auto_rename(output_dir):
+    """Handle automatic renaming of output directory to avoid overwriting files."""
+    output_path = Path(output_dir)
+    base_name = output_path.name
+    parent_dir = output_path.parent
+    
+    counter = 1
+    while True:
+        new_name = f"{base_name}_{counter}"
+        new_path = parent_dir / new_name
+        
+        # 检查新目录中是否也有冲突文件
+        tutorial_path = new_path / "tutorial.md"
+        question_path = new_path / "question.md"
+        
+        if not new_path.exists() or (not tutorial_path.exists() and not question_path.exists()):
+            # 创建新目录
+            new_path.mkdir(parents=True, exist_ok=True)
+            print(f"📁 自动重命名输出目录为: {new_path}")
+            return True, str(new_path)
+        
+        counter += 1
+        if counter > 100:  # 防止无限循环
+            print("❌ 无法找到合适的目录名，请手动清理输出目录")
+            return False, None
 
 
 def get_output_directory():
@@ -220,10 +259,20 @@ def run_interactive_mode():
         while True:
             topic = input("请输入学习主题 (例如: Python基础, 机器学习, 数据结构): ").strip()
             if topic:
-                # 解析文件引用
-                topic = parse_file_references(topic)
-                params["topic"] = topic
-                break
+                try:
+                    # 解析文件引用
+                    expanded_topic, has_file_ref = parse_file_references(topic)
+                    params["topic"] = expanded_topic
+                    params["has_file_reference"] = has_file_ref
+                    # 如果检测到文件引用，自动启用context模式
+                    if has_file_ref:
+                        params['context_mode'] = True
+                        print("📄 检测到@文件引用，自动启用--context模式")
+                    break
+                except (FileNotFoundError, ValueError) as e:
+                    print(f"❌ 错误: {e}")
+                    print("请重新输入正确的主题或文件路径")
+                    continue
             print("请输入有效的主题")
         
     else:  # Paper-based
@@ -333,10 +382,20 @@ def run_interactive_mode():
     
     params["output_dir"] = output_dir
     
-    # Check for existing files
-    if not check_and_confirm_overwrite(output_dir):
+    # Check for existing files and handle overwrite
+    can_continue, final_output_dir = check_and_confirm_overwrite(
+        output_dir, 
+        params.get('not_default', False),
+        params.get('no_override_material', False)
+    )
+    
+    if not can_continue:
         print("操作已取消")
         return None
+    
+    # Update output directory if it was renamed
+    if final_output_dir != output_dir:
+        params["output_dir"] = final_output_dir
     
     return params
 
@@ -355,7 +414,8 @@ def parse_direct_command(args):
     
     # Paper options
     parser.add_argument('-p', '--paper', help='论文文件路径')
-    parser.add_argument('--pdf', help='直接指定PDF文件路径（跳过搜索和下载）')
+    parser.add_argument('--file', help='直接处理文件路径 (支持PDF、MD、TXT)')
+    parser.add_argument('--pdf', help='直接指定PDF文件路径 (已弃用，请使用--file)')
     parser.add_argument('-u', '--url', help='论文URL')
     parser.add_argument('-d', '--description', help='论文描述/搜索关键词')
     parser.add_argument('--negative', help='负面提示词：指定不想要的内容或论文类型')
@@ -366,11 +426,20 @@ def parse_direct_command(args):
     parser.add_argument('--model', help='指定OpenRouter模型')
     parser.add_argument('--max-tokens', type=int, help='最大token数')
     parser.add_argument('--not-default', action='store_true', help='非默认模式，需要用户确认')
+    parser.add_argument('--no-override-material', action='store_true', help='不覆盖已存在的文件，自动重命名')
     parser.add_argument('--brainstorm-only', action='store_true', help='不自动创建文件，仅生成内容')
+    parser.add_argument('--context', action='store_true', help='将description视作直接context进入brainstorming，跳过论文搜索')
     
     try:
         parsed_args = parser.parse_args(args)
     except SystemExit:
+        return None
+    
+    # 检查互斥参数
+    if parsed_args.context and parsed_args.brainstorm_only:
+        print("❌ 错误: --context 和 --brainstorm-only 选项互斥，不能同时使用")
+        print("   --context: 跳过brainstorming，直接生成教程")
+        print("   --brainstorm-only: 只进行brainstorming，不生成教程")
         return None
     
     # Check if output is required for actual operation (not for --help)
@@ -384,7 +453,9 @@ def parse_direct_command(args):
         'style': parsed_args.style,
         'output_dir': parsed_args.output_dir,
         'not_default': parsed_args.not_default,
-        'brainstorm_only': parsed_args.brainstorm_only
+        'no_override_material': parsed_args.no_override_material,
+        'brainstorm_only': parsed_args.brainstorm_only,
+        'context_mode': parsed_args.context
     }
     
     if parsed_args.model:
@@ -411,10 +482,12 @@ def parse_direct_command(args):
             params['input_type'] = 1  # PDF file
             params['paper_path'] = paper_path
         params['read_images'] = parsed_args.read_images
-    elif parsed_args.pdf:
+    elif parsed_args.file or parsed_args.pdf:
+        # --file选项或向后兼容的--pdf选项
+        file_path = parsed_args.file or parsed_args.pdf
         params['type'] = 'paper'
-        params['input_type'] = 4  # Direct PDF file
-        params['pdf_path'] = parsed_args.pdf
+        params['input_type'] = 4  # Direct file
+        params['file_path'] = file_path
         params['read_images'] = parsed_args.read_images
     elif parsed_args.url:
         params['type'] = 'paper'
@@ -424,15 +497,51 @@ def parse_direct_command(args):
     elif parsed_args.description:
         params['type'] = 'paper'
         params['input_type'] = 3  # Description/Search
-        params['paper_description'] = parse_file_references(parsed_args.description)
+        try:
+            expanded_description, has_file_ref = parse_file_references(parsed_args.description)
+            params['paper_description'] = expanded_description
+            params['has_file_reference'] = has_file_ref
+            # 如果检测到文件引用，自动启用context模式
+            if has_file_ref:
+                params['context_mode'] = True
+                print("📄 检测到@文件引用，自动启用--context模式")
+        except (FileNotFoundError, ValueError) as e:
+            print(f"❌ 错误: {e}")
+            return None
         params['negative_prompt'] = parsed_args.negative
         params['read_images'] = parsed_args.read_images
     elif parsed_args.topic:
-        params['type'] = 'general'
-        params['topic'] = parse_file_references(parsed_args.topic)
+        try:
+            expanded_topic, has_file_ref = parse_file_references(parsed_args.topic)
+            params['type'] = 'general'
+            params['topic'] = expanded_topic
+            params['has_file_reference'] = has_file_ref
+            # 如果检测到文件引用，自动启用context模式
+            if has_file_ref:
+                params['context_mode'] = True
+                print("📄 检测到@文件引用，自动启用--context模式")
+        except (FileNotFoundError, ValueError) as e:
+            print(f"❌ 错误: {e}")
+            return None
     else:
         print("错误：必须指定学习主题或论文信息")
         return None
+    
+    # Check for existing files and handle overwrite in direct mode
+    if params['output_dir']:
+        can_continue, final_output_dir = check_and_confirm_overwrite(
+            params['output_dir'], 
+            params.get('not_default', False),
+            params.get('no_override_material', False)
+        )
+        
+        if not can_continue:
+            print("操作已取消")
+            return None
+        
+        # Update output directory if it was renamed
+        if final_output_dir != params['output_dir']:
+            params['output_dir'] = final_output_dir
     
     return params
 
@@ -441,7 +550,7 @@ def get_openrouter_models():
     """Get available OpenRouter models."""
     try:
         script_dir = Path(__file__).parent
-        openrouter_data_file = script_dir / "OPENROUTER_DATA" / "openrouter_models.json"
+        openrouter_data_file = script_dir / "OPENROUTER_PROJ" / "openrouter_models.json"
         
         if openrouter_data_file.exists():
             import json
@@ -556,7 +665,12 @@ def generate_content_structure_prompt(params):
         mode = params['mode']
         style = params['style']
         
-        return f'请为"{topic}"创建详细的学习教程结构，适合{mode}水平的学习者，采用{style}的解释风格。'
+        # 检查是否包含文件引用
+        if params.get("has_file_reference", False):
+            print("📄 检测到文件引用，将基于文件内容创建教程")
+            return f'基于以下内容创建详细的学习教程结构，适合{mode}水平的学习者，采用{style}的解释风格：\n\n{topic}'
+        else:
+            return f'请为"{topic}"创建详细的学习教程结构，适合{mode}水平的学习者，采用{style}的解释风格。'
         
     elif params["type"] == "paper":
         mode = params['mode']
@@ -1250,15 +1364,25 @@ def generate_learning_content(params):
     brainstorming_response = None
     brainstorming_token_info = None
     
-    print("\n📝 第1步：询问AI进行头脑风暴...")
-    structure_prompt = generate_content_structure_prompt(params)
+    # 检查是否跳过brainstorming（只有context模式才跳过）
+    if params.get("context_mode", False):
+        print("\n⏭️  跳过头脑风暴步骤（--context模式）")
+        # 直接准备论文内容用于后续步骤
+        if params["type"] == "paper":
+            structure_prompt = generate_content_structure_prompt(params)
+            if structure_prompt is None:
+                print("❌ 内容准备失败，无法继续生成学习材料")
+                return None
+    else:
+        print("\n📝 第1步：询问AI进行头脑风暴...")
+        structure_prompt = generate_content_structure_prompt(params)
+        
+        # Check if content preparation failed (e.g., PDF extraction failed)
+        if structure_prompt is None and params["type"] == "paper":
+            print("❌ 内容准备失败，无法继续生成学习材料")
+            return None
     
-    # Check if content preparation failed (e.g., PDF extraction failed)
-    if structure_prompt is None and params["type"] == "paper":
-        print("❌ 内容准备失败，无法继续生成学习材料")
-        return None
-    
-    if structure_prompt:  # Brainstorming was requested
+    if structure_prompt and not params.get("context_mode", False):  # Brainstorming was requested
         print("查询内容:")
         print("-" * 40)
         print(structure_prompt[:500] + "..." if len(structure_prompt) > 500 else structure_prompt)
@@ -1427,48 +1551,66 @@ def prepare_paper_content(params):
             
     elif input_type == 3:  # Description/Search
         paper_description = params.get("paper_description")
-        paper_content, downloaded_path, token_count = search_and_download_paper(paper_description, params)
-        if paper_content:
-            print(f"✅ 论文处理完成，内容长度: {token_count} tokens")
-            paper_path = downloaded_path  # PDF路径
+        
+        # 检查是否为context模式（包括文件引用或手动启用）
+        if params.get("context_mode", False):
+            print("📄 Context模式：直接使用description内容而非搜索论文")
+            # 直接使用description中的内容
+            paper_content = paper_description
+            paper_path = "context_content"
+            # 估算token数量
+            token_count = len(paper_content) // 4  # 粗略估算
+            print(f"✅ Context内容处理完成，内容长度: {token_count} tokens")
         else:
-            print("❌ 无法找到或下载论文")
+            paper_content, downloaded_path, token_count = search_and_download_paper(paper_description, params)
+            if paper_content:
+                print(f"✅ 论文处理完成，内容长度: {token_count} tokens")
+                paper_path = downloaded_path  # PDF路径
+            else:
+                print("❌ 无法找到或下载论文")
             return None, None, 0
     
-    elif input_type == 4:  # Direct PDF file
-        pdf_path = params.get("pdf_path")
-        print(f"📄 直接处理PDF文件: {pdf_path}")
+    elif input_type == 4:  # Direct file
+        file_path = params.get("file_path") or params.get("pdf_path")  # 向后兼容
+        file_path_obj = Path(file_path)
+        print(f"📄 直接处理文件: {file_path}")
         
-        # 检查PDF文件是否存在
-        if not Path(pdf_path).exists():
-            print(f"❌ PDF文件不存在: {pdf_path}")
+        # 检查文件是否存在
+        if not file_path_obj.exists():
+            print(f"❌ 文件不存在: {file_path}")
             return None, None, 0
         
-        # 使用EXTRACT_PDF提取内容
-        markdown_path = extract_pdf_content(pdf_path, params)
-        if not markdown_path:
-            print("❌ PDF内容提取失败")
-            return None, None, 0
+        # 根据文件类型处理
+        file_extension = file_path_obj.suffix.lower()
         
-        # 读取提取的markdown内容
-        try:
-            with open(markdown_path, 'r', encoding='utf-8') as f:
-                paper_content = f.read()
+        if file_extension == '.pdf':
+            # 使用EXTRACT_PDF提取PDF内容
+            markdown_path = extract_pdf_content(file_path, params)
+            if not markdown_path:
+                print("❌ PDF内容提取失败")
+                return None, None, 0
             
-            print(f"✅ PDF内容提取完成: {markdown_path}")
-            token_count = len(paper_content.split())  # 简单的token估算
-            print(f"📊 提取内容长度: {token_count} tokens")
+            # 读取提取的markdown内容
+            try:
+                with open(markdown_path, 'r', encoding='utf-8') as f:
+                    paper_content = f.read()
+            except Exception as e:
+                print(f"❌ 读取提取的内容失败: {e}")
+                return None, None, 0
+            paper_path = markdown_path
             
-            # 检查内容长度，如果太少就中断
-            min_content_length = 1000  # 最少1000个字符
-            if len(paper_content.strip()) < min_content_length:
-                print(f"❌ 论文内容太少（{len(paper_content)}字符 < {min_content_length}），可能提取失败")
-                raise Exception(f"论文内容提取不完整：仅有{len(paper_content)}字符，少于最小要求{min_content_length}字符")
-            
-            paper_path = pdf_path
-            
-        except Exception as e:
-            print(f"❌ 读取markdown文件失败: {e}")
+        elif file_extension in ['.md', '.txt']:
+            # 直接读取markdown或文本文件
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    paper_content = f.read()
+                paper_path = file_path
+                print(f"✅ 直接读取{file_extension}文件内容完成")
+            except Exception as e:
+                print(f"❌ 读取文件失败: {e}")
+                return None, None, 0
+        else:
+            print(f"❌ 不支持的文件类型: {file_extension}，支持 .pdf、.md、.txt")
             return None, None, 0
     
     if not paper_content:
@@ -2026,7 +2168,11 @@ def download_paper(pdf_url, paper_title, output_dir=None):
 
 
 def parse_file_references(text):
-    """解析文本中的@"文件路径"引用，展开为文件内容"""
+    """解析文本中的@"文件路径"引用，展开为文件内容
+    
+    Returns:
+        tuple: (expanded_text, has_file_reference)
+    """
     import re
     from pathlib import Path
     
@@ -2035,12 +2181,40 @@ def parse_file_references(text):
     
     def clean_markdown_content(content, file_path):
         """清理markdown内容中的placeholder和本地图片链接"""
-        # 移除 [placeholder: xxx] 行
-        content = re.sub(r'\[placeholder:\s*\w+\]\s*\n?', '', content)
+        # 移除各种类型的placeholder
+        # [placeholder: xxx], [image: xxx], [formula: xxx], [table: xxx]
+        content = re.sub(r'\[(?:placeholder|image|formula|table):\s*[^\]]*\]\s*\n?', '', content, flags=re.IGNORECASE)
+        
+        # 移除包含"placeholder"的整行
+        lines = content.split('\n')
+        cleaned_lines = []
+        for line in lines:
+            if '[placeholder:' not in line.lower() and '[image:' not in line.lower() and '[formula:' not in line.lower() and '[table:' not in line.lower() and '[formula:' not in line.lower():
+                cleaned_lines.append(line)
+        content = '\n'.join(cleaned_lines)
+        
+        # 移除图片hash ID（通常是32-64位十六进制字符串）
+        content = re.sub(r'\b[a-f0-9]{32,64}\b\s*\n?', '', content)
+        
+        # 移除图片引用（包含hash的）
+        content = re.sub(r'!\[[^\]]*\]\([^)]*[a-f0-9]{32,64}[^)]*\)\s*\n?', '', content)
         
         # 移除本地图片引用 ![...](images/xxx) 或 ![...](./images/xxx) 等
         # 保留网络图片链接 (http/https)
         content = re.sub(r'!\[[^\]]*\]\((?!https?://)[^)]*\)\s*\n?', '', content)
+        
+        # 移除错误信息占位符
+        content = re.sub(r'\[message:\s*[^\]]*\]\s*\n?', '', content, flags=re.IGNORECASE)
+        
+        # 移除包含特定关键词的行（更全面的清理）
+        forbidden_keywords = ['image_', 'formula_', 'table_', '图片处理失败', 'images/']
+        lines = content.split('\n')
+        cleaned_lines = []
+        for line in lines:
+            line_lower = line.lower()
+            if not any(keyword.lower() in line_lower for keyword in forbidden_keywords):
+                cleaned_lines.append(line)
+        content = '\n'.join(cleaned_lines)
         
         # 清理多余的空行（3个或更多连续空行压缩为2个）
         content = re.sub(r'\n{3,}', '\n\n', content)
@@ -2059,37 +2233,96 @@ def parse_file_references(text):
             
             # 检查文件是否存在
             if not path_obj.exists():
-                return f"[文件不存在: {file_path}]"
+                raise FileNotFoundError(f"@符号引用的文件不存在: {file_path}")
+                
+            # 检查是否是符号链接或其他特殊情况
+            if not path_obj.is_file():
+                raise ValueError(f"@符号引用的路径不是有效文件: {file_path}")
             
             # 检查文件类型
-            allowed_extensions = {'.txt', '.md'}
+            allowed_extensions = {'.txt', '.md', '.pdf'}
             if path_obj.suffix.lower() not in allowed_extensions:
-                return f"[不支持的文件类型: {file_path}，仅支持 .txt 和 .md 文件]"
+                return f"[不支持的文件类型: {file_path}，仅支持 .txt、.md 和 .pdf 文件]"
             
             # 读取文件内容
             try:
-                with open(path_obj, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                
-                # 如果是markdown文件，进行智能清理
-                if path_obj.suffix.lower() == '.md':
-                    original_length = len(content)
-                    content = clean_markdown_content(content, file_path)
-                    cleaned_length = len(content)
+                if path_obj.suffix.lower() == '.pdf':
+                    # 处理PDF文件 - 使用basic引擎进行解析
+                    import tempfile
+                    import subprocess
                     
-                    if original_length > cleaned_length:
-                        tokens_saved = (original_length - cleaned_length) // 4  # 粗略估算节省的tokens
-                        print(f"📎 展开文件引用: {file_path} ({cleaned_length}字符，清理后节省约{tokens_saved} tokens)")
-                    else:
-                        print(f"📎 展开文件引用: {file_path} ({cleaned_length}字符)")
+                    print(f"📎 正在解析PDF文件: {file_path} (使用basic引擎)")
+                    
+                    # 在/tmp中创建临时目录进行PDF解析
+                    with tempfile.TemporaryDirectory(prefix='learn_pdf_', dir='/tmp') as temp_dir:
+                        temp_dir_path = Path(temp_dir)
+                        
+                        # 调用EXTRACT_PDF进行解析
+                        extract_cmd = [
+                            'python3', str(Path(__file__).parent / 'EXTRACT_PDF.py'),
+                            str(path_obj),
+                            '--engine', 'basic-asyn',  # 使用basic引擎，不进行图像处理
+                            '--output', str(temp_dir_path)
+                        ]
+                        
+                        try:
+                            result = subprocess.run(extract_cmd, capture_output=True, text=True, timeout=60)
+                            if result.returncode == 0:
+                                # 查找生成的markdown文件
+                                md_files = list(temp_dir_path.glob('*.md'))
+                                if md_files:
+                                    md_file = md_files[0]
+                                    with open(md_file, 'r', encoding='utf-8') as f:
+                                        content = f.read()
+                                    
+                                    # 清理PDF解析生成的markdown内容
+                                    original_length = len(content)
+                                    content = clean_markdown_content(content, file_path)
+                                    cleaned_length = len(content)
+                                    
+                                    tokens_saved = (original_length - cleaned_length) // 4
+                                    print(f"📎 PDF解析完成: {file_path} ({cleaned_length}字符，清理后节省约{tokens_saved} tokens)")
+                                    
+                                    return f"\n\n--- 引用PDF文件: {file_path} ---\n{content}\n--- 文件引用结束 ---\n"
+                                else:
+                                    return f"[PDF解析失败: {file_path} - 未生成markdown文件]"
+                            else:
+                                return f"[PDF解析失败: {file_path} - {result.stderr}]"
+                        except subprocess.TimeoutExpired:
+                            return f"[PDF解析超时: {file_path}]"
+                        except Exception as e:
+                            return f"[PDF解析出错: {file_path} - {str(e)}]"
+                
                 else:
-                    print(f"📎 展开文件引用: {file_path} ({len(content)}字符)")
+                    # 处理文本文件
+                    with open(path_obj, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                    
+                    # 如果是markdown文件，进行智能清理
+                    if path_obj.suffix.lower() == '.md':
+                        original_length = len(content)
+                        content = clean_markdown_content(content, file_path)
+                        cleaned_length = len(content)
+                        
+                        if original_length > cleaned_length:
+                            tokens_saved = (original_length - cleaned_length) // 4  # 粗略估算节省的tokens
+                            print(f"📎 展开文件引用: {file_path} ({cleaned_length}字符，清理后节省约{tokens_saved} tokens)")
+                        else:
+                            print(f"📎 展开文件引用: {file_path} ({cleaned_length}字符)")
+                    else:
+                        print(f"📎 展开文件引用: {file_path} ({len(content)}字符)")
+                    
+                    return f"\n\n--- 引用文件: {file_path} ---\n{content}\n--- 文件引用结束 ---\n"
                 
-                return f"\n\n--- 引用文件: {file_path} ---\n{content}\n--- 文件引用结束 ---\n"
-                
+            except (FileNotFoundError, ValueError):
+                # 重新抛出文件不存在或路径无效的异常
+                raise
             except Exception as e:
                 return f"[读取文件失败: {file_path} - {str(e)}]"
                 
+        except (FileNotFoundError, ValueError):
+            # 重新抛出文件不存在或路径无效的异常
+            raise
         except Exception as e:
             return f"[文件路径解析失败: {file_path} - {str(e)}]"
     
@@ -2097,10 +2330,11 @@ def parse_file_references(text):
     expanded_text = re.sub(pattern, replace_reference, text)
     
     # 检查是否有引用被展开
-    if expanded_text != text:
+    has_file_reference = expanded_text != text
+    if has_file_reference:
         print("🔗 检测到文件引用，已自动展开并清理无用内容")
     
-    return expanded_text
+    return expanded_text, has_file_reference
 
 
 def generate_learn_command(description):
@@ -2220,7 +2454,8 @@ def main():
             parser.add_argument('-s', '--style', choices=['简洁明了', '详细深入', '实例丰富', '理论导向'],
                                default='详细深入', help='解释风格')
             parser.add_argument('-p', '--paper', help='论文文件路径')
-            parser.add_argument('--pdf', help='直接指定PDF文件路径（跳过搜索和下载）')
+            parser.add_argument('--file', help='直接处理文件路径 (支持PDF、MD、TXT)')
+            parser.add_argument('--pdf', help='直接指定PDF文件路径 (已弃用，请使用--file)')
             parser.add_argument('-u', '--url', help='论文URL')
             parser.add_argument('-d', '--description', help='论文描述/搜索关键词')
             parser.add_argument('--negative', help='负面提示词：指定不想要的内容或论文类型')
@@ -2229,7 +2464,9 @@ def main():
             parser.add_argument('--model', help='指定OpenRouter模型')
             parser.add_argument('--max-tokens', type=int, help='最大token数')
             parser.add_argument('--not-default', action='store_true', help='非默认模式，需要用户确认')
+            parser.add_argument('--no-override-material', action='store_true', help='不覆盖已存在的文件，自动重命名')
             parser.add_argument('--brainstorm-only', action='store_true', help='不自动创建文件，仅生成内容')
+            parser.add_argument('--context', action='store_true', help='将description视作直接context进入brainstorming，跳过论文搜索')
             
             # 捕获help输出而不是让它exit
             import io

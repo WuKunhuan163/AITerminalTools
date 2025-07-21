@@ -1,5 +1,0 @@
-{
-  "success": true,
-  "message": "Command executed successfully",
-  "output": "✅ Local UnimerNet components loaded successfully\n📁 Using local model path: /Users/wukunhuan/.local/bin/UNIMERNET_PROJ/unimernet_models/unimernet_hf_small_2503\n🔄 Loading UnimerNet model from /Users/wukunhuan/.local/bin/UNIMERNET_PROJ/unimernet_models/unimernet_hf_small_2503\n📱 Using device: mps\n✅ UnimerNet model loaded successfully\n✅ Recognition successful: D ^ { * } = \\frac { D - \\mathrm { m e d i a n } ( ...\n{\n  \"success\": true,\n  \"result\": \"D ^ { * } = \\\\frac { D - \\\\mathrm { m e d i a n } ( D ) } { \\\\frac { 1 } { M } \\\\sum _ { i = 1 } ^ { M } \\\\left| D - \\\\mathrm { m e d i a n } ( D ) \\\\right| } ,\",\n  \"image_path\": \"/var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/padded_0affe0ab782e7d3d50753527ee5fdd00337b9b3ead9ffb1a339d30e90b970a9e_2874.jpg\",\n  \"content_type\": \"formula\",\n  \"processor\": \"unimernet\",\n  \"timestamp\": \"2025-07-20T19:44:32.996585\",\n  \"from_cache\": false\n}"
-}

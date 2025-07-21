@@ -43,15 +43,19 @@ LEARN --gen-command "<description>"       # Generate LEARN command
 ### Advanced Options
 - `--model <model>`: Specify OpenRouter model (default: auto)
 - `--max-tokens <num>`: Maximum tokens per API call
+- `--context`: Treat description as direct context for brainstorming, skip paper search
 - `--not-default`: Disable default settings, enable interactive selection
+- `--no-override-material`: Avoid overwriting existing files, auto-rename output directory
 - `--brainstorm-only`: Only perform brainstorming, don't create files
 - `--gen-command <description>`: Generate LEARN command based on description
 
 ### File Reference Support
 LEARN supports @"file_path" syntax to include file content in prompts:
 - `@"/path/to/file.md"`: Include markdown file content
-- `@"/path/to/file.txt"`: Include text file content
-- Only .md and .txt files are supported for security
+- `@"/path/to/file.txt"`: Include text file content  
+- `@"/path/to/file.pdf"`: Include PDF file content (processed with basic engine)
+- When @file_path is detected, `--context` mode is automatically enabled
+- File references skip paper search and use content directly for brainstorming
 
 ## Examples
 
@@ -76,13 +80,36 @@ LEARN -o ~/tutorials -m 中级 -d "deep learning" --negative "GAN, generative mo
 LEARN -o ~/tutorials -m 高级 --pdf "/path/to/paper.pdf" --read-images
 ```
 
-### Context-Aware Learning with File References
+### File Input Options
 ```bash
-# Learn specific section with full paper context
-LEARN -o ~/tutorials -m 初学者 "学习论文3.1节的技术原理 @\"/path/to/paper.md\""
+# Direct file processing (with brainstorming)
+LEARN -o ~/tutorials -m 中级 --file "/path/to/paper.pdf"
+LEARN -o ~/tutorials -m 初学者 --file "/path/to/document.md"
 
-# Multiple file references
-LEARN -o ~/tutorials -m 中级 "比较两篇论文的方法 @\"/paper1.md\" @\"/paper2.md\""
+# Direct file processing with context mode (skip brainstorming)
+LEARN -o ~/tutorials -m 中级 --file "/path/to/paper.pdf" --context
+LEARN -o ~/tutorials -m 初学者 --file "/path/to/document.txt" --context
+
+# URL processing (with brainstorming)
+LEARN -o ~/tutorials -m 高级 -u "https://arxiv.org/pdf/2106.02613.pdf"
+
+# URL processing with context mode (skip brainstorming)
+LEARN -o ~/tutorials -m 高级 -u "https://arxiv.org/pdf/2106.02613.pdf" --context
+```
+
+### File Reference with @ Symbol
+```bash
+# @ file references with brainstorming (default)
+LEARN -o ~/tutorials -m 初学者 -d "学习论文3.1节的技术原理 @\"/path/to/paper.md\""
+
+# @ file references with context mode (skip brainstorming)
+LEARN -o ~/tutorials -m 初学者 -d "学习论文3.1节的技术原理 @\"/path/to/paper.md\"" --context
+
+# Multiple file references with context mode
+LEARN -o ~/tutorials -m 中级 -d "比较两篇论文的方法 @\"/paper1.md\" @\"/paper2.md\"" --context
+
+# Direct context content (skip brainstorming)
+LEARN -o ~/tutorials -m 专家 -d "深度学习核心概念：神经网络、反向传播、优化算法" --context
 ```
 
 ### Command Generation

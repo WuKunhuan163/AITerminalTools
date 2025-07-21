@@ -250,5 +250,52 @@ class TestExtractImg(unittest.TestCase):
             # RUN integration failure is acceptable
             print("✅ RUN --show EXTRACT_IMG test completed (failure expected without full setup)")
 
+    def test_custom_prompt_parameter(self):
+        """Test --prompt parameter functionality"""
+        # Skip if test image doesn't exist
+        if not self.test_img.exists():
+            self.skipTest(f"Test image not found: {self.test_img}")
+            
+        # Test with custom prompt
+        custom_prompt = "请简要描述这个图片的主要内容"
+        
+        result = subprocess.run([
+            sys.executable, EXTRACT_IMG_PY, str(self.test_img), 
+            '--type', 'image', '--prompt', custom_prompt, '--json'
+        ], capture_output=True, text=True, timeout=30)
+        
+        # Check that command accepts --prompt parameter (no argument error)
+        if result.returncode != 0:
+            # If it fails, it shouldn't be due to unknown argument
+            self.assertNotIn('unrecognized arguments: --prompt', result.stderr,
+                           "EXTRACT_IMG should support --prompt parameter")
+            
+        # If successful, verify JSON output structure
+        if result.returncode == 0:
+            try:
+                output_json = json.loads(result.stdout)
+                self.assertIsInstance(output_json, dict)
+                # Should have success or error information
+                self.assertTrue('success' in output_json or 'error' in output_json)
+                print("✅ --prompt parameter accepted and processed")
+            except json.JSONDecodeError:
+                self.fail(f"Expected valid JSON output with --prompt: {result.stdout[:200]}...")
+        else:
+            # Even if processing fails, --prompt should be recognized
+            print("✅ --prompt parameter recognized (processing failure acceptable)")
+
+    def test_help_includes_prompt_option(self):
+        """Test that help output includes --prompt option"""
+        result = subprocess.run([
+            sys.executable, EXTRACT_IMG_PY, '--help'
+        ], capture_output=True, text=True, timeout=10)
+        
+        self.assertEqual(result.returncode, 0)
+        self.assertIn('--prompt', result.stdout, 
+                     "Help output should include --prompt option")
+        self.assertIn('Custom prompt for image analysis', result.stdout,
+                     "Help should describe --prompt functionality")
+        print("✅ --prompt option documented in help")
+
 if __name__ == '__main__':
     unittest.main() 
