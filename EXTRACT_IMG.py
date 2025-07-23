@@ -46,7 +46,7 @@ if str(current_dir) not in sys.path:
 
 # Import centralized cache system
 try:
-    from EXTRACT_IMG_DATA.cache_system import ImageCacheSystem
+    from EXTRACT_IMG_PROJ.cache_system import ImageCacheSystem
     CACHE_AVAILABLE = True
 except ImportError:
     logger.warning("Cache system not available")
@@ -371,51 +371,67 @@ class UnifiedImageProcessor:
                 if result.returncode == 0:
                     try:
                         run_output = json.loads(result.stdout)
+                        logger.info(f"🔍 RUN output: {json.dumps(run_output, indent=2)[:500]}...")
                         if run_output.get('success'):
-                            # Extract UNIMERNET output
-                            unimernet_output = run_output.get('output', '')
+                            # RUN tool wraps the actual UNIMERNET output in different fields
+                            # Try to extract from 'result' field first, then from 'output' field
+                            unimernet_result_str = run_output.get('result', '')
                             
-                            # Find JSON result in UNIMERNET output
-                            # Look for multi-line JSON block in the output
-                            lines = unimernet_output.strip().split('\n')
-                            json_lines = []
-                            in_json = False
-                            brace_count = 0
+                            if not unimernet_result_str:
+                                # If result is empty, try to extract from output field
+                                output_text = run_output.get('output', '')
+                                
+                                # Look for the last complete JSON in the output text
+                                # Find the last occurrence of a JSON object
+                                last_json_start = output_text.rfind('\n{')
+                                if last_json_start == -1:
+                                    last_json_start = output_text.rfind('{')
+                                
+                                if last_json_start != -1:
+                                    json_candidate = output_text[last_json_start:].strip()
+                                    try:
+                                        # Try to parse this as JSON
+                                        parsed_json = json.loads(json_candidate)
+                                        if isinstance(parsed_json, dict) and 'success' in parsed_json:
+                                            unimernet_result_str = json_candidate
+                                            logger.info(f"🔍 Successfully parsed JSON from output: {len(json_candidate)} chars")
+                                        else:
+                                            logger.warning(f"🔍 Found JSON but missing required fields")
+                                    except json.JSONDecodeError:
+                                        logger.warning(f"🔍 Found potential JSON but failed to parse: {json_candidate[:100]}...")
+                                
+                                if not unimernet_result_str:
+                                    logger.warning(f"🔍 No valid JSON found in output, raw output: {output_text[:200]}...")
                             
-                            for line in lines:
-                                line = line.strip()
-                                if line.startswith('{'):
-                                    in_json = True
-                                    json_lines = [line]
-                                    brace_count = line.count('{') - line.count('}')
-                                elif in_json:
-                                    json_lines.append(line)
-                                    brace_count += line.count('{') - line.count('}')
-                                    if brace_count == 0:
-                                        # Complete JSON found
-                                        json_text = '\n'.join(json_lines)
-                                        try:
-                                            unimernet_result = json.loads(json_text)
-                                            if unimernet_result.get('success'):
-                                                # Add cache info
-                                                from_cache = unimernet_result.get('from_cache', False)
-                                                unimernet_result['from_cache'] = from_cache
-                                                return unimernet_result
-                                        except json.JSONDecodeError:
-                                            pass
-                                        # Reset for potential next JSON
-                                        in_json = False
-                                        json_lines = []
-                                        brace_count = 0
+                            logger.info(f"🔍 UNIMERNET result string: {unimernet_result_str[:200]}...")
                             
-                            return {
-                                "success": False,
-                                "error": "No valid JSON result found in UNIMERNET output"
-                            }
+                            # UNIMERNET returns nested JSON as string, try to parse it
+                            try:
+                                unimernet_result = json.loads(unimernet_result_str)
+                                logger.info(f"🔍 Parsed as JSON successfully")
+                                if unimernet_result.get('success'):
+                                    # Add metadata from outer result
+                                    unimernet_result['from_cache'] = run_output.get('from_cache', False)
+                                    unimernet_result['processing_time'] = run_output.get('processing_time', 0)
+                                    return unimernet_result
+                                else:
+                                    return {
+                                        "success": False,
+                                        "error": f"UNIMERNET processing failed: {unimernet_result.get('error', 'Unknown error')}"
+                                    }
+                            except json.JSONDecodeError:
+                                # Fallback: treat as direct text result
+                                logger.info(f"🔍 JSON decode failed, using fallback")
+                                return {
+                                    "success": True,
+                                    "result": unimernet_result_str,
+                                    "from_cache": run_output.get('from_cache', False),
+                                    "processing_time": run_output.get('processing_time', 0)
+                                }
                         else:
                             return {
                                 "success": False,
-                                "error": f"RUN UNIMERNET failed: {run_output}"
+                                "error": f"RUN UNIMERNET failed: {run_output.get('error', 'Unknown error')}"
                             }
                     except json.JSONDecodeError:
                         return {
@@ -512,7 +528,7 @@ class UnifiedImageProcessor:
             }
     
     def process_image(self, image_path: str, content_type: str = "auto", mode: str = "academic", 
-                     use_cache: bool = True, force: bool = False, custom_prompt: str = None) -> Dict[str, Any]:
+                     use_cache: bool = True, force: bool = False, custom_prompt: str = None, no_padding: bool = False) -> Dict[str, Any]:
         """
         Process image with appropriate tool based on content type.
         
@@ -559,12 +575,27 @@ class UnifiedImageProcessor:
         if detected_type in ["formula", "table"]:
             logger.info(f"🔄 Processing {detected_type} with UNIMERNET: {Path(image_path).name}")
             
-            # Add padding for better UNIMERNET recognition
-            padded_image_path = self.add_image_padding(image_path)
-            if padded_image_path != image_path:
-                temp_image_path = padded_image_path
+            # Add padding for better UNIMERNET recognition (unless disabled)
+            if no_padding:
+                logger.info(f"⚠️  Skipping padding due to --no-padding flag")
+                processing_image_path = image_path
+            else:
+                padded_image_path = self.add_image_padding(image_path)
+                if padded_image_path != image_path:
+                    temp_image_path = padded_image_path
+                    # Copy padded image to EXTRACT_IMG_DATA for inspection
+                    try:
+                        extract_img_data_dir = Path.home() / ".local" / "bin" / "EXTRACT_IMG_DATA" / "padded_images"
+                        extract_img_data_dir.mkdir(parents=True, exist_ok=True)
+                        padded_copy = extract_img_data_dir / Path(padded_image_path).name
+                        import shutil
+                        shutil.copy2(padded_image_path, padded_copy)
+                        logger.info(f"📁 Saved padded image to: {padded_copy}")
+                    except Exception as e:
+                        logger.warning(f"⚠️  Could not save padded image: {e}")
+                processing_image_path = padded_image_path
             
-            result = self.process_with_unimernet(padded_image_path, detected_type)
+            result = self.process_with_unimernet(processing_image_path, detected_type)
         else:  # detected_type == "image"
             logger.info(f"🔄 Processing image with IMG2TEXT: {Path(image_path).name}")
             result = self.process_with_img2text(image_path, mode, custom_prompt)
@@ -674,6 +705,7 @@ def main():
                        default="academic", help="Processing mode for general images")
     parser.add_argument("--prompt", help="Custom prompt for image analysis (only for image type)")
     parser.add_argument("--force", action="store_true", help="Force reprocessing (ignore cache)")
+    parser.add_argument("--no-padding", action="store_true", help="Skip image padding for formula/table processing")
     parser.add_argument("--batch", action="store_true", help="Process multiple images")
     parser.add_argument("--stats", action="store_true", help="Show cache statistics")
     parser.add_argument("--clear-cache", action="store_true", help="Clear all cached data")
@@ -780,7 +812,8 @@ def main():
         mode=args.mode,
         use_cache=True,  # Always enable cache for storage, force only affects reading
         force=args.force,
-        custom_prompt=args.prompt
+        custom_prompt=args.prompt,
+        no_padding=args.no_padding
     )
     
     # Output result

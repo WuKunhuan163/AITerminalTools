@@ -246,12 +246,8 @@ def create_alias(alias_name: str, alias_command: str, command_identifier=None) -
         print()
         if success_count > 0:
             print("🎉 Alias created successfully!")
-            print("💡 To use the alias immediately, run one of these commands:")
-            print("   source ~/.bash_profile")
-            print("   source ~/.bashrc")
-            print("   source ~/.zshrc")
-            print()
-            print("Or restart your terminal.")
+            print("🔄 Alias will be available in new terminal sessions")
+            print("💡 Note: Current session may need manual source or restart for aliases")
         else:
             print("❌ Failed to create alias in any configuration file")
     

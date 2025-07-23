@@ -28,13 +28,13 @@ EXTRACT_PDF --clean-data  # Clean cached data
 
 ### PDF Extraction Options
 - `--page <spec>`: Extract specific page(s) (e.g., 3, 1-5, 1,3,5)
-- `--output <dir>`: Output directory (default: same as PDF)
+- `--output-dir <dir>`: Output directory (default: same as PDF)
 - `--engine <mode>`: Extraction engine mode (default: mineru):
   - `basic`: Basic extractor with image processing (merge nearby images, generate placeholders)
   - `basic-asyn`: Basic extractor, async mode (text-only, no image processing)
-  - `mineru`: MinerU extractor (experimental, no image/formula/table analysis)
+  - `mineru`: MinerU extractor with full image/formula/table analysis
   - `mineru-asyn`: MinerU extractor, async mode (no image/formula/table analysis)
-  - `full`: Full analysis mode (enable all features including image/formula/table processing)
+  - `full`: Full analysis mode (equivalent to mineru - enable all features including image/formula/table processing)
 
 ### Post-processing Options
 - `--post [<file>]`: Post-process markdown file (replace placeholders with actual content)
@@ -68,7 +68,7 @@ EXTRACT_PDF document.pdf
 EXTRACT_PDF document.pdf --page 3 --engine basic
 
 # Extract page range with custom output directory
-EXTRACT_PDF paper.pdf --page 1-5 --output /path/to/output --engine mineru-asyn
+EXTRACT_PDF paper.pdf --page 1-5 --output-dir /path/to/output --engine mineru-asyn
 
 # Extract multiple pages using full engine (with image/formula/table processing)
 EXTRACT_PDF research.pdf --page 1,3,5-7 --engine full
@@ -110,7 +110,7 @@ EXTRACT_PDF --post document.md --post-type all --force
 EXTRACT_PDF --full document.pdf
 
 # Full pipeline with specific page range and custom output
-EXTRACT_PDF --full paper.pdf --page 1-10 --output /path/to/output
+EXTRACT_PDF --full paper.pdf --page 1-10 --output-dir /path/to/output
 
 # Full pipeline with specific engine
 EXTRACT_PDF --full document.pdf --engine full --page 1-5
@@ -259,7 +259,7 @@ The tool provides comprehensive error handling:
 
 ## Notes
 
-- Default engine is `mineru-asyn` for balance of speed and quality
+- Default engine is `mineru` with full image/formula/table analysis for best quality
 - GUI mode requires tkinter (usually included with Python installations)
 - RUN mode provides structured JSON output for automation
 - Post-processing preserves original placeholders on failure for manual review

@@ -1,0 +1,25 @@
+# GaussianObject: High-!ality 3D Object Reconstruction from Four Views with Gaussian Spla"ing
+
+CHEN YANG∗ , MoE Key Lab of Artificial Intelligence, AI Institute, SJTU, China   
+SIKUANG LI∗ , MoE Key Lab of Artificial Intelligence, AI Institute, SJTU, China   
+JIEMIN FANG†, Huawei Inc., China   
+RUOFAN LIANG, University of Toronto, Canada   
+LINGXI XIE, Huawei Inc., China   
+XIAOPENG ZHANG, Huawei Inc., China   
+WEI SHEN‡, MoE Key Lab of Artificial Intelligence, AI Institute, SJTU, China   
+QI TIAN, Huawei Inc., China
+
+[placeholder: image]
+![](/Users/wukunhuan/.local/bin/_UNITTEST/_DATA/extracted_paper_img.png)
+
+Fig. 1. We introduce GaussianObject, a framework capable of reconstructing high-quality 3D objects from only 4 images with Gaussian spla"ing. GaussianObject demonstrates superior performance over previous state-of-the-art (SOTA) methods on challenging objects.
+
+Reconstructing and rendering 3D objects from highly sparse views is of critical importance for promoting applications of 3D vision techniques and improving user experience. However, images from sparse views only contain very limited 3D information, leading to two signi!cant challenges: 1) Di"- culty in building multi-view consistency as images for matching are too few; 2) Partially omitted or highly compressed object information as view coverage is insu"cient. To tackle these challenges, we propose GaussianObject, a framework to represent and render the 3D object with Gaussian splatting that achieves high rendering quality with only 4 input images. We !rst introduce techniques of visual hull and #oater elimination, which explicitly inject structure priors into the initial optimization process to help build multi-view consistency, yielding a coarse 3D Gaussian representation. Then we construct a Gaussian repair model based on di\$usion models to supplement the omitted object information, where Gaussians are further re!ned. We design a self-generating strategy to obtain image pairs for training the repair model. We further design a COLMAP-free variant, where pre-given accurate camera poses are not required, which achieves competitive quality and facilitates wider applications. GaussianObject is evaluated on several challenging datasets, including MipNeRF360, OmniObject3D, OpenIllumination, and our-collected unposed images, achieving superior performance from only four views and signi!cantly outperforming previous SOTA methods. Our demo is available at https:// gaussianobject.github.io/ , and the code has been released at https:// github.com/ GaussianObject/ GaussianObject.
+
+# CCS Concepts: • Computing methodologies → Reconstruction; Rendering; Point-based models.
+
+Additional Key Words and Phrases: Sparse view reconstruction, 3D Gaussian Splatting, ControlNet, Visual hull, Novel view synthesis
+
+# ACM Reference Format:
+
+Chen Yang, Sikuang Li, Jiemin Fang, Ruofan Liang, Lingxi Xie, Xiaopeng Zhang, Wei Shen, and Qi Tian. 2024. GaussianObject: High-Quality 3D Object

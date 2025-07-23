@@ -25,14 +25,14 @@ if str(parent_dir) not in sys.path:
     sys.path.insert(0, str(parent_dir))
 
 try:
-    # Import centralized cache system from EXTRACT_IMG_DATA
-    from EXTRACT_IMG_DATA.cache_system import ImageCacheSystem
+    # Import centralized cache system from EXTRACT_IMG_PROJ
+    from EXTRACT_IMG_PROJ.cache_system import ImageCacheSystem
 except ImportError:
     try:
         # Fallback import path
         import sys
         from pathlib import Path
-        extract_img_proj = Path(__file__).parent.parent / "EXTRACT_IMG_DATA"
+        extract_img_proj = Path(__file__).parent.parent / "EXTRACT_IMG_PROJ"
         if str(extract_img_proj) not in sys.path:
             sys.path.insert(0, str(extract_img_proj))
         from cache_system import ImageCacheSystem

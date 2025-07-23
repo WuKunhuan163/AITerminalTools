@@ -47,6 +47,17 @@ When working with the user, you have access to the following custom binary tools
   - `EXTRACT_PDF --full document.pdf`
   - `EXTRACT_PDF --full paper.pdf --engine mineru --page 1-10`
 
+### EXTRACT_IMG
+- **Purpose**: Automatically detect image content types and route to appropriate processors with integrated caching
+- **Description**: Intelligent Image Analysis Tool
+- **Usage**: `EXTRACT_IMG [image_path] [options]`
+- **Examples**:
+  - `EXTRACT_IMG image.png`
+  - `EXTRACT_IMG image.png --type formula`
+  - `EXTRACT_IMG image.png --type table`
+  - `EXTRACT_IMG --batch *.png`
+  - `EXTRACT_IMG --stats`
+
 ### FILEDIALOG
 - **Purpose**: Open tkinter file selection dialog to specify file types
 - **Description**: File Selection Tool with tkinter GUI
@@ -78,9 +89,8 @@ When working with the user, you have access to the following custom binary tools
   - `OPENROUTER "解释量子计算" --model "deepseek/deepseek-r1"`
   - `OPENROUTER "Write a Python function" --key "sk-or-v1-..." --max-tokens 2000`
   - `OPENROUTER --list`
-  - `OPENROUTER --add "anthropic/claude-3-haiku" --temp-key "your-key"`
-  - `OPENROUTER --remove "old-model"`
   - `OPENROUTER --default "google/gemini-2.5-flash-lite-preview-06-17"`
+  - `OPENROUTER --test-connection`
 
 ### OVERLEAF
 - **Purpose**: Compile LaTeX files to PDF
@@ -91,14 +101,24 @@ When working with the user, you have access to the following custom binary tools
   - `OVERLEAF`
 
 ### SEARCH_PAPER
-- **Purpose**: Search academic papers from multiple platforms (arXiv, Google Scholar, Semantic Scholar)
+- **Purpose**: Search academic papers from multiple platforms (arXiv, Google Scholar) with web crawling
 - **Description**: Enhanced Academic Paper Search Tool
 - **Usage**: `SEARCH_PAPER [query] [options]`
 - **Examples**:
-  - `SEARCH_PAPER`
   - `SEARCH_PAPER "machine learning"`
   - `SEARCH_PAPER "deep learning" --max-results 20`
-  - `SEARCH_PAPER "NLP" --sources arxiv,semantic_scholar`
+  - `SEARCH_PAPER "NLP" --sources arxiv,google_scholar`
+
+### UNIMERNET
+- **Purpose**: Convert mathematical formulas and tables in images to text using UnimerNet neural network
+- **Description**: UnimerNet Formula and Table Recognition Tool
+- **Usage**: `UNIMERNET <image_path> [options]`
+- **Examples**:
+  - `UNIMERNET formula.png`
+  - `UNIMERNET table.png --type table`
+  - `UNIMERNET image.png --json --output result.json`
+  - `UNIMERNET --check`
+  - `UNIMERNET --stats`
 
 ### USERINPUT
 - **Purpose**: Get user feedback in Cursor AI workflows
@@ -110,8 +130,8 @@ When working with the user, you have access to the following custom binary tools
 ## Other Tools:
 
 ### RUN
-- **Purpose**: Execute other bin tools and capture their output in JSON format
-- **Description**: Execute bin tools with JSON output
+- **Purpose**: Execute other tools and capture their output in JSON format with unique identifiers
+- **Description**: Universal command wrapper with JSON output
 - **Usage**: `RUN [--show] <command> [args...]`
 - **Examples**:
   - `RUN OVERLEAF document.tex`
@@ -136,12 +156,14 @@ When working with the user, you have access to the following custom binary tools
 - **DOWNLOAD**: When user needs to download files from URLs
 - **EXPORT**: When user needs to set environment variables persistently
 - **EXTRACT_PDF**: When user needs to extract text from PDF files with different extraction engines
+- **EXTRACT_IMG**: When user needs intelligent image analysis with automatic content type detection
 - **FILEDIALOG**: When user needs to select specific file types through a GUI dialog
 - **LEARN**: When user needs structured learning materials, paper analysis, context-aware tutorials, or LEARN command generation
 - **OPENROUTER**: When user needs to call OpenRouter API for AI responses with cost tracking
 - **OVERLEAF**: When user needs to compile LaTeX documents
 - **RUN**: When user needs to execute other tools with JSON output
 - **SEARCH_PAPER**: When user needs to search for academic papers
+- **UNIMERNET**: When user needs to extract mathematical formulas or tables from images
 - **USERINPUT**: When you need to get user feedback in workflows
 
 Always prefer using these tools over manual implementations when the functionality matches the user's needs.

@@ -202,7 +202,7 @@ Description:
         # 不在 RUN 环境中，直接输出到 stdout（保持原有行为）
         os.system("clear") if os.name == "posix" else os.system("cls")
         if user_input != "stop":
-            user_input += "\n\n任务完成后，执行终端命令 `USERINPUT` 获取用户反馈。如遇异常情况（如程序停止），重复执行 `USERINPUT` 直到获得自然语言反馈。执行过程中遇到不确定的情况，请使用 `USERINPUT` 确认，不要直接结束。注意：使用 run_terminal_cmd 工具执行的命令就是字面上的 `USERINPUT`，不要添加其他参数或构造交互式命令。"
+            user_input += "\n\n任务完成后，执行终端命令 `USERINPUT` 获取用户反馈。如果程序停止，重复执行 `USERINPUT` 直到获得自然语言反馈。编程遇到不确定的情况或者Keyboard Interrupt时，请执行 `USERINPUT`，不要直接结束。注意：使用 run_terminal_cmd 工具执行的命令就是字面上的 `USERINPUT`，不要添加其他参数或构造交互式命令。"
         print(user_input)
 
 if __name__ == "__main__":

@@ -35,7 +35,7 @@ if str(EXTRACT_IMG_PROJ_PATH) not in sys.path:
 
 try:
     # Import centralized cache system
-    from cache_system import ImageCacheSystem
+    from EXTRACT_IMG_PROJ.cache_system import ImageCacheSystem
     CACHE_AVAILABLE = True
 except ImportError:
     print("Warning: Centralized cache system not available", file=sys.stderr)

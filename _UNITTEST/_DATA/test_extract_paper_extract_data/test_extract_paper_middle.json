@@ -1,0 +1,2648 @@
+{
+    "pdf_info": [
+        {
+            "preproc_blocks": [
+                {
+                    "type": "title",
+                    "bbox": [
+                        49,
+                        75,
+                        530,
+                        115
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                50,
+                                75,
+                                531,
+                                96
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        75,
+                                        531,
+                                        96
+                                    ],
+                                    "score": 1.0,
+                                    "content": "GaussianObject: High-!ality 3D Object Reconstruction from Four",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 0
+                        },
+                        {
+                            "bbox": [
+                                48,
+                                93,
+                                270,
+                                118
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        48,
+                                        93,
+                                        270,
+                                        118
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Views with Gaussian Spla\"ing",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 1
+                        }
+                    ],
+                    "index": 0.5
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        50,
+                        123,
+                        383,
+                        234
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                50,
+                                123,
+                                385,
+                                137
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        123,
+                                        385,
+                                        137
+                                    ],
+                                    "score": 1.0,
+                                    "content": "CHEN YANG∗ , MoE Key Lab of Artificial Intelligence, AI Institute, SJTU, China",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 2
+                        },
+                        {
+                            "bbox": [
+                                49,
+                                137,
+                                383,
+                                152
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        49,
+                                        137,
+                                        383,
+                                        152
+                                    ],
+                                    "score": 1.0,
+                                    "content": "SIKUANG LI∗ , MoE Key Lab of Artificial Intelligence, AI Institute, SJTU, China",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 3
+                        },
+                        {
+                            "bbox": [
+                                48,
+                                149,
+                                212,
+                                165
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        48,
+                                        149,
+                                        212,
+                                        165
+                                    ],
+                                    "score": 1.0,
+                                    "content": "JIEMIN FANG†, Huawei Inc., China",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 4
+                        },
+                        {
+                            "bbox": [
+                                49,
+                                165,
+                                265,
+                                179
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        49,
+                                        165,
+                                        265,
+                                        179
+                                    ],
+                                    "score": 1.0,
+                                    "content": "RUOFAN LIANG, University of Toronto, Canada",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 5
+                        },
+                        {
+                            "bbox": [
+                                50,
+                                179,
+                                194,
+                                192
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        179,
+                                        194,
+                                        192
+                                    ],
+                                    "score": 1.0,
+                                    "content": "LINGXI XIE, Huawei Inc., China",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 6
+                        },
+                        {
+                            "bbox": [
+                                49,
+                                193,
+                                237,
+                                207
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        49,
+                                        193,
+                                        237,
+                                        207
+                                    ],
+                                    "score": 1.0,
+                                    "content": "XIAOPENG ZHANG, Huawei Inc., China",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 7
+                        },
+                        {
+                            "bbox": [
+                                48,
+                                205,
+                                378,
+                                223
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        48,
+                                        205,
+                                        378,
+                                        223
+                                    ],
+                                    "score": 1.0,
+                                    "content": "WEI SHEN‡, MoE Key Lab of Artificial Intelligence, AI Institute, SJTU, China",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 8
+                        },
+                        {
+                            "bbox": [
+                                50,
+                                220,
+                                179,
+                                235
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        220,
+                                        179,
+                                        235
+                                    ],
+                                    "score": 1.0,
+                                    "content": "QI TIAN, Huawei Inc., China",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 9
+                        }
+                    ],
+                    "index": 5.5
+                },
+                {
+                    "type": "image",
+                    "bbox": [
+                        50,
+                        244,
+                        560,
+                        426
+                    ],
+                    "blocks": [
+                        {
+                            "type": "image_body",
+                            "bbox": [
+                                50,
+                                244,
+                                560,
+                                426
+                            ],
+                            "group_id": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        244,
+                                        560,
+                                        426
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                50,
+                                                244,
+                                                560,
+                                                426
+                                            ],
+                                            "score": 0.957,
+                                            "type": "image",
+                                            "image_path": "f4cd9a3ff84d91d075920ece838ca96f7a4344b466805a78f03ceb0b3ce11fb7.jpg"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 11,
+                            "virtual_lines": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        244,
+                                        560,
+                                        304.6666666666667
+                                    ],
+                                    "spans": [],
+                                    "index": 10
+                                },
+                                {
+                                    "bbox": [
+                                        50,
+                                        304.6666666666667,
+                                        560,
+                                        365.33333333333337
+                                    ],
+                                    "spans": [],
+                                    "index": 11
+                                },
+                                {
+                                    "bbox": [
+                                        50,
+                                        365.33333333333337,
+                                        560,
+                                        426.00000000000006
+                                    ],
+                                    "spans": [],
+                                    "index": 12
+                                }
+                            ]
+                        },
+                        {
+                            "type": "image_caption",
+                            "bbox": [
+                                48,
+                                438,
+                                560,
+                                459
+                            ],
+                            "group_id": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        438,
+                                        561,
+                                        450
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                50,
+                                                438,
+                                                561,
+                                                450
+                                            ],
+                                            "score": 1.0,
+                                            "content": "Fig. 1. We introduce GaussianObject, a framework capable of reconstructing high-quality 3D objects from only 4 images with Gaussian spla\"ing. Gaus-",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "index": 13
+                                },
+                                {
+                                    "bbox": [
+                                        49,
+                                        447,
+                                        439,
+                                        461
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                49,
+                                                447,
+                                                439,
+                                                461
+                                            ],
+                                            "score": 1.0,
+                                            "content": "sianObject demonstrates superior performance over previous state-of-the-art (SOTA) methods on challenging objects.",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "index": 14
+                                }
+                            ],
+                            "index": 13.5
+                        }
+                    ],
+                    "index": 12.25
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        51,
+                        465,
+                        294,
+                        555
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                50,
+                                465,
+                                295,
+                                475
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        465,
+                                        295,
+                                        475
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Reconstructing and rendering 3D objects from highly sparse views is of",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 15
+                        },
+                        {
+                            "bbox": [
+                                50,
+                                475,
+                                295,
+                                486
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        475,
+                                        295,
+                                        486
+                                    ],
+                                    "score": 1.0,
+                                    "content": "critical importance for promoting applications of 3D vision techniques and",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 16
+                        },
+                        {
+                            "bbox": [
+                                50,
+                                486,
+                                295,
+                                496
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        486,
+                                        295,
+                                        496
+                                    ],
+                                    "score": 1.0,
+                                    "content": "improving user experience. However, images from sparse views only contain",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 17
+                        },
+                        {
+                            "bbox": [
+                                50,
+                                496,
+                                295,
+                                505
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        496,
+                                        295,
+                                        505
+                                    ],
+                                    "score": 1.0,
+                                    "content": "very limited 3D information, leading to two signi!cant challenges: 1) Di\"-",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 18
+                        },
+                        {
+                            "bbox": [
+                                50,
+                                506,
+                                296,
+                                516
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        506,
+                                        296,
+                                        516
+                                    ],
+                                    "score": 1.0,
+                                    "content": "culty in building multi-view consistency as images for matching are too few;",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 19
+                        },
+                        {
+                            "bbox": [
+                                50,
+                                515,
+                                296,
+                                526
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        515,
+                                        296,
+                                        526
+                                    ],
+                                    "score": 1.0,
+                                    "content": "2) Partially omitted or highly compressed object information as view cover-",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 20
+                        },
+                        {
+                            "bbox": [
+                                49,
+                                525,
+                                296,
+                                536
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        49,
+                                        525,
+                                        296,
+                                        536
+                                    ],
+                                    "score": 1.0,
+                                    "content": "age is insu\"cient. To tackle these challenges, we propose GaussianObject, a",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 21
+                        },
+                        {
+                            "bbox": [
+                                49,
+                                534,
+                                295,
+                                546
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        49,
+                                        534,
+                                        295,
+                                        546
+                                    ],
+                                    "score": 1.0,
+                                    "content": "framework to represent and render the 3D object with Gaussian splatting",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 22
+                        },
+                        {
+                            "bbox": [
+                                50,
+                                545,
+                                295,
+                                556
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        545,
+                                        295,
+                                        556
+                                    ],
+                                    "score": 1.0,
+                                    "content": "that achieves high rendering quality with only 4 input images. We !rst",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 23
+                        }
+                    ],
+                    "index": 19
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        317,
+                        465,
+                        561,
+                        604
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                316,
+                                465,
+                                561,
+                                475
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        465,
+                                        561,
+                                        475
+                                    ],
+                                    "score": 1.0,
+                                    "content": "introduce techniques of visual hull and #oater elimination, which explicitly",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 24
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                475,
+                                561,
+                                486
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        475,
+                                        561,
+                                        486
+                                    ],
+                                    "score": 1.0,
+                                    "content": "inject structure priors into the initial optimization process to help build",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 25
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                486,
+                                561,
+                                495
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        486,
+                                        561,
+                                        495
+                                    ],
+                                    "score": 1.0,
+                                    "content": "multi-view consistency, yielding a coarse 3D Gaussian representation. Then",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 26
+                        },
+                        {
+                            "bbox": [
+                                315,
+                                495,
+                                562,
+                                505
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        315,
+                                        495,
+                                        562,
+                                        505
+                                    ],
+                                    "score": 1.0,
+                                    "content": "we construct a Gaussian repair model based on di$usion models to supple-",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 27
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                505,
+                                561,
+                                515
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        505,
+                                        561,
+                                        515
+                                    ],
+                                    "score": 1.0,
+                                    "content": "ment the omitted object information, where Gaussians are further re!ned.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 28
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                515,
+                                561,
+                                526
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        515,
+                                        561,
+                                        526
+                                    ],
+                                    "score": 1.0,
+                                    "content": "We design a self-generating strategy to obtain image pairs for training the",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 29
+                        },
+                        {
+                            "bbox": [
+                                315,
+                                525,
+                                561,
+                                536
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        315,
+                                        525,
+                                        561,
+                                        536
+                                    ],
+                                    "score": 1.0,
+                                    "content": "repair model. We further design a COLMAP-free variant, where pre-given",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 30
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                536,
+                                561,
+                                546
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        536,
+                                        561,
+                                        546
+                                    ],
+                                    "score": 1.0,
+                                    "content": "accurate camera poses are not required, which achieves competitive quality",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 31
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                545,
+                                561,
+                                555
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        545,
+                                        561,
+                                        555
+                                    ],
+                                    "score": 1.0,
+                                    "content": "and facilitates wider applications. GaussianObject is evaluated on several",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 32
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                555,
+                                561,
+                                565
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        555,
+                                        561,
+                                        565
+                                    ],
+                                    "score": 1.0,
+                                    "content": "challenging datasets, including MipNeRF360, OmniObject3D, OpenIllumi-",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 33
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                565,
+                                561,
+                                576
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        565,
+                                        561,
+                                        576
+                                    ],
+                                    "score": 1.0,
+                                    "content": "nation, and our-collected unposed images, achieving superior performance",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 34
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                575,
+                                561,
+                                585
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        575,
+                                        561,
+                                        585
+                                    ],
+                                    "score": 1.0,
+                                    "content": "from only four views and signi!cantly outperforming previous SOTA meth-",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 35
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                585,
+                                560,
+                                595
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        585,
+                                        560,
+                                        595
+                                    ],
+                                    "score": 1.0,
+                                    "content": "ods. Our demo is available at https:// gaussianobject.github.io/ , and the code",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 36
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                595,
+                                550,
+                                605
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        595,
+                                        550,
+                                        605
+                                    ],
+                                    "score": 1.0,
+                                    "content": "has been released at https:// github.com/ GaussianObject/ GaussianObject.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 43
+                        }
+                    ],
+                    "index": 30.5
+                },
+                {
+                    "type": "title",
+                    "bbox": [
+                        317,
+                        611,
+                        560,
+                        630
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                316,
+                                610,
+                                562,
+                                622
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        610,
+                                        562,
+                                        622
+                                    ],
+                                    "score": 1.0,
+                                    "content": "CCS Concepts: • Computing methodologies → Reconstruction; Ren-",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 44
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                621,
+                                418,
+                                631
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        621,
+                                        418,
+                                        631
+                                    ],
+                                    "score": 1.0,
+                                    "content": "dering; Point-based models.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 45
+                        }
+                    ],
+                    "index": 44.5
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        317,
+                        637,
+                        560,
+                        657
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                316,
+                                637,
+                                561,
+                                647
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        637,
+                                        561,
+                                        647
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Additional Key Words and Phrases: Sparse view reconstruction, 3D Gaussian",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 46
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                647,
+                                500,
+                                658
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        647,
+                                        500,
+                                        658
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Splatting, ControlNet, Visual hull, Novel view synthesis",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 47
+                        }
+                    ],
+                    "index": 46.5
+                },
+                {
+                    "type": "title",
+                    "bbox": [
+                        317,
+                        664,
+                        405,
+                        672
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                316,
+                                663,
+                                405,
+                                674
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        663,
+                                        405,
+                                        674
+                                    ],
+                                    "score": 1.0,
+                                    "content": "ACM Reference Format:",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 48
+                        }
+                    ],
+                    "index": 48
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        317,
+                        674,
+                        560,
+                        693
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                316,
+                                672,
+                                561,
+                                686
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        672,
+                                        561,
+                                        686
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Chen Yang, Sikuang Li, Jiemin Fang, Ruofan Liang, Lingxi Xie, Xiaopeng",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 49
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                682,
+                                561,
+                                695
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        682,
+                                        561,
+                                        695
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Zhang, Wei Shen, and Qi Tian. 2024. GaussianObject: High-Quality 3D Object",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 50
+                        }
+                    ],
+                    "index": 49.5
+                }
+            ],
+            "page_idx": 0,
+            "page_size": [
+                612,
+                792
+            ],
+            "discarded_blocks": [
+                {
+                    "type": "discarded",
+                    "bbox": [
+                        51,
+                        596,
+                        295,
+                        668
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                50,
+                                595,
+                                295,
+                                606
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        595,
+                                        295,
+                                        606
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Authors’ addresses: Chen Yang, MoE Key Lab of Arti!cial Intelligence, AI Institute,",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        {
+                            "bbox": [
+                                50,
+                                604,
+                                295,
+                                613
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        604,
+                                        295,
+                                        613
+                                    ],
+                                    "score": 1.0,
+                                    "content": "SJTU, Shanghai, China, ycyangchen@sjtu.edu.cn; Sikuang Li, MoE Key Lab of Arti!-",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        {
+                            "bbox": [
+                                50,
+                                613,
+                                294,
+                                621
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        613,
+                                        294,
+                                        621
+                                    ],
+                                    "score": 1.0,
+                                    "content": "cial Intelligence, AI Institute, SJTU, Shanghai, China, uranusits@sjtu.edu.cn; Jiemin",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        {
+                            "bbox": [
+                                49,
+                                620,
+                                295,
+                                630
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        49,
+                                        620,
+                                        295,
+                                        630
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Fang, Huawei Inc., Wuhan, China, jaminfong@gmail.com; Ruofan Liang, University",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        {
+                            "bbox": [
+                                49,
+                                628,
+                                295,
+                                637
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        49,
+                                        628,
+                                        295,
+                                        637
+                                    ],
+                                    "score": 1.0,
+                                    "content": "of Toronto, Toronto, Canada, ruofan@cs.toronto.edu; Lingxi Xie, Huawei Inc., Bei-",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        {
+                            "bbox": [
+                                50,
+                                636,
+                                296,
+                                645
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        636,
+                                        296,
+                                        645
+                                    ],
+                                    "score": 1.0,
+                                    "content": "jing, China, 198808xc@gmail.com; Xiaopeng Zhang, Huawei Inc., Shanghai, China,",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        {
+                            "bbox": [
+                                49,
+                                643,
+                                296,
+                                654
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        49,
+                                        643,
+                                        296,
+                                        654
+                                    ],
+                                    "score": 1.0,
+                                    "content": "zxphistory@gmail.com; Wei Shen, MoE Key Lab of Arti!cial Intelligence, AI Institute,",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        {
+                            "bbox": [
+                                50,
+                                651,
+                                296,
+                                662
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        651,
+                                        296,
+                                        662
+                                    ],
+                                    "score": 1.0,
+                                    "content": "SJTU, Shanghai, China, wei.shen@sjtu.edu.cn; Qi Tian, Huawei Inc., Shenzhen, China,",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        {
+                            "bbox": [
+                                50,
+                                660,
+                                116,
+                                669
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        660,
+                                        116,
+                                        669
+                                    ],
+                                    "score": 1.0,
+                                    "content": "tian.qi1@huawei.com.",
+                                    "type": "text"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "discarded",
+                    "bbox": [
+                        51,
+                        677,
+                        152,
+                        693
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                51,
+                                677,
+                                153,
+                                684
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        51,
+                                        677,
+                                        153,
+                                        684
+                                    ],
+                                    "score": 1.0,
+                                    "content": "2024. ACM 0730-0301/2024/12-ART",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        {
+                            "bbox": [
+                                50,
+                                685,
+                                141,
+                                693
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        685,
+                                        141,
+                                        693
+                                    ],
+                                    "score": 1.0,
+                                    "content": "https://doi.org/10.1145/3687759",
+                                    "type": "text"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "discarded",
+                    "bbox": [
+                        340,
+                        709,
+                        559,
+                        717
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                339,
+                                707,
+                                560,
+                                717
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        339,
+                                        707,
+                                        560,
+                                        717
+                                    ],
+                                    "score": 1.0,
+                                    "content": "ACM Trans. Graph., Vol. 43, No. 6, Article . Publication date: December 2024.",
+                                    "type": "text"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "discarded",
+                    "bbox": [
+                        51,
+                        562,
+                        119,
+                        588
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                50,
+                                560,
+                                113,
+                                571
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        560,
+                                        113,
+                                        571
+                                    ],
+                                    "score": 1.0,
+                                    "content": "∗ Equal contributions.",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        {
+                            "bbox": [
+                                50,
+                                569,
+                                92,
+                                580
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        569,
+                                        92,
+                                        580
+                                    ],
+                                    "score": 1.0,
+                                    "content": "†Project lead.",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        {
+                            "bbox": [
+                                49,
+                                577,
+                                121,
+                                590
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        49,
+                                        577,
+                                        121,
+                                        590
+                                    ],
+                                    "score": 1.0,
+                                    "content": "‡Corresponding author.",
+                                    "type": "text"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "discarded",
+                    "bbox": [
+                        14,
+                        203,
+                        37,
+                        561
+                    ],
+                    "lines": []
+                }
+            ],
+            "para_blocks": [
+                {
+                    "type": "title",
+                    "bbox": [
+                        49,
+                        75,
+                        530,
+                        115
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                50,
+                                75,
+                                531,
+                                96
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        75,
+                                        531,
+                                        96
+                                    ],
+                                    "score": 1.0,
+                                    "content": "GaussianObject: High-!ality 3D Object Reconstruction from Four",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 0
+                        },
+                        {
+                            "bbox": [
+                                48,
+                                93,
+                                270,
+                                118
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        48,
+                                        93,
+                                        270,
+                                        118
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Views with Gaussian Spla\"ing",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 1
+                        }
+                    ],
+                    "index": 0.5
+                },
+                {
+                    "type": "list",
+                    "bbox": [
+                        50,
+                        123,
+                        383,
+                        234
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                50,
+                                123,
+                                385,
+                                137
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        123,
+                                        385,
+                                        137
+                                    ],
+                                    "score": 1.0,
+                                    "content": "CHEN YANG∗ , MoE Key Lab of Artificial Intelligence, AI Institute, SJTU, China",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 2,
+                            "is_list_start_line": true
+                        },
+                        {
+                            "bbox": [
+                                49,
+                                137,
+                                383,
+                                152
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        49,
+                                        137,
+                                        383,
+                                        152
+                                    ],
+                                    "score": 1.0,
+                                    "content": "SIKUANG LI∗ , MoE Key Lab of Artificial Intelligence, AI Institute, SJTU, China",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 3,
+                            "is_list_start_line": true
+                        },
+                        {
+                            "bbox": [
+                                48,
+                                149,
+                                212,
+                                165
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        48,
+                                        149,
+                                        212,
+                                        165
+                                    ],
+                                    "score": 1.0,
+                                    "content": "JIEMIN FANG†, Huawei Inc., China",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 4,
+                            "is_list_start_line": true
+                        },
+                        {
+                            "bbox": [
+                                49,
+                                165,
+                                265,
+                                179
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        49,
+                                        165,
+                                        265,
+                                        179
+                                    ],
+                                    "score": 1.0,
+                                    "content": "RUOFAN LIANG, University of Toronto, Canada",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 5,
+                            "is_list_start_line": true
+                        },
+                        {
+                            "bbox": [
+                                50,
+                                179,
+                                194,
+                                192
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        179,
+                                        194,
+                                        192
+                                    ],
+                                    "score": 1.0,
+                                    "content": "LINGXI XIE, Huawei Inc., China",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 6,
+                            "is_list_start_line": true
+                        },
+                        {
+                            "bbox": [
+                                49,
+                                193,
+                                237,
+                                207
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        49,
+                                        193,
+                                        237,
+                                        207
+                                    ],
+                                    "score": 1.0,
+                                    "content": "XIAOPENG ZHANG, Huawei Inc., China",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 7,
+                            "is_list_start_line": true
+                        },
+                        {
+                            "bbox": [
+                                48,
+                                205,
+                                378,
+                                223
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        48,
+                                        205,
+                                        378,
+                                        223
+                                    ],
+                                    "score": 1.0,
+                                    "content": "WEI SHEN‡, MoE Key Lab of Artificial Intelligence, AI Institute, SJTU, China",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 8,
+                            "is_list_start_line": true
+                        },
+                        {
+                            "bbox": [
+                                50,
+                                220,
+                                179,
+                                235
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        220,
+                                        179,
+                                        235
+                                    ],
+                                    "score": 1.0,
+                                    "content": "QI TIAN, Huawei Inc., China",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 9,
+                            "is_list_start_line": true
+                        }
+                    ],
+                    "index": 5.5,
+                    "bbox_fs": [
+                        48,
+                        123,
+                        385,
+                        235
+                    ]
+                },
+                {
+                    "type": "image",
+                    "bbox": [
+                        50,
+                        244,
+                        560,
+                        426
+                    ],
+                    "blocks": [
+                        {
+                            "type": "image_body",
+                            "bbox": [
+                                50,
+                                244,
+                                560,
+                                426
+                            ],
+                            "group_id": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        244,
+                                        560,
+                                        426
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                50,
+                                                244,
+                                                560,
+                                                426
+                                            ],
+                                            "score": 0.957,
+                                            "type": "image",
+                                            "image_path": "f4cd9a3ff84d91d075920ece838ca96f7a4344b466805a78f03ceb0b3ce11fb7.jpg"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 11,
+                            "virtual_lines": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        244,
+                                        560,
+                                        304.6666666666667
+                                    ],
+                                    "spans": [],
+                                    "index": 10
+                                },
+                                {
+                                    "bbox": [
+                                        50,
+                                        304.6666666666667,
+                                        560,
+                                        365.33333333333337
+                                    ],
+                                    "spans": [],
+                                    "index": 11
+                                },
+                                {
+                                    "bbox": [
+                                        50,
+                                        365.33333333333337,
+                                        560,
+                                        426.00000000000006
+                                    ],
+                                    "spans": [],
+                                    "index": 12
+                                }
+                            ]
+                        },
+                        {
+                            "type": "image_caption",
+                            "bbox": [
+                                48,
+                                438,
+                                560,
+                                459
+                            ],
+                            "group_id": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        438,
+                                        561,
+                                        450
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                50,
+                                                438,
+                                                561,
+                                                450
+                                            ],
+                                            "score": 1.0,
+                                            "content": "Fig. 1. We introduce GaussianObject, a framework capable of reconstructing high-quality 3D objects from only 4 images with Gaussian spla\"ing. Gaus-",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "index": 13
+                                },
+                                {
+                                    "bbox": [
+                                        49,
+                                        447,
+                                        439,
+                                        461
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                49,
+                                                447,
+                                                439,
+                                                461
+                                            ],
+                                            "score": 1.0,
+                                            "content": "sianObject demonstrates superior performance over previous state-of-the-art (SOTA) methods on challenging objects.",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "index": 14
+                                }
+                            ],
+                            "index": 13.5
+                        }
+                    ],
+                    "index": 12.25
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        51,
+                        465,
+                        294,
+                        555
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                50,
+                                465,
+                                295,
+                                475
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        465,
+                                        295,
+                                        475
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Reconstructing and rendering 3D objects from highly sparse views is of",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 15
+                        },
+                        {
+                            "bbox": [
+                                50,
+                                475,
+                                295,
+                                486
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        475,
+                                        295,
+                                        486
+                                    ],
+                                    "score": 1.0,
+                                    "content": "critical importance for promoting applications of 3D vision techniques and",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 16
+                        },
+                        {
+                            "bbox": [
+                                50,
+                                486,
+                                295,
+                                496
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        486,
+                                        295,
+                                        496
+                                    ],
+                                    "score": 1.0,
+                                    "content": "improving user experience. However, images from sparse views only contain",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 17
+                        },
+                        {
+                            "bbox": [
+                                50,
+                                496,
+                                295,
+                                505
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        496,
+                                        295,
+                                        505
+                                    ],
+                                    "score": 1.0,
+                                    "content": "very limited 3D information, leading to two signi!cant challenges: 1) Di\"-",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 18
+                        },
+                        {
+                            "bbox": [
+                                50,
+                                506,
+                                296,
+                                516
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        506,
+                                        296,
+                                        516
+                                    ],
+                                    "score": 1.0,
+                                    "content": "culty in building multi-view consistency as images for matching are too few;",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 19
+                        },
+                        {
+                            "bbox": [
+                                50,
+                                515,
+                                296,
+                                526
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        515,
+                                        296,
+                                        526
+                                    ],
+                                    "score": 1.0,
+                                    "content": "2) Partially omitted or highly compressed object information as view cover-",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 20
+                        },
+                        {
+                            "bbox": [
+                                49,
+                                525,
+                                296,
+                                536
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        49,
+                                        525,
+                                        296,
+                                        536
+                                    ],
+                                    "score": 1.0,
+                                    "content": "age is insu\"cient. To tackle these challenges, we propose GaussianObject, a",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 21
+                        },
+                        {
+                            "bbox": [
+                                49,
+                                534,
+                                295,
+                                546
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        49,
+                                        534,
+                                        295,
+                                        546
+                                    ],
+                                    "score": 1.0,
+                                    "content": "framework to represent and render the 3D object with Gaussian splatting",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 22
+                        },
+                        {
+                            "bbox": [
+                                50,
+                                545,
+                                295,
+                                556
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        50,
+                                        545,
+                                        295,
+                                        556
+                                    ],
+                                    "score": 1.0,
+                                    "content": "that achieves high rendering quality with only 4 input images. We !rst",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 23
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                465,
+                                561,
+                                475
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        465,
+                                        561,
+                                        475
+                                    ],
+                                    "score": 1.0,
+                                    "content": "introduce techniques of visual hull and #oater elimination, which explicitly",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 24
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                475,
+                                561,
+                                486
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        475,
+                                        561,
+                                        486
+                                    ],
+                                    "score": 1.0,
+                                    "content": "inject structure priors into the initial optimization process to help build",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 25
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                486,
+                                561,
+                                495
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        486,
+                                        561,
+                                        495
+                                    ],
+                                    "score": 1.0,
+                                    "content": "multi-view consistency, yielding a coarse 3D Gaussian representation. Then",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 26
+                        },
+                        {
+                            "bbox": [
+                                315,
+                                495,
+                                562,
+                                505
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        315,
+                                        495,
+                                        562,
+                                        505
+                                    ],
+                                    "score": 1.0,
+                                    "content": "we construct a Gaussian repair model based on di$usion models to supple-",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 27
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                505,
+                                561,
+                                515
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        505,
+                                        561,
+                                        515
+                                    ],
+                                    "score": 1.0,
+                                    "content": "ment the omitted object information, where Gaussians are further re!ned.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 28
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                515,
+                                561,
+                                526
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        515,
+                                        561,
+                                        526
+                                    ],
+                                    "score": 1.0,
+                                    "content": "We design a self-generating strategy to obtain image pairs for training the",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 29
+                        },
+                        {
+                            "bbox": [
+                                315,
+                                525,
+                                561,
+                                536
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        315,
+                                        525,
+                                        561,
+                                        536
+                                    ],
+                                    "score": 1.0,
+                                    "content": "repair model. We further design a COLMAP-free variant, where pre-given",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 30
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                536,
+                                561,
+                                546
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        536,
+                                        561,
+                                        546
+                                    ],
+                                    "score": 1.0,
+                                    "content": "accurate camera poses are not required, which achieves competitive quality",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 31
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                545,
+                                561,
+                                555
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        545,
+                                        561,
+                                        555
+                                    ],
+                                    "score": 1.0,
+                                    "content": "and facilitates wider applications. GaussianObject is evaluated on several",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 32
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                555,
+                                561,
+                                565
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        555,
+                                        561,
+                                        565
+                                    ],
+                                    "score": 1.0,
+                                    "content": "challenging datasets, including MipNeRF360, OmniObject3D, OpenIllumi-",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 33
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                565,
+                                561,
+                                576
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        565,
+                                        561,
+                                        576
+                                    ],
+                                    "score": 1.0,
+                                    "content": "nation, and our-collected unposed images, achieving superior performance",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 34
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                575,
+                                561,
+                                585
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        575,
+                                        561,
+                                        585
+                                    ],
+                                    "score": 1.0,
+                                    "content": "from only four views and signi!cantly outperforming previous SOTA meth-",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 35
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                585,
+                                560,
+                                595
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        585,
+                                        560,
+                                        595
+                                    ],
+                                    "score": 1.0,
+                                    "content": "ods. Our demo is available at https:// gaussianobject.github.io/ , and the code",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 36
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                595,
+                                550,
+                                605
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        595,
+                                        550,
+                                        605
+                                    ],
+                                    "score": 1.0,
+                                    "content": "has been released at https:// github.com/ GaussianObject/ GaussianObject.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 43
+                        }
+                    ],
+                    "index": 19,
+                    "bbox_fs": [
+                        49,
+                        465,
+                        296,
+                        556
+                    ]
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        317,
+                        465,
+                        561,
+                        604
+                    ],
+                    "lines": [],
+                    "index": 30.5,
+                    "bbox_fs": [
+                        315,
+                        465,
+                        562,
+                        605
+                    ],
+                    "lines_deleted": true
+                },
+                {
+                    "type": "title",
+                    "bbox": [
+                        317,
+                        611,
+                        560,
+                        630
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                316,
+                                610,
+                                562,
+                                622
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        610,
+                                        562,
+                                        622
+                                    ],
+                                    "score": 1.0,
+                                    "content": "CCS Concepts: • Computing methodologies → Reconstruction; Ren-",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 44
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                621,
+                                418,
+                                631
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        621,
+                                        418,
+                                        631
+                                    ],
+                                    "score": 1.0,
+                                    "content": "dering; Point-based models.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 45
+                        }
+                    ],
+                    "index": 44.5
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        317,
+                        637,
+                        560,
+                        657
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                316,
+                                637,
+                                561,
+                                647
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        637,
+                                        561,
+                                        647
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Additional Key Words and Phrases: Sparse view reconstruction, 3D Gaussian",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 46
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                647,
+                                500,
+                                658
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        647,
+                                        500,
+                                        658
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Splatting, ControlNet, Visual hull, Novel view synthesis",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 47
+                        }
+                    ],
+                    "index": 46.5,
+                    "bbox_fs": [
+                        316,
+                        637,
+                        561,
+                        658
+                    ]
+                },
+                {
+                    "type": "title",
+                    "bbox": [
+                        317,
+                        664,
+                        405,
+                        672
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                316,
+                                663,
+                                405,
+                                674
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        663,
+                                        405,
+                                        674
+                                    ],
+                                    "score": 1.0,
+                                    "content": "ACM Reference Format:",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 48
+                        }
+                    ],
+                    "index": 48
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        317,
+                        674,
+                        560,
+                        693
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                316,
+                                672,
+                                561,
+                                686
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        672,
+                                        561,
+                                        686
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Chen Yang, Sikuang Li, Jiemin Fang, Ruofan Liang, Lingxi Xie, Xiaopeng",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 49
+                        },
+                        {
+                            "bbox": [
+                                316,
+                                682,
+                                561,
+                                695
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        316,
+                                        682,
+                                        561,
+                                        695
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Zhang, Wei Shen, and Qi Tian. 2024. GaussianObject: High-Quality 3D Object",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 50
+                        }
+                    ],
+                    "index": 49.5,
+                    "bbox_fs": [
+                        316,
+                        672,
+                        561,
+                        695
+                    ]
+                }
+            ]
+        }
+    ],
+    "_backend": "pipeline",
+    "_version_name": "2.1.0"
+}

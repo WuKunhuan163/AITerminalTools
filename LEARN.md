@@ -12,7 +12,7 @@ LEARN是一个智能学习系统，能够自动生成结构化的教程、问题
 ```bash
 LEARN                                    # Interactive mode
 LEARN "<topic>" [options]                # General topic learning  
-LEARN --pdf "<pdf_path>" [options]       # Direct PDF processing
+LEARN --file "<file_path>" [options]     # Direct file processing (PDF/MD/TXT)
 LEARN --description "<description>" [options]  # Paper search and download
 LEARN --gen-command "<description>"       # Generate LEARN command
 ```
@@ -32,9 +32,8 @@ LEARN --gen-command "<description>"       # Generate LEARN command
   - `实例丰富`: Rich examples and practical applications
   - `理论导向`: Theory-focused with rigorous explanations
 
-### Paper Input Options
-- `-p, --paper <path>`: Local paper file path (Markdown)
-- `--pdf <path>`: Direct PDF file path (skips search/download)
+### File Input Options
+- `--file <path>`: Direct file path (supports PDF, MD, TXT files)
 - `-u, --url <url>`: Paper URL for download
 - `-d, --description <text>`: Paper description for search and download
 - `--negative <text>`: Negative prompt to exclude unwanted papers
@@ -52,7 +51,7 @@ LEARN --gen-command "<description>"       # Generate LEARN command
 ### File Reference Support
 LEARN supports @"file_path" syntax to include file content in prompts:
 - `@"/path/to/file.md"`: Include markdown file content
-- `@"/path/to/file.txt"`: Include text file content  
+- `@"/path/to/file.txt"`: Include text file content
 - `@"/path/to/file.pdf"`: Include PDF file content (processed with basic engine)
 - When @file_path is detected, `--context` mode is automatically enabled
 - File references skip paper search and use content directly for brainstorming
@@ -68,7 +67,7 @@ LEARN -o ~/tutorials -m 高级 -s 实例丰富 "机器学习算法"
 ### Academic Paper Learning
 ```bash
 # Direct PDF processing
-LEARN -o ~/tutorials -m 中级 --pdf "/path/to/paper.pdf"
+LEARN -o ~/tutorials -m 中级 --file "/path/to/paper.pdf"
 
 # Search and download paper
 LEARN -o ~/tutorials -m 初学者 -d "3D Gaussian Splatting mesh reconstruction"
@@ -77,7 +76,7 @@ LEARN -o ~/tutorials -m 初学者 -d "3D Gaussian Splatting mesh reconstruction"
 LEARN -o ~/tutorials -m 中级 -d "deep learning" --negative "GAN, generative models"
 
 # With image processing enabled
-LEARN -o ~/tutorials -m 高级 --pdf "/path/to/paper.pdf" --read-images
+LEARN -o ~/tutorials -m 高级 --file "/path/to/paper.pdf" --read-images
 ```
 
 ### File Input Options

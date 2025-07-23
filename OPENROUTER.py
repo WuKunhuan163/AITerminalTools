@@ -270,27 +270,226 @@ def save_models(models: Dict[str, Dict[str, Any]]) -> bool:
         return False
 
 
-def set_default_model(model_id: str) -> bool:
-    """设置默认模型（将指定模型移到列表最上方）"""
+def set_default_model(model_ids_str: str) -> bool:
+    """设置默认模型（支持多个模型ID，将指定模型按顺序移到列表最前面）"""
     models = load_models()
     
-    if model_id not in models:
-        print(f"❌ 模型 '{model_id}' 不存在", file=sys.stderr)
+    # 解析模型ID列表（支持逗号或空格分隔）
+    import re
+    model_ids = re.split(r'[,\s]+', model_ids_str.strip())
+    model_ids = [mid.strip() for mid in model_ids if mid.strip()]
+    
+    if not model_ids:
+        print(f"❌ 未提供有效的模型ID", file=sys.stderr)
         return False
     
-    # 创建新的有序字典，将指定模型放在最前面
-    new_models = {model_id: models[model_id]}
+    # 检查每个模型是否存在
+    existing_models = []
+    missing_models = []
     
-    # 添加其他模型
-    for mid, info in models.items():
-        if mid != model_id:
-            new_models[mid] = info
+    for model_id in model_ids:
+        if model_id in models:
+            existing_models.append(model_id)
+        else:
+            missing_models.append(model_id)
+    
+    # 警告不存在的模型
+    if missing_models:
+        print(f"⚠️  以下模型不存在于列表中: {', '.join(missing_models)}")
+    
+    if not existing_models:
+        print(f"❌ 没有找到任何有效的模型", file=sys.stderr)
+        return False
+    
+    # 创建新的有序字典
+    new_models = {}
+    
+    # 1. 先按指定顺序添加存在的模型
+    for model_id in existing_models:
+        new_models[model_id] = models[model_id]
+    
+    # 2. 然后添加其他未指定的模型，保持它们的原有相对顺序
+    for model_id, info in models.items():
+        if model_id not in existing_models:
+            new_models[model_id] = info
     
     if save_models(new_models):
-        print(f"✅ 已将 '{model_id}' 设置为默认模型")
+        if len(existing_models) == 1:
+            print(f"✅ 已将 '{existing_models[0]}' 设置为默认模型")
+        else:
+            print(f"✅ 已按顺序设置优先模型: {' -> '.join(existing_models)}")
+            print(f"📋 新的默认模型: {existing_models[0]}")
         return True
     else:
         print(f"❌ 设置默认模型失败", file=sys.stderr)
+        return False
+
+
+def test_model_availability(model_id: str, api_key: str = None) -> Dict[str, Any]:
+    """测试模型是否可用"""
+    # 获取API密钥
+    test_api_key = api_key or os.getenv("OPENROUTER_API_KEY")
+    
+    if not test_api_key:
+        return {
+            "success": False,
+            "message": "❌ 需要API密钥来测试模型",
+            "error": "missing_api_key"
+        }
+    
+    headers = {
+        "Authorization": f"Bearer {test_api_key}",
+        "HTTP-Referer": "https://github.com/openrouter-test",
+        "X-Title": "OPENROUTER Model Test"
+    }
+    
+    # 测试模型调用
+    test_payload = {
+        "model": model_id,
+        "messages": [{"role": "user", "content": "Hello, please respond with 'OK'"}],
+        "max_tokens": 10
+    }
+    
+    try:
+        response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers=headers,
+            json=test_payload,
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            if 'choices' in result and len(result['choices']) > 0:
+                return {
+                    "success": True,
+                    "message": f"✅ 模型 {model_id} 测试成功",
+                    "response": result['choices'][0]['message']['content'].strip()
+                }
+            else:
+                return {
+                    "success": False,
+                    "message": f"❌ 模型 {model_id} 返回格式异常",
+                    "error": "invalid_response_format"
+                }
+        elif response.status_code == 404:
+            return {
+                "success": False,
+                "message": f"❌ 模型 {model_id} 不存在",
+                "error": "model_not_found"
+            }
+        elif response.status_code == 402:
+            return {
+                "success": False,
+                "message": f"❌ 账户余额不足或模型需要付费",
+                "error": "payment_required"
+            }
+        else:
+            error_data = response.json() if response.headers.get('content-type', '').startswith('application/json') else {}
+            error_msg = error_data.get('error', {}).get('message', f"HTTP {response.status_code}")
+            return {
+                "success": False,
+                "message": f"❌ 模型 {model_id} 测试失败: {error_msg}",
+                "error": "api_error"
+            }
+            
+    except requests.exceptions.Timeout:
+        return {
+            "success": False,
+            "message": f"❌ 模型 {model_id} 测试超时",
+            "error": "timeout"
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"❌ 模型 {model_id} 测试出错: {str(e)}",
+            "error": "unknown_error"
+        }
+
+
+def add_model(model_id: str, api_key: str = None) -> bool:
+    """添加新模型到列表（先测试可用性）"""
+    models = load_models()
+    
+    if model_id in models:
+        print(f"⚠️  模型 '{model_id}' 已存在于列表中")
+        return False
+    
+    print(f"🔍 正在测试模型 '{model_id}' 的可用性...")
+    
+    # 测试模型
+    test_result = test_model_availability(model_id, api_key)
+    
+    if not test_result["success"]:
+        print(test_result["message"])
+        return False
+    
+    print(test_result["message"])
+    
+    # 尝试获取模型的详细信息
+    try:
+        # 获取模型列表以获取详细信息
+        test_api_key = api_key or os.getenv("OPENROUTER_API_KEY")
+        headers = {
+            "Authorization": f"Bearer {test_api_key}",
+            "HTTP-Referer": "https://github.com/openrouter-test",
+            "X-Title": "OPENROUTER Model Info"
+        }
+        
+        response = requests.get("https://openrouter.ai/api/v1/models", headers=headers, timeout=15)
+        
+        model_info = {
+            "input_cost_per_1m": 0.0,
+            "output_cost_per_1m": 0.0,
+            "context_length": 4000,
+            "useable": True
+        }
+        
+        if response.status_code == 200:
+            models_data = response.json()
+            for model_data in models_data.get('data', []):
+                if model_data.get('id') == model_id:
+                    pricing = model_data.get('pricing', {})
+                    model_info.update({
+                        "input_cost_per_1m": float(pricing.get('prompt', '0')) * 1000000,
+                        "output_cost_per_1m": float(pricing.get('completion', '0')) * 1000000,
+                        "context_length": model_data.get('context_length', 4000),
+                        "useable": True
+                    })
+                    break
+    
+    except Exception as e:
+        print(f"⚠️  无法获取模型详细信息，使用默认值: {e}")
+    
+    # 添加到模型列表
+    models[model_id] = model_info
+    
+    if save_models(models):
+        print(f"✅ 成功添加模型 '{model_id}' 到列表")
+        print(f"📊 费率: 输入 ${model_info['input_cost_per_1m']:.2f}/1M, 输出 ${model_info['output_cost_per_1m']:.2f}/1M")
+        print(f"📏 上下文长度: {model_info['context_length']:,} tokens")
+        return True
+    else:
+        print(f"❌ 添加模型失败")
+        return False
+
+
+def remove_model(model_id: str) -> bool:
+    """从列表中移除模型"""
+    models = load_models()
+    
+    if model_id not in models:
+        print(f"❌ 模型 '{model_id}' 不存在于列表中")
+        return False
+    
+    # 删除模型
+    del models[model_id]
+    
+    if save_models(models):
+        print(f"✅ 已从列表中移除模型 '{model_id}'")
+        return True
+    else:
+        print(f"❌ 移除模型失败")
         return False
 
 
@@ -477,9 +676,7 @@ def call_openrouter_api(query: str, model: str = None, api_key: str = None, max_
     
     try:
         print(f"🤖 调用OpenRouter API...", file=sys.stderr)
-        print(f"📝 模型: {model}", file=sys.stderr)
-        print(f"🔢 最大tokens: {max_tokens}", file=sys.stderr)
-        print(f"🌡️  温度: {temperature}", file=sys.stderr)
+        print(f"📝 模型: {model}, 最大tokens: {max_tokens}, 温度: {temperature}", file=sys.stderr)
         
         response = requests.post(url, headers=headers, json=data, timeout=60)
         response.raise_for_status()
@@ -538,7 +735,9 @@ def main():
 
 Usage: OPENROUTER <query> [options]
        OPENROUTER --list
-       OPENROUTER --default <model>
+       OPENROUTER --default <model1> [model2] [model3] ...
+       OPENROUTER --add <model> [--temp-key <api_key>]
+       OPENROUTER --remove <model>
        OPENROUTER --test-connection
 
 Options:
@@ -549,7 +748,10 @@ Options:
   --temperature <float>  温度参数 (默认: 0.7)
   --output-dir <dir>     输出目录，保存模型回复到指定目录
   --list                 列出所有可用模型
-  --default <model>      设置默认模型（将指定模型移到列表最上方）
+  --default <models>     设置默认模型优先级（支持多个模型，用逗号或空格分隔）
+  --add <model>          添加新模型到列表（先测试连接）
+  --remove <model>       从列表中移除模型
+  --temp-key <api_key>   临时API密钥（用于测试新模型）
   --test-connection      测试API连接状态，不发送查询
   --help                 显示帮助信息
 
@@ -560,9 +762,13 @@ Examples:
   OPENROUTER "创建一个学习计划" --temperature 0.9
 
   OPENROUTER --list
-  OPENROUTER --default "deepseek/deepseek-chat"
+  OPENROUTER --default "qwen/qwen3-235b-a22b-07-25:free"
+  OPENROUTER --default "qwen/qwen3-235b-a22b-07-25:free,google/gemini-2.5-flash-lite-preview-06-17"
+  OPENROUTER --default "model1 model2 model3"
+  OPENROUTER --add "qwen/qwen3-235b-a22b-07-25:free"
+  OPENROUTER --add "moonshotai/kimi-k2:free" --temp-key "sk-or-v1-..."
+  OPENROUTER --remove "old-model"
   OPENROUTER --test-connection
-  OPENROUTER --test-connection --model "deepseek/deepseek-chat" --key "sk-or-v1-..."
 
 Environment Variables:
   OPENROUTER_API_KEY    默认API密钥
@@ -579,6 +785,9 @@ Note: 只有标记为可用(useable=true)的模型才会显示在列表中。
     parser.add_argument('--temperature', type=float, default=0.7, help='温度参数')
     parser.add_argument('--list', action='store_true', help='列出所有可用模型')
     parser.add_argument('--default', help='设置默认模型')
+    parser.add_argument('--add', help='添加新模型到列表（先测试连接）')
+    parser.add_argument('--remove', help='从列表中移除模型')
+    parser.add_argument('--temp-key', help='临时API密钥（用于测试新模型）')
     parser.add_argument('--output-dir', help='输出目录，保存模型回复到指定目录')
     parser.add_argument('--test-connection', action='store_true', help='测试API连接状态，不发送查询')
     parser.add_argument('--help', action='store_true', help='显示帮助信息')
@@ -586,7 +795,7 @@ Note: 只有标记为可用(useable=true)的模型才会显示在列表中。
     args = parser.parse_args()
     
     # 显示帮助信息
-    if args.help or (not args.query and not args.list and not args.default and not args.test_connection):
+    if args.help or (not args.query and not args.list and not args.default and not args.add and not args.remove and not args.test_connection):
         print(help_text)
         return
     
@@ -598,6 +807,16 @@ Note: 只有标记为可用(useable=true)的模型才会显示在列表中。
     # 设置默认模型
     if args.default:
         success = set_default_model(args.default)
+        sys.exit(0 if success else 1)
+    
+    # 添加模型
+    if args.add:
+        success = add_model(args.add, args.temp_key)
+        sys.exit(0 if success else 1)
+    
+    # 移除模型
+    if args.remove:
+        success = remove_model(args.remove)
         sys.exit(0 if success else 1)
     
     # 测试连接

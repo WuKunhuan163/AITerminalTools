@@ -1,21 +1,21 @@
 {
   "models": {
-    "deepseek/deepseek-chat:free": {
+    "qwen/qwen3-235b-a22b-07-25:free": {
       "input_cost_per_1m": 0.0,
       "output_cost_per_1m": 0.0,
-      "context_length": 163840,
+      "context_length": 262144,
       "useable": true
     },
-    "deepseek/deepseek-r1:free": {
-      "input_cost_per_1m": 0.0,
-      "output_cost_per_1m": 0.0,
-      "context_length": 163840,
-      "useable": true
-    },
-    "meta-llama/llama-3.2-3b-instruct:free": {
+    "qwen/qwen3-235b-a22b:free": {
       "input_cost_per_1m": 0.0,
       "output_cost_per_1m": 0.0,
       "context_length": 131072,
+      "useable": true
+    },
+    "deepseek/deepseek-r1-0528:free": {
+      "input_cost_per_1m": 0.0,
+      "output_cost_per_1m": 0.0,
+      "context_length": 163840,
       "useable": true
     },
     "google/gemini-2.5-flash-lite-preview-06-17": {
@@ -25,14 +25,8 @@
       "useable": true
     },
     "deepseek/deepseek-chat": {
-      "input_cost_per_1m": 0.3,
-      "output_cost_per_1m": 0.85,
-      "context_length": 163840,
-      "useable": true
-    },
-    "deepseek/deepseek-r1": {
-      "input_cost_per_1m": 0.4,
-      "output_cost_per_1m": 2.0,
+      "input_cost_per_1m": 0.272,
+      "output_cost_per_1m": 0.272,
       "context_length": 163840,
       "useable": true
     }

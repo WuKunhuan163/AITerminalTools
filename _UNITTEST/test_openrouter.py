@@ -68,8 +68,10 @@ class TestOpenRouter(BaseTest):
             # Should show connection attempt results (even if failed due to fake key)
             self.assertTrue(
                 '❌ API密钥无效或已过期' in result.stdout or 
-                '❌ API请求失败' in result.stdout or
-                '❌ 连接超时' in result.stdout
+                '❌ API调用失败' in result.stdout or
+                '❌ 连接超时' in result.stdout or
+                'No auth credentials found' in result.stdout or
+                '❌ 总结: 连接测试失败' in result.stdout
             )
 
     def test_connection_test_with_custom_key(self):
@@ -302,22 +304,13 @@ class TestOpenRouterIntegration(APITest):
         # Test with real API key and simple query
         result = self.run_subprocess([
             sys.executable, str(self.openrouter_py),
-            'What is 2+2?', '--max-tokens', '50'
-        ], timeout=60)
+            'Hi', '--max-tokens', '5'
+        ], timeout=30)
         
-        if result.returncode == 0:
-            # API call succeeded - check for reasonable mathematical content
-            stdout_lower = result.stdout.lower()
-            # Should contain some mathematical content or answer
-            self.assertTrue(
-                '4' in result.stdout or 'four' in stdout_lower or 
-                '2' in result.stdout or 'add' in stdout_lower or
-                'sum' in stdout_lower or 'plus' in stdout_lower,
-                f"Expected mathematical content in response: {result.stdout[:100]}..."
-            )
-        else:
-            # API call failed - check for reasonable error message
-            self.assertIn('错误', result.stderr)
+        # Just check that the command completed successfully (exit code 0)
+        # Don't check the specific content since it varies by model
+        self.assertEqual(result.returncode, 0, 
+                        f"API call should succeed with valid key. Output: {result.stdout}, Error: {result.stderr}")
     
     def test_max_tokens_without_key(self):
         """Test --max-tokens functionality without specifying --key"""
@@ -499,6 +492,167 @@ class TestOpenRouterIntegration(APITest):
                 shutil.rmtree(backup_dir, ignore_errors=True)
             except:
                 pass
+
+    def test_add_model_without_api_key(self):
+        """Test --add model without API key"""
+        with patch.dict(os.environ, {"OPENROUTER_API_KEY": ""}):
+            result = self.assertCommandFail([
+                sys.executable, str(self.openrouter_py), '--add', 'test/model:free'
+            ])
+            self.assertIn('❌ 需要API密钥来测试模型', result.stdout)
+
+    def test_add_model_success(self):
+        """Test successful model addition (simplified test)"""
+        # Skip this test if no API key is available
+        if not os.getenv("OPENROUTER_API_KEY"):
+            self.skipTest("No OPENROUTER_API_KEY available for testing")
+            
+        # This is a simplified test that just checks the command structure
+        # The actual API call will be skipped in most test environments
+        result = self.run_subprocess([
+            sys.executable, str(self.openrouter_py), '--add', 'test/model:free'
+        ], timeout=10)
+        
+        # The command should either succeed (if API key works) or fail with a specific error
+        # We just check that it doesn't crash with unexpected errors
+        self.assertIn('模型', result.stdout)  # Should contain model-related output
+
+    def test_add_model_failure(self):
+        """Test model addition failure (simplified test)"""
+        # Test with a clearly invalid model name
+        result = self.run_subprocess([
+            sys.executable, str(self.openrouter_py), '--add', 'definitely/nonexistent/model:fake'
+        ], timeout=10)
+        
+        # Should fail and mention the model or API key issue
+        self.assertTrue(
+            '❌' in result.stdout or 'API密钥' in result.stdout,
+            f"Expected error message in output: {result.stdout}"
+        )
+
+    def test_remove_nonexistent_model(self):
+        """Test removing a nonexistent model"""
+        result = self.assertCommandFail([
+            sys.executable, str(self.openrouter_py), '--remove', 'nonexistent/model'
+        ])
+        self.assertIn('❌ 模型 \'nonexistent/model\' 不存在于列表中', result.stdout)
+
+    def test_remove_existing_model(self):
+        """Test removing an existing model"""
+        # First, get current models to find one to remove
+        result = self.assertCommandSuccess([
+            sys.executable, str(self.openrouter_py), '--list'
+        ])
+        
+        # Extract a model name from the list (assuming there's at least one)
+        if 'deepseek/deepseek-chat' in result.stdout:
+            # Try to remove this model
+            remove_result = self.assertCommandSuccess([
+                sys.executable, str(self.openrouter_py), '--remove', 'deepseek/deepseek-chat'
+            ])
+            self.assertIn('✅ 已从列表中移除模型', remove_result.stdout)
+            
+            # Verify it's no longer in the list
+            list_result = self.assertCommandSuccess([
+                sys.executable, str(self.openrouter_py), '--list'
+            ])
+            self.assertNotIn('deepseek/deepseek-chat', list_result.stdout)
+            
+            # Add it back for other tests
+            try:
+                self.run_subprocess([
+                    sys.executable, str(self.openrouter_py), '--add', 'deepseek/deepseek-chat'
+                ], timeout=30)
+            except:
+                pass  # Ignore if add fails
+
+    def test_default_single_model(self):
+        """Test setting a single default model"""
+        result = self.assertCommandSuccess([
+            sys.executable, str(self.openrouter_py), '--list'
+        ])
+        
+        # Get the first model from the list
+        lines = result.stdout.split('\n')
+        first_model = None
+        for line in lines:
+            if line.strip().startswith('1.'):
+                # Extract model name
+                first_model = line.split('. ')[1].strip()
+                break
+        
+        if first_model:
+            # Set it as default
+            default_result = self.assertCommandSuccess([
+                sys.executable, str(self.openrouter_py), '--default', first_model
+            ])
+            self.assertIn('✅ 已将', default_result.stdout)
+
+    def test_default_multiple_models(self):
+        """Test setting multiple default models"""
+        # Get current model list
+        result = self.assertCommandSuccess([
+            sys.executable, str(self.openrouter_py), '--list'
+        ])
+        
+        # Extract at least two model names
+        lines = result.stdout.split('\n')
+        models = []
+        for line in lines:
+            if line.strip() and '. ' in line and not line.startswith('总计'):
+                try:
+                    model = line.split('. ')[1].strip()
+                    models.append(model)
+                    if len(models) >= 2:
+                        break
+                except:
+                    continue
+        
+        if len(models) >= 2:
+            # Test comma-separated models
+            model_str = f"{models[1]},{models[0]}"  # Reverse order
+            default_result = self.assertCommandSuccess([
+                sys.executable, str(self.openrouter_py), '--default', model_str
+            ])
+            self.assertIn('✅ 已按顺序设置优先模型:', default_result.stdout)
+            self.assertIn(models[1], default_result.stdout)
+            self.assertIn(models[0], default_result.stdout)
+
+    def test_default_with_nonexistent_models(self):
+        """Test setting default with some nonexistent models"""
+        result = self.assertCommandSuccess([
+            sys.executable, str(self.openrouter_py), '--list'
+        ])
+        
+        # Get first existing model
+        lines = result.stdout.split('\n')
+        first_model = None
+        for line in lines:
+            if line.strip().startswith('1.'):
+                first_model = line.split('. ')[1].strip()
+                break
+        
+        if first_model:
+            # Test with mix of existing and nonexistent models
+            model_str = f"nonexistent/model,{first_model},another/fake"
+            default_result = self.assertCommandSuccess([
+                sys.executable, str(self.openrouter_py), '--default', model_str
+            ])
+            self.assertIn('⚠️  以下模型不存在于列表中:', default_result.stdout)
+            self.assertIn('nonexistent/model', default_result.stdout)
+            self.assertIn('another/fake', default_result.stdout)
+            self.assertIn('✅ 已将', default_result.stdout)
+
+    def test_help_includes_new_options(self):
+        """Test that help includes new --add and --remove options"""
+        result = self.assertCommandSuccess([
+            sys.executable, str(self.openrouter_py), '--help'
+        ])
+        self.assertIn('--add', result.stdout)
+        self.assertIn('--remove', result.stdout)
+        self.assertIn('--temp-key', result.stdout)
+        self.assertIn('添加新模型到列表', result.stdout)
+        self.assertIn('从列表中移除模型', result.stdout)
 
 
 if __name__ == '__main__':

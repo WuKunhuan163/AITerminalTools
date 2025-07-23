@@ -9,6 +9,7 @@ import os
 import sys
 import json
 import hashlib
+import subprocess
 from pathlib import Path
 from typing import List, Dict, Any
 
@@ -79,6 +80,61 @@ def update_shell_configs():
     
     return success_count > 0
 
+def copy_to_clipboard(text):
+    """将文本复制到剪贴板"""
+    try:
+        # macOS
+        if sys.platform == "darwin":
+            result = subprocess.run(["pbcopy"], input=text.encode(), check=True, capture_output=True)
+            return True
+        # Linux
+        elif sys.platform == "linux":
+            result = subprocess.run(["xclip", "-selection", "clipboard"], input=text.encode(), check=True, capture_output=True)
+            return True
+        # Windows
+        elif sys.platform == "win32":
+            result = subprocess.run(["clip"], input=text.encode(), check=True, shell=True, capture_output=True)
+            return True
+        return False
+    except subprocess.CalledProcessError as e:
+        # 调试信息（可以注释掉）
+        # print(f"Debug: pbcopy failed with return code {e.returncode}")
+        # print(f"Debug: stderr: {e.stderr}")
+        return False
+    except Exception as e:
+        # print(f"Debug: Exception in copy_to_clipboard: {e}")
+        return False
+
+def copy_source_commands_to_clipboard(updated_files):
+    """生成source命令并复制到剪贴板"""
+    if not updated_files:
+        return
+    
+    # 过滤出shell配置文件
+    shell_config_files = []
+    for file_path in updated_files:
+        file_name = os.path.basename(file_path)
+        if file_name in ['.bash_profile', '.bashrc', '.zshrc']:
+            shell_config_files.append(file_path)
+    
+    if not shell_config_files:
+        return
+    
+    # 生成source命令，用&&连接
+    source_commands = []
+    for config_file in shell_config_files:
+        source_commands.append(f"source {config_file}")
+    
+    source_command_line = " && ".join(source_commands)
+    
+    # 尝试复制到剪贴板
+    if copy_to_clipboard(source_command_line):
+        print(f"📋 Source命令已复制到剪贴板:")
+        print(f"   {source_command_line}")
+        print("💡 粘贴并执行以在当前会话中立即生效")
+    else:
+        print(f"⚠️ 无法复制到剪贴板，请手动执行:")
+        print(f"   {source_command_line}")
 
 def get_shell_config_files():
     """获取shell配置文件路径"""
@@ -128,14 +184,35 @@ def write_config_file(config_file: Path, lines: List[str]):
 def remove_existing_export(lines: List[str], var_name: str) -> List[str]:
     """从配置文件中移除已存在的export语句"""
     new_lines = []
-    for line in lines:
+    i = 0
+    while i < len(lines):
+        line = lines[i]
         stripped = line.strip()
-        # 检查是否是要移除的export语句
+        
+        # 检查是否是要移除的export语句的开始
         if (stripped.startswith(f'export {var_name}=') or 
             stripped.startswith(f'export {var_name} =') or
             stripped == f'export {var_name}'):
+            
+            # 如果使用了 $'...' 格式，需要找到匹配的结束引号
+            if f"export {var_name}=$'" in line:
+                # 多行 $'...' 格式，需要找到结束的单引号
+                while i < len(lines):
+                    current_line = lines[i]
+                    # 检查是否找到了结束的单引号（不被转义的）
+                    if current_line.rstrip().endswith("'") and not current_line.rstrip().endswith("\\'"):
+                        i += 1  # 跳过这一行
+                        break
+                    i += 1
+                continue
+            else:
+                # 单行格式，直接跳过
+                i += 1
             continue
+        
         new_lines.append(line)
+        i += 1
+    
     return new_lines
 
 def add_export_statement(lines: List[str], var_name: str, var_value: str) -> List[str]:
@@ -143,8 +220,15 @@ def add_export_statement(lines: List[str], var_name: str, var_value: str) -> Lis
     # 移除已存在的export语句
     lines = remove_existing_export(lines, var_name)
     
-    # 添加新的export语句
-    export_line = f'export {var_name}="{var_value}"\n'
+    # 检查是否是多行值（包含换行符）
+    if '\n' in var_value:
+        # 对于多行值，使用 $'...' 格式来正确处理换行符
+        # 将换行符转换为 \n 转义序列
+        escaped_value = var_value.replace('\\', '\\\\').replace('\n', '\\n').replace("'", "\\'")
+        export_line = f"export {var_name}=$'{escaped_value}'\n"
+    else:
+        # 对于单行值，使用标准双引号格式
+        export_line = f'export {var_name}="{var_value}"\n'
     
     # 如果文件不为空且最后一行不是空行，添加一个空行
     if lines and not lines[-1].endswith('\n'):
@@ -220,7 +304,14 @@ def export_variable(var_name: str, var_value: str, command_identifier=None):
             print(f"📝 Updated files: {', '.join(updated_files)}")
             if failed_files:
                 print(f"❌ Failed files: {', '.join(failed_files)}")
-            print("💡 Note: Run 'source ~/.bash_profile' or restart your terminal to apply changes")
+            
+            # 自动在当前shell中设置环境变量
+            os.environ[var_name] = var_value
+            print("🔄 Environment variable set in current session")
+            print("💡 Note: Changes will persist in new terminal sessions")
+            
+            # 生成source命令并复制到剪贴板
+            copy_source_commands_to_clipboard(updated_files)
         return 0
     else:
         error_data = {

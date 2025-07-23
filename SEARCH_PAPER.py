@@ -289,22 +289,25 @@ class MultiPlatformPaperSearcher:
             
             if authors_elem:
                 text = authors_elem.get_text()
-                parts = text.split(' - ')
-                if len(parts) >= 2:
-                    authors_text = parts[0]
-                    venue_text = parts[1]
-                    
-                    # 提取作者
-                    authors = [a.strip() for a in authors_text.split(',')]
-                    
-                    # 提取期刊和日期
-                    venue_match = re.search(r'^([^,]+)', venue_text)
-                    if venue_match:
-                        venue = venue_match.group(1).strip()
-                    
-                    date_match = re.search(r'(\d{4})', venue_text)
-                    if date_match:
-                        pub_date = date_match.group(1)
+                if text:  # 确保 text 不为 None
+                    parts = text.split(' - ')
+                    if len(parts) >= 2:
+                        authors_text = parts[0]
+                        venue_text = parts[1]
+                        
+                        # 提取作者
+                        if authors_text:
+                            authors = [a.strip() for a in authors_text.split(',')]
+                        
+                        # 提取期刊和日期
+                        if venue_text:  # 确保 venue_text 不为 None
+                            venue_match = re.search(r'^([^,]+)', venue_text)
+                            if venue_match:
+                                venue = venue_match.group(1).strip()
+                            
+                            date_match = re.search(r'(\d{4})', venue_text)
+                            if date_match:
+                                pub_date = date_match.group(1)
             
             # 提取摘要
             abstract_elem = entry.find('div', class_='gs_rs')
@@ -317,9 +320,10 @@ class MultiPlatformPaperSearcher:
                 citation_link = citation_elem.find('a', string=re.compile(r'Cited by'))
                 if citation_link:
                     citation_text = citation_link.get_text()
-                    citation_match = re.search(r'(\d+)', citation_text)
-                    if citation_match:
-                        citation_count = int(citation_match.group(1))
+                    if citation_text:  # 确保 citation_text 不为 None
+                        citation_match = re.search(r'(\d+)', citation_text)
+                        if citation_match:
+                            citation_count = int(citation_match.group(1))
             
             return {
                 "title": title,

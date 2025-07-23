@@ -33,19 +33,13 @@ RUN USERINPUT
 
 # 直接执行（如果有可执行权限）
 ./USERINPUT.py
+USERINPUT
 ```
 
 ### 命令行参数
 
 ```bash
-# 生成新的唯一标识符
-python3 USERINPUT.py --generate-id
-
-# 设置标识符并运行
-python3 USERINPUT.py --set-identifier <identifier>
-
-# 设置标识符和输出文件
-python3 USERINPUT.py --set-identifier <identifier> <output_file>
+USERINPUT --help
 ```
 
 ### 环境变量

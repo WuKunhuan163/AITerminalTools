@@ -1,0 +1,57 @@
+{
+  "pdf_file": "/Users/wukunhuan/.local/bin/_UNITTEST/151108458.pdf",
+  "created_at": "2025-07-23T10:37:57.051399",
+  "page_range": null,
+  "total_items": 3,
+  "processed_items": 0,
+  "items": [
+    {
+      "id": "b122deff51a6eda4ee862c9bc2bb0963",
+      "type": "image",
+      "filename": "b122deff51a6eda4ee862c9bc2bb0963.jpg",
+      "image_path": "images/b122deff51a6eda4ee862c9bc2bb0963.jpg",
+      "processor": "basic_extractor",
+      "processed": false,
+      "placeholder": "![](images/b122deff51a6eda4ee862c9bc2bb0963.jpg)",
+      "bbox": [
+        195.40457153320312,
+        431.2780456542969,
+        233.66505432128906,
+        469.53851318359375
+      ],
+      "page": 4
+    },
+    {
+      "id": "a9d03e1416923acc058d3511a57e523b",
+      "type": "image",
+      "filename": "a9d03e1416923acc058d3511a57e523b.jpg",
+      "image_path": "images/a9d03e1416923acc058d3511a57e523b.jpg",
+      "processor": "basic_extractor",
+      "processed": false,
+      "placeholder": "![](images/a9d03e1416923acc058d3511a57e523b.jpg)",
+      "bbox": [
+        134.76499938964844,
+        307.57440185546875,
+        480.5992431640625,
+        442.5240478515625
+      ],
+      "page": 5
+    },
+    {
+      "id": "b122deff51a6eda4ee862c9bc2bb0963",
+      "type": "image",
+      "filename": "b122deff51a6eda4ee862c9bc2bb0963.jpg",
+      "image_path": "images/b122deff51a6eda4ee862c9bc2bb0963.jpg",
+      "processor": "basic_extractor",
+      "processed": false,
+      "placeholder": "![](images/b122deff51a6eda4ee862c9bc2bb0963.jpg)",
+      "bbox": [
+        135.1266632080078,
+        215.6057586669922,
+        164.05914306640625,
+        244.53823852539062
+      ],
+      "page": 9
+    }
+  ]
+}

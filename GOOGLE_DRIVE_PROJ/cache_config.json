@@ -1,0 +1,38 @@
+{
+  "version": "1.0",
+  "created": "2025-07-23T20:19:53.364168",
+  "files": {
+    "~/deep/test_download_file_1.txt": {
+      "remote_path": "~/deep/test_download_file_1.txt",
+      "cache_file": "8858f9ba63d06798",
+      "file_id": "1R27juSMVCwKr5VTI9YcvHzNg2y5hHJaP",
+      "original_name": "test_download_file_1.txt",
+      "cached_time": "2025-07-23T20:20:03.393645",
+      "content_hash": "c53c209c4d01f9ad6fffddfb85e68020",
+      "status": "unmodified",
+      "size": 1091373
+    },
+    "/REMOTE_ROOT/test_file.txt": {
+      "cache_file": "13eb04a71aa32067",
+      "cache_path": "/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/remote_files/13eb04a71aa32067",
+      "content_hash": "57489213a19433722ce63b420c128399",
+      "cached_time": "2025-07-23T20:53:24.283260",
+      "status": "valid"
+    },
+    "/content/drive/MyDrive/REMOTE_ROOT/renamed_test.txt": {
+      "cache_file": "530ca3c4944f4615",
+      "cache_path": "/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/remote_files/530ca3c4944f4615",
+      "content_hash": "06b60aaaa1471cfcd469124028173175",
+      "cached_time": "2025-07-23T20:57:37.750224",
+      "status": "valid"
+    },
+    "/content/drive/MyDrive/REMOTE_ROOT/final_file.txt": {
+      "cache_file": "fa208a7813595fae",
+      "cache_path": "/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/remote_files/fa208a7813595fae",
+      "content_hash": "bd60343d42c4ce15a846f536b689eb67",
+      "cached_time": "2025-07-23T20:59:05.342570",
+      "status": "valid",
+      "moved_time": "2025-07-23T21:05:24.335404"
+    }
+  }
+}

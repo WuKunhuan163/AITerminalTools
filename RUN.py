@@ -81,11 +81,55 @@ def wrap_command(command, *args):
     run_identifier = generate_run_identifier(command, *args)
     output_file = generate_output_file(run_identifier)
     
+    # 设置环境变量
+    env = os.environ.copy()
+    env[f'RUN_IDENTIFIER_{run_identifier}'] = 'True'
+    env[f'RUN_DATA_FILE_{run_identifier}'] = str(output_file)
+    env['RUN_DATA_FILE'] = str(output_file)  # 保持向后兼容
+    
     # 构建完整的命令路径
     full_command = script_dir / command
     
-    # 检查命令是否存在
-    if not full_command.exists():
+    # 首先检查是否是别名 - 需要加载shell配置
+    # 尝试多种方式检查别名
+    shell_configs = [
+        'source ~/.bashrc 2>/dev/null || true; source ~/.bash_profile 2>/dev/null || true; source ~/.profile 2>/dev/null || true',
+        'source ~/.zshrc 2>/dev/null || true'
+    ]
+    
+    is_alias = False
+    actual_command = None
+    
+    # 使用交互式bash检查别名
+    alias_check = subprocess.run(
+        ['bash', '-i', '-c', f'type {command} 2>/dev/null'],
+        capture_output=True,
+        text=True,
+        env=env
+    )
+    
+    if alias_check.returncode == 0 and 'aliased to' in alias_check.stdout:
+        is_alias = True
+        # 获取别名的实际命令
+        alias_cmd = subprocess.run(
+            ['bash', '-i', '-c', f'alias {command} 2>/dev/null'],
+            capture_output=True,
+            text=True,
+            env=env
+        )
+        
+        if alias_cmd.returncode == 0 and '=' in alias_cmd.stdout:
+            actual_command = alias_cmd.stdout.strip().split('=', 1)[1].strip("'\"")
+        else:
+            # 从type输出中解析
+            # 输出格式：GDS is aliased to `GOOGLE_DRIVE --shell'
+            if 'aliased to' in alias_check.stdout:
+                parts = alias_check.stdout.split('aliased to')
+                if len(parts) > 1:
+                    actual_command = parts[1].strip().strip('`\'\"')
+    
+    # 检查命令是否存在（文件或别名）
+    if not full_command.exists() and not is_alias:
         data = {
             'success': False,
             'error': f'Command not found: {full_command}'
@@ -96,21 +140,44 @@ def wrap_command(command, *args):
     # 记录开始时间
     start_time = time.time()
     
-    # 设置环境变量
-    env = os.environ.copy()
-    env[f'RUN_IDENTIFIER_{run_identifier}'] = 'True'
-    env[f'RUN_DATA_FILE_{run_identifier}'] = str(output_file)
-    env['RUN_DATA_FILE'] = str(output_file)  # 保持向后兼容
-    
     try:
-        # 执行命令，传递identifier作为第一个参数
-        cmd_args = [str(full_command), run_identifier] + list(args)
-        result = subprocess.run(
-            cmd_args,
-            env=env,
-            capture_output=True,  # 捕获输出
-            text=True
-        )
+        if is_alias:
+            # 如果是别名，使用shell执行
+            if actual_command:
+                # 对于别名命令，不传递run_identifier作为参数
+                # 而是通过环境变量传递
+                if args:
+                    full_shell_cmd = f"{actual_command} {' '.join(args)}"
+                else:
+                    full_shell_cmd = actual_command
+                
+                # 使用shell执行别名命令
+                result = subprocess.run(
+                    full_shell_cmd,
+                    shell=True,
+                    env=env,
+                    capture_output=True,
+                    text=True
+                )
+            else:
+                # 如果解析失败，回退到直接执行
+                cmd_args = [str(full_command), run_identifier] + list(args)
+                result = subprocess.run(
+                    cmd_args,
+                    env=env,
+                    capture_output=True,
+                    text=True
+                )
+        else:
+            # 不是别名，直接执行
+            cmd_args = [str(full_command), run_identifier] + list(args)
+            result = subprocess.run(
+                cmd_args,
+                env=env,
+                capture_output=True,
+                text=True
+            )
+        
         exit_code = result.returncode
         stdout_output = result.stdout.strip()
         stderr_output = result.stderr.strip()
@@ -127,7 +194,7 @@ def wrap_command(command, *args):
         }
         write_json_output(data, output_file)
         return str(output_file), exit_code
-    
+
     # 计算执行时间
     end_time = time.time()
     duration = int(end_time - start_time)
@@ -200,10 +267,10 @@ def parse_arguments(args_list):
         args = args[1:]
     
     if not args:
-        return {'help': False, 'show': show_output, 'command': None, 'args': []}
+        return {'help': True, 'show': show_output, 'command': None, 'args': []}
     
     command = args[0]
-    command_args = args[1:]
+    command_args = args[1:] if len(args) > 1 else []
     
     return {
         'help': False,
@@ -212,94 +279,67 @@ def parse_arguments(args_list):
         'args': command_args
     }
 
-def show_usage():
-    """显示使用说明"""
-    print("""Usage: RUN.py [--show] <command> [args...]
+def show_help():
+    """显示帮助信息"""
+    print("""
+RUN - Universal Command Wrapper
+
+Usage:
+    RUN [--show] <command> [args...]
+    RUN --help
 
 Options:
-  --show    Display JSON output in terminal (also clears screen first)
+    --show      Show JSON output directly to terminal
+    --help      Show this help message
 
 Examples:
-  RUN.py OVERLEAF document.tex
-  RUN.py SEARCH_PAPER "3DGS" --max-results 3
-  RUN.py --show SEARCH_PAPER "3DGS" --max-results 3
-  RUN.py LEARN "python basics"
-  RUN.py ALIAS ll "ls -la"
-  RUN.py USERINPUT
+    RUN OVERLEAF document.tex
+    RUN --show SEARCH_PAPER "machine learning"
+    RUN GOOGLE_DRIVE --shell ls
 
-The command returns a JSON file path containing the execution results.
-Commands can write to the JSON output file via the RUN_DATA_FILE environment variable.
-Each execution gets a unique RUN_IDENTIFIER for isolation.
-With --show flag, JSON results are also displayed in terminal.
-
-Functions available for import:
-  - generate_run_identifier(*args): Generate unique identifier
-  - wrap_command(command, *args): Execute command with wrapper
-""")
+Description:
+    RUN executes bin tools and captures their output in JSON format.
+    Each execution generates a unique identifier and stores results
+    in the RUN_DATA directory.
+    """)
 
 def main():
     """主函数"""
-    if len(sys.argv) < 2:
-        show_usage()
-        return 1
-    
     args = sys.argv[1:]
-    show_output = False
     
-    # 检查 --help 参数
-    if args and args[0] in ['--help', '-h']:
-        show_usage()
+    # 解析参数
+    parsed = parse_arguments(args)
+    
+    if parsed['help']:
+        show_help()
         return 0
     
-    # 解析 --show 参数
-    if args and args[0] == '--show':
-        show_output = True
-        args = args[1:]
+    command = parsed['command']
+    command_args = parsed['args']
+    show_output = parsed['show']
     
-    if not args:
-        show_usage()
-        return 1
-    
-    command = args[0]
-    command_args = args[1:]
-    
-    # 执行命令
-    output_file, exit_code = wrap_command(command, *command_args)
-    
-    # 如果使用了 --show 参数，显示JSON输出并包含文件路径
-    if show_output:
-        # 不清屏，避免输出被截断
-        # os.system('clear' if os.name == 'posix' else 'cls')
+    try:
+        # 执行命令
+        output_file, exit_code = wrap_command(command, *command_args)
         
-        # 显示JSON内容
-        if Path(output_file).exists():
+        if show_output:
+            # 读取并显示JSON输出
             try:
                 with open(output_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
-                
-                # 将输出文件路径添加到JSON数据中
-                data['_RUN_DATA_file'] = output_file
-                
                 print(json.dumps(data, indent=2, ensure_ascii=False))
             except Exception as e:
-                error_data = {
-                    "success": False,
-                    "error": f"Error reading output file: {e}",
-                    "RUN_DATA_file": output_file
-                }
-                print(json.dumps(error_data, indent=2, ensure_ascii=False))
-        else:
-            error_data = {
-                "success": False,
-                "error": f"Output file not found: {output_file}",
-                "RUN_DATA_file": output_file
-            }
-            print(json.dumps(error_data, indent=2, ensure_ascii=False))
-    else:
-        # 非show模式下，仍然输出文件路径（保持向后兼容）
-        print(output_file)
-    
-    return exit_code
+                print(f"Error reading output file: {e}", file=sys.stderr)
+                return 1
+        
+        return exit_code
+        
+    except KeyboardInterrupt:
+        print("\n操作已取消", file=sys.stderr)
+        return 130
+    except Exception as e:
+        print(f"RUN执行出错: {e}", file=sys.stderr)
+        return 1
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.exit(main()) 

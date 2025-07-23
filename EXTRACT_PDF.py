@@ -32,7 +32,7 @@ def get_pdf_extractor_data_dir():
     return data_dir
 
 
-def save_to_unified_data_directory(content: str, pdf_path: Path, page_spec: str = None, images_data: list = None) -> Tuple[str, str]:
+def save_to_unified_data_directory(content: str, pdf_path: Path, page_spec: str = None, images_data: list = None, output_dir: Path = None) -> Tuple[str, str]:
     """
     统一的数据存储接口，供basic和mineru模式共用
     
@@ -75,14 +75,16 @@ def save_to_unified_data_directory(content: str, pdf_path: Path, page_spec: str 
             with open(img_file, 'wb') as f:
                 f.write(img_data['bytes'])
     
-    # 创建PDF同层目录的文件
+    # 创建输出目录的文件（如果指定了输出目录，否则使用PDF同层目录）
     pdf_stem = pdf_path.stem
     if page_spec:
         pdf_stem_with_pages = f"{pdf_stem}_p{page_spec}"
     else:
         pdf_stem_with_pages = pdf_stem
     
-    same_name_md_file = pdf_path.parent / f"{pdf_stem_with_pages}.md"
+    # 使用指定的输出目录或PDF同层目录
+    output_parent = output_dir if output_dir else pdf_path.parent
+    same_name_md_file = output_parent / f"{pdf_stem_with_pages}.md"
     
     # 更新图片路径到绝对路径 (指向EXTRACT_PDF_DATA)
     updated_content = update_image_paths_to_data_directory(content, str(data_dir))
@@ -91,14 +93,14 @@ def save_to_unified_data_directory(content: str, pdf_path: Path, page_spec: str 
     with open(same_name_md_file, 'w', encoding='utf-8') as f:
         f.write(updated_content)
     
-    # 复制图片到PDF同层目录的images文件夹
+    # 复制图片到输出目录的images文件夹
     if images_data:
-        pdf_images_dir = pdf_path.parent / "images"
-        pdf_images_dir.mkdir(exist_ok=True)
+        output_images_dir = output_parent / "images"
+        output_images_dir.mkdir(exist_ok=True)
         
         for img_data in images_data:
             src_file = images_dir / img_data['filename']
-            dst_file = pdf_images_dir / img_data['filename']
+            dst_file = output_images_dir / img_data['filename']
             if src_file.exists():
                 shutil.copy2(src_file, dst_file)
     
@@ -288,7 +290,7 @@ class PDFExtractor:
             
             # 使用统一数据存储接口保存数据
             data_md_path, pdf_md_path = save_to_unified_data_directory(
-                full_content, pdf_path, page_spec, images_data
+                full_content, pdf_path, page_spec, images_data, output_dir
             )
             
             # 创建postprocess状态文件
@@ -594,7 +596,7 @@ class PDFExtractor:
             
             # 使用统一数据存储接口保存数据
             data_md_path, pdf_md_path = save_to_unified_data_directory(
-                full_content, pdf_path, page_spec, images_data
+                full_content, pdf_path, page_spec, images_data, output_dir
             )
             
             # 创建postprocess状态文件
@@ -1081,96 +1083,6 @@ class PDFExtractor:
         except Exception as e:
             print(f"❌ 统一处理异常: {e}")
             return False
-    
-    def _update_markdown_with_result(self, md_content: str, item: dict, result_text: str) -> Optional[str]:
-        """更新markdown内容，保留placeholder，清除已有分析结果并替换为新结果"""
-        import re
-        
-        item_type = item.get('type')
-        image_path = item.get('image_path', '')
-        
-        # 构建更复杂的模式来匹配整个块（包括可能存在的分析结果）
-        # 先尝试匹配已经包含分析结果的完整块
-        image_filename = Path(image_path).name
-        escaped_filename = re.escape(image_filename)
-        escaped_type = re.escape(item_type)
-        
-        # 模式1: 匹配包含分析结果的完整块
-        # [placeholder: type]\n![...](path)\n\n**分析结果:**...\n 直到下一个空行或文件结束
-        complete_block_pattern = (
-            rf'\[placeholder:\s*{escaped_type}\]\s*\n'
-            rf'!\[[^\]]*\]\([^)]*{escaped_filename}\)[^)]*\)\s*\n'
-            rf'(?:\n\*\*图片分析:\*\*.*?(?=\n\n|\n#|\Z))?'
-            rf'(?:\n\n\*\*图片分析:\*\*.*?(?=\n\n|\n#|\Z))?'
-            rf'(?:\n\*\*表格内容:\*\*.*?(?=\n\n|\n#|\Z))?'
-            rf'(?:\n\*\*分析结果:\*\*.*?(?=\n\n|\n#|\Z))?'
-        )
-        
-        # 模式2: 简单匹配placeholder和图片（没有分析结果的情况）
-        simple_pattern = (
-            rf'\[placeholder:\s*{escaped_type}\]\s*\n'
-            rf'!\[[^\]]*\]\([^)]*{escaped_filename}\)[^)]*\)'
-        )
-        
-        # 先尝试完整块模式
-        if re.search(complete_block_pattern, md_content, re.DOTALL):
-            pattern_to_use = complete_block_pattern
-            flags = re.DOTALL
-        elif re.search(simple_pattern, md_content):
-            pattern_to_use = simple_pattern
-            flags = 0
-        else:
-            # 尝试更宽松的匹配（只匹配文件名）
-            loose_pattern = rf'\[placeholder:\s*{escaped_type}\]\s*\n!\[[^\]]*\]\([^)]*{escaped_filename}[^)]*\)'
-            if re.search(loose_pattern, md_content):
-                pattern_to_use = loose_pattern
-                flags = 0
-            else:
-                print(f"⚠️  未找到匹配的placeholder模式")
-                # 调试信息：显示markdown中实际存在的placeholder
-                debug_pattern = r'\[placeholder:\s*(\w+)\]\s*!\[[^\]]*\]\(([^)]+)\)'
-                debug_matches = re.findall(debug_pattern, md_content)
-                if debug_matches:
-                    print(f"📋 markdown中找到的placeholder: {debug_matches}")
-                return None
-        
-        def replace_with_new_result(match):
-            # 获取原始的placeholder和图片引用部分
-            matched_text = match.group(0)
-            
-            # 提取placeholder和图片引用（去掉可能存在的分析结果）
-            placeholder_img_pattern = rf'(\[placeholder:\s*{escaped_type}\]\s*\n!\[[^\]]*\]\([^)]*{escaped_filename}[^)]*\))'
-            placeholder_img_match = re.search(placeholder_img_pattern, matched_text)
-            
-            if placeholder_img_match:
-                placeholder_and_img = placeholder_img_match.group(1)
-            else:
-                # 如果提取失败，使用整个匹配的开头部分
-                lines = matched_text.split('\n')
-                if len(lines) >= 2:
-                    placeholder_and_img = f"{lines[0]}\n{lines[1]}"
-                else:
-                    placeholder_and_img = matched_text
-            
-            # 构建新的内容
-            if item_type == 'image':
-                return f"{placeholder_and_img}\n\n**图片分析:** {result_text}\n"
-            elif item_type in ['formula', 'interline_equation']:
-                return f"{placeholder_and_img}\n\n{result_text}\n"
-            elif item_type == 'table':
-                return f"{placeholder_and_img}\n\n**表格内容:**\n{result_text}\n"
-            else:
-                return f"{placeholder_and_img}\n\n**分析结果:**\n{result_text}\n"
-        
-        # 执行替换
-        updated_content = re.sub(pattern_to_use, replace_with_new_result, md_content, flags=flags)
-        
-        # 检查是否实际进行了替换
-        if updated_content != md_content:
-            return updated_content
-        else:
-            print(f"⚠️  没有进行任何替换，使用的模式: {pattern_to_use}")
-            return None
 
 class PDFPostProcessor:
     """PDF后处理器，用于处理图片、公式、表格的标签替换"""
@@ -1439,97 +1351,6 @@ class PDFPostProcessor:
         except Exception as e:
             print(f"❌ 统一处理异常: {e}")
             return False
-    
-    def _update_markdown_with_result(self, md_content: str, item: dict, result_text: str) -> Optional[str]:
-        """更新markdown内容，保留placeholder，清除已有分析结果并替换为新结果"""
-        import re
-        
-        item_type = item.get('type')
-        image_path = item.get('image_path', '')
-        
-        # 构建更复杂的模式来匹配整个块（包括可能存在的分析结果）
-        # 先尝试匹配已经包含分析结果的完整块
-        image_filename = Path(image_path).name
-        escaped_filename = re.escape(image_filename)
-        escaped_type = re.escape(item_type)
-        
-        # 模式1: 匹配包含分析结果的完整块
-        # [placeholder: type]\n![...](path)\n\n**分析结果:**...\n 直到下一个空行或文件结束
-        complete_block_pattern = (
-            rf'\[placeholder:\s*{escaped_type}\]\s*\n'
-            rf'!\[[^\]]*\]\([^)]*{escaped_filename}\)[^)]*\)\s*\n'
-            rf'(?:\n\*\*图片分析:\*\*.*?(?=\n\n|\n#|\Z))?'
-            rf'(?:\n\n\*\*图片分析:\*\*.*?(?=\n\n|\n#|\Z))?'
-            rf'(?:\n\*\*表格内容:\*\*.*?(?=\n\n|\n#|\Z))?'
-            rf'(?:\n\*\*分析结果:\*\*.*?(?=\n\n|\n#|\Z))?'
-        )
-        
-        # 模式2: 简单匹配placeholder和图片（没有分析结果的情况）
-        simple_pattern = (
-            rf'\[placeholder:\s*{escaped_type}\]\s*\n'
-            rf'!\[[^\]]*\]\([^)]*{escaped_filename}\)[^)]*\)'
-        )
-        
-        # 先尝试完整块模式
-        if re.search(complete_block_pattern, md_content, re.DOTALL):
-            pattern_to_use = complete_block_pattern
-            flags = re.DOTALL
-        elif re.search(simple_pattern, md_content):
-            pattern_to_use = simple_pattern
-            flags = 0
-        else:
-            # 尝试更宽松的匹配（只匹配文件名）
-            loose_pattern = rf'\[placeholder:\s*{escaped_type}\]\s*\n!\[[^\]]*\]\([^)]*{escaped_filename}[^)]*\)'
-            if re.search(loose_pattern, md_content):
-                pattern_to_use = loose_pattern
-                flags = 0
-            else:
-                print(f"⚠️  未找到匹配的placeholder模式")
-                # 调试信息：显示markdown中实际存在的placeholder
-                debug_pattern = r'\[placeholder:\s*(\w+)\]\s*!\[[^\]]*\]\(([^)]+)\)'
-                debug_matches = re.findall(debug_pattern, md_content)
-                if debug_matches:
-                    print(f"📋 markdown中找到的placeholder: {debug_matches}")
-                return None
-        
-        def replace_with_new_result(match):
-            # 获取原始的placeholder和图片引用部分
-            matched_text = match.group(0)
-            
-            # 提取placeholder和图片引用（去掉可能存在的分析结果）
-            placeholder_img_pattern = rf'(\[placeholder:\s*{escaped_type}\]\s*\n!\[[^\]]*\]\([^)]*{escaped_filename}[^)]*\))'
-            placeholder_img_match = re.search(placeholder_img_pattern, matched_text)
-            
-            if placeholder_img_match:
-                placeholder_and_img = placeholder_img_match.group(1)
-            else:
-                # 如果提取失败，使用整个匹配的开头部分
-                lines = matched_text.split('\n')
-                if len(lines) >= 2:
-                    placeholder_and_img = f"{lines[0]}\n{lines[1]}"
-                else:
-                    placeholder_and_img = matched_text
-            
-            # 构建新的内容
-            if item_type == 'image':
-                return f"{placeholder_and_img}\n\n**图片分析:** {result_text}\n"
-            elif item_type in ['formula', 'interline_equation']:
-                return f"{placeholder_and_img}\n\n{result_text}\n"
-            elif item_type == 'table':
-                return f"{placeholder_and_img}\n\n**表格内容:**\n{result_text}\n"
-            else:
-                return f"{placeholder_and_img}\n\n**分析结果:**\n{result_text}\n"
-        
-        # 执行替换
-        updated_content = re.sub(pattern_to_use, replace_with_new_result, md_content, flags=flags)
-        
-        # 检查是否实际进行了替换
-        if updated_content != md_content:
-            return updated_content
-        else:
-            print(f"⚠️  没有进行任何替换，使用的模式: {pattern_to_use}")
-            return None
-    
     def _find_actual_image_path(self, pdf_file: str, image_filename: str) -> Optional[str]:
         """查找图片文件的实际路径"""
         pdf_path = Path(pdf_file)
@@ -1645,6 +1466,84 @@ class PDFPostProcessor:
             print(f"❌ 同步placeholder信息失败: {e}")
             return status_data
     
+    def _update_markdown_with_result(self, md_content: str, item: dict, result_text: str) -> Optional[str]:
+        """更新markdown内容，保留placeholder，精确替换分析结果，避免误删正文"""
+        import re
+        
+        item_type = item.get('type')
+        image_path = item.get('image_path', '')
+        image_filename = Path(image_path).name
+        escaped_filename = re.escape(image_filename)
+        escaped_type = re.escape(item_type)
+        
+        # 使用分步方法：先找到placeholder和图片，然后检查后面是否有分析结果
+        # 更精确的模式：图片引用应该以.jpg/.png/.pdf等结尾，然后是)
+        placeholder_img_pattern = (
+            rf'\[placeholder:\s*{escaped_type}\]\s*\n'
+            rf'!\[[^\]]*\]\([^)]*{escaped_filename}\)'
+        )
+        
+        # 查找placeholder和图片的位置
+        placeholder_match = re.search(placeholder_img_pattern, md_content)
+        if not placeholder_match:
+            print(f"⚠️  未找到匹配的placeholder模式")
+            return None
+        
+        placeholder_and_img = placeholder_match.group(0)
+        start_pos = placeholder_match.start()
+        end_pos = placeholder_match.end()
+        
+        # 检查后面是否有现有的分析结果需要替换
+        remaining_content = md_content[end_pos:]
+        
+        # 定义各种分析结果的模式 - 更精确地匹配，避免误删正文
+        analysis_patterns = [
+            r'\n\n--- 图像分析结果 ---.*?\n--------------------',  # --- 图像分析结果 --- 块（包括后续内容和分隔线）
+            r'\n\n\*\*图片分析:\*\*.*?(?=\n\n(?!\*\*)|$)',  # **图片分析:** 块（兼容旧格式）
+            r'\n\n\*\*表格内容:\*\*.*?(?=\n\n(?!\*\*)|$)',  # **表格内容:** 块
+            r'\n\n\*\*分析结果:\*\*.*?(?=\n\n(?!\*\*)|$)',  # **分析结果:** 块
+            r'\n\n\$\$\n.*?\n\$\$',  # 多行公式块
+            r'\n\n\$\$[^$\n]+\$\$',  # 单行公式块
+            r'\n\n\$\$\n\\text\{.*?\}\n\$\$',  # 错误公式块（如识别失败信息）
+        ]
+        
+        # 找到最早出现的分析结果
+        earliest_match = None
+        earliest_pos = len(remaining_content)
+        
+        for pattern in analysis_patterns:
+            match = re.search(pattern, remaining_content, re.DOTALL)
+            if match and match.start() < earliest_pos:
+                earliest_match = match
+                earliest_pos = match.start()
+        
+        if earliest_match:
+            # 有现有分析结果，替换它
+            print(f"🔍 找到现有分析结果，位置: {earliest_pos}, 长度: {earliest_match.end() - earliest_match.start()}")
+            analysis_end = end_pos + earliest_match.end()
+            before_analysis = md_content[:start_pos]
+            after_analysis = md_content[analysis_end:]
+        else:
+            # 没有现有分析结果，在placeholder后直接添加
+            print(f"🔍 未找到现有分析结果，直接添加")
+            before_analysis = md_content[:start_pos]
+            after_analysis = md_content[end_pos:]
+        
+        # 构建新的内容
+        if item_type == 'image':
+            new_content = f"{placeholder_and_img}\n\n{result_text}"
+        elif item_type in ['formula', 'interline_equation']:
+            new_content = f"{placeholder_and_img}\n\n{result_text}"
+        elif item_type == 'table':
+            new_content = f"{placeholder_and_img}\n\n**表格内容:**\n{result_text}"
+        else:
+            new_content = f"{placeholder_and_img}\n\n**分析结果:**\n{result_text}"
+        
+        # 组合最终内容
+        updated_content = before_analysis + new_content + after_analysis
+        
+        return updated_content
+    
     def _process_with_unimernet(self, image_path: str, content_type: str = "auto", force: bool = False) -> str:
         """使用UNIMERNET工具处理公式或表格图片"""
         try:
@@ -1685,24 +1584,24 @@ class PDFPostProcessor:
                             return f"$$\n{cleaned_result}\n$$"
                         else:
                             print("⚠️  EXTRACT_IMG返回空结果")
-                            return f"**公式识别失败:**\n\n```\n错误信息: EXTRACT_IMG返回空结果\n```"
+                            return f"$$\n\\text{{[公式识别失败: EXTRACT_IMG返回空结果]}}\n$$"
                     else:
                         error_msg = extract_result.get('error', 'Unknown error')
                         print(f"❌ EXTRACT_IMG处理失败: {error_msg}")
-                        return f"**公式识别失败:**\n\n```\n错误信息: {error_msg}\n```"
+                        return f"$$\n\\text{{[公式识别失败: {error_msg}]}}\n$$"
                 except json.JSONDecodeError as e:
-                    error_msg = f"JSON解析失败: {e}\n原始输出: {result.stdout[:200]}..."
+                    error_msg = f"JSON解析失败: {e}"
                     print(f"❌ 无法解析EXTRACT_IMG JSON输出: {e}")
                     print(f"   原始输出: {result.stdout[:200]}...")
-                    return f"**公式识别失败:**\n\n```\n错误信息: {error_msg}\n```"
+                    return f"$$\n\\text{{[公式识别失败: {error_msg}]}}\n$$"
             else:
                 error_msg = f"EXTRACT_IMG执行失败: {result.stderr}"
                 print(f"❌ EXTRACT_IMG执行失败: {result.stderr}")
-                return f"**公式识别失败:**\n\n```\n错误信息: {error_msg}\n```"
+                return f"$$\n\\text{{[公式识别失败: {error_msg}]}}\n$$"
                 
         except Exception as e:
             print(f"❌ UNIMERNET处理异常: {e}")
-            return f"**公式识别失败:**\n\n```\n错误信息: UNIMERNET处理异常: {e}\n```"
+            return f"$$\n\\text{{[公式识别失败: UNIMERNET处理异常: {e}]}}\n$$"
     
     def _process_items_hybrid(self, pdf_file: str, md_file: str, status_data: dict, 
                              items_to_process: list, process_type: str, custom_prompt: str = None, force: bool = False) -> bool:
@@ -2524,6 +2423,7 @@ Usage: EXTRACT_PDF <pdf_file> [options]
 Options:
   --page <spec>        Extract specific page(s) (e.g., 3, 1-5, 1,3,5)
   --output <dir>       Output directory (default: same as PDF)
+  --output-dir <dir>   Alias for --output
   --engine <mode>      Processing engine mode:
                        basic        - Basic extractor, no image/formula/table processing
                        basic-asyn   - Basic extractor, async mode (disable analysis)
@@ -2672,12 +2572,12 @@ def main(args=None, command_identifier=None):
                 else:
                     print(error_msg)
                 return 1
-        elif arg == '--output':
+        elif arg == '--output' or arg == '--output-dir':
             if i + 1 < len(args):
                 output_dir = args[i + 1]
                 i += 2
             else:
-                error_msg = "❌ Error: --output requires a value"
+                error_msg = f"❌ Error: {arg} requires a value"
                 if is_run_environment(command_identifier):
                     error_data = {"success": False, "error": error_msg}
                     write_to_json_output(error_data, command_identifier)

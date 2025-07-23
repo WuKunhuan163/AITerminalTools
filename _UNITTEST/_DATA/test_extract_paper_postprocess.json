@@ -1,0 +1,313 @@
+{
+  "pdf_file": "/Users/wukunhuan/.local/bin/_UNITTEST/_DATA/test_extract_paper.pdf",
+  "created_at": "2025-07-23T11:01:57.321747",
+  "page_range": null,
+  "total_items": 19,
+  "processed_items": 0,
+  "items": [
+    {
+      "id": "27861551482094e05256a4f4e604f4f3",
+      "type": "image",
+      "filename": "27861551482094e05256a4f4e604f4f3.jpg",
+      "image_path": "images/27861551482094e05256a4f4e604f4f3.jpg",
+      "processor": "basic_extractor",
+      "processed": false,
+      "placeholder": "![](images/27861551482094e05256a4f4e604f4f3.jpg)",
+      "bbox": [
+        37.35089874267578,
+        329.5258483886719,
+        100.85490417480469,
+        371.83538818359375
+      ],
+      "page": 1
+    },
+    {
+      "id": "ff3924d476ddf35afe830542034c973c",
+      "type": "image",
+      "filename": "ff3924d476ddf35afe830542034c973c.jpg",
+      "image_path": "images/ff3924d476ddf35afe830542034c973c.jpg",
+      "processor": "basic_extractor",
+      "processed": false,
+      "placeholder": "![](images/ff3924d476ddf35afe830542034c973c.jpg)",
+      "bbox": [
+        79.93827056884766,
+        329.5258483886719,
+        143.44227600097656,
+        371.83538818359375
+      ],
+      "page": 1
+    },
+    {
+      "id": "93ffa8370fb7fa0b5cdfaa6aca92db90",
+      "type": "image",
+      "filename": "93ffa8370fb7fa0b5cdfaa6aca92db90.jpg",
+      "image_path": "images/93ffa8370fb7fa0b5cdfaa6aca92db90.jpg",
+      "processor": "basic_extractor",
+      "processed": false,
+      "placeholder": "![](images/93ffa8370fb7fa0b5cdfaa6aca92db90.jpg)",
+      "bbox": [
+        38.938499450683594,
+        371.83544921875,
+        102.4425048828125,
+        414.1449890136719
+      ],
+      "page": 1
+    },
+    {
+      "id": "9cfb4f1764394585ae409fa8b857d1c1",
+      "type": "image",
+      "filename": "9cfb4f1764394585ae409fa8b857d1c1.jpg",
+      "image_path": "images/9cfb4f1764394585ae409fa8b857d1c1.jpg",
+      "processor": "basic_extractor",
+      "processed": false,
+      "placeholder": "![](images/9cfb4f1764394585ae409fa8b857d1c1.jpg)",
+      "bbox": [
+        82.31967163085938,
+        371.83544921875,
+        145.82366943359375,
+        414.1449890136719
+      ],
+      "page": 1
+    },
+    {
+      "id": "a6b38b5e4c1b80068b888a48093573f5",
+      "type": "image",
+      "filename": "a6b38b5e4c1b80068b888a48093573f5.jpg",
+      "image_path": "images/a6b38b5e4c1b80068b888a48093573f5.jpg",
+      "processor": "basic_extractor",
+      "processed": false,
+      "placeholder": "![](images/a6b38b5e4c1b80068b888a48093573f5.jpg)",
+      "bbox": [
+        305.98870849609375,
+        329.5259094238281,
+        432.91729736328125,
+        414.1449890136719
+      ],
+      "page": 1
+    },
+    {
+      "id": "774ff98807013c55a5dc29efb0373dda",
+      "type": "image",
+      "filename": "774ff98807013c55a5dc29efb0373dda.jpg",
+      "image_path": "images/774ff98807013c55a5dc29efb0373dda.jpg",
+      "processor": "basic_extractor",
+      "processed": false,
+      "placeholder": "![](images/774ff98807013c55a5dc29efb0373dda.jpg)",
+      "bbox": [
+        275.25518798828125,
+        244.85211181640625,
+        402.0210876464844,
+        329.47119140625
+      ],
+      "page": 1
+    },
+    {
+      "id": "ebcb1db8f2f555cb83cbe100062bbac9",
+      "type": "image",
+      "filename": "ebcb1db8f2f555cb83cbe100062bbac9.jpg",
+      "image_path": "images/ebcb1db8f2f555cb83cbe100062bbac9.jpg",
+      "processor": "basic_extractor",
+      "processed": false,
+      "placeholder": "![](images/ebcb1db8f2f555cb83cbe100062bbac9.jpg)",
+      "bbox": [
+        369.4151916503906,
+        329.3888244628906,
+        496.3437805175781,
+        414.0079040527344
+      ],
+      "page": 1
+    },
+    {
+      "id": "ba696a17a8c23198c8260d19b80d77bb",
+      "type": "image",
+      "filename": "ba696a17a8c23198c8260d19b80d77bb.jpg",
+      "image_path": "images/ba696a17a8c23198c8260d19b80d77bb.jpg",
+      "processor": "basic_extractor",
+      "processed": false,
+      "placeholder": "![](images/ba696a17a8c23198c8260d19b80d77bb.jpg)",
+      "bbox": [
+        356.9302062988281,
+        244.95172119140625,
+        483.69610595703125,
+        329.57080078125
+      ],
+      "page": 1
+    },
+    {
+      "id": "96e4eab90f9dcd278d89f00aa06141c5",
+      "type": "image",
+      "filename": "96e4eab90f9dcd278d89f00aa06141c5.jpg",
+      "image_path": "images/96e4eab90f9dcd278d89f00aa06141c5.jpg",
+      "processor": "basic_extractor",
+      "processed": false,
+      "placeholder": "![](images/96e4eab90f9dcd278d89f00aa06141c5.jpg)",
+      "bbox": [
+        179.0601043701172,
+        329.5259094238281,
+        305.98870849609375,
+        414.1449890136719
+      ],
+      "page": 1
+    },
+    {
+      "id": "fac8c612c09881b3ffb685f85157b367",
+      "type": "image",
+      "filename": "fac8c612c09881b3ffb685f85157b367.jpg",
+      "image_path": "images/fac8c612c09881b3ffb685f85157b367.jpg",
+      "processor": "basic_extractor",
+      "processed": false,
+      "placeholder": "![](images/fac8c612c09881b3ffb685f85157b367.jpg)",
+      "bbox": [
+        191.1396026611328,
+        245.08963012695312,
+        317.905517578125,
+        329.7087097167969
+      ],
+      "page": 1
+    },
+    {
+      "id": "5e5cd52740e8ff2910efd02a02329b72",
+      "type": "image",
+      "filename": "5e5cd52740e8ff2910efd02a02329b72.jpg",
+      "image_path": "images/5e5cd52740e8ff2910efd02a02329b72.jpg",
+      "processor": "basic_extractor",
+      "processed": false,
+      "placeholder": "![](images/5e5cd52740e8ff2910efd02a02329b72.jpg)",
+      "bbox": [
+        453.8382873535156,
+        329.57733154296875,
+        580.7669067382812,
+        414.1964111328125
+      ],
+      "page": 1
+    },
+    {
+      "id": "1ccde6038e68d0ebec90e5f3d2f9a4f5",
+      "type": "image",
+      "filename": "1ccde6038e68d0ebec90e5f3d2f9a4f5.jpg",
+      "image_path": "images/1ccde6038e68d0ebec90e5f3d2f9a4f5.jpg",
+      "processor": "basic_extractor",
+      "processed": false,
+      "placeholder": "![](images/1ccde6038e68d0ebec90e5f3d2f9a4f5.jpg)",
+      "bbox": [
+        444.4368896484375,
+        244.8994140625,
+        697.9686889648438,
+        329.51849365234375
+      ],
+      "page": 1
+    },
+    {
+      "id": "9a6139e9a95215551a961d5cd975a1b9",
+      "type": "image",
+      "filename": "9a6139e9a95215551a961d5cd975a1b9.jpg",
+      "image_path": "images/9a6139e9a95215551a961d5cd975a1b9.jpg",
+      "processor": "basic_extractor",
+      "processed": false,
+      "placeholder": "![](images/9a6139e9a95215551a961d5cd975a1b9.jpg)",
+      "bbox": [
+        115.5553970336914,
+        329.04443359375,
+        242.5634002685547,
+        413.66351318359375
+      ],
+      "page": 1
+    },
+    {
+      "id": "8367f0cdd0234b1e86324e339cc3fe92",
+      "type": "image",
+      "filename": "8367f0cdd0234b1e86324e339cc3fe92.jpg",
+      "image_path": "images/8367f0cdd0234b1e86324e339cc3fe92.jpg",
+      "processor": "basic_extractor",
+      "processed": false,
+      "placeholder": "![](images/8367f0cdd0234b1e86324e339cc3fe92.jpg)",
+      "bbox": [
+        171.62559509277344,
+        248.9766082763672,
+        175.8174591064453,
+        256.03021240234375
+      ],
+      "page": 1
+    },
+    {
+      "id": "cd829a278db2bd9e56825a1bec695f31",
+      "type": "image",
+      "filename": "cd829a278db2bd9e56825a1bec695f31.jpg",
+      "image_path": "images/cd829a278db2bd9e56825a1bec695f31.jpg",
+      "processor": "basic_extractor",
+      "processed": false,
+      "placeholder": "![](images/cd829a278db2bd9e56825a1bec695f31.jpg)",
+      "bbox": [
+        201.0402069091797,
+        249.2965850830078,
+        205.47801208496094,
+        257.028076171875
+      ],
+      "page": 1
+    },
+    {
+      "id": "fee5528351e448c618bb0a0e12f5bbe3",
+      "type": "image",
+      "filename": "fee5528351e448c618bb0a0e12f5bbe3.jpg",
+      "image_path": "images/fee5528351e448c618bb0a0e12f5bbe3.jpg",
+      "processor": "basic_extractor",
+      "processed": false,
+      "placeholder": "![](images/fee5528351e448c618bb0a0e12f5bbe3.jpg)",
+      "bbox": [
+        81.66771697998047,
+        287.4195556640625,
+        145.17172241210938,
+        329.768798828125
+      ],
+      "page": 1
+    },
+    {
+      "id": "b9600d9a46e614070a70cb4ef36a2257",
+      "type": "image",
+      "filename": "b9600d9a46e614070a70cb4ef36a2257.jpg",
+      "image_path": "images/b9600d9a46e614070a70cb4ef36a2257.jpg",
+      "processor": "basic_extractor",
+      "processed": false,
+      "placeholder": "![](images/b9600d9a46e614070a70cb4ef36a2257.jpg)",
+      "bbox": [
+        83.62944030761719,
+        244.9067840576172,
+        147.13343811035156,
+        287.2560119628906
+      ],
+      "page": 1
+    },
+    {
+      "id": "cd252b6fc8670da7737f57bc15eb8080",
+      "type": "image",
+      "filename": "cd252b6fc8670da7737f57bc15eb8080.jpg",
+      "image_path": "images/cd252b6fc8670da7737f57bc15eb8080.jpg",
+      "processor": "basic_extractor",
+      "processed": false,
+      "placeholder": "![](images/cd252b6fc8670da7737f57bc15eb8080.jpg)",
+      "bbox": [
+        40.16889190673828,
+        287.4103698730469,
+        103.67289733886719,
+        329.7596130371094
+      ],
+      "page": 1
+    },
+    {
+      "id": "72384d3162a28504620677c72f1021fb",
+      "type": "image",
+      "filename": "72384d3162a28504620677c72f1021fb.jpg",
+      "image_path": "images/72384d3162a28504620677c72f1021fb.jpg",
+      "processor": "basic_extractor",
+      "processed": false,
+      "placeholder": "![](images/72384d3162a28504620677c72f1021fb.jpg)",
+      "bbox": [
+        30.80204963684082,
+        245.06117248535156,
+        94.3060531616211,
+        287.410400390625
+      ],
+      "page": 1
+    }
+  ]
+}

@@ -8,6 +8,8 @@ import unittest
 import os
 import sys
 import json
+import shutil
+import re
 import tempfile
 import subprocess
 import shutil
@@ -209,7 +211,7 @@ class TestExtractPDFEngines(BaseTest):
             result = self.run_subprocess([
                 sys.executable, str(self.extract_pdf_path),
                 str(self.test_pdf_simple), "--engine", "basic", 
-                "--page", "1", "--output", temp_dir
+                "--page", "1", "--output-dir", temp_dir
             ])
             
             # 基础模式可能因为缺少依赖而失败，但应该有合理的错误消息
@@ -229,7 +231,7 @@ class TestExtractPDFEngines(BaseTest):
             result = self.run_subprocess([
                 sys.executable, str(self.extract_pdf_path),
                 str(self.test_pdf_simple), "--engine", "basic-asyn", 
-                "--page", "1", "--output", temp_dir
+                "--page", "1", "--output-dir", temp_dir
             ])
             
             output = result.stdout + result.stderr
@@ -249,7 +251,7 @@ class TestExtractPDFEngines(BaseTest):
             result = self.run_subprocess([
                 sys.executable, str(self.extract_pdf_path),
                 str(self.test_pdf_2pages), "--engine", "mineru-asyn", 
-                "--page", "2", "--output", temp_dir
+                "--page", "2", "--output-dir", temp_dir
             ])
             
             output = result.stdout + result.stderr
@@ -279,7 +281,7 @@ class TestExtractPDFEngines(BaseTest):
             result = self.run_subprocess([
                 sys.executable, str(self.extract_pdf_path),
                 str(self.test_pdf_simple), "--engine", "full", 
-                "--output", temp_dir
+                "--output-dir", temp_dir
             ])
             
             output = result.stdout + result.stderr
@@ -333,19 +335,28 @@ class TestExtractPDFPreprocessing(BaseTest):
             result = self.run_subprocess([
                 sys.executable, str(self.extract_pdf_path),
                 str(self.test_pdf_preprocess), "--engine", "basic", 
-                "--output", temp_dir
+                "--output-dir", temp_dir
             ])
             
             output = result.stdout + result.stderr
             
             if result.returncode == 0:
-                # 检查生成的markdown文件（文件名基于实际PDF文件名）
-                expected_md = Path(temp_dir) / f"{self.test_pdf_preprocess.stem}.md"
-                if not expected_md.exists():
-                    # 如果是符号链接，尝试使用原始文件名
-                    expected_md = Path(temp_dir) / "test_extract_paper.md"
+                # 检查生成的markdown文件
+                # 由于test_extract_preprocess.pdf是符号链接，文件名可能基于目标文件
+                possible_names = [
+                    f"{self.test_pdf_preprocess.stem}.md",  # test_extract_preprocess.md
+                    "test_extract_paper.md"  # 符号链接目标的名称
+                ]
                 
-                self.assertTrue(expected_md.exists(), f"Markdown file not found: {expected_md}")
+                expected_md = None
+                for name in possible_names:
+                    candidate = Path(temp_dir) / name
+                    if candidate.exists():
+                        expected_md = candidate
+                        break
+                
+                self.assertTrue(expected_md is not None and expected_md.exists(), 
+                               f"Markdown file not found. Checked: {[str(Path(temp_dir) / name) for name in possible_names]}")
                 
                 # 读取markdown内容
                 with open(expected_md, 'r', encoding='utf-8') as f:
@@ -380,7 +391,7 @@ class TestExtractPDFPreprocessing(BaseTest):
                 result2 = self.run_subprocess([
                     sys.executable, str(self.extract_pdf_path),
                     str(self.test_pdf_preprocess), "--engine", "mineru-asyn", 
-                    "--output", temp_dir
+                    "--output-dir", temp_dir
                 ])
                 
                 if result2.returncode == 0:
@@ -402,7 +413,7 @@ class TestExtractPDFPreprocessing(BaseTest):
             result = self.run_subprocess([
                 sys.executable, str(self.extract_pdf_path),
                 str(self.test_pdf_preprocess), "--engine", "basic", 
-                "--output", temp_dir
+                "--output-dir", temp_dir
             ])
             
             if result.returncode != 0:
@@ -410,7 +421,7 @@ class TestExtractPDFPreprocessing(BaseTest):
                 result = self.run_subprocess([
                     sys.executable, str(self.extract_pdf_path),
                     str(self.test_pdf_preprocess), "--engine", "mineru-asyn", 
-                    "--output", temp_dir
+                    "--output-dir", temp_dir
                 ])
             
             if result.returncode != 0:
@@ -452,15 +463,6 @@ class TestExtractPDFPreprocessing(BaseTest):
                 # 验证处理结果
                 if content_after != content_before:
                     print("✅ Post-processing completed: content was modified")
-                    
-                    # 检查是否有公式识别结果或错误信息
-                    has_formula_result = any(marker in content_after for marker in 
-                                           ["$$", "公式识别", "description:", "reason:"])
-                    
-                    if has_formula_result:
-                        print("✅ Formula processing successful: found formula results or error info")
-                    else:
-                        print("⚠️  Formula processing completed but no clear results found")
                 else:
                     print("ℹ️  Post-processing completed but content unchanged")
             else:
@@ -592,7 +594,7 @@ class TestExtractPDFFullPipeline(BaseTest):
         with tempfile.TemporaryDirectory() as temp_dir:
             result = self.run_subprocess([
                 sys.executable, str(self.extract_pdf_path),
-                "--full", str(test_pdf), "--output", temp_dir
+                "--full", str(test_pdf), "--output-dir", temp_dir
             ])
             
             output = result.stdout + result.stderr
@@ -899,7 +901,7 @@ class TestExtractPDFPaper2(BaseTest):
         result = self.run_subprocess([
             sys.executable, str(self.extract_pdf_path),
             str(self.test_pdf_paper2), "--engine", "mineru-asyn", 
-            "--output", str(self.test_data_dir)
+            "--output-dir", str(self.test_data_dir)
         ], timeout=180)  # 3分钟限时
         
         output = result.stdout + result.stderr
@@ -1031,7 +1033,7 @@ class TestExtractPDFPaper2(BaseTest):
             # 使用--full参数进行完整流程
             result = self.run_subprocess([
                 sys.executable, str(self.extract_pdf_path),
-                "--full", str(self.test_pdf_paper2), "--output", temp_dir
+                "--full", str(self.test_pdf_paper2), "--output-dir", temp_dir
             ], timeout=360)  # 6分钟限时
             
             output = result.stdout + result.stderr
@@ -1160,6 +1162,200 @@ class TestExtractPDFPaper2(BaseTest):
             
             print(f"📊 Step1+Step2: {step2_markers}")
             print(f"📊 Full pipeline: {full_markers}")
+
+
+class TestExtractPDFPostProcessingQuality(unittest.TestCase):
+    """测试后处理质量和placeholder位置的准确性"""
+    
+    def setUp(self):
+        """设置测试环境"""
+        self.test_data_dir = Path(__file__).parent / "_DATA"
+        self.extract_pdf_path = Path(__file__).parent.parent / "EXTRACT_PDF.py"
+        self.temp_dir = Path("/tmp/extract_pdf_test")
+        self.temp_dir.mkdir(exist_ok=True)
+        
+        # 测试数据文件
+        self.extracted_paper_md = self.test_data_dir / "extracted_paper_for_post.md"
+        self.extracted_paper2_md = self.test_data_dir / "extracted_paper2_for_post.md"
+        
+        # 确保测试数据存在
+        self.assertTrue(self.extracted_paper_md.exists(), f"Test data not found: {self.extracted_paper_md}")
+        self.assertTrue(self.extracted_paper2_md.exists(), f"Test data not found: {self.extracted_paper2_md}")
+    
+    def tearDown(self):
+        """清理测试环境"""
+        import shutil
+        if self.temp_dir.exists():
+            shutil.rmtree(self.temp_dir)
+    
+    def test_01_placeholder_position_accuracy(self):
+        """测试placeholder位置的准确性"""
+        # 复制测试文件到临时目录
+        test_file = self.temp_dir / "test_placeholder_position.md"
+        shutil.copy2(self.extracted_paper_md, test_file)
+        
+        # 执行后处理
+        result = subprocess.run([
+            sys.executable, str(self.extract_pdf_path),
+            "--post", str(test_file)
+        ], capture_output=True, text=True, timeout=300)
+        
+        # 检查执行是否成功
+        self.assertEqual(result.returncode, 0, f"Post-processing failed: {result.stderr}")
+        
+        # 读取处理后的文件
+        with open(test_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # 检查placeholder格式和位置
+        placeholders = re.findall(r'\[placeholder:\s*(\w+)\]', content)
+        self.assertGreater(len(placeholders), 0, "No placeholders found after post-processing")
+        
+        # 检查每个placeholder后面是否有对应的图片引用
+        for match in re.finditer(r'\[placeholder:\s*(\w+)\]\s*\n!\[.*?\]\(.*?\)', content):
+            placeholder_type = match.group(1)
+            print(f"✅ Found valid placeholder-image pair: {placeholder_type}")
+        
+        # 检查图片分析结果格式
+        image_analysis_blocks = re.findall(r'--- 图像分析结果 ---.*?--------------------', content, re.DOTALL)
+        print(f"📊 Found {len(image_analysis_blocks)} image analysis blocks")
+        
+        # 检查表格内容格式
+        table_blocks = re.findall(r'\*\*表格内容:\*\*\s*\$\$.*?\$\$', content, re.DOTALL)
+        print(f"📊 Found {len(table_blocks)} table content blocks")
+        
+        # 检查公式格式
+        formula_blocks = re.findall(r'\$\$[^$]*\$\$', content)
+        print(f"📊 Found {len(formula_blocks)} formula blocks")
+    
+    def test_02_multiple_processing_stability(self):
+        """测试多次处理的稳定性（不产生重复内容）"""
+        # 复制测试文件到临时目录
+        test_file = self.temp_dir / "test_multiple_processing.md"
+        shutil.copy2(self.extracted_paper2_md, test_file)
+        
+        # 第一次处理
+        result1 = subprocess.run([
+            sys.executable, str(self.extract_pdf_path),
+            "--post", str(test_file)
+        ], capture_output=True, text=True, timeout=300)
+        
+        self.assertEqual(result1.returncode, 0, f"First post-processing failed: {result1.stderr}")
+        
+        # 读取第一次处理后的内容
+        with open(test_file, 'r', encoding='utf-8') as f:
+            content_after_first = f.read()
+        
+        # 第二次处理（使用--force）
+        result2 = subprocess.run([
+            sys.executable, str(self.extract_pdf_path),
+            "--post", str(test_file), "--force"
+        ], capture_output=True, text=True, timeout=300)
+        
+        self.assertEqual(result2.returncode, 0, f"Second post-processing failed: {result2.stderr}")
+        
+        # 读取第二次处理后的内容
+        with open(test_file, 'r', encoding='utf-8') as f:
+            content_after_second = f.read()
+        
+        # 检查分隔线数量是否稳定
+        separators_first = content_after_first.count('--------------------')
+        separators_second = content_after_second.count('--------------------')
+        
+        self.assertEqual(separators_first, separators_second, 
+                        f"Separator count changed: {separators_first} -> {separators_second}")
+        
+        # 检查placeholder数量是否稳定
+        placeholders_first = len(re.findall(r'\[placeholder:\s*\w+\]', content_after_first))
+        placeholders_second = len(re.findall(r'\[placeholder:\s*\w+\]', content_after_second))
+        
+        self.assertEqual(placeholders_first, placeholders_second,
+                        f"Placeholder count changed: {placeholders_first} -> {placeholders_second}")
+        
+        print(f"✅ Multiple processing stability verified: {placeholders_first} placeholders, {separators_first} separators")
+    
+    def test_03_content_preservation(self):
+        """测试原始内容保护（确保正文不被误删）"""
+        # 复制测试文件到临时目录
+        test_file = self.temp_dir / "test_content_preservation.md"
+        shutil.copy2(self.extracted_paper_md, test_file)
+        
+        # 读取原始内容中的正文段落（排除placeholder和图片引用）
+        with open(test_file, 'r', encoding='utf-8') as f:
+            original_content = f.read()
+        
+        # 提取原始正文段落
+        original_paragraphs = []
+        for line in original_content.split('\n'):
+            line = line.strip()
+            if (line and 
+                not line.startswith('[placeholder:') and 
+                not line.startswith('![') and
+                not line.startswith('---') and
+                not line.startswith('**') and
+                not line.startswith('$$') and
+                len(line) > 20):  # 只考虑较长的正文段落
+                original_paragraphs.append(line)
+        
+        # 执行后处理
+        result = subprocess.run([
+            sys.executable, str(self.extract_pdf_path),
+            "--post", str(test_file)
+        ], capture_output=True, text=True, timeout=300)
+        
+        self.assertEqual(result.returncode, 0, f"Post-processing failed: {result.stderr}")
+        
+        # 读取处理后的内容
+        with open(test_file, 'r', encoding='utf-8') as f:
+            processed_content = f.read()
+        
+        # 检查原始正文段落是否都保留
+        missing_paragraphs = []
+        for paragraph in original_paragraphs[:5]:  # 检查前5个段落
+            if paragraph not in processed_content:
+                missing_paragraphs.append(paragraph[:50] + "...")
+        
+        self.assertEqual(len(missing_paragraphs), 0, 
+                        f"Original content lost: {missing_paragraphs}")
+        
+        print(f"✅ Content preservation verified: {len(original_paragraphs)} original paragraphs checked")
+    
+    def test_04_analysis_result_format(self):
+        """测试分析结果格式的正确性"""
+        # 复制测试文件到临时目录
+        test_file = self.temp_dir / "test_analysis_format.md"
+        shutil.copy2(self.extracted_paper2_md, test_file)
+        
+        # 执行后处理
+        result = subprocess.run([
+            sys.executable, str(self.extract_pdf_path),
+            "--post", str(test_file)
+        ], capture_output=True, text=True, timeout=300)
+        
+        self.assertEqual(result.returncode, 0, f"Post-processing failed: {result.stderr}")
+        
+        # 读取处理后的内容
+        with open(test_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # 检查图片分析格式：应该是 "--- 图像分析结果 ---" 而不是 "**图片分析:**"
+        old_format_count = content.count('**图片分析:**')
+        new_format_count = content.count('--- 图像分析结果 ---')
+        
+        print(f"🔍 Debug: old_format={old_format_count}, new_format={new_format_count}")
+        print(f"🔍 Content preview: {content[:500]}...")
+        
+        self.assertEqual(old_format_count, 0, "Found old image analysis format (**图片分析:**)")
+
+        # 检查表格内容格式：应该在$$包围内
+        table_pattern = r'\*\*表格内容:\*\*\s*\$\$.*?\$\$'
+        table_matches = re.findall(table_pattern, content, re.DOTALL)
+        
+        # 检查公式错误格式：应该是$$ \text{[错误信息]} $$
+        error_formula_pattern = r'\$\$\s*\\text\{.*?\}\s*\$\$'
+        error_formula_matches = re.findall(error_formula_pattern, content)
+        
+        print(f"✅ Format verification: {new_format_count} image analyses, {len(table_matches)} tables, {len(error_formula_matches)} error formulas")
 
 
 if __name__ == '__main__':

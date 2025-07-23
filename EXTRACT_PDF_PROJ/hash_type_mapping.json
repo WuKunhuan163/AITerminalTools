@@ -5,12 +5,13 @@
     "c7c84f7bcf90c20b1784c35c628d3cb12bd4de7662735890a6b6b21bc3def7b9": "table",
     "9daed601931c7dc45e90545d5335e1cbcc58e382e377760ddc3033477cc096b8": "interline_equation",
     "4ccaa51b81a2fc2d42cb15374f1d03adc72c7a5e5622100441bd35cfd35964f8": "interline_equation",
-    "60ec91bbbd047fbafd8b25eb3606bbea75cbb6cec0e3a59f67611fd3403fb52e": "image"
+    "60ec91bbbd047fbafd8b25eb3606bbea75cbb6cec0e3a59f67611fd3403fb52e": "image",
+    "f4cd9a3ff84d91d075920ece838ca96f7a4344b466805a78f03ceb0b3ce11fb7": "image"
   },
   "usage_notes": [
     "This file maps image file hashes to their content types (image, formula, table)",
     "Used for placeholder regeneration when type information is missing",
     "Automatically updated when processing items with known types"
   ],
-  "last_updated": "2025-07-21T17:03:27.364241"
+  "last_updated": "2025-07-22T22:28:53.811447"
 }

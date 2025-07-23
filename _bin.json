@@ -98,7 +98,7 @@
       "usage": "EXTRACT_PDF <pdf_file> [options] | EXTRACT_PDF --post [<markdown_file>] [--post-type <type>] | EXTRACT_PDF --full <pdf_file> [options]",
       "examples": [
         "EXTRACT_PDF document.pdf --page 3",
-        "EXTRACT_PDF paper.pdf --page 1-5 --output /path/to/output",
+        "EXTRACT_PDF paper.pdf --page 1-5 --output-dir /path/to/output",
         "EXTRACT_PDF paper.pdf --engine mineru-asyn --page 1-3",
         "EXTRACT_PDF --post",
         "EXTRACT_PDF --post document.md --post-type image",
@@ -120,6 +120,37 @@
         "binary": "815cfcd144c0e380ef2a51600019ab1738cea17d79b919929d39986804c2788b",
         "python": "f3a9b389083c60cb9638f13b410972d9bbdd56ecaba07133f80d20a4b61ae1f3",
         "markdown": "8d49efda30ae889b8906f6805bd5f1e9bf4dd8081514c289b24b7ac4cfa1e7e6"
+      },
+      "test_command": [
+        "--help"
+      ]
+    },
+    "EXTRACT_IMG": {
+      "name": "EXTRACT_IMG",
+      "description": "Intelligent Image Analysis Tool",
+      "purpose": "Automatically detect image content types and route to appropriate processors with integrated caching",
+      "usage": "EXTRACT_IMG [image_path] [options]",
+      "examples": [
+        "EXTRACT_IMG image.png",
+        "EXTRACT_IMG image.png --type formula",
+        "EXTRACT_IMG image.png --type table",
+        "EXTRACT_IMG --batch *.png",
+        "EXTRACT_IMG --stats"
+      ],
+      "files": {
+        "binary": "EXTRACT_IMG",
+        "python": "EXTRACT_IMG.py",
+        "markdown": "EXTRACT_IMG.md"
+      },
+      "run_compatible": true,
+      "testable": true,
+      "test_passed": true,
+      "ai_usable": true,
+      "tool_use_scenario": "When user needs intelligent image analysis with automatic content type detection",
+      "file_hashes": {
+        "binary": "placeholder",
+        "python": "placeholder",
+        "markdown": "placeholder"
       },
       "test_command": [
         "--help"
@@ -187,17 +218,20 @@
     },
     "IMG2TEXT": {
       "name": "IMG2TEXT",
-      "description": "图片转文字描述工具，支持Google Gemini Vision API",
-      "purpose": "Convert images to structured text descriptions using Google Gemini Vision API",
-      "usage": "IMG2TEXT <image_path> [--mode academic|general|code_snippet] [--api google] [--output <file>]",
+      "description": "Image to text conversion tool using Google Gemini Vision API",
+      "purpose": "Convert images to structured text descriptions using Google Gemini Vision API with multiple analysis modes",
+      "usage": "IMG2TEXT [image_path] [options]",
       "examples": [
         "IMG2TEXT example.png --mode academic",
         "IMG2TEXT example.png --mode general --output result.txt",
-        "IMG2TEXT example.png --mode code_snippet"
+        "IMG2TEXT example.png --mode code_snippet",
+        "IMG2TEXT --test-connection",
+        "IMG2TEXT"
       ],
       "files": {
         "binary": "IMG2TEXT",
-        "python": "IMG2TEXT.py"
+        "python": "IMG2TEXT.py",
+        "markdown": "IMG2TEXT.md"
       },
       "run_compatible": true,
       "testable": true,
@@ -253,9 +287,8 @@
         "OPENROUTER \"解释量子计算\" --model \"deepseek/deepseek-r1\"",
         "OPENROUTER \"Write a Python function\" --key \"sk-or-v1-...\" --max-tokens 2000",
         "OPENROUTER --list",
-        "OPENROUTER --add \"anthropic/claude-3-haiku\" --temp-key \"your-key\"",
-        "OPENROUTER --remove \"old-model\"",
-        "OPENROUTER --default \"google/gemini-2.5-flash-lite-preview-06-17\""
+        "OPENROUTER --default \"google/gemini-2.5-flash-lite-preview-06-17\"",
+        "OPENROUTER --test-connection"
       ],
       "files": {
         "binary": "OPENROUTER",
@@ -306,8 +339,8 @@
     },
     "RUN": {
       "name": "RUN",
-      "description": "Execute bin tools with JSON output",
-      "purpose": "Execute other bin tools and capture their output in JSON format",
+      "description": "Universal command wrapper with JSON output",
+      "purpose": "Execute other tools and capture their output in JSON format with unique identifiers",
       "usage": "RUN [--show] <command> [args...]",
       "examples": [
         "RUN OVERLEAF document.tex",
@@ -333,13 +366,12 @@
     "SEARCH_PAPER": {
       "name": "SEARCH_PAPER",
       "description": "Enhanced Academic Paper Search Tool",
-      "purpose": "Search academic papers from multiple platforms (arXiv, Google Scholar, Semantic Scholar)",
+      "purpose": "Search academic papers from multiple platforms (arXiv, Google Scholar) with web crawling",
       "usage": "SEARCH_PAPER [query] [options]",
       "examples": [
-        "SEARCH_PAPER",
         "SEARCH_PAPER \"machine learning\"",
         "SEARCH_PAPER \"deep learning\" --max-results 20",
-        "SEARCH_PAPER \"NLP\" --sources arxiv,semantic_scholar"
+        "SEARCH_PAPER \"NLP\" --sources arxiv,google_scholar"
       ],
       "files": {
         "binary": "SEARCH_PAPER",
@@ -355,6 +387,37 @@
         "binary": "2779f023273904684a05ee2f4e19c578e1c9ba957f43b8785edc3e6ed2409e5b",
         "python": "9886a0e93f019c7a6a4be90a0fa783316710ecb482aab8c36d9004097c3f033a",
         "markdown": "a5d4d13de705761a4d4b8ccd6a8eb6cc93173bf0a2fe6231a749104a105c4867"
+      },
+      "test_command": [
+        "--help"
+      ]
+    },
+    "UNIMERNET": {
+      "name": "UNIMERNET",
+      "description": "UnimerNet Formula and Table Recognition Tool",
+      "purpose": "Convert mathematical formulas and tables in images to text using UnimerNet neural network",
+      "usage": "UNIMERNET <image_path> [options]",
+      "examples": [
+        "UNIMERNET formula.png",
+        "UNIMERNET table.png --type table",
+        "UNIMERNET image.png --json --output result.json",
+        "UNIMERNET --check",
+        "UNIMERNET --stats"
+      ],
+      "files": {
+        "binary": "UNIMERNET",
+        "python": "UNIMERNET.py",
+        "markdown": "UNIMERNET.md"
+      },
+      "run_compatible": true,
+      "testable": true,
+      "test_passed": true,
+      "ai_usable": true,
+      "tool_use_scenario": "When user needs to extract mathematical formulas or tables from images",
+      "file_hashes": {
+        "binary": "placeholder",
+        "python": "placeholder",
+        "markdown": "placeholder"
       },
       "test_command": [
         "--help"
@@ -391,6 +454,6 @@
   "metadata": {
     "version": "1.0.0",
     "last_updated": "2025-07-20",
-    "total_tools": 13
+    "total_tools": 15
   }
 }

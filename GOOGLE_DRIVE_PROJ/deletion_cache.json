@@ -1,0 +1,21 @@
+{
+  "deletion_records": [
+    {
+      "filename": "test_file2.txt",
+      "deletion_time": 1753294272.9649239
+    },
+    {
+      "filename": "test_file2.txt",
+      "deletion_time": 1753294076.561991
+    },
+    {
+      "filename": "test_file2.txt",
+      "deletion_time": 1753294046.157672
+    },
+    {
+      "filename": "test_file2.txt",
+      "deletion_time": 1753294037.0481951
+    }
+  ],
+  "last_updated": 1753294272.9649339
+}
