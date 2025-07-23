@@ -1693,7 +1693,8 @@ def prepare_paper_content(params):
         parsed_url = urllib.parse.urlparse(paper_url)
         filename = Path(parsed_url.path).name or "downloaded_paper.pdf"
         
-        downloaded_path, title = download_paper(paper_url, filename.replace('.pdf', ''))
+        downloaded_path, title = download_paper(paper_url, filename.replace('.pdf', ''), 
+                                               output_dir=params.get('output_dir'))
         if downloaded_path:
             read_images = params.get("read_images", False)
             paper_content, processed_path = process_paper_with_extract_pdf(downloaded_path, read_images)

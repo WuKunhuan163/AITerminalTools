@@ -4373,7 +4373,32 @@ def handle_shell_command(shell_cmd, command_identifier=None):
                         else:
                             source_files = upload_args
                             target_path = "."
-                        result = shell.cmd_upload(source_files, target_path, force=force)
+                        
+                        # 检查是否有文件夹需要上传，如果是单个文件夹则使用cmd_upload_folder
+                        if len(source_files) == 1 and os.path.isdir(source_files[0]):
+                            result = shell.cmd_upload_folder(source_files[0], target_path, keep_zip=False)
+                        else:
+                            result = shell.cmd_upload(source_files, target_path, force=force)
+        elif cmd == "upload-folder":
+            if not args:
+                result = {"success": False, "error": "用法: upload-folder [--keep-zip] <folder_path> [target_path]"}
+            else:
+                # 解析参数
+                keep_zip = False
+                folder_args = []
+                
+                for arg in args:
+                    if arg == '--keep-zip':
+                        keep_zip = True
+                    else:
+                        folder_args.append(arg)
+                
+                if not folder_args:
+                    result = {"success": False, "error": "请指定要上传的文件夹"}
+                else:
+                    folder_path = folder_args[0]
+                    target_path = folder_args[1] if len(folder_args) > 1 else "."
+                    result = shell.cmd_upload_folder(folder_path, target_path, keep_zip=keep_zip)
         elif cmd == "help":
             result = {
                 "success": True,
@@ -4392,7 +4417,8 @@ def handle_shell_command(shell_cmd, command_identifier=None):
                     "python -c '<code>'           - execute python code",
                                     "download [--force] <file> [path] - download file with caching",
                     "mv <source> <dest>           - move/rename file or folder",
-                    "upload <files...> [target]   - upload files to Google Drive"
+                    "upload <files...> [target]   - upload files to Google Drive",
+                    "upload-folder [--keep-zip] <folder> [target] - upload folder (zip->upload->unzip->cleanup)"
                 ]
             }
         else:

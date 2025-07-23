@@ -1,21 +1,13 @@
 {
   "deletion_records": [
     {
-      "filename": "test_file2.txt",
-      "deletion_time": 1753294272.9649239
+      "filename": "test_upload_folder.zip",
+      "deletion_time": 1753299108.095073
     },
     {
-      "filename": "test_file2.txt",
-      "deletion_time": 1753294076.561991
-    },
-    {
-      "filename": "test_file2.txt",
-      "deletion_time": 1753294046.157672
-    },
-    {
-      "filename": "test_file2.txt",
-      "deletion_time": 1753294037.0481951
+      "filename": "test_upload_folder.zip",
+      "deletion_time": 1753298919.650659
     }
   ],
-  "last_updated": 1753294272.9649339
+  "last_updated": 1753299108.095105
 }

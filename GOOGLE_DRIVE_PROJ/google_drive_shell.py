@@ -89,6 +89,9 @@ class GoogleDriveShell:
         # 初始化删除时间缓存
         self.deletion_cache = self.load_deletion_cache()
         
+        # 设置常量
+        self.HOME_URL = "https://drive.google.com/drive/u/0/my-drive"
+        
         # 设置路径
         if self.cache_config_loaded:
             try:
@@ -474,7 +477,7 @@ class GoogleDriveShell:
                 # 遍历文件夹中的所有文件
                 for file_path in folder_path.rglob('*'):
                     if file_path.is_file():
-                        # 计算相对路径
+                        # 计算相对路径，使用文件夹名作为根目录
                         arcname = file_path.relative_to(folder_path.parent)
                         zipf.write(file_path, arcname)
                         
@@ -494,76 +497,495 @@ class GoogleDriveShell:
         except Exception as e:
             return {"success": False, "error": f"打包过程出错: {e}"}
     
-    def _unzip_remote_file(self, zip_filename, target_dir=".", delete_zip=True):
+    def _unzip_remote_file(self, zip_filename, target_dir=".", delete_zip=True, remote_path=None):
         """
-        在远程解压zip文件
+        生成包含两个同步检测的远程解压命令并通过tkinter窗口提供给用户执行
         
         Args:
             zip_filename (str): 要解压的zip文件名
             target_dir (str): 解压目标目录
             delete_zip (bool): 解压后是否删除zip文件
+            remote_path (str): 远程目标路径
             
         Returns:
             dict: 解压结果
         """
         try:
-            print(f"📂 正在远程解压: {zip_filename}")
+            print(f"📂 生成包含双重同步检测的远程解压命令: {zip_filename}")
             
-            # 使用Python命令在远程解压zip文件
-            python_code = f'''
-import zipfile
-import os
-from pathlib import Path
-
-zip_file = "{zip_filename}"
-target_dir = "{target_dir}"
-delete_zip = {delete_zip}
-
-try:
-    if not os.path.exists(zip_file):
-        print(f"❌ zip文件不存在: {{zip_file}}")
-        exit(1)
-    
-    # 创建目标目录
-    if target_dir != "." and not os.path.exists(target_dir):
-        os.makedirs(target_dir, exist_ok=True)
-    
-    # 解压zip文件
-    with zipfile.ZipFile(zip_file, 'r') as zipf:
-        zipf.extractall(target_dir)
-        extracted_files = zipf.namelist()
-    
-    print(f"✅ 解压完成，提取了 {{len(extracted_files)}} 个文件")
-    
-    # 删除zip文件
-    if delete_zip:
-        os.remove(zip_file)
-        print(f"🗑️  已删除zip文件: {{zip_file}}")
-    
-    print("SUCCESS")
-    
-except Exception as e:
-    print(f"❌ 解压失败: {{e}}")
-    exit(1)
-'''
-            
-            # 执行远程Python命令
-            result = self.cmd_python_code(python_code)
-            
-            if result.get("success") and "SUCCESS" in result.get("output", ""):
-                return {
-                    "success": True,
-                    "message": f"成功解压 {zip_filename}",
-                    "zip_deleted": delete_zip
-                }
+            # 构建远程路径
+            if remote_path is None:
+                remote_target_path = f'"{self.REMOTE_ROOT}"'
             else:
+                if remote_path.startswith('/'):
+                    remote_target_path = f'"{remote_path}"'
+                else:
+                    # 解析相对路径，处理~和..
+                    import os.path
+                    if remote_path.startswith('~'):
+                        # 将~替换为REMOTE_ROOT
+                        resolved_path = remote_path.replace('~', self.REMOTE_ROOT, 1)
+                    else:
+                        resolved_path = f"{self.REMOTE_ROOT}/{remote_path}"
+                    
+                    # 规范化路径，处理..
+                    normalized_path = os.path.normpath(resolved_path)
+                    remote_target_path = f'"{normalized_path}"'
+            
+            # 构建源文件路径（Google Drive Desktop同步路径）
+            source_path = f'"/content/drive/Othercomputers/我的 MacBook Air/Google Drive/{zip_filename}"'
+            target_zip_path = f'{remote_target_path}/{zip_filename}'
+            
+            # 生成包含两个同步检测的远程命令
+            if delete_zip:
+                # 第一个⏳：等待上传完成并移动zip文件
+                # 第二个⏳：等待移动完成后直接解压
+                remote_command = f"""(mkdir -p {remote_target_path} && echo -n "⏳"; for i in {{1..60}}; do     if mv {source_path} {target_zip_path} 2>/dev/null; then         echo "";         break;     else         if [ $i -eq 60 ]; then             echo " ❌ (已重试60次失败)";             exit 1;         else             echo -n ".";             sleep 1;         fi;     fi; done) && (cd {remote_target_path} && echo -n "⏳"; for i in {{1..30}}; do     if [ -f "{zip_filename}" ]; then         echo "";         break;     else         if [ $i -eq 30 ]; then             echo " ❌ (zip文件检测失败)";             exit 1;         else             echo -n ".";             sleep 1;         fi;     fi; done) && (cd {remote_target_path} && echo "=== 开始解压 ===" && unzip -o {zip_filename} && echo "=== 删除zip ===" && rm {zip_filename} && echo "=== 验证结果 ===" && ls -la) && clear && echo "✅ 执行成功" || echo "❌ 执行失败\""""
+            else:
+                # 保留zip文件的版本
+                remote_command = f"""(mkdir -p {remote_target_path} && echo -n "⏳"; for i in {{1..60}}; do     if mv {source_path} {target_zip_path} 2>/dev/null; then         echo "";         break;     else         if [ $i -eq 60 ]; then             echo " ❌ (已重试60次失败)";             exit 1;         else             echo -n ".";             sleep 1;         fi;     fi; done) && (cd {remote_target_path} && echo -n "⏳"; for i in {{1..30}}; do     if [ -f "{zip_filename}" ]; then         echo "";         break;     else         if [ $i -eq 30 ]; then             echo " ❌ (zip文件检测失败)";             exit 1;         else             echo -n ".";             sleep 1;         fi;     fi; done) && (cd {remote_target_path} && echo "=== 开始解压 ===" && unzip -o {zip_filename} && echo "=== 验证结果 ===" && ls -la) && clear && echo "✅ 执行成功" || echo "❌ 执行失败\""""
+            
+            print(f"🔧 生成的远程命令（包含双重同步检测）: {remote_command}")
+            
+            # 使用tkinter窗口显示命令并等待用户反馈
+            try:
+                import tkinter as tk
+                from tkinter import messagebox, scrolledtext
+                import threading
+                import queue
+                
+                # 创建结果队列
+                result_queue = queue.Queue()
+                
+                def show_command_window():
+                    """显示远程命令窗口"""
+                    root = tk.Tk()
+                    root.title("远程文件夹上传命令 - Google Drive")
+                    root.geometry("800x600")
+                    
+                    # 标题
+                    title_label = tk.Label(root, text=f"远程文件夹上传: {zip_filename}", 
+                                         font=("Arial", 14, "bold"))
+                    title_label.pack(pady=10)
+                    
+                    # 说明文字
+                    instruction_text = f"""
+请在远程终端执行以下命令来完成文件夹上传：
+
+该命令包含双重同步检测：
+• 第一个⏳：等待zip文件上传完成并移动到目标位置
+• 第二个⏳：等待移动完成后自动解压
+
+1. 复制下面的命令到剪切板
+2. 在远程终端粘贴并执行
+3. 根据执行结果选择相应按钮
+"""
+                    instruction_label = tk.Label(root, text=instruction_text, 
+                                               justify=tk.LEFT, wraplength=750)
+                    instruction_label.pack(pady=10)
+                    
+                    # 命令文本框
+                    command_frame = tk.Frame(root)
+                    command_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+                    
+                    command_text = scrolledtext.ScrolledText(command_frame, height=8, 
+                                                           font=("Consolas", 10))
+                    command_text.pack(fill=tk.BOTH, expand=True)
+                    command_text.insert(tk.END, remote_command)
+                    command_text.config(state=tk.DISABLED)
+                    
+                    # 复制按钮
+                    def copy_command():
+                        root.clipboard_clear()
+                        root.clipboard_append(remote_command)
+                        messagebox.showinfo("已复制", "命令已复制到剪切板")
+                    
+                    copy_btn = tk.Button(root, text="📋 复制命令到剪切板", 
+                                       command=copy_command, font=("Arial", 12))
+                    copy_btn.pack(pady=10)
+                    
+                    # 结果按钮框架
+                    result_frame = tk.Frame(root)
+                    result_frame.pack(pady=20)
+                    
+                    # 结果按钮
+                    def on_success():
+                        result_queue.put({"success": True, "message": "用户确认解压成功"})
+                        root.destroy()
+                    
+                    def on_failure():
+                        result_queue.put({"success": False, "error": "用户报告解压失败"})
+                        root.destroy()
+                    
+                    def on_cancel():
+                        result_queue.put({"success": False, "error": "用户取消操作"})
+                        root.destroy()
+                    
+                    success_btn = tk.Button(result_frame, text="✅ 执行成功", 
+                                          command=on_success, bg="lightgreen",
+                                          font=("Arial", 12), width=12)
+                    success_btn.pack(side=tk.LEFT, padx=10)
+                    
+                    failure_btn = tk.Button(result_frame, text="❌ 执行失败", 
+                                          command=on_failure, bg="lightcoral",
+                                          font=("Arial", 12), width=12)
+                    failure_btn.pack(side=tk.LEFT, padx=10)
+                    
+                    cancel_btn = tk.Button(result_frame, text="🚫 取消操作", 
+                                         command=on_cancel, bg="lightgray",
+                                         font=("Arial", 12), width=12)
+                    cancel_btn.pack(side=tk.LEFT, padx=10)
+                    
+                    # 居中显示窗口
+                    root.update_idletasks()
+                    x = (root.winfo_screenwidth() // 2) - (root.winfo_width() // 2)
+                    y = (root.winfo_screenheight() // 2) - (root.winfo_height() // 2)
+                    root.geometry(f"+{x}+{y}")
+                    
+                    root.mainloop()
+                
+                # 在单独线程中显示窗口
+                window_thread = threading.Thread(target=show_command_window)
+                window_thread.start()
+                window_thread.join()
+                
+                # 获取用户反馈结果
+                try:
+                    user_result = result_queue.get_nowait()
+                    if user_result["success"]:
+                        return {
+                            "success": True,
+                            "message": f"成功解压 {zip_filename}",
+                            "zip_deleted": delete_zip,
+                            "method": "manual_execution"
+                        }
+                    else:
+                        return {
+                            "success": False,
+                            "error": user_result["error"],
+                            "method": "manual_execution"
+                        }
+                except queue.Empty:
+                    return {
+                        "success": False,
+                        "error": "用户未提供反馈",
+                        "method": "manual_execution"
+                    }
+                    
+            except Exception as e:
                 return {
                     "success": False,
-                    "error": f"解压失败: {result.get('error', '未知错误')}"
+                    "error": f"显示命令窗口失败: {e}",
+                    "command": remote_command
                 }
                 
         except Exception as e:
-            return {"success": False, "error": f"远程解压过程出错: {e}"}
+            return {"success": False, "error": f"生成远程解压命令失败: {e}"}
+    
+    def _generate_unzip_and_delete_command(self, zip_filename, remote_target_path, keep_zip=False):
+        """
+        生成远程解压和删除zip文件的命令，并通过tkinter窗口提供给用户执行
+        
+        Args:
+            zip_filename (str): zip文件名
+            remote_target_path (str): 远程目标路径
+            keep_zip (bool): 是否保留zip文件
+            
+        Returns:
+            dict: 命令生成结果
+        """
+        try:
+            print(f"📂 生成远程解压和删除命令: {zip_filename}")
+            
+            # 构建远程命令
+            if keep_zip:
+                # 保留zip文件的版本：只解压，不删除
+                remote_command = f'''cd "{remote_target_path}" && echo "=== 开始解压 ===" && unzip -o "{zip_filename}" && echo "=== 验证结果 ===" && ls -la && clear && echo "✅ 执行成功" || echo "❌ 执行失败"'''
+            else:
+                # 默认版本：解压后删除zip文件
+                remote_command = f'''cd "{remote_target_path}" && echo "=== 开始解压 ===" && unzip -o "{zip_filename}" && echo "=== 删除zip ===" && rm "{zip_filename}" && echo "=== 验证结果 ===" && ls -la && clear && echo "✅ 执行成功" || echo "❌ 执行失败"'''
+            
+            print(f"🔧 生成的远程解压命令: {remote_command}")
+            
+            # 使用tkinter窗口显示命令并等待用户反馈
+            try:
+                import tkinter as tk
+                from tkinter import messagebox, scrolledtext
+                import threading
+                import queue
+                
+                # 创建结果队列
+                result_queue = queue.Queue()
+                
+                def show_command_window():
+                    """显示远程解压命令窗口"""
+                    root = tk.Tk()
+                    root.title("远程文件夹解压命令 - Google Drive")
+                    root.geometry("800x600")
+                    
+                    # 标题
+                    title_label = tk.Label(root, text=f"远程文件夹解压: {zip_filename}", 
+                                         font=("Arial", 14, "bold"))
+                    title_label.pack(pady=10)
+                    
+                    # 说明文字
+                    action_text = "解压并删除zip文件" if not keep_zip else "解压但保留zip文件"
+                    instruction_text = f"""
+请在远程终端执行以下命令来完成文件夹解压：
+
+操作: {action_text}
+目标路径: {remote_target_path}
+
+1. 复制下面的命令到剪切板
+2. 在远程终端粘贴并执行
+3. 根据执行结果选择相应按钮
+"""
+                    instruction_label = tk.Label(root, text=instruction_text, 
+                                               justify=tk.LEFT, wraplength=750)
+                    instruction_label.pack(pady=10)
+                    
+                    # 命令文本框
+                    command_frame = tk.Frame(root)
+                    command_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+                    
+                    command_text = scrolledtext.ScrolledText(command_frame, height=8, 
+                                                           font=("Consolas", 10))
+                    command_text.pack(fill=tk.BOTH, expand=True)
+                    command_text.insert(tk.END, remote_command)
+                    command_text.config(state=tk.DISABLED)
+                    
+                    # 复制按钮
+                    def copy_command():
+                        root.clipboard_clear()
+                        root.clipboard_append(remote_command)
+                        messagebox.showinfo("已复制", "命令已复制到剪切板")
+                    
+                    copy_btn = tk.Button(root, text="📋 复制命令到剪切板", 
+                                       command=copy_command, font=("Arial", 12))
+                    copy_btn.pack(pady=10)
+                    
+                    # 结果按钮框架
+                    result_frame = tk.Frame(root)
+                    result_frame.pack(pady=20)
+                    
+                    # 结果按钮
+                    def on_success():
+                        result_queue.put({"success": True, "message": "用户确认解压成功"})
+                        root.destroy()
+                    
+                    def on_failure():
+                        result_queue.put({"success": False, "error": "用户报告解压失败"})
+                        root.destroy()
+                    
+                    def on_cancel():
+                        result_queue.put({"success": False, "error": "用户取消操作"})
+                        root.destroy()
+                    
+                    success_btn = tk.Button(result_frame, text="✅ 执行成功", 
+                                          command=on_success, bg="lightgreen",
+                                          font=("Arial", 12), width=12)
+                    success_btn.pack(side=tk.LEFT, padx=10)
+                    
+                    failure_btn = tk.Button(result_frame, text="❌ 执行失败", 
+                                          command=on_failure, bg="lightcoral",
+                                          font=("Arial", 12), width=12)
+                    failure_btn.pack(side=tk.LEFT, padx=10)
+                    
+                    cancel_btn = tk.Button(result_frame, text="🚫 取消操作", 
+                                         command=on_cancel, bg="lightgray",
+                                         font=("Arial", 12), width=12)
+                    cancel_btn.pack(side=tk.LEFT, padx=10)
+                    
+                    # 居中显示窗口
+                    root.update_idletasks()
+                    x = (root.winfo_screenwidth() // 2) - (root.winfo_width() // 2)
+                    y = (root.winfo_screenheight() // 2) - (root.winfo_height() // 2)
+                    root.geometry(f"+{x}+{y}")
+                    
+                    root.mainloop()
+                
+                # 在单独线程中显示窗口
+                window_thread = threading.Thread(target=show_command_window)
+                window_thread.start()
+                window_thread.join()
+                
+                # 获取用户反馈结果
+                try:
+                    user_result = result_queue.get_nowait()
+                    if user_result["success"]:
+                        return {
+                            "success": True,
+                            "message": f"成功解压 {zip_filename}",
+                            "zip_deleted": not keep_zip,
+                            "method": "manual_execution",
+                            "command": remote_command
+                        }
+                    else:
+                        return {
+                            "success": False,
+                            "error": user_result["error"],
+                            "method": "manual_execution",
+                            "command": remote_command
+                        }
+                except queue.Empty:
+                    return {
+                        "success": False,
+                        "error": "用户未提供反馈",
+                        "method": "manual_execution",
+                        "command": remote_command
+                    }
+                    
+            except Exception as e:
+                return {
+                    "success": False,
+                    "error": f"显示命令窗口失败: {e}",
+                    "command": remote_command
+                }
+                
+        except Exception as e:
+            return {"success": False, "error": f"生成远程解压命令失败: {e}"}
+    
+    def _wait_for_zip_sync(self, zip_filename, timeout=60):
+        """
+        等待zip文件同步到远程目录
+        
+        Args:
+            zip_filename (str): 要等待的zip文件名
+            timeout (int): 超时时间（秒）
+            
+        Returns:
+            dict: 等待结果
+        """
+        try:
+            import time
+            
+            print(f"⏳ 等待zip文件同步: {zip_filename}")
+            
+            start_time = time.time()
+            check_count = 0
+            next_check_delay = 1.0  # 第一次检测等待1秒
+            
+            # 只显示一行简洁的开始信息
+            print(f"⏳", end="", flush=True)
+            
+            while time.time() - start_time < timeout:
+                check_count += 1
+                elapsed_time = time.time() - start_time
+                
+                # 使用 ls 命令检查文件是否存在
+                try:
+                    check_result = self.cmd_ls(".")
+                    if check_result.get("success"):
+                        files = check_result.get("files", [])
+                        zip_exists = any(f.get("name") == zip_filename for f in files)
+                        
+                        if zip_exists:
+                            print(f" ({elapsed_time:.1f}s)")
+                            return {
+                                "success": True,
+                                "message": f"zip文件同步完成: {zip_filename}",
+                                "sync_time": elapsed_time
+                            }
+                        
+                except Exception as e:
+                    pass  # 静默处理检查错误
+                
+                # 显示一个点表示检测进行中
+                print(".", end="", flush=True)
+                
+                # 使用对数规律增加等待时间：每次 * √2，最多等待8秒
+                time.sleep(min(next_check_delay, 8))
+                next_check_delay *= 1.414  # √2 ≈ 1.414
+            
+            # 超时，返回失败
+            print(f" ⏰ 超时 ({timeout}s)")
+            return {
+                "success": False,
+                "error": f"zip文件同步超时: {zip_filename}",
+                "sync_time": timeout
+            }
+            
+        except Exception as e:
+            print(f" ❌ 检测失败: {e}")
+            return {"success": False, "error": f"zip文件同步检测失败: {e}"}
+
+    def cmd_upload_folder(self, folder_path, target_path=".", keep_zip=False):
+        """
+        上传文件夹到Google Drive
+        
+        流程：打包 -> 上传zip文件（作为普通文件）
+        
+        Args:
+            folder_path (str): 要上传的文件夹路径
+            target_path (str): 目标路径（相对于当前shell路径）
+            keep_zip (bool): 是否保留本地zip文件（远端总是保留zip文件）
+            
+        Returns:
+            dict: 上传结果
+        """
+        try:
+            print(f"🚀 开始上传文件夹: {folder_path}")
+            
+            # 步骤1: 打包文件夹
+            print("📦 步骤1: 打包文件夹...")
+            zip_result = self._zip_folder(folder_path)
+            if not zip_result["success"]:
+                return {"success": False, "error": f"打包失败: {zip_result['error']}"}
+            
+            zip_path = zip_result["zip_path"]
+            zip_filename = Path(zip_path).name
+            
+            try:
+                # 步骤2: 上传zip文件并自动解压
+                print("📤 步骤2: 上传zip文件并自动解压...")
+                
+                # 传递文件夹上传的特殊参数
+                upload_result = self.cmd_upload([zip_path], target_path, force=False, 
+                                              folder_upload_info={
+                                                  "is_folder_upload": True,
+                                                  "zip_filename": zip_filename,
+                                                  "keep_zip": keep_zip
+                                              })
+                if not upload_result["success"]:
+                    return {"success": False, "error": f"上传失败: {upload_result['error']}"}
+                
+                # 成功完成
+                folder_name = Path(folder_path).name
+                print(f"Folder upload successful: {folder_name}")
+                
+                return {
+                    "success": True,
+                    "message": f"成功上传文件夹: {folder_name}",
+                    "original_folder": folder_path,
+                    "zip_uploaded": zip_filename,
+                    "zip_kept": keep_zip,
+                    "target_path": target_path,
+                    "zip_size": zip_result.get("zip_size", 0),
+                    "method": "zip_upload_and_extract",
+                    "upload_details": upload_result
+                }
+                
+            finally:
+                # 根据keep_zip参数决定是否清理本地临时zip文件
+                if not keep_zip:
+                    try:
+                        if Path(zip_path).exists():
+                            Path(zip_path).unlink()
+                            print(f"🧹 已清理本地临时文件: {zip_filename}")
+                    except Exception as e:
+                        print(f"⚠️ 清理临时文件失败: {e}")
+                else:
+                    print(f"📁 保留本地zip文件: {zip_path}")
+                    
+        except Exception as e:
+            # 如果出错，也要清理临时文件
+            try:
+                if 'zip_path' in locals() and Path(zip_path).exists():
+                    Path(zip_path).unlink()
+                    print(f"🧹 已清理本地临时文件: {zip_path}")
+            except:
+                pass
+            return {"success": False, "error": f"文件夹上传过程出错: {e}"}
     
     def _wait_for_file_sync_with_timeout(self, expected_files, file_moves, custom_timeout):
         """
@@ -715,7 +1137,7 @@ except Exception as e:
         except Exception as e:
             return {"success": False, "error": f"本地文件检查失败: {e}"}
 
-    def generate_remote_commands(self, file_moves, target_path):
+    def generate_remote_commands(self, file_moves, target_path, folder_upload_info=None):
         """
         生成远端等效命令，包含必要的mkdir命令
         
@@ -730,6 +1152,9 @@ except Exception as e:
             commands = []
             
             # 计算目标绝对路径
+            # 计算目标绝对路径
+            import os.path
+            
             if target_path == "." or target_path == "":
                 # "." 表示当前shell的位置，但如果没有shell则默认为REMOTE_ROOT
                 current_shell = self.get_current_shell()
@@ -748,8 +1173,21 @@ except Exception as e:
                 # 绝对路径，基于 REMOTE_ROOT
                 target_absolute = f"{self.REMOTE_ROOT}{target_path}"
             else:
-                # 相对路径，基于 REMOTE_ROOT
-                target_absolute = f"{self.REMOTE_ROOT}/{target_path.lstrip('/')}"
+                # 相对路径，需要考虑当前shell位置并规范化路径
+                current_shell = self.get_current_shell()
+                if current_shell and current_shell.get("current_path") != "~":
+                    current_path = current_shell.get("current_path", "~")
+                    if current_path.startswith("~/"):
+                        # 从当前路径计算相对路径
+                        current_relative = current_path[2:]  # 去掉 ~/
+                        combined_path = f"{self.REMOTE_ROOT}/{current_relative}/{target_path}"
+                    else:
+                        combined_path = f"{self.REMOTE_ROOT}/{target_path}"
+                else:
+                    combined_path = f"{self.REMOTE_ROOT}/{target_path.lstrip('/')}"
+                
+                # 规范化路径，处理..等
+                target_absolute = os.path.normpath(combined_path)
             
             for file_info in file_moves:
                 filename = file_info["filename"]  # 实际的文件名（可能已重命名）
@@ -809,11 +1247,28 @@ done'''.strip()
             
             mkdir_command_str = " && ".join(mkdir_commands) if mkdir_commands else ""
             
-            # 组合完整命令：创建目录 + 移动文件 + 结果提示
+            # 检查是否为文件夹上传，如果是则添加解压和删除命令
+            additional_commands = ""
+            if folder_upload_info and folder_upload_info.get("is_folder_upload"):
+                zip_filename = folder_upload_info.get("zip_filename")
+                keep_zip = folder_upload_info.get("keep_zip", False)
+                
+                if zip_filename:
+                    # 添加解压命令
+                    unzip_cmd = f'echo "=== 开始解压 ===" && unzip -o "{zip_filename}"'
+                    
+                    # 如果不保留zip文件，添加删除命令
+                    if not keep_zip:
+                        delete_cmd = f'echo "=== 删除zip ===" && rm "{zip_filename}"'
+                        additional_commands = f' && cd "{target_absolute}" && {unzip_cmd} && {delete_cmd} && echo "=== 验证结果 ===" && ls -la'
+                    else:
+                        additional_commands = f' && cd "{target_absolute}" && {unzip_cmd} && echo "=== 验证结果 ===" && ls -la'
+            
+            # 组合完整命令：创建目录 + 移动文件 + 解压删除 + 结果提示
             if mkdir_command_str:
-                enhanced_command = f'({mkdir_command_str} && {base_command}) && clear && echo "✅ 执行成功" || echo "❌ 执行失败"'
+                enhanced_command = f'({mkdir_command_str} && {base_command}{additional_commands}) && clear && echo "✅ 执行成功" || echo "❌ 执行失败"'
             else:
-                enhanced_command = f'({base_command}) && clear && echo "✅ 执行成功" || echo "❌ 执行失败"'
+                enhanced_command = f'({base_command}{additional_commands}) && clear && echo "✅ 执行成功" || echo "❌ 执行失败"'
             
             return enhanced_command
             
@@ -863,7 +1318,7 @@ done'''.strip()
             root = tk.Tk()
             window_title = f"Google Drive - {command_type} Command"
             root.title(window_title)
-            root.geometry("600x80")  # 恢复原始宽度
+            root.geometry("500x60")
             root.resizable(False, False)
             
             # 居中窗口
@@ -1256,7 +1711,7 @@ done'''.strip()
         except Exception as e:
             return {"success": False, "error": f"处理大文件时出错: {e}"}
 
-    def cmd_upload(self, source_files, target_path=".", force=False):
+    def cmd_upload(self, source_files, target_path=".", force=False, folder_upload_info=None):
         """
         GDS UPLOAD 命令实现
         
@@ -1467,7 +1922,7 @@ done'''.strip()
             self._verify_files_available(file_moves)
             
             # 8. 静默生成远端命令
-            remote_command = self.generate_remote_commands(file_moves, target_path)
+            remote_command = self.generate_remote_commands(file_moves, target_path, folder_upload_info)
             
             # 7.5. 远端目录创建已经集成到generate_remote_commands中，无需额外处理
             
