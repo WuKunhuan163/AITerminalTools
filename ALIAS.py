@@ -312,7 +312,7 @@ Arguments:
 
 Options:
   --help, -h      Show this help message
-  --remove        Remove an existing alias
+  --remove, --undo, -r  Remove an existing alias
   --update        Update shell configuration files (source all config files)
 
 Examples:
@@ -322,6 +322,7 @@ Examples:
   ALIAS mydir "cd ~/my-project"        # Create alias for changing directory
   ALIAS serve "python -m http.server"  # Create alias for local server
   ALIAS --remove ll                     # Remove the 'll' alias
+  ALIAS --undo gs                       # Remove the 'gs' alias
   ALIAS --update                        # Update shell configuration files
 
 Notes:
@@ -376,15 +377,16 @@ def main():
         return 0
     
     # 处理移除别名
-    if args[0] == '--remove':
+    if args[0] in ['--remove', '--undo', '-r']:
         if len(args) != 2:
-            error_msg = "Error: --remove requires exactly one argument: alias_name"
+            error_msg = "Error: --remove/--undo requires exactly one argument: alias_name"
             if is_run_environment(command_identifier):
                 error_data = {"success": False, "error": error_msg}
                 write_to_json_output(error_data, command_identifier)
             else:
                 print(f"❌ {error_msg}")
                 print("Usage: ALIAS --remove <alias_name>")
+                print("       ALIAS --undo <alias_name>")
             return 1
         
         alias_name = args[1]

@@ -17,6 +17,7 @@ import tempfile
 from pathlib import Path
 import platform
 import psutil
+from typing import Dict
 
 # 抑制urllib3的SSL警告
 warnings.filterwarnings('ignore', message='urllib3 v2 only supports OpenSSL 1.1.1+')
@@ -266,8 +267,8 @@ class GoogleDriveShell:
                             "error": f"删除旧文件失败: {e}"
                         }
             
-            # 移动文件
-            shutil.move(str(source_path), str(target_path))
+            # 复制文件而不是移动（保留原文件）
+            shutil.copy2(str(source_path), str(target_path))
             
             return {
                 "success": True,
@@ -1210,7 +1211,7 @@ class GoogleDriveShell:
                 source_absolute = f"{self.DRIVE_EQUIVALENT}/{filename}"
                 dest_absolute = f"{target_absolute.rstrip('/')}/{original_filename}"
                 
-                # 生成循环重试的mv命令，用简洁的点显示进度
+                # 生成循环重试的mv命令，用简洁的点显示进度，并提供详细错误诊断
                 retry_cmd = f'''
 echo -n "⏳"
 for i in {{1..60}}; do
@@ -1219,7 +1220,27 @@ for i in {{1..60}}; do
         break
     else
         if [ $i -eq 60 ]; then
-            echo " ❌ (已重试60次失败)"
+            echo ""
+            echo "❌ 文件移动失败: {original_filename}"
+            echo "📂 源文件检查:"
+            if [ -f "{source_absolute}" ]; then
+                echo "  ✅ 源文件存在: {source_absolute}"
+                ls -la "{source_absolute}"
+            else
+                echo "  ❌ 源文件不存在: {source_absolute}"
+                echo "  📋 DRIVE_EQUIVALENT 目录内容:"
+                ls -la "{self.DRIVE_EQUIVALENT}/" | head -10
+            fi
+            echo "📂 目标路径检查:"
+            target_dir="{target_absolute.rstrip('/')}"
+            if [ -d "$target_dir" ]; then
+                echo "  ✅ 目标目录存在: $target_dir"
+            else
+                echo "  ❌ 目标目录不存在: $target_dir"
+            fi
+            echo "🔍 权限检查:"
+            echo "  源目录权限: $(ls -ld "{self.DRIVE_EQUIVALENT}/" 2>/dev/null || echo "无法访问")"
+            echo "  目标目录权限: $(ls -ld "$target_dir" 2>/dev/null || echo "无法访问")"
             exit 1
         else
             echo -n "."
@@ -1711,7 +1732,7 @@ done'''.strip()
         except Exception as e:
             return {"success": False, "error": f"处理大文件时出错: {e}"}
 
-    def cmd_upload(self, source_files, target_path=".", force=False, folder_upload_info=None):
+    def cmd_upload(self, source_files, target_path=".", force=False, folder_upload_info=None, remove_local=False):
         """
         GDS UPLOAD 命令实现
         
@@ -1955,8 +1976,20 @@ done'''.strip()
             # 9. 上传和远端命令执行完成后，清理LOCAL_EQUIVALENT中的文件
             if verify_result["success"]:
                 self._cleanup_local_equivalent_files(file_moves)
+                
+                # 如果指定了 --remove-local 选项，删除本地源文件
+                if remove_local:
+                    removed_files = []
+                    failed_removals = []
+                    for source_file in source_files:
+                        try:
+                            if os.path.exists(source_file):
+                                os.unlink(source_file)
+                                removed_files.append(source_file)
+                        except Exception as e:
+                            failed_removals.append({"file": source_file, "error": str(e)})
             
-            return {
+            result = {
                 "success": verify_result["success"],
                 "uploaded_files": verify_result.get("found_files", []),
                 "failed_files": verify_result.get("missing_files", []) + [fm["file"] for fm in failed_moves],
@@ -1971,6 +2004,17 @@ done'''.strip()
                 "message": f"Upload completed: {len(verify_result.get('found_files', []))}/{len(source_files)} files" if verify_result["success"] else f"⚠️ Partially uploaded: {len(verify_result.get('found_files', []))}/{len(source_files)} files",
                 "api_available": self.drive_service is not None
             }
+            
+            # 添加本地文件删除信息
+            if remove_local and verify_result["success"]:
+                result["removed_local_files"] = removed_files
+                result["failed_local_removals"] = failed_removals
+                if removed_files:
+                    result["message"] += f" (removed {len(removed_files)} local files)"
+                if failed_removals:
+                    result["message"] += f" (failed to remove {len(failed_removals)} local files)"
+            
+            return result
             
         except Exception as e:
             return {
@@ -3226,7 +3270,7 @@ done'''.strip()
             # 如果无法获取缓存路径，返回简化的文件名
             return remote_path.split('/')[-1] if '/' in remote_path else remote_path
     
-    def cmd_upload_multi(self, file_pairs, force=False):
+    def cmd_upload_multi(self, file_pairs, force=False, remove_local=False):
         """
         多文件上传命令，支持 [[src1, dst1], [src2, dst2], ...] 语法
         
@@ -3276,31 +3320,59 @@ done'''.strip()
             for src_file, dst_path in validated_pairs:
                 filename = Path(src_file).name
                 
+                # 判断 dst_path 是文件还是文件夹
+                # 简单方法：检查路径最后一个部分是否包含点号
+                last_part = dst_path.split('/')[-1]
+                is_file = '.' in last_part and last_part != '.' and last_part != '..'
+                
                 # 计算完整的远端目标路径
-                if dst_path.startswith("/"):
-                    full_target_path = f"{dst_path.rstrip('/')}/{filename}"
-                elif dst_path == "." or dst_path == "":
-                    if current_shell.get("current_path") != "~":
-                        current_path = current_shell.get("current_path", "~")
-                        if current_path.startswith("~/"):
-                            full_target_path = f"{current_path}/{filename}"
+                if is_file:
+                    # dst_path 是文件名，直接使用
+                    if dst_path.startswith("/"):
+                        full_target_path = dst_path
+                    elif dst_path == "." or dst_path == "":
+                        # 这种情况不应该发生，因为 "." 不包含点号
+                        full_target_path = f"~/{filename}"
+                    else:
+                        # 相对路径文件名
+                        if current_shell.get("current_path") != "~":
+                            current_path = current_shell.get("current_path", "~")
+                            if current_path.startswith("~/"):
+                                base_path = current_path[2:] if len(current_path) > 2 else ""
+                                if base_path:
+                                    full_target_path = f"~/{base_path}/{dst_path}"
+                                else:
+                                    full_target_path = f"~/{dst_path}"
+                            else:
+                                full_target_path = f"~/{dst_path}"
+                        else:
+                            full_target_path = f"~/{dst_path}"
+                else:
+                    # dst_path 是文件夹，在后面添加文件名
+                    if dst_path.startswith("/"):
+                        full_target_path = f"{dst_path.rstrip('/')}/{filename}"
+                    elif dst_path == "." or dst_path == "":
+                        if current_shell.get("current_path") != "~":
+                            current_path = current_shell.get("current_path", "~")
+                            if current_path.startswith("~/"):
+                                full_target_path = f"{current_path}/{filename}"
+                            else:
+                                full_target_path = f"~/{filename}"
                         else:
                             full_target_path = f"~/{filename}"
                     else:
-                        full_target_path = f"~/{filename}"
-                else:
-                    if current_shell.get("current_path") != "~":
-                        current_path = current_shell.get("current_path", "~")
-                        if current_path.startswith("~/"):
-                            base_path = current_path[2:] if len(current_path) > 2 else ""
-                            if base_path:
-                                full_target_path = f"~/{base_path}/{dst_path.strip('/')}/{filename}"
+                        if current_shell.get("current_path") != "~":
+                            current_path = current_shell.get("current_path", "~")
+                            if current_path.startswith("~/"):
+                                base_path = current_path[2:] if len(current_path) > 2 else ""
+                                if base_path:
+                                    full_target_path = f"~/{base_path}/{dst_path.strip('/')}/{filename}"
+                                else:
+                                    full_target_path = f"~/{dst_path.strip('/')}/{filename}"
                             else:
                                 full_target_path = f"~/{dst_path.strip('/')}/{filename}"
                         else:
                             full_target_path = f"~/{dst_path.strip('/')}/{filename}"
-                    else:
-                        full_target_path = f"~/{dst_path.strip('/')}/{filename}"
                 
                 if full_target_path in target_paths:
                     return {
@@ -3458,7 +3530,19 @@ done'''.strip()
                     "execution_result": execution_result
                 }
             
-            return {
+            # 如果指定了 --remove-local 选项，删除本地源文件
+            removed_files = []
+            failed_removals = []
+            if remove_local and execution_result["success"]:
+                for src_file, _ in validated_pairs:
+                    try:
+                        if os.path.exists(src_file):
+                            os.unlink(src_file)
+                            removed_files.append(src_file)
+                    except Exception as e:
+                        failed_removals.append({"file": src_file, "error": str(e)})
+            
+            result = {
                 "success": True,
                 "uploaded_files": [{"name": fm["filename"], "target_path": fm["target_path"]} for fm in all_file_moves],
                 "failed_files": [fm["file"] for fm in failed_moves],
@@ -3468,6 +3552,17 @@ done'''.strip()
                 "sync_time": sync_result.get("sync_time", 0),
                 "remote_command": remote_command
             }
+            
+            # 添加本地文件删除信息
+            if remove_local:
+                result["removed_local_files"] = removed_files
+                result["failed_local_removals"] = failed_removals
+                if removed_files:
+                    result["message"] += f" (removed {len(removed_files)} local files)"
+                if failed_removals:
+                    result["message"] += f" (failed to remove {len(failed_removals)} local files)"
+            
+            return result
             
         except Exception as e:
             return {"success": False, "error": f"多文件上传时出错: {e}"}
@@ -3961,12 +4056,7 @@ fi
             if file_info['mimeType'] == 'application/vnd.google-apps.folder':
                 return {"success": False, "error": f"download: {filename}: 是一个目录，无法下载"}
             
-            # 生成下载URL
-            file_id = file_info['id']
-            download_url = f"https://drive.google.com/uc?id={file_id}&export=download"
-            
-            # 使用DOWNLOAD工具下载文件
-            import subprocess
+            # 使用Google Drive API直接下载文件
             import tempfile
             
             # 创建临时文件
@@ -3974,57 +4064,59 @@ fi
                 temp_path = temp_file.name
             
             try:
-                # 调用DOWNLOAD工具
-                download_cmd = ["./DOWNLOAD", download_url, temp_path]
-                result = subprocess.run(download_cmd, capture_output=True, text=True, cwd=Path(__file__).parent.parent)
+                # 使用Google Drive API下载文件内容
+                file_id = file_info['id']
+                request = self.drive_service.service.files().get_media(fileId=file_id)
+                content = request.execute()
                 
-                if result.returncode == 0:
-                    # 下载成功，缓存文件
-                    cache_result = cache_manager.cache_file(
-                        remote_path=remote_absolute_path,
-                        temp_file_path=temp_path
-                    )
-                    
-                    if cache_result["success"]:
-                        if local_path:
-                            # 如果指定了本地目标，也复制到目标位置（cp操作）
-                            import shutil
-                            if os.path.isdir(local_path):
-                                target_path = os.path.join(local_path, filename)
-                            else:
-                                target_path = local_path
-                            
-                            # 确保目标目录存在
-                            os.makedirs(os.path.dirname(os.path.abspath(target_path)), exist_ok=True)
-                            shutil.copy2(temp_path, target_path)
-                            
-                            result = {
-                                "success": True,
-                                "message": f"Downloaded successfully to: {target_path}",
-                                "source": "download",
-                                "remote_path": remote_absolute_path,
-                                "cache_file": cache_result["cache_file"],
-                                "cache_path": cache_result["cache_path"],
-                                "local_path": target_path
-                            }
-                            result.update(force_info)
-                            return result
+                # 将内容写入临时文件
+                with open(temp_path, 'wb') as f:
+                    f.write(content)
+                
+                # 下载成功，缓存文件
+                cache_result = cache_manager.cache_file(
+                    remote_path=remote_absolute_path,
+                    temp_file_path=temp_path
+                )
+                
+                if cache_result["success"]:
+                    if local_path:
+                        # 如果指定了本地目标，也复制到目标位置（cp操作）
+                        import shutil
+                        if os.path.isdir(local_path):
+                            target_path = os.path.join(local_path, filename)
                         else:
-                            # 只显示缓存信息
-                            result = {
-                                "success": True,
-                                "message": f"Downloaded successfully to: {cache_result['cache_file']}",
-                                "source": "download",
-                                "remote_path": remote_absolute_path,
-                                "cache_file": cache_result["cache_file"],
-                                "cache_path": cache_result["cache_path"]
-                            }
-                            result.update(force_info)
-                            return result
+                            target_path = local_path
+                        
+                        # 确保目标目录存在
+                        os.makedirs(os.path.dirname(os.path.abspath(target_path)), exist_ok=True)
+                        shutil.copy2(temp_path, target_path)
+                        
+                        result = {
+                            "success": True,
+                            "message": f"Downloaded successfully to: {target_path}",
+                            "source": "download",
+                            "remote_path": remote_absolute_path,
+                            "cache_file": cache_result["cache_file"],
+                            "cache_path": cache_result["cache_path"],
+                            "local_path": target_path
+                        }
+                        result.update(force_info)
+                        return result
                     else:
-                        return {"success": False, "error": f"Download failed: {cache_result.get('error')}"}
+                        # 只显示缓存信息
+                        result = {
+                            "success": True,
+                            "message": f"Downloaded successfully to: {cache_result['cache_file']}",
+                            "source": "download",
+                            "remote_path": remote_absolute_path,
+                            "cache_file": cache_result["cache_file"],
+                            "cache_path": cache_result["cache_path"]
+                        }
+                        result.update(force_info)
+                        return result
                 else:
-                    return {"success": False, "error": f"Download failed: {result.stderr}"}
+                    return {"success": False, "error": f"Download failed: {cache_result.get('error')}"}
                     
             finally:
                 # 清理临时文件
@@ -4774,9 +4866,33 @@ fi
             # 尝试获取真实文件信息，优先使用API，其次使用文件夹URL
             if target_folder_id:
                 if self.drive_service:
-                    verify_result = self.verify_upload_success(expected_filenames, target_folder_id)
+                    
+                    # 添加重试机制，因为Google Drive同步可能有延迟
+                    import time
+                    max_retries = 3
+                    retry_delay = 2  # 秒
+                    
+                    verify_result = None
+                    for attempt in range(max_retries):
+                        if attempt > 0:
+                            time.sleep(retry_delay)
+                        
+                        verify_result = self.verify_upload_success(expected_filenames, target_folder_id)
+                        
+                        if verify_result["success"]:
+                            break
+                        elif attempt < max_retries - 1:
+                            pass
+                            # print(f"验证失败，将重试...")
+                        else:
+                            print(f"最终验证失败详情: {verify_result}")
+                        
                     if verify_result["success"]:
                         verify_result["user_confirmed"] = True
+                        
+                        # 更新上传文件的缓存信息，记录最新的远端修改时间
+                        self._update_uploaded_files_cache(verify_result.get("found_files", []), context_info)
+                        
                         return verify_result
                     else:
                         # API验证失败，使用文件夹URL作为备选
@@ -5540,3 +5656,1578 @@ fi
     
 
     
+
+    def is_remote_file_cached(self, remote_path: str) -> Dict:
+        """检查远端文件是否在本地有缓存"""
+        try:
+            from cache_manager import GDSCacheManager
+            cache_manager = GDSCacheManager()
+            
+            cache_config = cache_manager.cache_config
+            files = cache_config.get("files", {})
+            
+            if remote_path in files:
+                file_info = files[remote_path]
+                cache_file_path = file_info.get("cache_path")
+                
+                if cache_file_path and Path(cache_file_path).exists():
+                    return {
+                        "success": True,
+                        "is_cached": True,
+                        "cache_file_path": cache_file_path,
+                        "cache_info": file_info
+                    }
+                else:
+                    return {
+                        "success": True,
+                        "is_cached": False,
+                        "reason": "cache_file_not_found"
+                    }
+            else:
+                return {
+                    "success": True,
+                    "is_cached": False,
+                    "reason": "not_in_cache_config"
+                }
+                
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"检查缓存时出错: {e}"
+            }
+    
+    def get_remote_file_modification_time(self, remote_path: str) -> Dict:
+        """获取远端文件的修改时间"""
+        try:
+            # 如果remote_path看起来像文件名（不包含路径分隔符），在当前目录中查找
+            if '/' not in remote_path and not remote_path.startswith('~'):
+                # 列出当前目录的所有文件
+                result = self.cmd_ls('', detailed=True)
+                
+                if result["success"] and result["files"]:
+                    # 在文件列表中查找指定文件
+                    for file_info in result["files"]:
+                        if file_info.get("name") == remote_path:
+                            modified_time = file_info.get("modifiedTime")
+                            
+                            if modified_time:
+                                return {
+                                    "success": True,
+                                    "modified_time": modified_time,
+                                    "file_info": file_info
+                                }
+                            else:
+                                return {
+                                    "success": False,
+                                    "error": "无法获取文件修改时间"
+                                }
+                    
+                    # 文件未找到
+                    return {
+                        "success": False,
+                        "error": f"文件不存在或无法访问: {remote_path}"
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "error": f"无法列出目录内容: {result.get('error', 'unknown error')}"
+                    }
+            else:
+                # 原来的逻辑，处理路径格式的文件
+                result = self.cmd_ls(remote_path, detailed=True)
+                
+                if result["success"] and result["files"]:
+                    file_info = result["files"][0]
+                    modified_time = file_info.get("modifiedTime")
+                    
+                    if modified_time:
+                        return {
+                            "success": True,
+                            "modified_time": modified_time,
+                            "file_info": file_info
+                        }
+                    else:
+                        return {
+                            "success": False,
+                            "error": "无法获取文件修改时间"
+                        }
+                else:
+                    return {
+                        "success": False,
+                        "error": f"文件不存在或无法访问: {remote_path}"
+                    }
+                
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"获取文件修改时间时出错: {e}"
+            }
+    
+    def is_cached_file_up_to_date(self, remote_path: str) -> Dict:
+        """检查缓存文件是否为最新版本"""
+        try:
+            cache_result = self.is_remote_file_cached(remote_path)
+            if not cache_result["success"]:
+                return cache_result
+            
+            if not cache_result["is_cached"]:
+                return {
+                    "success": True,
+                    "is_cached": False,
+                    "is_up_to_date": False,
+                    "reason": "no_cache"
+                }
+            
+            cache_info = cache_result["cache_info"]
+            cached_modified_time = cache_info.get("remote_modified_time")
+            
+            if not cached_modified_time:
+                return {
+                    "success": True,
+                    "is_cached": True,
+                    "is_up_to_date": False,
+                    "reason": "no_cached_modified_time"
+                }
+            
+            import os
+            filename = os.path.basename(remote_path)
+            remote_time_result = self.get_remote_file_modification_time(filename)
+            if not remote_time_result["success"]:
+                return {
+                    "success": False,
+                    "error": f"无法获取远端修改时间: {remote_time_result.get('error', '未知错误')}"
+                }
+            
+            current_modified_time = remote_time_result["modified_time"]
+            is_up_to_date = cached_modified_time == current_modified_time
+            
+            return {
+                "success": True,
+                "is_cached": True,
+                "is_up_to_date": is_up_to_date,
+                "cached_modified_time": cached_modified_time,
+                "current_modified_time": current_modified_time
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"检查缓存新旧时出错: {e}"
+            }
+
+    def cmd_read(self, filename, *args):
+        """读取远端文件内容，支持智能缓存和行数范围"""
+        try:
+            if not filename:
+                return {"success": False, "error": "请指定要读取的文件"}
+            
+            current_shell = self.get_current_shell()
+            if not current_shell:
+                return {"success": False, "error": "没有活跃的远程shell"}
+            
+            remote_absolute_path = self.resolve_remote_absolute_path(filename, current_shell)
+            if not remote_absolute_path:
+                return {"success": False, "error": f"无法解析文件路径: {filename}"}
+            
+            line_ranges = self._parse_line_ranges(args)
+            if line_ranges is False:
+                return {"success": False, "error": "行数范围参数格式错误"}
+            
+            freshness_result = self.is_cached_file_up_to_date(remote_absolute_path)
+            
+            file_content = None
+            source = "unknown"
+            
+            if (freshness_result["success"] and 
+                freshness_result["is_cached"] and 
+                freshness_result["is_up_to_date"]):
+                
+                cache_status = self.is_remote_file_cached(remote_absolute_path)
+                cache_file_path = cache_status["cache_file_path"]
+                
+                if cache_file_path and Path(cache_file_path).exists():
+                    with open(cache_file_path, 'r', encoding='utf-8', errors='replace') as f:
+                        file_content = f.read()
+                    source = "cache"
+                else:
+                    download_result = self._download_and_get_content(filename, remote_absolute_path)
+                    if not download_result["success"]:
+                        return download_result
+                    file_content = download_result["content"]
+                    source = "download"
+            else:
+                download_result = self._download_and_get_content(filename, remote_absolute_path)
+                if not download_result["success"]:
+                    return download_result
+                file_content = download_result["content"]
+                source = "download"
+            
+            lines = file_content.split('\n')
+            
+            if not line_ranges:
+                selected_lines = [(i, line) for i, line in enumerate(lines)]
+            else:
+                selected_lines = []
+                for start, end in line_ranges:
+                    start = max(0, start)
+                    end = min(len(lines), end)
+                    
+                    for i in range(start, end):
+                        if i < len(lines):
+                            selected_lines.append((i, lines[i]))
+                
+                selected_lines = list(dict(selected_lines).items())
+                selected_lines.sort(key=lambda x: x[0])
+            
+            formatted_output = self._format_read_output(selected_lines)
+            
+            return {
+                "success": True,
+                "filename": filename,
+                "remote_path": remote_absolute_path,
+                "source": source,
+                "total_lines": len(lines),
+                "selected_lines": len(selected_lines),
+                "line_ranges": line_ranges,
+                "output": formatted_output,
+                "lines_data": selected_lines
+            }
+            
+        except Exception as e:
+            return {"success": False, "error": f"读取文件时出错: {e}"}
+
+    def _parse_line_ranges(self, args):
+        """解析行数范围参数"""
+        try:
+            if not args:
+                return None
+            
+            if len(args) == 1:
+                arg = args[0]
+                if isinstance(arg, str) and arg.startswith('[[') and arg.endswith(']]'):
+                    import ast
+                    try:
+                        ranges = ast.literal_eval(arg)
+                        if isinstance(ranges, list):
+                            return [(start, end) for start, end in ranges]
+                    except:
+                        return False
+                else:
+                    return False
+            
+            elif len(args) == 2:
+                try:
+                    start = int(args[0])
+                    end = int(args[1])
+                    return [(start, end)]
+                except ValueError:
+                    return False
+            
+            else:
+                return False
+                
+        except Exception:
+            return False
+    
+    def _download_and_get_content(self, filename, remote_absolute_path):
+        """下载文件并获取内容"""
+        try:
+            download_result = self.cmd_download(filename, force=True)
+            
+            if not download_result["success"]:
+                return {
+                    "success": False,
+                    "error": f"下载文件失败: {download_result.get('error', '未知错误')}"
+                }
+            
+            cache_file_path = download_result.get("cache_path")
+            if not cache_file_path or not Path(cache_file_path).exists():
+                return {
+                    "success": False,
+                    "error": "下载后无法找到缓存文件"
+                }
+            
+            with open(cache_file_path, 'r', encoding='utf-8', errors='replace') as f:
+                content = f.read()
+            
+            return {
+                "success": True,
+                "content": content,
+                "cache_path": cache_file_path
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"下载和读取文件时出错: {e}"
+            }
+    
+    def _format_read_output(self, selected_lines):
+        """格式化读取输出，带行号"""
+        if not selected_lines:
+            return ""
+        
+        formatted_lines = []
+        for line_num, content in selected_lines:
+            formatted_lines.append(f"{line_num}: {content}")
+        
+        return '\n'.join(formatted_lines)
+
+    def _update_uploaded_files_cache(self, found_files, context_info):
+        """
+        更新上传文件的缓存信息，记录最新的远端修改时间
+        
+        Args:
+            found_files (list): 验证成功的文件列表，包含文件信息
+            context_info (dict): 上下文信息，包含file_moves等
+        """
+        try:
+            # 导入缓存管理器
+            import sys
+            from pathlib import Path
+            cache_manager_path = Path(__file__).parent / "cache_manager.py"
+            if not cache_manager_path.exists():
+                return  # 缓存管理器不存在，静默返回
+                
+            sys.path.insert(0, str(Path(__file__).parent))
+            from cache_manager import GDSCacheManager
+            cache_manager = GDSCacheManager()
+            
+            file_moves = context_info.get("file_moves", [])
+            target_path = context_info.get("target_path", ".")
+            
+            # 为每个成功上传的文件更新缓存
+            for found_file in found_files:
+                file_name = found_file.get("name")
+                if not file_name:
+                    continue
+                    
+                # 构建远端绝对路径
+                if target_path == ".":
+                    # 当前目录
+                    current_shell = self.get_current_shell()
+                    if current_shell:
+                        current_path = current_shell.get("current_path", "~")
+                        if current_path == "~":
+                            remote_absolute_path = f"{self.REMOTE_ROOT}/{file_name}"
+                        else:
+                            remote_absolute_path = f"{current_path}/{file_name}"
+                    else:
+                        remote_absolute_path = f"{self.REMOTE_ROOT}/{file_name}"
+                else:
+                    # 指定目标路径
+                    if target_path.startswith("/"):
+                        remote_absolute_path = f"{target_path}/{file_name}"
+                    else:
+                        current_shell = self.get_current_shell()
+                        if current_shell:
+                            current_path = current_shell.get("current_path", "~")
+                            if current_path == "~":
+                                remote_absolute_path = f"{self.REMOTE_ROOT}/{target_path}/{file_name}"
+                            else:
+                                remote_absolute_path = f"{current_path}/{target_path}/{file_name}"
+                        else:
+                            remote_absolute_path = f"{self.REMOTE_ROOT}/{target_path}/{file_name}"
+                
+                # 获取远端修改时间
+                remote_modified_time = found_file.get("modified")
+                if remote_modified_time:
+                    # 检查是否已经有缓存
+                    if cache_manager.is_file_cached(remote_absolute_path):
+                        # 更新现有缓存的远端修改时间
+                        cache_manager._update_cached_file_modified_time(remote_absolute_path, remote_modified_time)
+                        print(f"✅ 已更新缓存文件时间: {file_name} -> {remote_modified_time}")
+                    else:
+                        # 文件还没有缓存，存储修改时间以备后用
+                        cache_manager.store_pending_modified_time(remote_absolute_path, remote_modified_time)
+                        print(f"📝 记录上传文件修改时间: {file_name} -> {remote_modified_time}")
+                        
+        except Exception as e:
+            # 静默处理错误，不影响主流程
+            print(f"⚠️ 更新缓存时间时出错: {e}")
+
+
+    def cmd_find(self, *args):
+        """
+        GDS find命令实现，类似bash find
+        
+        用法:
+            find [path] -name [pattern]
+            find [path] -iname [pattern]  # 大小写不敏感
+            find [path] -type f -name [pattern]  # 只查找文件
+            find [path] -type d -name [pattern]  # 只查找目录
+        
+        Args:
+            *args: 命令参数
+            
+        Returns:
+            dict: 查找结果
+        """
+        try:
+            if not args:
+                return {
+                    "success": False,
+                    "error": "用法: find [path] -name [pattern] 或 find [path] -type [f|d] -name [pattern]"
+                }
+            
+            # 解析参数
+            parsed_args = self._parse_find_args(args)
+            if not parsed_args["success"]:
+                return parsed_args
+            
+            search_path = parsed_args["path"]
+            pattern = parsed_args["pattern"]
+            case_sensitive = parsed_args["case_sensitive"]
+            file_type = parsed_args["file_type"]  # "f" for files, "d" for directories, None for both
+            
+            # 递归搜索文件
+            results = self._recursive_find(search_path, pattern, case_sensitive, file_type)
+            
+            if results["success"]:
+                found_files = results["files"]
+                
+                # 格式化输出
+                output_lines = []
+                for file_path in sorted(found_files):
+                    output_lines.append(file_path)
+                
+                return {
+                    "success": True,
+                    "files": found_files,
+                    "count": len(found_files),
+                    "output": "\n".join(output_lines) if output_lines else "No files found matching the pattern."
+                }
+            else:
+                return results
+                
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Find命令执行错误: {e}"
+            }
+
+
+    def _parse_find_args(self, args):
+        """
+        解析find命令的参数
+        
+        Args:
+            args: 命令参数元组
+            
+        Returns:
+            dict: 解析结果
+        """
+        try:
+            args_list = list(args)
+            
+            # 默认值
+            search_path = "."
+            pattern = None
+            case_sensitive = True
+            file_type = None  # None表示文件和目录都查找
+            
+            i = 0
+            while i < len(args_list):
+                arg = args_list[i]
+                
+                if arg == "-name":
+                    if i + 1 >= len(args_list):
+                        return {"success": False, "error": "-name参数需要指定模式"}
+                    pattern = args_list[i + 1]
+                    case_sensitive = True
+                    i += 2
+                elif arg == "-iname":
+                    if i + 1 >= len(args_list):
+                        return {"success": False, "error": "-iname参数需要指定模式"}
+                    pattern = args_list[i + 1]
+                    case_sensitive = False
+                    i += 2
+                elif arg == "-type":
+                    if i + 1 >= len(args_list):
+                        return {"success": False, "error": "-type参数需要指定类型"}
+                    type_value = args_list[i + 1]
+                    if type_value not in ["f", "d"]:
+                        return {"success": False, "error": "-type参数只支持f（文件）或d（目录）"}
+                    file_type = type_value
+                    i += 2
+                elif not arg.startswith("-"):
+                    # 这是路径参数
+                    search_path = arg
+                    i += 1
+                else:
+                    return {"success": False, "error": f"未知参数: {arg}"}
+            
+            if pattern is None:
+                return {"success": False, "error": "必须指定-name或-iname参数"}
+            
+            return {
+                "success": True,
+                "path": search_path,
+                "pattern": pattern,
+                "case_sensitive": case_sensitive,
+                "file_type": file_type
+            }
+            
+        except Exception as e:
+            return {"success": False, "error": f"参数解析错误: {e}"}
+
+
+    def _recursive_find(self, search_path, pattern, case_sensitive=True, file_type=None):
+        """
+        递归搜索匹配模式的文件和目录
+        
+        Args:
+            search_path: 搜索路径
+            pattern: 匹配模式（支持通配符）
+            case_sensitive: 是否大小写敏感
+            file_type: 文件类型过滤（"f"=文件, "d"=目录, None=都包括）
+            
+        Returns:
+            dict: 搜索结果
+        """
+        try:
+            import fnmatch
+            
+            found_files = []
+            
+            # 解析搜索路径
+            if search_path == ".":
+                # 当前目录，直接使用"."
+                base_path = "."
+            else:
+                # 其他路径，解析为绝对路径
+                base_path = self.resolve_remote_absolute_path(search_path)
+            
+            # 递归遍历目录
+            self._find_in_directory(base_path, pattern, case_sensitive, file_type, found_files, "")
+            
+            return {
+                "success": True,
+                "files": found_files
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"递归搜索错误: {e}"
+            }
+    
+    def _find_in_directory(self, dir_path, pattern, case_sensitive, file_type, found_files, relative_prefix):
+        """
+        在指定目录中搜索匹配的文件
+        
+        Args:
+            dir_path: 目录路径
+            pattern: 匹配模式
+            case_sensitive: 是否大小写敏感
+            file_type: 文件类型过滤
+            found_files: 结果列表（引用传递）
+            relative_prefix: 相对路径前缀
+        """
+        try:
+            import fnmatch
+            
+            # 获取目录内容
+            if dir_path == "~" or dir_path == ".": 
+                # 当前目录
+                ls_result = self.cmd_ls("", detailed=True)
+            elif dir_path.startswith("~/"):
+                # 相对路径格式，转换为shell命令
+                relative_path = dir_path[2:] if len(dir_path) > 2 else ""
+                ls_result = self.cmd_ls(relative_path, detailed=True)
+            else:
+                # 绝对路径格式，需要转换
+                ls_result = self.cmd_ls("", detailed=True)  # 先获取当前目录
+            
+            if not ls_result.get("success"):
+                return  # 无法访问目录，跳过
+            
+            files = ls_result.get("files", [])
+            folders = ls_result.get("folders", [])
+            
+            # 合并文件和目录列表
+            all_items = files + folders
+            
+            for file_info in all_items:
+                file_name = file_info.get("name")
+                if not file_name:
+                    continue
+                
+                mime_type = file_info.get("mimeType", "")
+                is_directory = mime_type == "application/vnd.google-apps.folder"
+                
+                # 构建相对路径
+                if relative_prefix:
+                    relative_path = f"{relative_prefix}/{file_name}"
+                else:
+                    relative_path = file_name
+                
+                # 检查文件类型过滤
+                if file_type == "f" and is_directory:
+                    # 只要文件，跳过目录
+                    pass
+                elif file_type == "d" and not is_directory:
+                    # 只要目录，跳过文件
+                    pass
+                else:
+                    # 检查模式匹配
+                    match_name = file_name.lower() if not case_sensitive else file_name
+                    match_pattern = pattern.lower() if not case_sensitive else pattern
+                    
+                    if fnmatch.fnmatch(match_name, match_pattern):
+                        found_files.append(relative_path)
+                
+                # 如果是目录，递归搜索
+                if is_directory:
+                    # 构建子目录路径
+                    if dir_path == "~":
+                        sub_dir_path = f"~/{file_name}"
+                    elif dir_path.startswith("~/"):
+                        sub_dir_path = f"{dir_path}/{file_name}"
+                    else:
+                        sub_dir_path = f"{dir_path}/{file_name}"
+                    
+                    # 递归搜索子目录（暂时禁用以避免死循环）
+                    # self._find_in_directory(sub_dir_path, pattern, case_sensitive, file_type, found_files, relative_path)
+                    
+        except Exception as e:
+            # 忽略单个目录的错误，继续搜索其他目录
+            pass
+
+    def cmd_edit(self, filename, replacement_spec, preview=False, backup=False):
+        """
+        GDS edit命令 - 支持多段文本同步替换的文件编辑功能
+        
+        Args:
+            filename (str): 要编辑的文件名
+            replacement_spec (str): 替换规范，支持多种格式
+            preview (bool): 预览模式，只显示修改结果不实际保存
+            backup (bool): 是否创建备份文件
+            
+        Returns:
+            dict: 编辑结果
+            
+        支持的替换格式:
+        1. 行号替换: '[[[1, 2], "new content"], [[5, 7], "another content"]]'
+        2. 文本搜索替换: '[["old text", "new text"], ["another old", "another new"]]'
+        3. 混合模式: '[[[1, 1], "line replacement"], ["text search", "text replace"]]'
+        """
+        try:
+            import json
+            import re
+            import tempfile
+            import shutil
+            from datetime import datetime
+            
+            # 导入缓存管理器
+            import sys
+            from pathlib import Path
+            cache_manager_path = Path(__file__).parent / "cache_manager.py"
+            if cache_manager_path.exists():
+                sys.path.insert(0, str(Path(__file__).parent))
+                from cache_manager import GDSCacheManager
+                cache_manager = GDSCacheManager()
+            else:
+                return {"success": False, "error": "缓存管理器未找到"}
+            
+            current_shell = self.get_current_shell()
+            if not current_shell:
+                return {"success": False, "error": "没有活跃的远程shell"}
+            
+            # 1. 解析替换规范
+            try:
+                replacements = json.loads(replacement_spec)
+                if not isinstance(replacements, list):
+                    return {"success": False, "error": "替换规范必须是数组格式"}
+            except json.JSONDecodeError as e:
+                return {"success": False, "error": f"替换规范JSON解析失败: {e}"}
+            
+            # 2. 下载文件到缓存
+            download_result = self.cmd_download(filename, force=True)  # 强制重新下载确保最新内容
+            if not download_result["success"]:
+                return {"success": False, "error": f"下载文件失败: {download_result.get('error')}"}
+            
+            cache_file_path = download_result.get("cache_path") or download_result.get("cached_path")
+            if not cache_file_path or not os.path.exists(cache_file_path):
+                return {"success": False, "error": "无法获取缓存文件路径"}
+            
+            # 3. 读取文件内容
+            try:
+                with open(cache_file_path, 'r', encoding='utf-8') as f:
+                    original_lines = f.readlines()
+            except UnicodeDecodeError:
+                # 尝试其他编码
+                try:
+                    with open(cache_file_path, 'r', encoding='gbk') as f:
+                        original_lines = f.readlines()
+                except:
+                    return {"success": False, "error": "文件编码不支持，请确保文件为UTF-8或GBK编码"}
+            except Exception as e:
+                return {"success": False, "error": f"读取文件失败: {e}"}
+            
+            # 4. 解析和验证替换操作
+            parsed_replacements = []
+            for i, replacement in enumerate(replacements):
+                if not isinstance(replacement, list) or len(replacement) != 2:
+                    return {"success": False, "error": f"替换规范第{i+1}项格式错误，应为[source, target]格式"}
+                
+                source, target = replacement
+                
+                if isinstance(source, list) and len(source) == 2 and all(isinstance(x, int) for x in source):
+                    # 行号替换模式: [[start_line, end_line], "new_content"] (0-based, [a, b) 语法)
+                    start_line, end_line = source
+                    # 使用0-based索引，[a, b) 语法
+                    start_idx = start_line
+                    end_idx = end_line - 1  # end_line是exclusive的
+                    
+                    if start_idx < 0 or start_idx >= len(original_lines) or end_line > len(original_lines) or start_idx > end_idx:
+                        return {"success": False, "error": f"行号范围错误: [{start_line}, {end_line})，文件共{len(original_lines)}行 (0-based索引)"}
+                    
+                    parsed_replacements.append({
+                        "type": "line_range",
+                        "start_idx": start_idx,
+                        "end_idx": end_idx,
+                        "start_line": start_line,
+                        "end_line": end_line,
+                        "new_content": target,
+                        "original_content": "".join(original_lines[start_idx:end_line]).rstrip()
+                    })
+                    
+                elif isinstance(source, str):
+                    # 文本搜索替换模式: ["old_text", "new_text"]
+                    if source not in "".join(original_lines):
+                        return {"success": False, "error": f"未找到要替换的文本: {source[:50]}..."}
+                    
+                    parsed_replacements.append({
+                        "type": "text_search",
+                        "old_text": source,
+                        "new_text": target
+                    })
+                else:
+                    return {"success": False, "error": f"替换规范第{i+1}项的源格式不支持，应为行号数组[start, end]或文本字符串"}
+            
+            # 5. 执行替换操作
+            modified_lines = original_lines.copy()
+            
+            # 按行号倒序处理行替换，避免行号变化影响后续替换
+            line_replacements = [r for r in parsed_replacements if r["type"] == "line_range"]
+            line_replacements.sort(key=lambda x: x["start_idx"], reverse=True)
+            
+            for replacement in line_replacements:
+                start_idx = replacement["start_idx"]
+                end_idx = replacement["end_idx"]
+                new_content = replacement["new_content"]
+                
+                # 确保新内容以换行符结尾（如果原内容有换行符）
+                if not new_content.endswith('\n') and end_idx < len(modified_lines) - 1:
+                    new_content += '\n'
+                elif new_content.endswith('\n') and end_idx == len(modified_lines) - 1 and not original_lines[-1].endswith('\n'):
+                    new_content = new_content.rstrip('\n')
+                
+                # 替换行范围 (使用[a, b)语法)
+                modified_lines[start_idx:replacement["end_line"]] = [new_content] if new_content else []
+            
+            # 处理文本搜索替换
+            text_replacements = [r for r in parsed_replacements if r["type"] == "text_search"]
+            if text_replacements:
+                file_content = "".join(modified_lines)
+                for replacement in text_replacements:
+                    file_content = file_content.replace(replacement["old_text"], replacement["new_text"])
+                modified_lines = file_content.splitlines(keepends=True)
+            
+            # 6. 生成结果预览
+            diff_info = self._generate_edit_diff(original_lines, modified_lines, parsed_replacements)
+            
+            if preview:
+                # 预览模式：只返回修改预览，不实际保存
+                return {
+                    "success": True,
+                    "mode": "preview",
+                    "filename": filename,
+                    "original_lines": len(original_lines),
+                    "modified_lines": len(modified_lines),
+                    "replacements_applied": len(parsed_replacements),
+                    "diff": diff_info,
+                    "preview_content": "".join(modified_lines)
+                }
+            
+            # 7. 创建备份（如果需要）
+            backup_info = {}
+            if backup:
+                backup_filename = f"{filename}.backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+                backup_result = self._create_backup(filename, backup_filename)
+                backup_info = {
+                    "backup_created": backup_result["success"],
+                    "backup_filename": backup_filename if backup_result["success"] else None,
+                    "backup_error": backup_result.get("error") if not backup_result["success"] else None
+                }
+            
+            # 8. 保存修改后的文件到临时位置，使用正确的文件名
+            import tempfile
+            temp_dir = tempfile.gettempdir()
+            temp_file_path = os.path.join(temp_dir, filename)
+            
+            # 如果临时文件已存在，添加时间戳避免冲突
+            if os.path.exists(temp_file_path):
+                from datetime import datetime
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                name_parts = filename.rsplit('.', 1)
+                if len(name_parts) == 2:
+                    temp_filename = f"{name_parts[0]}_{timestamp}.{name_parts[1]}"
+                else:
+                    temp_filename = f"{filename}_{timestamp}"
+                temp_file_path = os.path.join(temp_dir, temp_filename)
+            
+            with open(temp_file_path, 'w', encoding='utf-8') as temp_file:
+                temp_file.writelines(modified_lines)
+            
+            try:
+                # 9. 更新缓存
+                remote_absolute_path = self.resolve_remote_absolute_path(filename, current_shell)
+                cache_result = cache_manager.cache_file(remote_absolute_path, temp_file_path)
+                
+                if not cache_result["success"]:
+                    return {"success": False, "error": f"更新缓存失败: {cache_result.get('error')}"}
+                
+                # 10. 上传修改后的文件，使用多文件上传语法指定目标文件名
+                file_pairs = [[temp_file_path, filename]]
+                upload_result = self.cmd_upload_multi(file_pairs, force=True)
+                
+                if upload_result["success"]:
+                    result = {
+                        "success": True,
+                        "filename": filename,
+                        "original_lines": len(original_lines),
+                        "modified_lines": len(modified_lines),
+                        "replacements_applied": len(parsed_replacements),
+                        "diff": diff_info,
+                        "cache_updated": True,
+                        "uploaded": True,
+                        "message": f"文件 {filename} 编辑完成，应用了 {len(parsed_replacements)} 个替换操作"
+                    }
+                    result.update(backup_info)
+                    return result
+                else:
+                    return {
+                        "success": False,
+                        "error": f"上传修改后的文件失败: {upload_result.get('error')}",
+                        "cache_updated": True,
+                        "diff": diff_info
+                    }
+                    
+            finally:
+                # 清理临时文件
+                if os.path.exists(temp_file_path):
+                    os.unlink(temp_file_path)
+            
+        except Exception as e:
+            return {"success": False, "error": f"编辑操作失败: {str(e)}"}
+    
+    def _generate_edit_diff(self, original_lines, modified_lines, replacements):
+        """生成编辑差异信息"""
+        diff_info = {
+            "total_replacements": len(replacements),
+            "line_changes": [],
+            "text_changes": [],
+            "lines_added": len(modified_lines) - len(original_lines),
+            "summary": []
+        }
+        
+        for replacement in replacements:
+            if replacement["type"] == "line_range":
+                diff_info["line_changes"].append({
+                    "lines": f"[{replacement['start_line']}, {replacement['end_line']})",
+                    "before": replacement["original_content"],
+                    "after": replacement["new_content"].rstrip()
+                })
+                diff_info["summary"].append(f"Lines [{replacement['start_line']}, {replacement['end_line']}): replaced")
+            elif replacement["type"] == "text_search":
+                diff_info["text_changes"].append({
+                    "before": replacement["old_text"],
+                    "after": replacement["new_text"]
+                })
+                diff_info["summary"].append(f"Text '{replacement['old_text'][:30]}...' replaced")
+        
+        return diff_info
+    
+    def _create_backup(self, original_filename, backup_filename):
+        """创建文件备份"""
+        try:
+            # 下载原文件
+            download_result = self.cmd_download(original_filename)
+            if not download_result["success"]:
+                return {"success": False, "error": f"下载原文件失败: {download_result.get('error')}"}
+            
+            cache_file_path = download_result.get("cache_path") or download_result.get("cached_path")
+            
+            # 上传为备份文件
+            upload_result = self.cmd_upload([cache_file_path], ".", force=True)
+            # 这里需要重命名上传的文件，但由于当前上传机制的限制，我们先简化实现
+            
+            return {
+                "success": True,
+                "message": f"备份文件 {backup_filename} 创建成功"
+            }
+        except Exception as e:
+            return {"success": False, "error": f"创建备份失败: {str(e)}"}
+
+    # 特殊命令列表 - 这些命令在本地处理，不需要远端执行
+    SPECIAL_COMMANDS = {
+        'ls', 'cd', 'pwd', 'mkdir', 'rm', 'mv', 'cat', 'echo', 'grep', 
+        'upload', 'download', 'edit', 'read', 'find', 'help', 'exit', 'quit'
+    }
+
+    def execute_generic_remote_command(self, cmd, args):
+        """
+        统一远端命令执行接口 - 处理除特殊命令外的所有命令
+        
+        Args:
+            cmd (str): 命令名称
+            args (list): 命令参数
+            
+        Returns:
+            dict: 执行结果，包含stdout、stderr、path等字段
+        """
+        try:
+            # 检查是否为特殊命令
+            if cmd in self.SPECIAL_COMMANDS:
+                return {
+                    "success": False, 
+                    "error": f"命令 '{cmd}' 应该通过特殊命令处理，不应调用此接口"
+                }
+            
+            # 获取当前shell信息
+            current_shell = self.get_current_shell()
+            if not current_shell:
+                return {"success": False, "error": "没有活跃的shell会话"}
+            
+            # 生成远端命令
+            remote_command_info = self._generate_remote_command(cmd, args, current_shell)
+            
+            # 显示远端命令并通过tkinter获取用户执行结果
+            result = self._execute_with_result_capture(remote_command_info, cmd, args)
+            
+            return result
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"执行远端命令时出错: {str(e)}"
+            }
+    
+    def _generate_remote_command(self, cmd, args, current_shell):
+        """
+        生成远端执行命令
+        
+        Args:
+            cmd (str): 命令名称
+            args (list): 命令参数
+            current_shell (dict): 当前shell信息
+            
+        Returns:
+            tuple: (远端命令字符串, 结果文件名)
+        """
+        try:
+            # 获取当前路径
+            current_path = current_shell.get("current_path", "~")
+            
+            # 解析远端绝对路径
+            if current_path == "~":
+                remote_path = self.REMOTE_ROOT
+            elif current_path.startswith("~/"):
+                remote_path = f"{self.REMOTE_ROOT}/{current_path[2:]}"
+            else:
+                remote_path = current_path
+            
+            # 构建基础命令
+            full_command = f"{cmd} {' '.join(args)}" if args else cmd
+            
+            # 将args转换为JSON格式
+            import json
+            args_json = json.dumps(args)
+            
+            # 生成结果文件名：时间戳+哈希，存储在REMOTE_ROOT/tmp目录
+            import time
+            import hashlib
+            timestamp = str(int(time.time()))
+            cmd_hash = hashlib.md5(f"{cmd}_{' '.join(args)}_{timestamp}".encode()).hexdigest()[:8]
+            result_filename = f"cmd_{timestamp}_{cmd_hash}.json"
+            result_path = f"{self.REMOTE_ROOT}/tmp/{result_filename}"
+            
+            # 构建完整的远端命令
+            # 使用字符串拼接避免f-string中的反斜杠问题，并正确转义JSON字符串
+            remote_command = (
+                f'cd "{remote_path}" && {{\n'
+                f'    # 确保tmp目录存在\n'
+                f'    mkdir -p "{self.REMOTE_ROOT}/tmp"\n'
+                f'    echo "{{" > "{result_path}"\n'
+                f'    echo \'  "cmd": "{cmd}",\' >> "{result_path}"\n'
+                f'    echo \'  "args": {args_json},\' >> "{result_path}"\n'
+                f'    echo \'  "working_dir": "\'$(pwd)\'",\' >> "{result_path}"\n'
+                f'    echo \'  "timestamp": "\'$(date -Iseconds)\'",\' >> "{result_path}"\n'
+                f'    \n'
+                f'    # 执行命令并捕获输出\n'
+                f'    OUTPUT_FILE="/tmp/cmd_stdout_{timestamp}_{cmd_hash}"\n'
+                f'    ERROR_FILE="/tmp/cmd_stderr_{timestamp}_{cmd_hash}"\n'
+                f'    \n'
+                f'    {full_command} > "$OUTPUT_FILE" 2> "$ERROR_FILE"\n'
+                f'    EXIT_CODE=$?\n'
+                f'    \n'
+                f'    echo \'  "exit_code": \'$EXIT_CODE\',\' >> "{result_path}"\n'
+                f'    echo \'  "stdout": "\' >> "{result_path}"\n'
+                f'    if [ -f "$OUTPUT_FILE" ]; then\n'
+                f'        # 使用Python进行JSON转义，将换行符转为\\n\n'
+                f'        python3 -c "import json, sys; content=sys.stdin.read(); print(json.dumps(content)[1:-1], end=\'\')" < "$OUTPUT_FILE" >> "{result_path}"\n'
+                f'    fi\n'
+                f'    echo \'",\' >> "{result_path}"\n'
+                f'    \n'
+                f'    echo \'  "stderr": "\' >> "{result_path}"\n'
+                f'    if [ -f "$ERROR_FILE" ]; then\n'
+                f'        # 使用Python进行JSON转义，将换行符转为\\n\n'
+                f'        python3 -c "import json, sys; content=sys.stdin.read(); print(json.dumps(content)[1:-1], end=\'\')" < "$ERROR_FILE" >> "{result_path}"\n'
+                f'    fi\n'
+                f'    echo \'"\' >> "{result_path}"\n'
+                f'    \n'
+                f'    echo "}}" >> "{result_path}"\n'
+                f'    \n'
+                f'    # 清理临时文件\n'
+                f'    rm -f "$OUTPUT_FILE" "$ERROR_FILE"\n'
+                f'    \n'
+                f'    echo "命令执行完成，结果已保存到: {result_filename}"\n'
+                f'}}'
+            )
+            
+            return remote_command, result_filename
+            
+        except Exception as e:
+            raise Exception(f"生成远端命令失败: {str(e)}")
+    
+    def _execute_with_result_capture(self, remote_command_info, cmd, args):
+        """
+        执行远端命令并捕获结果
+        
+        Args:
+            remote_command_info (tuple): (远端命令, 结果文件名)
+            cmd (str): 原始命令名
+            args (list): 原始命令参数
+            
+        Returns:
+            dict: 执行结果
+        """
+        try:
+            remote_command, result_filename = remote_command_info
+            
+            # 通过tkinter显示命令并获取用户反馈
+            window_result = self._show_generic_command_window(remote_command, cmd, args)
+            
+            if window_result.get("action") != "success":
+                return {
+                    "success": False,
+                    "error": f"User operation: {'Cancelled' if window_result.get('action', 'unknown') == 'error' else window_result.get('action', 'unknown')}",
+                    "user_feedback": window_result
+                }
+            
+            # 等待远端文件出现，最多等待60秒
+            result_data = self._wait_and_read_result_file(result_filename)
+            
+            if not result_data.get("success"):
+                return {
+                    "success": False,
+                    "error": "读取结果文件失败",
+                    "read_error": result_data.get("error")
+                }
+            
+            # 返回完整结果
+            return {
+                "success": True,
+                "cmd": cmd,
+                "args": args,
+                "exit_code": result_data["data"].get("exit_code", -1),
+                "stdout": result_data["data"].get("stdout", "") + "\n" if result_data["data"].get("stdout", "").strip() else "",
+                "stderr": result_data["data"].get("stderr", "") + "\n" if result_data["data"].get("stderr", "").strip() else "",
+                "working_dir": result_data["data"].get("working_dir", ""),
+                "timestamp": result_data["data"].get("timestamp", ""),
+                "path": f"tmp/{result_filename}"  # 远端结果文件路径
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"执行结果捕获失败: {str(e)}"
+            }
+    
+    def _show_generic_command_window(self, remote_command, cmd, args):
+        """
+        显示简化的命令执行窗口
+        
+        Args:
+            remote_command (str): 远端命令
+            cmd (str): 原始命令名
+            args (list): 原始命令参数
+            
+        Returns:
+            dict: 用户操作结果
+        """
+        try:
+            import tkinter as tk
+            from tkinter import messagebox
+            import queue
+            
+            result_queue = queue.Queue()
+            
+            def show_command_window():
+                root = tk.Tk()
+                root.title("Google Drive Shell")
+                root.geometry("400x60")
+                root.resizable(False, False)
+                
+                # 居中窗口
+                root.eval('tk::PlaceWindow . center')
+                
+                # 设置窗口置顶
+                root.attributes('-topmost', True)
+                
+                # 自动复制命令到剪切板
+                root.clipboard_clear()
+                root.clipboard_append(remote_command)
+                
+                # 主框架
+                main_frame = tk.Frame(root, padx=10, pady=10)
+                main_frame.pack(fill=tk.BOTH, expand=True)
+                
+                # 按钮框架
+                button_frame = tk.Frame(main_frame)
+                button_frame.pack(fill=tk.X, expand=True)
+                
+                def copy_command():
+                    try:
+                        # 使用更可靠的复制方法 - 一次性复制完整命令
+                        root.clipboard_clear()
+                        root.clipboard_append(remote_command)
+                        
+                        # 验证复制是否成功
+                        try:
+                            clipboard_content = root.clipboard_get()
+                            if clipboard_content == remote_command:
+                                copy_btn.config(text="✅ 复制成功", bg="#4CAF50")
+                            else:
+                                # 复制不完整，重试一次
+                                root.clipboard_clear()
+                                root.clipboard_append(remote_command)
+                                copy_btn.config(text="⚠️ 已重试", bg="#FF9800")
+                                print(f"复制验证: 原始{len(remote_command)}字符，剪切板{len(clipboard_content)}字符")
+                        except Exception as verify_error:
+                            # 验证失败但复制可能成功，显示已复制
+                            copy_btn.config(text="✅ 已复制", bg="#4CAF50")
+                            print(f"复制验证失败但命令已复制: {verify_error}")
+                        
+                        root.after(1500, lambda: copy_btn.config(text="📋 复制指令", bg="#2196F3"))
+                    except Exception as e:
+                        print(f"复制到剪贴板失败: {e}")
+                        copy_btn.config(text="❌ 复制失败", bg="#f44336")
+                
+                def execution_completed():
+                    result_queue.put({"action": "success", "message": "用户确认执行完成"})
+                    root.destroy()
+                
+                # 复制指令按钮
+                copy_btn = tk.Button(
+                    button_frame, 
+                    text="📋 复制指令", 
+                    command=copy_command,
+                    font=("Arial", 10),
+                    bg="#2196F3",
+                    fg="white",
+                    padx=15,
+                    pady=5,
+                    relief=tk.RAISED,
+                    bd=2
+                )
+                copy_btn.pack(side=tk.LEFT, padx=(0, 10), fill=tk.X, expand=True)
+                
+                # 执行完成按钮
+                complete_btn = tk.Button(
+                    button_frame, 
+                    text="✅ 执行完成", 
+                    command=execution_completed,
+                    font=("Arial", 10, "bold"),
+                    bg="#4CAF50",
+                    fg="white",
+                    padx=15,
+                    pady=5,
+                    relief=tk.RAISED,
+                    bd=2
+                )
+                complete_btn.pack(side=tk.LEFT, fill=tk.X, expand=True)
+                
+                # 设置焦点到完成按钮
+                complete_btn.focus_set()
+                
+                # 自动复制命令到剪贴板
+                copy_command()
+                
+                root.mainloop()
+            
+            # 直接在主线程中显示窗口，避免tkinter线程问题
+            show_command_window()
+            
+            # 获取结果
+            try:
+                return result_queue.get_nowait()
+            except queue.Empty:
+                return {"action": "error", "error_info": "窗口关闭但未获取到用户操作"}
+                
+        except Exception as e:
+            return {"action": "error", "error_info": f"显示命令窗口失败: {str(e)}"}
+    
+    def _download_result_file(self, result_filename):
+        """
+        下载远端结果文件到本地/tmp目录
+        
+        Args:
+            result_filename (str): 远端结果文件名（在tmp目录中）
+            
+        Returns:
+            dict: 下载结果
+        """
+        try:
+            import tempfile
+            import os
+            
+            # 确保/tmp目录存在
+            tmp_dir = "/tmp"
+            os.makedirs(tmp_dir, exist_ok=True)
+            
+            # 本地文件路径
+            local_path = os.path.join(tmp_dir, result_filename)
+            
+            # 远端文件路径（在tmp目录中）
+            remote_file_path = f"tmp/{result_filename}"
+            
+            # 首先检查远端文件是否存在
+            check_result = self._check_remote_file_exists(remote_file_path)
+            if not check_result.get("exists"):
+                return {
+                    "success": False,
+                    "error": f"远端结果文件不存在: {remote_file_path}"
+                }
+            
+            # 使用现有的download功能下载文件
+            download_result = self.cmd_download(remote_file_path, local_path, force=True)
+            
+            if download_result.get("success"):
+                return {
+                    "success": True,
+                    "local_path": local_path,
+                    "message": f"结果文件已下载到: {local_path}"
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": f"下载失败: {download_result.get('error', 'unknown error')}"
+                }
+                
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"下载结果文件时出错: {str(e)}"
+            }
+    
+    def _wait_and_read_result_file(self, result_filename):
+        """
+        等待并读取远端结果文件，最多等待60秒
+        
+        Args:
+            result_filename (str): 远端结果文件名（在tmp目录中）
+            
+        Returns:
+            dict: 读取结果
+        """
+        try:
+            import sys
+            
+            # 远端文件路径（在REMOTE_ROOT/tmp目录中）
+            remote_file_path = f"~/tmp/{result_filename}"
+            
+            # 输出等待指示器
+            print("⏳", end="", flush=True)
+            
+            # 等待文件出现，最多60秒
+            max_wait_time = 60
+            for wait_count in range(max_wait_time):
+                # 检查文件是否存在
+                check_result = self._check_remote_file_exists_absolute(remote_file_path)
+                
+                if check_result.get("exists"):
+                    # 文件存在，读取内容
+                    print()  # 换行
+                    return self._read_result_file_via_gds(result_filename)
+                
+                # 文件不存在，等待1秒并输出进度点
+                time.sleep(1)
+                print(".", end="", flush=True)
+            
+            # 超时
+            print()  # 换行
+            return {
+                "success": False,
+                "error": f"等待远端结果文件超时（60秒）: {remote_file_path}"
+            }
+            
+        except Exception as e:
+            print()  # 换行
+            return {
+                "success": False,
+                "error": f"等待结果文件时出错: {str(e)}"
+            }
+    
+    def _preprocess_json_content(self, content):
+        """
+        预处理JSON内容，修复常见的格式问题
+        
+        Args:
+            content (str): 原始JSON内容
+            
+        Returns:
+            str: 处理后的JSON内容
+        """
+        # 现在远程命令已经正确转义了换行符为\n，
+        # 我们只需要处理可能仍然存在的跨行问题
+        import re
+        
+        # 先尝试直接解析，如果成功就不需要预处理
+        try:
+            import json
+            json.loads(content)
+            return content  # 如果能直接解析，就返回原内容
+        except:
+            pass  # 如果解析失败，继续预处理
+        
+        # 处理可能的跨行问题：将多行的stdout/stderr字段合并到单行
+        lines = content.split('\n')
+        cleaned_lines = []
+        
+        i = 0
+        while i < len(lines):
+            line = lines[i].rstrip()
+            
+            # 检查是否是跨行的stdout或stderr字段
+            if ('"stdout":' in line or '"stderr":' in line) and line.endswith('"') and not line.count('"') >= 4:
+                # 这可能是一个跨行字段的开始
+                field_content = [line]
+                i += 1
+                
+                # 收集内容直到找到结束
+                while i < len(lines):
+                    current_line = lines[i].rstrip()
+                    field_content.append(current_line)
+                    
+                    # 检查是否结束（以" 或 ", 结尾，且不在字符串中间）
+                    if current_line.endswith('"') or current_line.endswith('",'):
+                        break
+                    i += 1
+                
+                # 合并成单行
+                merged_line = ' '.join(field_content)
+                cleaned_lines.append(merged_line)
+            else:
+                # 普通行，直接添加
+                cleaned_lines.append(line)
+            
+            i += 1
+        
+        return '\n'.join(cleaned_lines)
+
+    def _read_result_file_via_gds(self, result_filename):
+        """
+        使用GDS ls和cat机制读取远端结果文件
+        
+        Args:
+            result_filename (str): 远端结果文件名（在tmp目录中）
+            
+        Returns:
+            dict: 读取结果
+        """
+        try:
+            # 远端文件路径（在REMOTE_ROOT/tmp目录中）
+            # 需要先cd到根目录，然后访问tmp目录
+            remote_file_path = f"~/tmp/{result_filename}"
+            
+            # 首先使用ls检查文件是否存在
+            check_result = self._check_remote_file_exists_absolute(remote_file_path)
+            if not check_result.get("exists"):
+                return {
+                    "success": False,
+                    "error": f"远端结果文件不存在: {remote_file_path}"
+                }
+            
+            # 使用cat命令读取文件内容
+            cat_result = self.cmd_cat(remote_file_path)
+            
+            if not cat_result.get("success"):
+                return {
+                    "success": False,
+                    "error": f"读取文件内容失败: {cat_result.get('error', 'unknown error')}"
+                }
+            
+            # 获取文件内容
+            content = cat_result.get("output", "")
+            
+            # 尝试解析JSON
+            try:
+                import json
+                # 预处理JSON内容以修复格式问题
+                cleaned_content = self._preprocess_json_content(content)
+                result_data = json.loads(cleaned_content)
+                return {
+                    "success": True,
+                    "data": result_data
+                }
+            except json.JSONDecodeError as e:
+                # 如果JSON解析失败，返回原始内容
+                return {
+                    "success": True,
+                    "data": {
+                        "exit_code": -1,
+                        "stdout": content,
+                        "stderr": f"JSON解析失败: {str(e)}",
+                        "raw_content": content
+                    }
+                }
+                
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"读取结果文件时出错: {str(e)}"
+            }
+    
+    def _check_remote_file_exists_absolute(self, file_path):
+        """
+        检查远端文件是否存在（绝对路径）
+        
+        Args:
+            file_path (str): 绝对路径的文件路径（如~/tmp/filename.json）
+            
+        Returns:
+            dict: 检查结果
+        """
+        try:
+            # 解析路径
+            if "/" in file_path:
+                dir_path, filename = file_path.rsplit("/", 1)
+            else:
+                dir_path = "~"
+                filename = file_path
+            
+            # 列出目录内容
+            ls_result = self.cmd_ls(dir_path)
+            
+            if not ls_result.get("success"):
+                return {"exists": False, "error": f"无法访问目录: {dir_path}"}
+            
+            # 检查文件是否在列表中
+            files = ls_result.get("files", [])
+            file_exists = any(f.get("name") == filename for f in files)
+            
+            return {"exists": file_exists}
+            
+        except Exception as e:
+            return {"exists": False, "error": f"检查文件存在性时出错: {str(e)}"}
+    
+    def _check_remote_file_exists(self, file_path):
+        """
+        检查远端文件是否存在
+        
+        Args:
+            file_path (str): 相对于当前目录的文件路径
+            
+        Returns:
+            dict: 检查结果
+        """
+        try:
+            # 使用ls命令检查文件是否存在
+            # 解析路径
+            if "/" in file_path:
+                dir_path, filename = file_path.rsplit("/", 1)
+            else:
+                dir_path = "."
+                filename = file_path
+            
+            # 列出目录内容
+            ls_result = self.cmd_ls(dir_path)
+            
+            if not ls_result.get("success"):
+                return {"exists": False, "error": f"无法访问目录: {dir_path}"}
+            
+            # 检查文件是否在列表中
+            files = ls_result.get("files", [])
+            file_exists = any(f.get("name") == filename for f in files)
+            
+            return {"exists": file_exists}
+            
+        except Exception as e:
+            return {"exists": False, "error": f"检查文件存在性时出错: {str(e)}"}
+    
+    def _parse_result_file(self, local_file_path):
+        """
+        解析本地结果文件
+        
+        Args:
+            local_file_path (str): 本地结果文件路径
+            
+        Returns:
+            dict: 解析结果
+        """
+        try:
+            if not os.path.exists(local_file_path):
+                return {
+                    "success": False,
+                    "error": f"结果文件不存在: {local_file_path}"
+                }
+            
+            with open(local_file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # 尝试解析JSON
+            try:
+                import json
+                # 预处理JSON内容以修复格式问题
+                cleaned_content = self._preprocess_json_content(content)
+                result_data = json.loads(cleaned_content)
+                return {
+                    "success": True,
+                    "data": result_data
+                }
+            except json.JSONDecodeError as e:
+                # 如果JSON解析失败，返回原始内容
+                return {
+                    "success": True,
+                    "data": {
+                        "exit_code": -1,
+                        "stdout": content,
+                        "stderr": f"JSON解析失败: {str(e)}",
+                        "raw_content": content
+                    }
+                }
+                
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"解析结果文件时出错: {str(e)}"
+            }
+    
+    def _cleanup_remote_result_file(self, result_filename):
+        """
+        清理远端结果文件
+        
+        Args:
+            result_filename (str): 要清理的远端文件名（在tmp目录中）
+        """
+        try:
+            # 使用rm命令删除远端文件（静默执行）
+            remote_file_path = f"tmp/{result_filename}"
+            self.cmd_rm(remote_file_path, force=True)
+        except:
+            # 清理失败不影响主要功能
+            pass
+

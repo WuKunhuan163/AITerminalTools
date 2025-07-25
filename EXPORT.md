@@ -4,26 +4,41 @@ Environment Variable Export Tool
 
 ## Description
 
-EXPORT is a comprehensive tool for setting environment variables and automatically writing them to multiple shell configuration files. It ensures environment variables persist across terminal sessions by updating ~/.bash_profile, ~/.bashrc, and ~/.zshrc.
+EXPORT is a comprehensive tool for setting and managing environment variables. It automatically writes them to multiple shell configuration files and ensures environment variables persist across terminal sessions by updating ~/.bash_profile, ~/.bashrc, and ~/.zshrc.
 
 ## Usage
 
+### Setting Variables
 ```bash
 EXPORT <variable_name> <value>
 ```
 
+### Removing Variables
+```bash
+EXPORT --remove <variable_name>
+EXPORT --undo <variable_name>
+```
+
+### Other Options
+```bash
+EXPORT --update
+EXPORT --help
+```
+
 ## Arguments
 
-- `variable_name`: Name of the environment variable to export
-- `value`: Value to assign to the variable
+- `variable_name`: Name of the environment variable to export/remove
+- `value`: Value to assign to the variable (for setting)
 
 ## Options
 
 - `--help, -h`: Show help message
+- `--remove, --undo, -r`: Remove an existing environment variable from all config files
+- `--update`: Update shell configuration files (source all config files)
 
 ## Examples
 
-### Basic Usage
+### Setting Variables
 ```bash
 # Export API key
 EXPORT OPENROUTER_API_KEY "sk-or-v1-..."
@@ -38,10 +53,30 @@ EXPORT MY_VAR "some value"
 EXPORT MY_MESSAGE "Hello World"
 ```
 
+### Removing Variables
+```bash
+# Remove environment variable
+EXPORT --remove MY_VAR
+
+# Alternative syntax
+EXPORT --undo OPENROUTER_API_KEY
+EXPORT -r MY_MESSAGE
+```
+
+### Configuration Management
+```bash
+# Update shell configurations
+EXPORT --update
+
+# Get help
+EXPORT --help
+```
+
 ### RUN Integration
 ```bash
 # Get JSON output
 RUN --show EXPORT MY_VAR "test value"
+RUN --show EXPORT --remove MY_VAR
 ```
 
 ## Features
@@ -49,30 +84,22 @@ RUN --show EXPORT MY_VAR "test value"
 - **Multi-File Update**: Automatically updates .bash_profile, .bashrc, and .zshrc
 - **Backup Creation**: Creates backup files before modification
 - **Duplicate Removal**: Removes existing export statements before adding new ones
-- **Current Session**: Sets variable in current environment immediately
-- **RUN Compatible**: Works with RUN command for JSON output
-- **Validation**: Validates variable names for proper format
+- **Variable Removal**: Complete removal of environment variables from all config files
+- **Current Session**: Updates both config files and current shell session
+- **Validation**: Checks variable names for proper format
+- **Cross-Shell Support**: Works with Bash, Zsh, and other shells
 
-## Output
+## Configuration Files
 
-When executed directly, the tool shows which files were updated and provides instructions for applying changes. When used with RUN, it returns JSON with operation status and file modification details.
-
-## Files Modified
-
-The tool updates the following configuration files:
-- `~/.bash_profile`
-- `~/.bashrc`
-- `~/.zshrc`
-
-## Dependencies
-
-- Python 3.9+
-- File system write permissions
+The tool manages environment variables in these files:
+- `~/.bash_profile` (Bash login shells)
+- `~/.bashrc` (Bash non-login shells)  
+- `~/.zshrc` (Zsh shells)
 
 ## Notes
 
-- Creates backup files (.backup extension) before modification
-- You may need to restart terminal or run `source ~/.bash_profile` to apply changes
-- Validates variable names to ensure they follow shell conventions
-- RUN mode provides JSON output for automation
-- Direct execution shows detailed update information 
+- Variable names must be valid shell identifiers
+- Changes take effect immediately in current session
+- New terminal sessions will automatically load the variables
+- Use `--update` to refresh configuration without restarting terminal
+- Backup files are created with `.backup` extension before modifications 

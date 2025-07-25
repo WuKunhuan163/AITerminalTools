@@ -103,13 +103,34 @@ class GDSCacheManager:
             content_hash = self._get_file_content_hash(str(cache_file_path))
             
             # 更新缓存配置
-            self.cache_config["files"][remote_path] = {
+            cache_info = {
                 "cache_file": cache_hash,
                 "cache_path": str(cache_file_path),
                 "content_hash": content_hash,
                 "cached_time": datetime.now().isoformat(),
                 "status": "valid"
             }
+            
+            # 检查是否有待处理的修改时间（支持多种路径格式）
+            pending_modified_time = self.get_pending_modified_time(remote_path)
+            
+            # 如果绝对路径没找到，尝试相对路径格式
+            if not pending_modified_time:
+                # 将绝对路径转换为相对路径格式进行查找
+                if remote_path.startswith("/content/drive/MyDrive/REMOTE_ROOT/"):
+                    relative_path = remote_path.replace("/content/drive/MyDrive/REMOTE_ROOT/", "~/")
+                    pending_modified_time = self.get_pending_modified_time(relative_path)
+                    if pending_modified_time:
+                        # 清除相对路径格式的待处理时间
+                        self.clear_pending_modified_time(relative_path)
+            else:
+                # 清除绝对路径格式的待处理时间
+                self.clear_pending_modified_time(remote_path)
+            
+            if pending_modified_time:
+                cache_info["remote_modified_time"] = pending_modified_time
+            
+            self.cache_config["files"][remote_path] = cache_info
             
             # 保存配置
             self._save_cache_config()
@@ -289,3 +310,80 @@ class GDSCacheManager:
                 "success": False,
                 "error": f"获取缓存统计失败: {e}"
             } 
+    def _update_cached_file_modified_time(self, remote_path: str, remote_modified_time: str):
+        """
+        更新已缓存文件的远端修改时间
+        
+        Args:
+            remote_path: 远端文件路径
+            remote_modified_time: 远端文件修改时间（ISO格式字符串）
+        """
+        try:
+            if remote_path in self.cache_config["files"]:
+                self.cache_config["files"][remote_path]["remote_modified_time"] = remote_modified_time
+                self._save_cache_config()
+                return True
+            return False
+        except Exception as e:
+            print(f"更新缓存文件修改时间失败: {e}")
+            return False
+
+
+    def store_pending_modified_time(self, remote_path: str, remote_modified_time: str):
+        """
+        存储待处理的文件修改时间，用于上传后但尚未缓存的文件
+        
+        Args:
+            remote_path: 远端文件路径
+            remote_modified_time: 远端文件修改时间（ISO格式字符串）
+        """
+        try:
+            if "pending_modified_times" not in self.cache_config:
+                self.cache_config["pending_modified_times"] = {}
+            
+            self.cache_config["pending_modified_times"][remote_path] = {
+                "modified_time": remote_modified_time,
+                "stored_at": datetime.now().isoformat()
+            }
+            self._save_cache_config()
+            return True
+        except Exception as e:
+            print(f"存储待处理修改时间失败: {e}")
+            return False
+    
+    def get_pending_modified_time(self, remote_path: str):
+        """
+        获取待处理的文件修改时间
+        
+        Args:
+            remote_path: 远端文件路径
+            
+        Returns:
+            str or None: 修改时间字符串，如果不存在则返回None
+        """
+        try:
+            pending_times = self.cache_config.get("pending_modified_times", {})
+            if remote_path in pending_times:
+                return pending_times[remote_path]["modified_time"]
+            return None
+        except Exception as e:
+            print(f"获取待处理修改时间失败: {e}")
+            return None
+    
+    def clear_pending_modified_time(self, remote_path: str):
+        """
+        清除待处理的文件修改时间（通常在文件被缓存后调用）
+        
+        Args:
+            remote_path: 远端文件路径
+        """
+        try:
+            if "pending_modified_times" in self.cache_config and remote_path in self.cache_config["pending_modified_times"]:
+                del self.cache_config["pending_modified_times"][remote_path]
+                self._save_cache_config()
+                return True
+            return False
+        except Exception as e:
+            print(f"清除待处理修改时间失败: {e}")
+            return False
+

@@ -32,12 +32,7 @@ class GoogleDriveService:
         else:
             self.key_path = os.environ.get('GOOGLE_DRIVE_SERVICE_ACCOUNT_KEY')
         
-        if not self.key_path:
-            raise ValueError("未找到服务账户密钥文件路径")
-        
-        if not os.path.exists(self.key_path):
-            raise FileNotFoundError(f"服务账户密钥文件不存在: {self.key_path}")
-        
+        # 尝试认证
         self._authenticate()
     
     def _authenticate(self):
@@ -49,16 +44,72 @@ class GoogleDriveService:
                 'https://www.googleapis.com/auth/drive.file'
             ]
             
-            # 从服务账户密钥文件创建凭据
-            self.credentials = service_account.Credentials.from_service_account_file(
-                self.key_path, scopes=SCOPES
-            )
+            # 尝试从文件认证
+            if self.key_path and os.path.exists(self.key_path):
+                # 从服务账户密钥文件创建凭据
+                self.credentials = service_account.Credentials.from_service_account_file(
+                    self.key_path, scopes=SCOPES
+                )
+            else:
+                # 尝试从环境变量构建服务账户信息
+                service_account_info = self._build_service_account_info_from_env()
+                if service_account_info:
+                    self.credentials = service_account.Credentials.from_service_account_info(
+                        service_account_info, scopes=SCOPES
+                    )
+                else:
+                    raise ValueError("无法找到有效的服务账户认证信息")
             
             # 创建Drive API服务对象
             self.service = build('drive', 'v3', credentials=self.credentials)
             
         except Exception as e:
             raise Exception(f"Google Drive API认证失败: {e}")
+    
+    def _build_service_account_info_from_env(self):
+        """从环境变量构建服务账户信息"""
+        try:
+            # 检查必需的环境变量
+            required_vars = [
+                'GOOGLE_DRIVE_SERVICE_TYPE',
+                'GOOGLE_DRIVE_PROJECT_ID',
+                'GOOGLE_DRIVE_PRIVATE_KEY_ID',
+                'GOOGLE_DRIVE_PRIVATE_KEY',
+                'GOOGLE_DRIVE_CLIENT_EMAIL',
+                'GOOGLE_DRIVE_CLIENT_ID',
+                'GOOGLE_DRIVE_AUTH_URI',
+                'GOOGLE_DRIVE_TOKEN_URI',
+                'GOOGLE_DRIVE_AUTH_PROVIDER_CERT_URL',
+                'GOOGLE_DRIVE_CLIENT_CERT_URL'
+            ]
+            
+            # 检查所有必需变量是否存在
+            env_values = {}
+            for var in required_vars:
+                value = os.environ.get(var)
+                if not value:
+                    return None
+                env_values[var] = value
+            
+            # 构建服务账户信息字典
+            service_account_info = {
+                "type": env_values['GOOGLE_DRIVE_SERVICE_TYPE'],
+                "project_id": env_values['GOOGLE_DRIVE_PROJECT_ID'],
+                "private_key_id": env_values['GOOGLE_DRIVE_PRIVATE_KEY_ID'],
+                "private_key": env_values['GOOGLE_DRIVE_PRIVATE_KEY'].replace('\\n', '\n'),
+                "client_email": env_values['GOOGLE_DRIVE_CLIENT_EMAIL'],
+                "client_id": env_values['GOOGLE_DRIVE_CLIENT_ID'],
+                "auth_uri": env_values['GOOGLE_DRIVE_AUTH_URI'],
+                "token_uri": env_values['GOOGLE_DRIVE_TOKEN_URI'],
+                "auth_provider_x509_cert_url": env_values['GOOGLE_DRIVE_AUTH_PROVIDER_CERT_URL'],
+                "client_x509_cert_url": env_values['GOOGLE_DRIVE_CLIENT_CERT_URL']
+            }
+            
+            return service_account_info
+            
+        except Exception as e:
+            print(f"从环境变量构建服务账户信息失败: {e}")
+            return None
     
     def test_connection(self):
         """测试API连接"""

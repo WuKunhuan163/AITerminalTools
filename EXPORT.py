@@ -237,6 +237,98 @@ def add_export_statement(lines: List[str], var_name: str, var_value: str) -> Lis
     lines.append(export_line)
     return lines
 
+def remove_variable(var_name: str, command_identifier=None):
+    """移除环境变量并从配置文件中删除"""
+    
+    # 验证变量名
+    if not var_name or not var_name.replace('_', '').isalnum():
+        error_data = {
+            "success": False,
+            "error": f"Invalid variable name: {var_name}",
+            "variable": var_name
+        }
+        
+        if is_run_environment(command_identifier):
+            write_to_json_output(error_data, command_identifier)
+        else:
+            print(f"❌ Error: Invalid variable name: {var_name}")
+        return 1
+    
+    # 获取配置文件
+    config_files = get_shell_config_files()
+    
+    # 从当前环境中移除变量
+    if var_name in os.environ:
+        del os.environ[var_name]
+    
+    updated_files = []
+    failed_files = []
+    
+    # 从每个配置文件中移除export语句
+    for config_file in config_files:
+        try:
+            # 备份文件
+            if not backup_config_file(config_file):
+                failed_files.append(str(config_file))
+                continue
+            
+            # 读取现有内容
+            lines = read_config_file(config_file)
+            
+            # 移除export语句
+            new_lines = remove_export_statement(lines, var_name)
+            
+            # 写入文件
+            if write_config_file(config_file, new_lines):
+                updated_files.append(str(config_file))
+            else:
+                failed_files.append(str(config_file))
+                
+        except Exception as e:
+            failed_files.append(str(config_file))
+            if not is_run_environment(command_identifier):
+                print(f"❌ Error updating {config_file}: {e}")
+    
+    # 准备结果
+    result_data = {
+        "success": len(failed_files) == 0,
+        "variable": var_name,
+        "updated_files": updated_files,
+        "failed_files": failed_files,
+        "message": f"Removed {var_name} from {len(updated_files)} files" if len(failed_files) == 0 else f"Failed to remove from {len(failed_files)} files"
+    }
+    
+    if is_run_environment(command_identifier):
+        write_to_json_output(result_data, command_identifier)
+    else:
+        if len(failed_files) == 0:
+            print(f"✅ Successfully removed {var_name} from {len(updated_files)} configuration files!")
+            for file in updated_files:
+                print(f"   📝 {file}")
+        else:
+            print(f"⚠️ Partially successful: removed from {len(updated_files)} files, failed on {len(failed_files)} files")
+            for file in failed_files:
+                print(f"   ❌ {file}")
+    
+    return 0 if len(failed_files) == 0 else 1
+
+def remove_export_statement(lines: List[str], var_name: str) -> List[str]:
+    """从配置行中移除指定的export语句"""
+    new_lines = []
+    
+    for line in lines:
+        # 检查是否是要移除的export语句
+        stripped = line.strip()
+        if (stripped.startswith(f'export {var_name}=') or 
+            stripped.startswith(f'export {var_name} =') or
+            stripped == f'export {var_name}'):
+            # 跳过这一行（不添加到new_lines中）
+            continue
+        else:
+            new_lines.append(line)
+    
+    return new_lines
+
 def export_variable(var_name: str, var_value: str, command_identifier=None):
     """导出环境变量并写入配置文件"""
     
@@ -333,6 +425,7 @@ def show_help():
     help_text = """EXPORT - Environment Variable Export Tool
 
 Usage: EXPORT <variable_name> <value>
+       EXPORT --remove <variable_name>
        EXPORT --update
 
 Arguments:
@@ -341,12 +434,15 @@ Arguments:
 
 Options:
   --help, -h          Show this help message
+  --remove, --undo, -r Remove an existing environment variable
   --update            Update shell configuration files (source all config files)
 
 Examples:
   EXPORT OPENROUTER_API_KEY "sk-or-v1-..."
   EXPORT PATH "/usr/local/bin:$PATH"
   EXPORT MY_VAR "some value"
+  EXPORT --remove MY_VAR
+  EXPORT --undo OPENROUTER_API_KEY
   EXPORT --update
 
 This tool will:
@@ -412,13 +508,20 @@ def main():
             if is_run_environment(command_identifier):
                 error_data = {
                     "success": False,
-                    "error": "Missing value. Usage: EXPORT <variable_name> <value>"
+                    "error": "Missing value. Usage: EXPORT <variable_name> <value> or EXPORT --remove <variable_name>"
                 }
                 write_to_json_output(error_data, command_identifier)
             else:
                 print("❌ Error: Missing value")
                 print("Usage: EXPORT <variable_name> <value>")
+                print("       EXPORT --remove <variable_name>")
+                print("       EXPORT --undo <variable_name>")
             return 1
+    
+    if len(args) == 2:
+        if args[0] in ['--remove', '--undo', '-r']:
+            var_name = args[1]
+            return remove_variable(var_name, command_identifier)
     
     if len(args) >= 2:
         var_name = args[0]

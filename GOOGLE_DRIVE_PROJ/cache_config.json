@@ -33,6 +33,117 @@
       "cached_time": "2025-07-23T20:59:05.342570",
       "status": "valid",
       "moved_time": "2025-07-23T21:05:24.335404"
+    },
+    "/content/drive/MyDrive/REMOTE_ROOT/test_dir1/test_upload_dir/performance_test_file.txt": {
+      "cache_file": "a23504a48f0eff22",
+      "cache_path": "/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/remote_files/a23504a48f0eff22",
+      "content_hash": "46546a2476d2b8508e22c553d6d65964",
+      "cached_time": "2025-07-24T16:38:35.275186",
+      "status": "valid"
+    },
+    "/content/drive/MyDrive/REMOTE_ROOT/test_dir1/test_upload_dir/test_upload_read.txt": {
+      "cache_file": "05c270d97d74bfc1",
+      "cache_path": "/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/remote_files/05c270d97d74bfc1",
+      "content_hash": "3bed9ae400490de55645ec6757f07270",
+      "cached_time": "2025-07-24T16:42:45.716366",
+      "status": "valid"
+    },
+    "/content/drive/MyDrive/REMOTE_ROOT/test_dir1/test_upload_dir/cache_time_test.txt": {
+      "cache_file": "c3d5f574085bae74",
+      "cache_path": "/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/remote_files/c3d5f574085bae74",
+      "content_hash": "3307ce28982d49b3ed6a9d12819dfeac",
+      "cached_time": "2025-07-24T16:47:07.287428",
+      "status": "valid",
+      "remote_modified_time": "2025-07-24T16:50:00.000Z"
+    },
+    "/content/drive/MyDrive/REMOTE_ROOT/test_dir1/test_upload_dir/cache_update_test.txt": {
+      "cache_file": "95aa9c40f78f473a",
+      "cache_path": "/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/remote_files/95aa9c40f78f473a",
+      "content_hash": "7ad73fa0f1b8f989379dcbd9c32c1c9d",
+      "cached_time": "2025-07-24T16:54:26.034991",
+      "status": "valid"
+    },
+    "/content/drive/MyDrive/REMOTE_ROOT/test_dir1/test_upload_dir/final_test.txt": {
+      "cache_file": "ec7ad17bb9c198c8",
+      "cache_path": "/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/remote_files/ec7ad17bb9c198c8",
+      "content_hash": "1e1fb3accf3494721067e48e6c35fbc9",
+      "cached_time": "2025-07-24T16:56:35.746749",
+      "status": "valid"
+    },
+    "/content/drive/MyDrive/REMOTE_ROOT/test_dir1/test_upload_dir/retry_test.txt": {
+      "cache_file": "d082db508bfb9823",
+      "cache_path": "/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/remote_files/d082db508bfb9823",
+      "content_hash": "6b36e71d06114f25be4b012289cf33ad",
+      "cached_time": "2025-07-24T17:07:24.657733",
+      "status": "valid",
+      "remote_modified_time": "2025-07-24T09:05:22.558Z"
+    },
+    "/content/drive/MyDrive/REMOTE_ROOT/test_dir1/test_upload_dir/complete_test.txt": {
+      "cache_file": "219d34e1b67b12b7",
+      "cache_path": "/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/remote_files/219d34e1b67b12b7",
+      "content_hash": "fbae672f4b34bdea48ff280309b8fcac",
+      "cached_time": "2025-07-24T17:16:53.455155",
+      "status": "valid",
+      "remote_modified_time": "2025-07-24T09:15:06.797Z"
+    },
+    "/content/drive/MyDrive/REMOTE_ROOT/test_dir1/test_upload_dir/test_main.py": {
+      "cache_file": "0631fc39826d7ff5",
+      "cache_path": "/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/remote_files/0631fc39826d7ff5",
+      "content_hash": "375bb27268a25be97ee3ea4102b7a4a3",
+      "cached_time": "2025-07-24T21:06:54.357188",
+      "status": "valid"
+    },
+    "/content/drive/MyDrive/REMOTE_ROOT/test_dir1/test_upload_dir/tmp_7c5ifkf_test_main.py": {
+      "cache_file": "42ca51aeaa5e29a0",
+      "cache_path": "/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/remote_files/42ca51aeaa5e29a0",
+      "content_hash": "0a98e378c70ce3b5076fb618df6b113f",
+      "cached_time": "2025-07-24T21:09:31.902967",
+      "status": "valid",
+      "remote_modified_time": "2025-07-24T13:06:54.356Z"
+    },
+    "/content/drive/MyDrive/REMOTE_ROOT/test_edit.py": {
+      "cache_file": "19f4078b18c8f98b",
+      "cache_path": "/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/remote_files/19f4078b18c8f98b",
+      "content_hash": "39e99314247ad9ab4e4e2f42a72fc1a2",
+      "cached_time": "2025-07-24T21:21:14.210241",
+      "status": "valid"
+    },
+    "/content/drive/MyDrive/REMOTE_ROOT/TEST/test_edit.py": {
+      "cache_file": "856dfae761be5b75",
+      "cache_path": "/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/remote_files/856dfae761be5b75",
+      "content_hash": "39e99314247ad9ab4e4e2f42a72fc1a2",
+      "cached_time": "2025-07-24T21:25:59.152025",
+      "status": "valid",
+      "remote_modified_time": "2025-07-24T13:24:47.165Z"
+    },
+    "/content/drive/MyDrive/REMOTE_ROOT/TEST/test_edit_final.py": {
+      "cache_file": "556f5a47683eab4c",
+      "cache_path": "/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/remote_files/556f5a47683eab4c",
+      "content_hash": "39e99314247ad9ab4e4e2f42a72fc1a2",
+      "cached_time": "2025-07-24T21:34:52.482133",
+      "status": "valid"
+    }
+  },
+  "pending_modified_times": {
+    "~/TEST/test_remove_local.py": {
+      "modified_time": "2025-07-24T13:36:43.363Z",
+      "stored_at": "2025-07-24T21:37:22.405418"
+    },
+    "~/TEST/test_remote_python.py": {
+      "modified_time": "2025-07-25T02:33:08.485Z",
+      "stored_at": "2025-07-25T10:33:44.432469"
+    },
+    "~/TEST/test_multiline_python.py": {
+      "modified_time": "2025-07-25T02:40:38.487Z",
+      "stored_at": "2025-07-25T10:41:54.423424"
+    },
+    "~/TEST/test_error_python.py": {
+      "modified_time": "2025-07-25T02:43:14.310Z",
+      "stored_at": "2025-07-25T10:43:53.409252"
+    },
+    "~/TEST/test_runtime_error.py": {
+      "modified_time": "2025-07-25T02:44:25.451Z",
+      "stored_at": "2025-07-25T10:45:42.749027"
     }
   }
 }

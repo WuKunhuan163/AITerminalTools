@@ -3324,6 +3324,18 @@ def enter_shell_mode(command_identifier=None):
                         print("  help          - 显示帮助信息")
                         print("  exit          - 退出shell模式")
                         print()
+                    elif cmd == "read":
+                        if not args:
+                            result = {"success": False, "error": "用法: read <filename> [start end] 或 read <filename> [[start1, end1], [start2, end2], ...]"}
+                        else:
+                            filename = args[0]
+                            range_args = args[1:] if len(args) > 1 else []
+                            result = shell.cmd_read(filename, *range_args)
+                    elif cmd == "find":
+                        if not args:
+                            result = {"success": False, "error": "用法: find [path] -name [pattern] 或 find [path] -type [f|d] -name [pattern]"}
+                        else:
+                            result = shell.cmd_find(*args)
                     else:
                         print(f"❌ 未知命令: {cmd}")
                         print("💡 输入 'help' 查看可用命令")
@@ -4298,13 +4310,9 @@ def handle_shell_command(shell_cmd, command_identifier=None):
         elif cmd == "python":
             if not args:
                 result = {"success": False, "error": "用法: python <file> 或 python -c '<code>'"}
-            elif args[0] == "-c" and len(args) > 1:
-                # python -c "code"
-                code = " ".join(args[1:])
-                result = shell.cmd_python(code=code)
             else:
-                # python file.py
-                result = shell.cmd_python(filename=args[0])
+                # 使用统一的远端命令执行接口处理python命令
+                result = shell.execute_generic_remote_command(cmd, args)
         elif cmd == "download":
             if not args:
                 result = {"success": False, "error": "用法: download [--force] <filename> [local_path]"}
@@ -4323,7 +4331,18 @@ def handle_shell_command(shell_cmd, command_identifier=None):
                     result = shell.cmd_download(download_args[0], force=force_download)
                 else:
                     result = shell.cmd_download(download_args[0], download_args[1], force=force_download)
-
+        elif cmd == "read":
+            if not args:
+                result = {"success": False, "error": "用法: read <filename> [start end] 或 read <filename> [[start1, end1], [start2, end2], ...]"}
+            else:
+                filename = args[0]
+                range_args = args[1:] if len(args) > 1 else []
+                result = shell.cmd_read(filename, *range_args)
+        elif cmd == "find":
+            if not args:
+                result = {"success": False, "error": "用法: find [path] -name [pattern] 或 find [path] -type [f|d] -name [pattern]"}
+            else:
+                result = shell.cmd_find(*args)
         elif cmd == "mv":
             if not args:
                 result = {"success": False, "error": "用法: mv <source> <destination> 或 mv [[src1, dst1], [src2, dst2], ...]"}
@@ -4340,17 +4359,43 @@ def handle_shell_command(shell_cmd, command_identifier=None):
                 result = shell.cmd_mv(args[0], args[1])
             else:
                 result = {"success": False, "error": "用法: mv <source> <destination> 或 mv [[src1, dst1], [src2, dst2], ...]"}
+        elif cmd == "edit":
+            if not args:
+                result = {"success": False, "error": "用法: edit [--preview] [--backup] <filename> '<replacement_spec>'"}
+            else:
+                # 解析选项
+                preview_mode = False
+                backup_mode = False
+                edit_args = args.copy()
+                
+                if "--preview" in edit_args:
+                    preview_mode = True
+                    edit_args.remove("--preview")
+                
+                if "--backup" in edit_args:
+                    backup_mode = True
+                    edit_args.remove("--backup")
+                
+                if len(edit_args) < 2:
+                    result = {"success": False, "error": "用法: edit [--preview] [--backup] <filename> '<replacement_spec>'"}
+                else:
+                    filename = edit_args[0]
+                    replacement_spec = " ".join(edit_args[1:])  # 支持带空格的JSON
+                    result = shell.cmd_edit(filename, replacement_spec, preview=preview_mode, backup=backup_mode)
         elif cmd == "upload":
             if not args:
-                result = {"success": False, "error": "用法: upload [--force] <file1> [file2] ... [target_path] 或 upload [--force] [[src1, dst1], [src2, dst2], ...]"}
+                result = {"success": False, "error": "用法: upload [--force] [--remove-local] <file1> [file2] ... [target_path] 或 upload [--force] [--remove-local] [[src1, dst1], [src2, dst2], ...]"}
             else:
-                # 解析--force选项
+                # 解析选项
                 force = False
+                remove_local = False
                 upload_args = []
                 
                 for arg in args:
                     if arg == '--force':
                         force = True
+                    elif arg == '--remove-local':
+                        remove_local = True
                     else:
                         upload_args.append(arg)
                 
@@ -4362,7 +4407,7 @@ def handle_shell_command(shell_cmd, command_identifier=None):
                         try:
                             import ast
                             file_pairs = ast.literal_eval(upload_args[0])
-                            result = shell.cmd_upload_multi(file_pairs, force=force)
+                            result = shell.cmd_upload_multi(file_pairs, force=force, remove_local=remove_local)
                         except:
                             result = {"success": False, "error": "多文件语法格式错误，应为: [[src1, dst1], [src2, dst2], ...]"}
                     else:
@@ -4378,7 +4423,7 @@ def handle_shell_command(shell_cmd, command_identifier=None):
                         if len(source_files) == 1 and os.path.isdir(source_files[0]):
                             result = shell.cmd_upload_folder(source_files[0], target_path, keep_zip=False)
                         else:
-                            result = shell.cmd_upload(source_files, target_path, force=force)
+                            result = shell.cmd_upload(source_files, target_path, force=force, remove_local=remove_local)
         elif cmd == "upload-folder":
             if not args:
                 result = {"success": False, "error": "用法: upload-folder [--keep-zip] <folder_path> [target_path]"}
@@ -4416,13 +4461,17 @@ def handle_shell_command(shell_cmd, command_identifier=None):
                     "python <file>                - execute python file",
                     "python -c '<code>'           - execute python code",
                                     "download [--force] <file> [path] - download file with caching",
+                    "read <file> [start end]      - read file content with line numbers",
+                    "find [path] -name [pattern]  - search for files matching pattern",
                     "mv <source> <dest>           - move/rename file or folder",
+                    "edit [--preview] [--backup] <file> '<spec>' - edit file with multi-segment replacement",
                     "upload <files...> [target]   - upload files to Google Drive",
                     "upload-folder [--keep-zip] <folder> [target] - upload folder (zip->upload->unzip->cleanup)"
                 ]
             }
         else:
-            result = {"success": False, "error": f"未知命令: {cmd}"}
+            # 使用统一的远端命令执行接口处理未知命令
+            result = shell.execute_generic_remote_command(cmd, args)
         
         # 输出结果
         if is_run_environment(command_identifier):
@@ -4545,21 +4594,70 @@ def handle_shell_command(shell_cmd, command_identifier=None):
                     # cat命令输出文件内容
                     if "output" in result:
                         print(result["output"])
+                elif cmd == "read":
+                    # read命令输出文件内容（带行号）
+                    if "output" in result:
+                        print(result["output"])
+                elif cmd == "find":
+                    # find命令输出搜索结果
+                    if "output" in result:
+                        print(result["output"])
+                    if result.get("success") and "count" in result:
+                        print("\nFound", result.get("count", 0), "matches.")
                 elif cmd == "grep":
                     # grep命令输出匹配行
                     if "output" in result:
                         print(result["output"])
                 elif cmd == "python":
-                    # python命令输出执行结果
-                    if "stdout" in result:
-                        if result["stdout"]:
-                            print(result["stdout"])
-                        if result["stderr"]:
-                            print(result["stderr"], file=sys.stderr)
+                    # python命令现在使用远端执行接口，由通用处理逻辑处理
+                    if "path" in result and "stdout" in result and "stderr" in result:
+                        # 远端命令执行结果
+                        if result.get("stdout"):
+                            print(result["stdout"], end="")
+                        if result.get("stderr"):
+                            print(result["stderr"], file=sys.stderr, end="")
+                    else:
+                        # 兼容旧格式
+                        if "stdout" in result:
+                            if result["stdout"]:
+                                print(result["stdout"])
+                            if result["stderr"]:
+                                print(result["stderr"], file=sys.stderr)
                 elif cmd == "download":
                     # download命令输出缓存下载信息
                     if "message" in result:
                         print(result["message"])
+                elif cmd == "edit":
+                    # edit命令输出编辑结果
+                    if result.get("mode") == "preview":
+                        # 预览模式
+                        print(f"📝 预览模式 - 文件: {result.get('filename')}")
+                        print(f"原始行数: {result.get('original_lines')}, 修改后行数: {result.get('modified_lines')}")
+                        print(f"应用替换: {result.get('replacements_applied')} 个")
+                        
+                        if result.get("diff", {}).get("summary"):
+                            print("\n🔄 修改摘要:")
+                            for summary in result["diff"]["summary"]:
+                                print(f"  • {summary}")
+                        
+                        print(f"\n📄 修改后内容预览:")
+                        print("=" * 50)
+                        print(result.get("preview_content", ""))
+                        print("=" * 50)
+                    else:
+                        # 正常编辑模式
+                        if "message" in result:
+                            print(result["message"])
+                        
+                        if result.get("diff", {}).get("summary"):
+                            print("\n🔄 修改摘要:")
+                            for summary in result["diff"]["summary"]:
+                                print(f"  • {summary}")
+                        
+                        if result.get("backup_created"):
+                            print(f"💾 备份文件已创建: {result.get('backup_filename')}")
+                        elif result.get("backup_error"):
+                            print(f"⚠️  备份创建失败: {result.get('backup_error')}")
                 elif cmd == "upload":
                     # bash风格简洁输出
                     if result.get("uploaded_files"):
@@ -4591,9 +4689,33 @@ def handle_shell_command(shell_cmd, command_identifier=None):
                     # bash风格：成功的命令不输出任何内容
                     pass
                 else:
-                    # 其他命令保持简洁输出
-                    if "message" in result:
-                        print(result["message"])
+                    # 检查是否为远端命令执行结果
+                    if "path" in result and "stdout" in result and "stderr" in result:
+                        # 远端命令执行结果的特殊输出格式
+                        if result.get("stdout"):
+                            print(result["stdout"], end="")
+                        if result.get("stderr"):
+                            print(result["stderr"], file=sys.stderr, end="")
+                        
+                        # 在RUN环境下输出完整JSON，包含所有字段
+                        if is_run_environment(command_identifier):
+                            # 确保包含所有必要字段
+                            run_result = {
+                                "success": result.get("success", True),
+                                "cmd": result.get("cmd"),
+                                "args": result.get("args", []),
+                                "exit_code": result.get("exit_code", 0),
+                                "stdout": result.get("stdout", ""),
+                                "stderr": result.get("stderr", ""),
+                                "working_dir": result.get("working_dir", ""),
+                                "timestamp": result.get("timestamp", ""),
+                                "path": result.get("path", "")  # 本地结果文件路径
+                            }
+                            write_to_json_output(run_result, command_identifier)
+                    else:
+                        # 其他命令保持简洁输出
+                        if "message" in result:
+                            print(result["message"])
             else:
                 # bash风格错误输出：command: error message
                 # 对于有用户输入的命令，使用统一接口处理错误信息

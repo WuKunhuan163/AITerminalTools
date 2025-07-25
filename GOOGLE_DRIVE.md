@@ -11,9 +11,21 @@ GOOGLE_DRIVE 是一个强大的 Google Drive 远程控制工具，支持通过�
 - **改进**: 简化了启动流程，提高用户体验
 - **状态检测**: 自动检测Google Drive Desktop运行状态
 
+### EDIT 功能全新发布
+- **多段同步替换**: 支持行号替换和文本搜索替换的混合编辑
+- **0-based 索引**: 行号使用 [a, b) 语法，与 Python 和 read 命令对齐
+- **预览模式**: `--preview` 选项查看修改结果而不保存
+- **备份功能**: `--backup` 选项创建修改前的备份文件
+
+### Upload 功能优化
+- **文件名保持**: 修复了上传时文件名被错误重命名的问题
+- **本地文件保护**: 改用 `cp` 替代 `mv`，保护本地文件不被意外删除
+- **--remove-local 选项**: 新增选项，成功上传后可选择性删除本地文件
+- **智能路径判断**: 通过文件扩展名自动区分文件和文件夹路径
+
 ### Upload检测优化
-- **调试增强**: 当upload检测超时时，自动显示`GDS ls ~`输出进行调试
-- **问题诊断**: 帮助快速定位文件同步问题
+- **调试增强**: 当upload检测超时时，自动显示详细的错误诊断信息
+- **问题诊断**: 包括源文件检查、目标路径检查、权限检查等
 - **超时处理**: 改进了60秒超时机制的错误处理
 
 ## 主要功能
@@ -35,7 +47,7 @@ GOOGLE_DRIVE 是一个强大的 Google Drive 远程控制工具，支持通过�
 
 ### 3. 高级功能
 - 🐍 Python 代码执行
-- 🔍 文件内容查看和搜索 (`cat`, `grep`)
+- 🔍 文件内容查看和搜索 (`cat`, `grep`, `read`, `find`)
 - 📝 文本文件创建 (`echo`)
 - 🔗 与 Google Colab 集成
 - 🛠️ 调试和诊断工具
@@ -74,7 +86,7 @@ GDS [command]  # Shell 模式别名
 | `-my` | 打开 My Drive |
 | `--console-setup` | 启动 API 设置向导 |
 | `--shell [COMMAND]` | 进入交互式 Shell 或执行指定命令 (别名: GDS) |
-| `--upload FILE [PATH]` | 通过本地同步上传文件到Google Drive |
+| `--upload [--remove-local] FILE [PATH]` | 通过本地同步上传文件到Google Drive |
 | `--create-remote-shell` | 创建新的远程 Shell 会话 |
 | `--list-remote-shell` | 列出所有远程 Shell 会话 |
 | `--checkout-remote-shell ID` | 切换到指定 Shell |
@@ -86,6 +98,177 @@ GDS [command]  # Shell 模式别名
 | `--desktop --set-local-sync-dir` | 设置本地同步目录路径 |
 | `--desktop --set-global-sync-dir` | 设置全局同步目录 (Drive文件夹) |
 | `--help, -h` | 显示帮助信息 |
+
+## EDIT 功能详解
+
+### 概述
+EDIT 功能提供强大的文件编辑能力，支持多段文本同步替换，类似 Cursor 的 file_edit 工具。整个编辑流程包括：下载、编辑、重新上传，并与现有的缓存系统完全集成。
+
+### ✨ 核心特性
+- **多段同步替换**: 支持同时替换多个文本段，避免行号变化导致的替换错误
+- **多种替换模式**: 支持行号替换、文本搜索替换、混合模式
+- **预览功能**: 支持预览模式，查看修改结果而不实际保存
+- **备份机制**: 可选择性创建备份文件
+- **缓存集成**: 与现有下载/上传缓存系统完全集成
+- **智能编码**: 自动处理 UTF-8 和 GBK 编码
+
+### 语法格式
+
+#### 基本语法
+```bash
+GDS edit [选项] <文件名> '<替换规范>'
+```
+
+#### 选项参数
+- `--preview`: 预览模式，只显示修改结果不实际保存
+- `--backup`: 创建备份文件（格式：filename.backup.YYYYMMDD_HHMMSS）
+
+#### 替换规范格式
+
+##### 1. 行号替换模式 (0-based, [a, b) 语法)
+```json
+[[[起始行号, 结束行号], "新内容"], [[起始行号, 结束行号], "新内容"]]
+```
+
+示例：
+```bash
+# 将第0行替换为新函数定义，第3行替换为函数调用 (0-based索引)
+GDS edit main.py '[[[0, 1], "def greet():"], [[3, 4], "greet()"]]'
+```
+
+##### 2. 文本搜索替换模式
+```json
+[["旧文本", "新文本"], ["旧文本", "新文本"]]
+```
+
+示例：
+```bash
+# 替换配置项
+GDS edit config.py '[["DEBUG = False", "DEBUG = True"], ["localhost", "0.0.0.0"]]'
+```
+
+##### 3. 混合模式
+```json
+[[[行号范围], "新内容"], ["搜索文本", "替换文本"]]
+```
+
+示例：
+```bash
+# 第1行添加shebang，搜索替换函数名
+GDS edit app.py '[[[1, 1], "#!/usr/bin/env python3"], ["old_func", "new_func"]]'
+```
+
+### 工作原理
+
+1. **参数解析**: 解析命令选项和替换规范
+2. **文件下载**: 强制重新下载文件确保获取最新内容
+3. **内容读取**: 智能处理文件编码（UTF-8/GBK）
+4. **替换验证**: 验证行号范围和搜索文本是否存在
+5. **同步替换**: 按倒序处理行替换，避免行号变化影响
+6. **结果生成**: 生成详细的修改差异信息
+7. **缓存更新**: 更新本地缓存文件
+8. **文件上传**: 上传修改后的文件到远程
+
+### 使用示例
+
+#### 基础示例
+```bash
+# 修改Python函数
+GDS edit hello.py '[[[1, 2], "def say_hello(name):"], [[3, 3], "    print(f\"Hello, {name}!\")"]]'
+
+# 配置文件修改
+GDS edit settings.json '[["\"debug\": false", "\"debug\": true"], ["\"port\": 8080", "\"port\": 3000"]]'
+```
+
+#### 预览模式
+```bash
+# 先预览修改结果
+GDS edit --preview main.py '[[[5, 10], "# New implementation\ndef new_function():\n    pass"]]'
+```
+
+#### 备份模式
+```bash
+# 重要文件修改前创建备份
+GDS edit --backup production.py '[["old_api_key", "new_api_key"]]'
+```
+
+#### 复杂编辑
+```bash
+# 多类型替换组合
+GDS edit complex.py '[
+  [[1, 1], "#!/usr/bin/env python3"],
+  ["import os", "import os\nimport sys"],
+  ["DEBUG = True", "DEBUG = False"],
+  [[20, 25], "# Refactored function\ndef improved_function():\n    return \"better implementation\""]
+]'
+```
+
+### 输出格式
+
+#### 预览模式输出
+```
+📝 预览模式 - 文件: main.py
+原始行数: 10, 修改后行数: 8
+应用替换: 2 个
+
+🔄 修改摘要:
+  • Lines 1-2: replaced
+  • Text 'main()...' replaced
+
+📄 修改后内容预览:
+==================================================
+def greet():
+    print('Hello! ')
+greet()
+==================================================
+```
+
+#### 正常编辑输出
+```
+文件 main.py 编辑完成，应用了 2 个替换操作
+
+🔄 修改摘要:
+  • Lines 1-2: replaced
+  • Text 'main()...' replaced
+
+💾 备份文件已创建: main.py.backup.20250123_143022
+```
+
+### 错误处理
+
+常见错误和解决方案：
+
+1. **行号范围错误**
+   ```
+   行号范围错误: [1, 15]，文件共10行
+   ```
+   - 检查文件实际行数，调整行号范围
+
+2. **文本未找到**
+   ```
+   未找到要替换的文本: old_function...
+   ```
+   - 确认搜索文本在文件中存在，注意大小写和空格
+
+3. **JSON格式错误**
+   ```
+   替换规范JSON解析失败: Expecting ',' delimiter
+   ```
+   - 检查JSON格式，确保引号、括号匹配
+
+4. **编码问题**
+   ```
+   文件编码不支持，请确保文件为UTF-8或GBK编码
+   ```
+   - 转换文件编码为UTF-8或GBK
+
+### 最佳实践
+
+1. **使用预览模式**: 复杂修改前先使用 `--preview` 查看结果
+2. **创建备份**: 重要文件修改时使用 `--backup` 选项
+3. **分步编辑**: 复杂修改可分解为多个简单的编辑操作
+4. **验证结果**: 编辑后使用 `cat` 或 `read` 命令验证修改结果
+5. **JSON转义**: 替换内容包含特殊字符时注意JSON转义
 
 ## UPLOAD 功能详解
 
@@ -178,6 +361,7 @@ mkdir [-p] <dir>            # 创建目录 (递归使用 -p)
 rm <file>                   # 删除文件
 rm -rf <dir>                # 递归删除目录
 mv <source> <dest>          # 移动/重命名文件或文件夹
+edit [--preview] [--backup] <file> '<spec>' # 多段文本同步替换编辑
 upload <files...> [target]  # 上传文件到Google Drive
 ```
 
@@ -187,7 +371,8 @@ cat <file>                  # 显示文件内容
 echo <text>                 # 显示文本
 echo <text> > <file>        # 创建文件并写入文本
 grep <pattern> <file>       # 在文件中搜索模式
-```
+read <file> [start end]     # 读取文件内容（带行号）
+find [path] -name [pattern] # 查找匹配模式的文件和目录```
 
 ### 下载功能
 ```bash
@@ -199,6 +384,37 @@ download [--force] <file> [path] # 下载文件到本地 (带缓存)
 python <file>               # 执行Python文件
 python -c '<code>'          # 执行Python代码
 ```
+
+### 远程命令执行 ⭐ **新功能**
+```bash
+GOOGLE_DRIVE --shell "command"  # 执行远程命令
+```
+
+**功能特性**:
+- ✅ **完整输出保留**: 支持多行输出、特殊字符、stdout/stderr分离
+- ✅ **错误处理**: 完整显示语法错误、运行时错误和traceback信息  
+- ✅ **复杂脚本支持**: 可执行Python脚本、shell脚本等复杂程序
+- ✅ **JSON格式化**: 内部使用`\n`转义保持输出格式的同时确保数据完整性
+- ✅ **简化流程**: 无需额外清理步骤，减少用户交互
+
+**使用示例**:
+```bash
+# 基本命令
+GOOGLE_DRIVE --shell "whoami"
+GOOGLE_DRIVE --shell "pwd && ls -la"
+
+# 执行Python脚本
+GOOGLE_DRIVE --shell "python3 my_script.py"
+
+# 复杂命令组合
+GOOGLE_DRIVE --shell "cd /path && python3 -c 'print(\"Hello World\")'"
+```
+
+**输出效果**:
+- 保留原始多行格式
+- 正确处理特殊字符（引号、反斜杠等）
+- 分别显示stdout和stderr内容
+- 完整的错误信息和调试支持
 
 ## 使用示例
 
@@ -239,6 +455,59 @@ GDS download report.pdf
 
 # 批量下载
 GDS download-all *.txt
+```
+
+### 文件搜索
+```bash
+# 查找所有 .txt 文件
+GDS find . -name "*.txt"
+
+# 大小写不敏感查找
+GDS find . -iname "*.PDF"
+
+# 查找包含特定字符的文件
+GDS find . -name "*report*"
+
+# 只查找文件（不包括目录）
+GDS find . -type f -name "*.py"
+
+# 只查找目录
+GDS find . -type d -name "*test*"
+
+# 读取文件内容（带行号）
+GDS read document.txt
+
+# 读取指定行数范围
+GDS read document.txt 0 10
+
+# 读取多个不连续范围
+GDS read document.txt "[[0, 5], [10, 15]]"
+``````
+
+### 文件编辑
+```bash
+# 基本编辑 - 行号替换 (0-based索引)
+GDS edit main.py '[[[0, 1], "def greet():"], [[3, 4], "greet()"]]'
+
+# 文本搜索替换
+GDS edit config.py '[["DEBUG = False", "DEBUG = True"], ["localhost", "0.0.0.0"]]'
+
+# 混合模式编辑
+GDS edit app.py '[[[1, 1], "#!/usr/bin/env python3"], ["print(\"old\")", "print(\"new\")"]]'
+
+# 预览模式 - 只显示修改结果不保存
+GDS edit --preview main.py '[[[1, 2], "def greet():"]]'
+
+# 创建备份后编辑
+GDS edit --backup important.py '[["old_function", "new_function"]]'
+
+# 复杂编辑示例
+GDS edit server.py '[
+  [[1, 3], "# Updated server configuration"],
+  ["port = 8000", "port = 3000"],
+  ["debug = True", "debug = False"],
+  [[50, 52], "# New error handling code\ntry:\n    process_request()"]
+]'
 ```
 
 ### Python 代码执行
