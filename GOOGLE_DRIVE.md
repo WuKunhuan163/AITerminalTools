@@ -11,11 +11,13 @@ GOOGLE_DRIVE 是一个强大的 Google Drive 远程控制工具，支持通过�
 - **改进**: 简化了启动流程，提高用户体验
 - **状态检测**: 自动检测Google Drive Desktop运行状态
 
-### EDIT 功能全新发布
+### EDIT 功能全新发布 ✅ 已修复
 - **多段同步替换**: 支持行号替换和文本搜索替换的混合编辑
-- **0-based 索引**: 行号使用 [a, b) 语法，与 Python 和 read 命令对齐
+- **0-based 索引**: 行号使用 [a, b) 语法，与 Python 和 read 命令对齐  
 - **预览模式**: `--preview` 选项查看修改结果而不保存
 - **备份功能**: `--backup` 选项创建修改前的备份文件
+- **JSON解析修复**: 解决了shlex分割JSON字符串导致的解析失败问题
+- **路径重复修复**: 修复了多文件上传中文件名重复添加的路径错误
 
 ### Upload 功能优化
 - **文件名保持**: 修复了上传时文件名被错误重命名的问题
@@ -27,6 +29,127 @@ GOOGLE_DRIVE 是一个强大的 Google Drive 远程控制工具，支持通过�
 - **调试增强**: 当upload检测超时时，自动显示详细的错误诊断信息
 - **问题诊断**: 包括源文件检查、目标路径检查、权限检查等
 - **超时处理**: 改进了60秒超时机制的错误处理
+
+## 🔧 GDS Shell 管理系统
+
+### GDS vs GOOGLE_DRIVE --shell 的区别
+
+**重要理解**: `GDS` 和 `GOOGLE_DRIVE --shell` 是不同的概念：
+
+- **`GOOGLE_DRIVE --shell`**: 返回并进入默认shell（如果直接运行会进入交互模式）
+- **`GDS`**: 对**当前活跃shell**进行操作的命令别名
+
+### Shell 管理功能
+
+`GDS` 代表一个完整的shell管理系统，支持：
+
+- **多Shell环境**: 可以创建多个独立的shell会话
+- **Shell切换**: 在不同shell之间自由切换（checkout）
+- **Shell生命周期**: 创建、删除、查看所有shell
+- **工作目录管理**: 每个shell维护自己的远端等效路径
+- **会话隔离**: 不同shell相当于不同的工作环境
+
+### Shell 管理命令
+
+```bash
+# Shell 会话管理
+GOOGLE_DRIVE --create-remote-shell              # 创建新shell
+GOOGLE_DRIVE --list-remote-shell                # 列出所有shell
+GOOGLE_DRIVE --checkout-remote-shell <shell_id> # 切换到指定shell
+GOOGLE_DRIVE --terminate-remote-shell <shell_id> # 终止指定shell
+
+# 使用GDS操作当前活跃shell
+GDS pwd                                         # 显示当前shell的路径
+GDS ls                                          # 列出当前shell目录内容
+GDS cd <path>                                   # 在当前shell中切换目录
+```
+
+### 工作流程示例
+
+```bash
+# 创建一个用于项目A的shell
+GOOGLE_DRIVE --create-remote-shell
+# 输出: ✅ 远程shell创建成功，Shell ID: abc123
+
+# 在项目A的shell中工作
+GDS cd project_a
+GDS upload file1.txt
+GDS ls
+
+# 创建另一个用于项目B的shell
+GOOGLE_DRIVE --create-remote-shell  
+# 输出: ✅ 远程shell创建成功，Shell ID: def456
+
+# 切换到项目B的shell
+GOOGLE_DRIVE --checkout-remote-shell def456
+
+# 在项目B的shell中工作
+GDS cd project_b
+GDS upload file2.txt
+
+# 查看所有shell
+GOOGLE_DRIVE --list-remote-shell
+
+# 切换回项目A
+GOOGLE_DRIVE --checkout-remote-shell abc123
+GDS pwd  # 显示项目A的当前路径
+```
+
+## 🤖 AI Agent 使用指南
+
+### 文件编辑最佳实践
+
+**重要提示**: 对于AI agents，推荐使用 `GDS edit` 功能进行文件编辑，而不是创建本地文件后上传替换的方式。
+
+#### 推荐工作流程
+
+```bash
+# 1. 获取文件上下文
+GDS grep "function_name" target_file.py    # 搜索相关内容
+GDS read target_file.py 10 20             # 读取特定行范围
+
+# 2. 基于上下文进行精确编辑
+GDS edit target_file.py '[[[15, 18], "def improved_function():\n    return \"better implementation\""]]'
+
+# 3. 验证编辑结果
+GDS read target_file.py 10 25             # 检查修改后的内容
+```
+
+#### 避免的做法
+
+```bash
+# ❌ 不推荐：创建本地文件 + 强制上传替换
+echo "new content" > local_file.py
+GDS upload --force local_file.py
+
+# ✅ 推荐：直接编辑远程文件
+GDS edit remote_file.py '[["old_content", "new_content"]]'
+```
+
+#### 编辑功能优势
+
+1. **高效性**: 直接修改远程文件，无需下载-修改-上传循环
+2. **精确性**: 支持多段同步替换，避免行号变化导致的错误
+3. **安全性**: 支持预览模式和备份功能
+4. **一致性**: 与Cursor IDE的编辑体验保持一致
+
+#### 复杂编辑示例
+
+```bash
+# 混合模式编辑：行号替换 + 文本搜索替换
+GDS edit complex_file.py '[
+  [[1, 1], "#!/usr/bin/env python3"],
+  ["import os", "import os\nimport sys"],
+  ["DEBUG = True", "DEBUG = False"],
+  [[50, 55], "# Refactored function\ndef new_implementation():\n    pass"]
+]'
+
+# 预览模式：查看修改结果而不保存
+GDS edit --preview important_file.py '[["old_logic", "new_logic"]]'
+
+# 备份模式：重要文件修改前创建备份
+GDS edit --backup production_config.py '[["old_setting", "new_setting"]]'
+```
 
 ## 主要功能
 
@@ -43,6 +166,7 @@ GOOGLE_DRIVE 是一个强大的 Google Drive 远程控制工具，支持通过�
 - 📤 文件上传 (`upload`) - **已优化检测机制**
 - 📥 文件下载 (`download`)
 - 🔄 文件移动 (`mv`)
+- ✏️ 文件编辑 (`edit`) - **支持多段同步替换**
 - 🔍 路径解析支持
 
 ### 3. 高级功能
@@ -361,8 +485,8 @@ mkdir [-p] <dir>            # 创建目录 (递归使用 -p)
 rm <file>                   # 删除文件
 rm -rf <dir>                # 递归删除目录
 mv <source> <dest>          # 移动/重命名文件或文件夹
-edit [--preview] [--backup] <file> '<spec>' # 多段文本同步替换编辑
-upload <files...> [target]  # 上传文件到Google Drive
+edit [--preview] [--backup] <file> '<spec>' # 多段文本同sync替换编辑
+upload [--force] <files...> [target]  # 上传文件到Google Drive (--force强制覆盖)
 ```
 
 ### 文件内容
@@ -396,6 +520,8 @@ GOOGLE_DRIVE --shell "command"  # 执行远程命令
 - ✅ **复杂脚本支持**: 可执行Python脚本、shell脚本等复杂程序
 - ✅ **JSON格式化**: 内部使用`\n`转义保持输出格式的同时确保数据完整性
 - ✅ **简化流程**: 无需额外清理步骤，减少用户交互
+- ✅ **超时处理**: 60秒等待超时后提供用户手动输入fallback机制
+- ✅ **长期运行支持**: 适用于http-server等需要持续运行的服务
 
 **使用示例**:
 ```bash
@@ -408,6 +534,9 @@ GOOGLE_DRIVE --shell "python3 my_script.py"
 
 # 复杂命令组合
 GOOGLE_DRIVE --shell "cd /path && python3 -c 'print(\"Hello World\")'"
+
+# 长期运行服务（会触发超时fallback）
+GOOGLE_DRIVE --shell "python3 -m http.server 8000"
 ```
 
 **输出效果**:
@@ -415,6 +544,14 @@ GOOGLE_DRIVE --shell "cd /path && python3 -c 'print(\"Hello World\")'"
 - 正确处理特殊字符（引号、反斜杠等）
 - 分别显示stdout和stderr内容
 - 完整的错误信息和调试支持
+
+**超时处理机制**:
+当命令执行超过60秒未生成结果文件时（如http-server等长期运行服务），系统会：
+1. 显示超时提示和可能的原因
+2. 提供用户手动输入选项
+3. 支持多行输入，按Ctrl+D结束
+4. 支持Ctrl+C中断和重新输入
+5. 可选择跳过输入（直接按Enter）
 
 ## 使用示例
 
@@ -428,6 +565,54 @@ GDS pwd
 
 # 列出文件
 GDS ls
+
+# 创建目录
+GDS mkdir test_folder
+
+# 切换目录
+GDS cd test_folder
+
+# 返回上级目录
+GDS cd ..
+```
+
+### 文件管理
+```bash
+# 上传文件到当前目录
+GDS upload file.txt
+
+# 上传文件到指定目录
+GDS upload file.txt subfolder/
+
+# 强制覆盖上传（替换已存在的文件）
+GDS upload --force updated_file.txt
+
+# 移动文件
+GDS mv old_name.txt new_name.txt
+
+# 删除文件
+GDS rm unwanted_file.txt
+
+# 递归删除目录
+GDS rm -rf old_folder
+```
+
+### 文件内容操作
+```bash
+# 查看文件内容
+GDS cat document.txt
+
+# 搜索文件内容
+GDS grep "pattern" document.txt
+
+# 读取文件指定行
+GDS read document.txt 1 10
+
+# 查找文件
+GDS find . -name "*.py"
+
+# 下载文件到本地
+GDS download remote_file.txt ~/Downloads/
 
 # 创建目录
 GDS mkdir projects

@@ -511,10 +511,14 @@ def parse_direct_command(args):
     parser.add_argument('--negative', help='负面提示词：指定不想要的内容或论文类型')
     parser.add_argument('--read-images', action='store_true', help='处理PDF中的图像、公式和表格')
     parser.add_argument('--gen-command', help='根据描述生成LEARN命令')
+    parser.add_argument('--paper-based', action='store_true', help='强制使用基于论文的学习模式，即使只提供了描述也会搜索和下载论文')
+    parser.add_argument('--sources', help='指定论文搜索引擎，用逗号分隔 (arxiv,google_scholar)，默认为自动推荐')
     
     # Model options
     parser.add_argument('--model', help='指定OpenRouter模型')
     parser.add_argument('--max-tokens', type=int, help='最大token数')
+    parser.add_argument('--temperature', type=float, help='温度参数 (0.0-2.0，控制回复的创造性)')
+    parser.add_argument('--key', help='指定OpenRouter API密钥')
     parser.add_argument('--not-default', action='store_true', help='非默认模式，需要用户确认')
     parser.add_argument('--no-override-material', action='store_true', help='不覆盖已存在的文件，自动重命名')
     parser.add_argument('--brainstorm-only', action='store_true', help='不自动创建文件，仅生成内容')
@@ -558,6 +562,10 @@ def parse_direct_command(args):
         params['selected_model'] = parsed_args.model
     if parsed_args.max_tokens:
         params['max_tokens'] = parsed_args.max_tokens
+    if parsed_args.temperature is not None:
+        params['temperature'] = parsed_args.temperature
+    if parsed_args.key:
+        params['api_key'] = parsed_args.key
     
     # Determine type based on arguments
     if parsed_args.file:
@@ -615,6 +623,7 @@ def parse_direct_command(args):
             return None
         params['negative_prompt'] = parsed_args.negative
         params['read_images'] = parsed_args.read_images
+        params['sources'] = parsed_args.sources
     elif parsed_args.topic:
         try:
             expanded_topic, has_file_ref = parse_file_references(parsed_args.topic)
@@ -641,17 +650,28 @@ def parse_direct_command(args):
                     else:
                         params['file_path'] = str(topic_path)
                     params['read_images'] = parsed_args.read_images
-                    print(f"📄 检测到{file_ext.upper()}文件路径，切换到论文学习模式: {topic_path}")
                 else:
                     # 其他文件类型仍然按一般主题处理
                     params['type'] = 'general'
                     params['topic'] = expanded_topic
                     params['has_file_reference'] = has_file_ref
             else:
-                # 不是文件路径，按一般主题处理
-                params['type'] = 'general'
-                params['topic'] = expanded_topic
-                params['has_file_reference'] = has_file_ref
+                # 检查是否指定了--paper-based标志
+                if parsed_args.paper_based:
+                    # 强制使用论文模式，将topic作为论文描述搜索
+                    params['type'] = 'paper'
+                    params['input_type'] = 3  # Description/Search
+                    params['paper_description'] = expanded_topic
+                    params['has_file_reference'] = has_file_ref
+                    params['negative_prompt'] = parsed_args.negative
+                    params['read_images'] = parsed_args.read_images
+                    params['sources'] = parsed_args.sources
+                    print(f"🔍 --paper-based模式：将主题作为论文搜索关键词: {expanded_topic}")
+                else:
+                    # 不是文件路径，按一般主题处理
+                    params['type'] = 'general'
+                    params['topic'] = expanded_topic
+                    params['has_file_reference'] = has_file_ref
             
             # 如果检测到@文件引用，自动启用context模式
             if has_file_ref:
@@ -928,7 +948,7 @@ def generate_content_structure_prompt(params):
     return None
 
 
-def call_openrouter_for_structure(prompt, model=None, max_tokens=None, retry_count=0):
+def call_openrouter_for_structure(prompt, model=None, max_tokens=None, retry_count=0, temperature=None, api_key=None):
     """Call OpenRouter API for structure generation with improved error handling."""
     import time
     import json
@@ -982,6 +1002,14 @@ def call_openrouter_for_structure(prompt, model=None, max_tokens=None, retry_cou
             # 传入max-tokens参数（OPENROUTER工具会自动处理动态调整）
             if max_tokens:
                 cmd.extend(["--max-tokens", str(max_tokens)])
+            
+            # 传入temperature参数
+            if temperature is not None:
+                cmd.extend(["--temperature", str(temperature)])
+            
+            # 传入API密钥参数
+            if api_key:
+                cmd.extend(["--key", api_key])
             
             # 使用RUN --show模式调用OPENROUTER工具，避免响应被截断
             try:
@@ -1379,9 +1407,13 @@ def call_openrouter_with_retry(prompt, model, max_tokens, step_name, max_retries
     log_progress(f"开始{step_name}", "API")
     current_model = model
     
+    # 提取额外参数
+    temperature = params.get('temperature') if params else None
+    api_key = params.get('api_key') if params else None
+    
     for attempt in range(max_retries):
         log_progress(f"{step_name} - 第{attempt + 1}次尝试", "API")
-        response, token_info = call_openrouter_for_structure(prompt, current_model, max_tokens, attempt)
+        response, token_info = call_openrouter_for_structure(prompt, current_model, max_tokens, attempt, temperature, api_key)
         
         # 检查是否成功（不是None且不是错误）
         if response is not None and not (isinstance(response, str) and response.startswith("ERROR:")):
@@ -1398,7 +1430,7 @@ def call_openrouter_with_retry(prompt, model, max_tokens, step_name, max_retries
                 break
             
             # 用新模型重试
-            response, token_info = call_openrouter_for_structure(prompt, current_model, max_tokens, 0)
+            response, token_info = call_openrouter_for_structure(prompt, current_model, max_tokens, 0, temperature, api_key)
             if response is not None and not (isinstance(response, str) and response.startswith("ERROR:")):
                 return response, token_info, current_model
     
@@ -1802,19 +1834,23 @@ def optimize_search_query_with_ai(user_description):
 
 用户描述：{user_description}
 
-请帮助优化这个搜索查询，生成3-5个最佳的英文搜索关键词或短语，用于在学术数据库中搜索相关论文。
+请帮助优化这个搜索查询，生成2-4个最佳的英文搜索关键词或短语，用于在学术数据库中搜索相关论文。
 
 要求：
-1. 使用英文关键词
-2. 包含核心技术术语
-3. 避免过于宽泛或过于具体
-4. 适合在arXiv、Google Scholar等平台搜索
+1. 使用英文关键词或短语
+2. 每个关键词/短语不超过3个单词
+3. 总词汇量控制在10个单词以内
+4. 包含核心技术术语，确保精确匹配
+5. 避免过于宽泛的词汇（如单独的"machine learning"）
+6. 适合在arXiv、Google Scholar等平台搜索
+7. 优先使用具体的算法名称或技术术语
 
 请只返回搜索关键词，用逗号分隔，不要其他解释。
 
 例如：
-- 如果用户说"3DGS mesh reconstruction"，返回："3D Gaussian Splatting, mesh reconstruction, neural surface reconstruction, 3DGS geometry"
-- 如果用户说"机器学习分类算法"，返回："machine learning classification, classification algorithms, supervised learning"
+- 如果用户说"3DGS mesh reconstruction"，返回："3D Gaussian Splatting, mesh reconstruction, neural rendering"
+- 如果用户说"机器学习优化算法"，返回："gradient descent optimization, SGD algorithms, optimization methods"
+- 如果用户说"香港环境保护运动"，返回："Hong Kong environmental policy, sustainability initiatives, urban environmental management"
 
 搜索关键词："""
 
@@ -1832,6 +1868,46 @@ def optimize_search_query_with_ai(user_description):
     except Exception as e:
         print(f"⚠️  AI优化出错，使用原始描述: {e}")
         return user_description
+
+
+def recommend_search_engines_with_ai(user_description, optimized_query):
+    """使用AI推荐最适合的论文搜索引擎"""
+    try:
+        prompt = f"""你是一个学术搜索专家。请根据用户的搜索需求推荐最适合的论文搜索平台。
+
+用户描述：{user_description}
+优化后的搜索词：{optimized_query}
+
+可用的搜索平台：
+1. arxiv - 主要包含计算机科学、物理学、数学、统计学等领域的预印本论文
+2. google_scholar - 覆盖所有学科领域，包括已发表的期刊论文、会议论文、学位论文等
+
+请根据搜索主题选择最合适的搜索平台：
+
+- 如果是计算机科学、AI、机器学习、深度学习、物理、数学等技术领域，推荐：arxiv,google_scholar
+- 如果是优化算法、机器学习算法、具体算法研究等，推荐：google_scholar （Google Scholar有更丰富的算法论文）
+- 如果是社会科学、环境政策、经济学、管理学、医学等领域，推荐：google_scholar
+- 如果是跨学科或不确定领域，推荐：arxiv,google_scholar
+
+请只返回推荐的搜索引擎，用逗号分隔，不要其他解释。
+例如：arxiv,google_scholar 或 google_scholar
+
+推荐的搜索引擎："""
+
+        print("🤖 正在推荐最适合的搜索引擎...")
+        result = call_openrouter_with_auto_model(prompt, model="auto")
+        
+        if result['success']:
+            recommended_sources = result['content'].strip()
+            print(f"✅ 推荐的搜索引擎: {recommended_sources}")
+            return recommended_sources
+        else:
+            print(f"⚠️  搜索引擎推荐失败，使用默认: arxiv,google_scholar")
+            return "arxiv,google_scholar"
+            
+    except Exception as e:
+        print(f"⚠️  搜索引擎推荐出错，使用默认: {e}")
+        return "arxiv,google_scholar"
 
 
 def select_best_papers_with_ai(search_results, user_description, max_papers=3, negative_prompt=None):
@@ -1862,9 +1938,19 @@ def select_best_papers_with_ai(search_results, user_description, max_papers=3, n
 {papers_text}
 
 请从这些论文中选择最相关和最有价值的{max_papers}篇论文，考虑以下因素：
-1. 与用户需求的相关性
+1. 与用户需求的直接相关性（必须有明确的主题关联）
 2. 论文的质量和影响力（引用量、发表时间等）
-3. 研究的新颖性和重要性"""
+3. 研究的新颖性和重要性
+
+**筛选标准**：
+- 论文标题、摘要中必须包含与用户需求相关的核心概念或技术术语
+- 对于技术主题，论文应涉及相同或相关的算法、方法或技术领域
+- 完全无关的论文（如电影生成 vs 优化算法、天线设计 vs 机器学习）应该被排除
+- 如果没有找到真正相关的论文，请诚实说明"无相关论文"
+
+**示例**：
+- 用户需求"机器学习优化算法" → 接受：梯度下降、SGD、Adam优化器相关论文
+- 用户需求"机器学习优化算法" → 拒绝：电影生成、天线设计、医学影像等无关论文"""
 
         # 如果有negative prompt，添加到指令中
         if negative_prompt:
@@ -1887,13 +1973,66 @@ def select_best_papers_with_ai(search_results, user_description, max_papers=3, n
             selected_indices = result['content'].strip()
             print(f"✅ AI推荐论文: {selected_indices}")
             
-            # 解析选择的论文编号
+            # 检查是否AI认为没有相关论文 - 但如果用户明确要求基于论文学习，则放宽标准
+            strict_no_relevant_keywords = ['无相关论文', '没有相关', 'no paper is highly relevant', 'none of the provided papers directly focus']
+            if any(keyword in selected_indices.lower() for keyword in strict_no_relevant_keywords):
+                # 检查是否有备选推荐（即使AI认为不是很相关）
+                if any(char.isdigit() for char in selected_indices):
+                    print("⚠️  AI认为论文相关性不高，但仍提供了备选推荐，继续处理...")
+                else:
+                    print("❌ AI判断：没有找到相关论文")
+                    return []  # 返回空列表表示没有相关论文
+            
+            # 解析选择的论文编号 - 改进的解析逻辑
             try:
-                indices = [int(x.strip()) - 1 for x in selected_indices.split(',')]  # 转换为0-based索引
-                selected_papers = [search_results[i] for i in indices if 0 <= i < len(search_results)]
-                return selected_papers[:max_papers]
+                # 方法1: 尝试直接解析（适用于简洁回答如 "1,3,5"）
+                if ',' in selected_indices and len(selected_indices.strip()) < 20:
+                    indices = [int(x.strip()) - 1 for x in selected_indices.split(',')]
+                    selected_papers = [search_results[i] for i in indices if 0 <= i < len(search_results)]
+                    return selected_papers[:max_papers]
+                
+                # 方法2: 从长文本中提取数字（适用于详细解释）
+                import re
+                
+                # 查找 "Final selection:" 或类似模式后的数字
+                final_selection_patterns = [
+                    r'Final selection:\s*([0-9,\s]+)',
+                    r'final selection:\s*([0-9,\s]+)', 
+                    r'选择:\s*([0-9,\s]+)',
+                    r'推荐:\s*([0-9,\s]+)'
+                ]
+                
+                for pattern in final_selection_patterns:
+                    match = re.search(pattern, selected_indices, re.IGNORECASE)
+                    if match:
+                        numbers_str = match.group(1).strip()
+                        indices = [int(x.strip()) - 1 for x in numbers_str.split(',') if x.strip().isdigit()]
+                        if indices:
+                            selected_papers = [search_results[i] for i in indices if 0 <= i < len(search_results)]
+                            print(f"✅ 从详细回复中提取到选择: {[i+1 for i in indices]}")
+                            return selected_papers[:max_papers]
+                
+                # 方法3: 查找所有数字模式（如 "8,6,9" 或 "8, 6, 9"）
+                number_patterns = re.findall(r'\b\d+(?:\s*,\s*\d+)+\b', selected_indices)
+                if number_patterns:
+                    # 使用最后一个找到的数字序列（通常是最终选择）
+                    numbers_str = number_patterns[-1]
+                    indices = [int(x.strip()) - 1 for x in numbers_str.split(',') if x.strip().isdigit()]
+                    if indices:
+                        selected_papers = [search_results[i] for i in indices if 0 <= i < len(search_results)]
+                        print(f"✅ 从文本中提取到数字序列: {[i+1 for i in indices]}")
+                        return selected_papers[:max_papers]
+                
+                # 如果所有方法都失败，抛出异常进入fallback逻辑
+                raise ValueError("无法从AI回复中提取有效的论文编号")
+                
             except (ValueError, IndexError) as e:
-                print(f"⚠️  解析AI选择失败: {e}，返回前{max_papers}篇")
+                print(f"⚠️  解析AI选择失败: {e}")
+                # 如果解析失败且包含"无相关"等关键词，返回空列表
+                if any(keyword in selected_indices for keyword in ['无相关论文', '无相关', 'no relevant']):
+                    print("❌ 没有找到相关论文")
+                    return []
+                print(f"📄 返回前{max_papers}篇论文作为备选")
                 return search_results[:max_papers]
         else:
             print(f"⚠️  AI筛选失败，返回前{max_papers}篇: {result['error']}")
@@ -1962,14 +2101,29 @@ def search_and_download_paper(paper_description, params=None):
         print("📝 步骤1/10: 使用AI优化搜索查询...")
         optimized_query = optimize_search_query_with_ai(paper_description)
         
+        # 步骤2: 推荐搜索引擎（如果用户没有指定）
+        print("🔍 步骤2/10: 推荐搜索引擎...")
+        sources = params.get('sources') if params else None
+        if not sources:
+            sources = recommend_search_engines_with_ai(paper_description, optimized_query)
+        else:
+            print(f"✅ 使用用户指定的搜索引擎: {sources}")
+        
         script_dir = Path(__file__).parent
         search_paper_path = script_dir / "SEARCH_PAPER"
         
-        # 步骤2: 使用优化后的查询搜索论文
-        print("🔍 步骤2/10: 执行SEARCH_PAPER搜索...")
-        result = subprocess.run([
-            str(search_paper_path), optimized_query, "--max-results", "10"  # 增加搜索结果数量
-        ], capture_output=True, text=True)
+        # 步骤3: 使用优化后的查询和推荐的搜索引擎搜索论文
+        print("🔍 步骤3/10: 执行SEARCH_PAPER搜索...")
+        
+        # 对于技术主题，增加搜索结果数量以获得更好的匹配
+        max_results = 15 if any(keyword in paper_description.lower() 
+                               for keyword in ['algorithm', 'optimization', 'machine learning', 'deep learning', 'neural']) else 10
+        
+        cmd = [str(search_paper_path), optimized_query, "--max-results", str(max_results)]
+        if sources:
+            cmd.extend(["--sources", sources])
+        
+        result = subprocess.run(cmd, capture_output=True, text=True)
         
         if result.returncode != 0:
             print(f"❌ 搜索失败: {result.stderr}")
@@ -1977,8 +2131,8 @@ def search_and_download_paper(paper_description, params=None):
             
         print("✅ SEARCH_PAPER搜索完成")
         
-        # 步骤3: 解析搜索结果
-        print("📊 步骤3/10: 解析搜索结果...")
+        # 步骤4: 解析搜索结果
+        print("📊 步骤4/10: 解析搜索结果...")
         search_results = parse_search_results()
         if not search_results:
             print("❌ 未找到相关论文")
@@ -1986,8 +2140,8 @@ def search_and_download_paper(paper_description, params=None):
 
         print(f"✅ 找到 {len(search_results)} 篇相关论文")
         
-        # 步骤4: 使用AI筛选最佳论文
-        print("🤖 步骤4/10: 使用AI筛选最佳论文...")
+        # 步骤5: 使用AI筛选最佳论文
+        print("🤖 步骤5/10: 使用AI筛选最佳论文...")
         selected_papers = select_best_papers_with_ai(
             search_results, 
             paper_description, 
@@ -1996,12 +2150,12 @@ def search_and_download_paper(paper_description, params=None):
         )
         
         if not selected_papers:
-            print("❌ AI筛选后无可用论文")
+            print("❌ 没有找到相关论文，无法继续")
             return None, None, 0
         
-        # 步骤5: 显示AI推荐的论文供用户选择
+        # 步骤6: 显示AI推荐的论文供用户选择
         print("✅ AI筛选完成")
-        print(f"📋 步骤5/10: 显示AI推荐的{len(selected_papers)}篇最佳论文:")
+        print(f"📋 步骤6/10: 显示AI推荐的{len(selected_papers)}篇最佳论文:")
         for i, paper in enumerate(selected_papers):
             title = paper.get('title', 'Unknown')
             authors = paper.get('authors', [])
@@ -2012,8 +2166,8 @@ def search_and_download_paper(paper_description, params=None):
             print(f"     引用量: {citation_count}")
             print()
         
-        # 步骤6: 让用户选择或自动选择第一篇
-        print("🎯 步骤6/10: 选择论文...")
+        # 步骤7: 让用户选择或自动选择第一篇
+        print("🎯 步骤7/10: 选择论文...")
         if len(selected_papers) == 1:
             selected_paper = selected_papers[0]
             print(f"✅ 自动选择唯一推荐论文")
@@ -2022,8 +2176,8 @@ def search_and_download_paper(paper_description, params=None):
             selected_paper = selected_papers[0]
             print(f"✅ 自动选择AI推荐的最佳论文: {selected_paper.get('title', 'Unknown')}")
 
-        # 步骤7: 尝试下载论文
-        print("📥 步骤7/10: 下载论文...")
+        # 步骤8: 尝试下载论文
+        print("📥 步骤8/10: 下载论文...")
         pdf_url = selected_paper.get('pdf_url')
         if not pdf_url:
             print("❌ 未找到PDF下载链接")
@@ -2050,8 +2204,8 @@ def search_and_download_paper(paper_description, params=None):
             print("❌ 论文下载失败")
             return None, None, 0
         
-        # 步骤8: 使用AI给PDF重命名为简洁明了的名字
-        print("🤖 步骤8/10: 为PDF生成简洁明了的文件名...")
+        # 步骤9: 使用AI给PDF重命名为简洁明了的名字
+        print("🤖 步骤9/10: 为PDF生成简洁明了的文件名...")
         new_filename = generate_simple_filename_with_ai(selected_paper, paper_description)
         
         # 重命名PDF文件
@@ -2065,16 +2219,16 @@ def search_and_download_paper(paper_description, params=None):
         except Exception as e:
             print(f"⚠️  重命名失败，使用原文件名: {e}")
         
-        # 步骤9: 使用EXTRACT_PDF提取论文内容
-        print("📄 步骤9/10: 提取PDF内容...")
+        # 步骤10: 使用EXTRACT_PDF提取论文内容
+        print("📄 步骤10/10: 提取PDF内容...")
         markdown_path = extract_pdf_content(downloaded_path, params)
         
         if not markdown_path:
             print("❌ PDF内容提取失败")
             return None, None, 0
         
-        # 步骤10: 读取提取的markdown内容
-        print("📖 步骤10/10: 读取提取的markdown内容...")
+        # 步骤11: 读取提取的markdown内容
+        print("📖 步骤11/11: 读取提取的markdown内容...")
         try:
             with open(markdown_path, 'r', encoding='utf-8') as f:
                 paper_content = f.read()
@@ -2495,14 +2649,23 @@ LEARN工具文档：
 3. 解释风格（简洁明了、详细深入、实例丰富、理论导向）
 4. 是否需要特殊选项（如--file、--description、--negative、--read-images等）
 5. 输出目录建议
+6. OpenRouter模型选项：
+   - --model: 指定特定的AI模型
+   - --max-tokens: 控制输出长度
+   - --temperature: 控制创造性（0.0-2.0，数值越高越有创造性）
+   - --key: 使用特定的API密钥
 
 请直接返回完整的LEARN命令，以"LEARN"开头，不要包含其他解释。
 如果需要文件路径，请使用占位符如"/path/to/file"。
+如果用户需要高创造性回复，可以添加--temperature参数。
+如果用户需要指定模型，可以添加--model参数。
 
 示例格式：
 LEARN -o ~/tutorials -m 初学者 -s 简洁明了 "Python基础编程"
 LEARN -o ~/tutorials -m 中级 --file "/path/to/paper.pdf"
 LEARN -o ~/tutorials -m 高级 -d "深度学习" --negative "GAN"
+LEARN -o ~/tutorials -m 专家 -s 实例丰富 --temperature 0.8 "创意写作技巧"
+LEARN -o ~/tutorials -m 中级 --model "deepseek/deepseek-r1" --max-tokens 8000 "机器学习算法"
 
 生成的命令："""
 
@@ -2584,7 +2747,7 @@ def main():
             parser = argparse.ArgumentParser(description='LEARN - 智能学习系统')
             parser.add_argument('topic', nargs='?', help='学习主题')
             parser.add_argument('-o', '--output-dir', help='输出目录')
-            parser.add_argument('-m', '--mode', choices=list(MODE_MAPPING.keys()), 
+            parser.add_argument('-m', '--mode', choices=list(MODE_MAPPING.keys()),
                                default='中级', help='学习水平 (Learning level)')
             parser.add_argument('-s', '--style', choices=list(STYLE_MAPPING.keys()),
                                default='详细深入', help='解释风格 (Explanation style)')
@@ -2594,8 +2757,12 @@ def main():
             parser.add_argument('--negative', help='负面提示词：指定不想要的内容或论文类型')
             parser.add_argument('--read-images', action='store_true', help='处理PDF中的图像、公式和表格')
             parser.add_argument('--gen-command', help='根据描述生成LEARN命令')
+            parser.add_argument('--paper-based', action='store_true', help='强制使用基于论文的学习模式，即使只提供了描述也会搜索和下载论文')
+            parser.add_argument('--sources', help='指定论文搜索引擎，用逗号分隔 (arxiv,google_scholar)，默认为自动推荐')
             parser.add_argument('--model', help='指定OpenRouter模型')
             parser.add_argument('--max-tokens', type=int, help='最大token数')
+            parser.add_argument('--temperature', type=float, help='温度参数 (0.0-2.0，控制回复的创造性)')
+            parser.add_argument('--key', help='指定OpenRouter API密钥')
             parser.add_argument('--not-default', action='store_true', help='非默认模式，需要用户确认')
             parser.add_argument('--no-override-material', action='store_true', help='不覆盖已存在的文件，自动重命名')
             parser.add_argument('--brainstorm-only', action='store_true', help='不自动创建文件，仅生成内容')
@@ -2658,12 +2825,9 @@ def main():
         else:
             print("❌ 文件创建失败")
             return 1
-        
-    except SystemExit:
-        # argparse calls sys.exit on error
-        return 1
+    
     except Exception as e:
-        print(f"错误: {e}")
+        print(f"❌ 运行时出错: {e}")
         return 1
 
 

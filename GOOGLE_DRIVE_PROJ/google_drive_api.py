@@ -281,7 +281,7 @@ class GoogleDriveService:
         except Exception as e:
             return {
                 "success": False,
-                "error": f"下载文件失败: {e}"
+                "error": f"{e}"
             }
     
     def delete_file(self, file_id):

@@ -14,6 +14,7 @@ LEARN                                    # Interactive mode
 LEARN "<topic>" [options]                # General topic learning  
 LEARN --file "<file_path>" [options]     # Direct file processing (PDF/MD/TXT)
 LEARN --description "<description>" [options]  # Paper search and download
+LEARN --paper-based "<topic>" [options]  # Force paper-based learning mode
 LEARN --gen-command "<description>"       # Generate LEARN command
 ```
 
@@ -37,12 +38,14 @@ LEARN --gen-command "<description>"       # Generate LEARN command
 - `-u, --url <url>`: Paper URL for download
 - `-d, --description <text>`: Paper description for search and download
 - `--negative <text>`: Negative prompt to exclude unwanted papers
+- `--sources <sources>`: Specify paper search engines (comma-separated: arxiv,google_scholar), default: auto-recommend
 - `--read-images`: Enable image/formula/table processing in PDFs
 
 ### Advanced Options
 - `--model <model>`: Specify OpenRouter model (default: auto)
 - `--max-tokens <num>`: Maximum tokens per API call
 - `--context`: Treat description as direct context for brainstorming, skip paper search
+- `--paper-based`: Force paper-based learning mode, search and download papers even with simple topic descriptions
 - `--not-default`: Disable default settings, enable interactive selection
 - `--no-override-material`: Avoid overwriting existing files, auto-rename output directory
 - `--brainstorm-only`: Only perform brainstorming, don't create files
@@ -62,6 +65,10 @@ LEARN supports @"file_path" syntax to include file content in prompts:
 ```bash
 LEARN -o ~/tutorials -m 初学者 -s 简洁明了 "Python基础编程"
 LEARN -o ~/tutorials -m 高级 -s 实例丰富 "机器学习算法"
+
+# Force paper-based learning for topics
+LEARN -o ~/tutorials -m 中级 --paper-based "深度学习优化算法"
+LEARN -o ~/tutorials -m 高级 --paper-based "Transformer架构" --negative "BERT"
 ```
 
 ### Academic Paper Learning
@@ -74,6 +81,10 @@ LEARN -o ~/tutorials -m 初学者 -d "3D Gaussian Splatting mesh reconstruction"
 
 # With negative prompt to exclude specific papers
 LEARN -o ~/tutorials -m 中级 -d "deep learning" --negative "GAN, generative models"
+
+# Specify search engines
+LEARN -o ~/tutorials -m 中级 -d "machine learning" --sources "arxiv,google_scholar"
+LEARN -o ~/tutorials -m 高级 -d "environmental policy" --sources "google_scholar"
 
 # With image processing enabled
 LEARN -o ~/tutorials -m 高级 --file "/path/to/paper.pdf" --read-images
@@ -117,6 +128,7 @@ LEARN -o ~/tutorials -m 专家 -d "深度学习核心概念：神经网络、反
 LEARN --gen-command "我想学习A论文的前五页"
 LEARN --gen-command "帮我创建深度学习入门教程"
 LEARN --gen-command "分析这篇NLP论文的核心算法"
+LEARN --gen-command "基于最新论文学习Transformer优化技术"
 ```
 
 ## Interactive Mode
@@ -129,10 +141,25 @@ When run without arguments, LEARN enters interactive mode:
 ## Paper Search and Download
 LEARN can automatically search and download papers:
 1. **AI Query Optimization**: Converts user descriptions to professional search terms
-2. **Multi-source Search**: Searches arXiv, Google Scholar, Semantic Scholar
-3. **AI Paper Selection**: Uses AI to select the most relevant papers
-4. **Automatic Download**: Downloads selected papers with AI-generated filenames
-5. **Content Extraction**: Extracts text/images using EXTRACT_PDF tool
+2. **AI Search Engine Recommendation**: Automatically recommends optimal search engines based on topic (arXiv for CS/Physics, Google Scholar for social sciences, etc.)
+3. **Multi-source Search**: Searches arXiv, Google Scholar with intelligent source selection
+4. **AI Paper Selection**: Uses AI to select the most relevant papers
+5. **Automatic Download**: Downloads selected papers with AI-generated filenames
+6. **Content Extraction**: Extracts text/images using EXTRACT_PDF tool
+
+### Search Engine Selection
+- **Auto-recommendation (default)**: AI analyzes your topic and recommends the best search engines
+- **Manual specification**: Use `--sources arxiv,google_scholar` to specify engines
+- **arXiv**: Best for computer science, physics, mathematics, statistics
+- **Google Scholar**: Best for all disciplines, especially social sciences, medicine, humanities
+
+### Paper-based Learning Mode
+By default, LEARN treats simple topic descriptions as general learning topics. Use `--paper-based` to force paper search and analysis:
+
+- **Default behavior**: `LEARN "machine learning"` → General tutorial about machine learning
+- **Paper-based mode**: `LEARN --paper-based "machine learning"` → Search, download, and analyze academic papers about machine learning
+
+This is useful when you want to learn from academic literature rather than general knowledge.
 
 ## Output Structure
 

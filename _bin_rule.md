@@ -39,7 +39,7 @@ When working with the user, you have access to the following custom binary tools
 - **Usage**: `EXTRACT_PDF <pdf_file> [options] | EXTRACT_PDF --post [<markdown_file>] [--post-type <type>] | EXTRACT_PDF --full <pdf_file> [options]`
 - **Examples**:
   - `EXTRACT_PDF document.pdf --page 3`
-  - `EXTRACT_PDF paper.pdf --page 1-5 --output /path/to/output`
+  - `EXTRACT_PDF paper.pdf --page 1-5 --output-dir /path/to/output`
   - `EXTRACT_PDF paper.pdf --engine mineru-asyn --page 1-3`
   - `EXTRACT_PDF --post`
   - `EXTRACT_PDF --post document.md --post-type image`
@@ -68,6 +68,41 @@ When working with the user, you have access to the following custom binary tools
   - `FILEDIALOG --types pdf,txt,doc`
   - `FILEDIALOG --types image --title "Select Image"`
   - `FILEDIALOG --multiple --types pdf`
+
+### GOOGLE_DRIVE
+- **Purpose**: Access Google Drive in browser and manage files remotely through an interactive shell interface (GDS). Supports file operations, remote Python execution, and comprehensive Google Drive API integration.
+- **Description**: Google Drive access tool with GDS (Google Drive Shell) for remote file management
+- **Usage**: `GOOGLE_DRIVE [url] [options] | GOOGLE_DRIVE --shell [command] | GDS [command]`
+- **Examples**:
+  - `GOOGLE_DRIVE`
+  - `GOOGLE_DRIVE -my`
+  - `GOOGLE_DRIVE https://drive.google.com/drive/my-drive`
+  - `GOOGLE_DRIVE --shell`
+  - `GOOGLE_DRIVE --shell pwd`
+  - `GOOGLE_DRIVE --shell ls`
+  - `GOOGLE_DRIVE --shell "cd test && ls"`
+  - `GOOGLE_DRIVE --shell upload file.txt`
+  - `GOOGLE_DRIVE --upload file.txt remote/path`
+  - `GDS pwd`
+  - `GDS ls`
+  - `GDS mkdir test`
+  - `GDS cd test`
+  - `GDS upload file.txt`
+  - `GOOGLE_DRIVE --create-remote-shell`
+  - `GOOGLE_DRIVE --list-remote-shell`
+  - `GOOGLE_DRIVE --console-setup`
+  - `GOOGLE_DRIVE --desktop --status`
+
+### IMG2TEXT
+- **Purpose**: Convert images to structured text descriptions using Google Gemini Vision API with multiple analysis modes
+- **Description**: Image to text conversion tool using Google Gemini Vision API
+- **Usage**: `IMG2TEXT [image_path] [options]`
+- **Examples**:
+  - `IMG2TEXT example.png --mode academic`
+  - `IMG2TEXT example.png --mode general --output result.txt`
+  - `IMG2TEXT example.png --mode code_snippet`
+  - `IMG2TEXT --test-connection`
+  - `IMG2TEXT`
 
 ### LEARN
 - **Purpose**: Create structured learning materials from topics or papers with advanced context support, paper search, and command generation
@@ -158,6 +193,8 @@ When working with the user, you have access to the following custom binary tools
 - **EXTRACT_PDF**: When user needs to extract text from PDF files with different extraction engines
 - **EXTRACT_IMG**: When user needs intelligent image analysis with automatic content type detection
 - **FILEDIALOG**: When user needs to select specific file types through a GUI dialog
+- **GOOGLE_DRIVE**: When user needs to access Google Drive, manage remote files through shell interface, upload/download files, execute remote Python code, or set up Google Drive API integration
+- **IMG2TEXT**: When user needs to convert images to text descriptions
 - **LEARN**: When user needs structured learning materials, paper analysis, context-aware tutorials, or LEARN command generation
 - **OPENROUTER**: When user needs to call OpenRouter API for AI responses with cost tracking
 - **OVERLEAF**: When user needs to compile LaTeX documents

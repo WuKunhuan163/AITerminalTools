@@ -189,13 +189,28 @@
     },
     "GOOGLE_DRIVE": {
       "name": "GOOGLE_DRIVE",
-      "description": "Google Drive access tool",
-      "purpose": "Open Google Drive in browser with various options",
-      "usage": "GOOGLE_DRIVE [url] [options]",
+      "description": "Google Drive access tool with GDS (Google Drive Shell) for remote file management",
+      "purpose": "Access Google Drive in browser and manage files remotely through an interactive shell interface (GDS). Supports file operations, remote Python execution, and comprehensive Google Drive API integration.",
+      "usage": "GOOGLE_DRIVE [url] [options] | GOOGLE_DRIVE --shell [command] | GDS [command]",
       "examples": [
         "GOOGLE_DRIVE",
         "GOOGLE_DRIVE -my",
-        "GOOGLE_DRIVE https://drive.google.com/drive/my-drive"
+        "GOOGLE_DRIVE https://drive.google.com/drive/my-drive",
+        "GOOGLE_DRIVE --shell",
+        "GOOGLE_DRIVE --shell pwd",
+        "GOOGLE_DRIVE --shell ls",
+        "GOOGLE_DRIVE --shell \"cd test && ls\"",
+        "GOOGLE_DRIVE --shell upload file.txt",
+        "GOOGLE_DRIVE --upload file.txt remote/path",
+        "GDS pwd",
+        "GDS ls",
+        "GDS mkdir test",
+        "GDS cd test",
+        "GDS upload file.txt",
+        "GOOGLE_DRIVE --create-remote-shell",
+        "GOOGLE_DRIVE --list-remote-shell",
+        "GOOGLE_DRIVE --console-setup",
+        "GOOGLE_DRIVE --desktop --status"
       ],
       "files": {
         "binary": "GOOGLE_DRIVE",
@@ -204,16 +219,61 @@
       },
       "run_compatible": true,
       "testable": true,
-      "test_passed": false,
+      "test_passed": true,
       "ai_usable": true,
-      "tool_use_scenario": "When user needs to access Google Drive",
+      "tool_use_scenario": "When user needs to access Google Drive, manage remote files through shell interface, upload/download files, execute remote Python code, or set up Google Drive API integration",
+      "gds_commands": {
+        "navigation": [
+          "pwd",
+          "ls",
+          "cd"
+        ],
+        "file_operations": [
+          "mkdir",
+          "rm",
+          "mv",
+          "cat",
+          "read"
+        ],
+        "upload_download": [
+          "upload",
+          "upload-folder",
+          "download"
+        ],
+        "text_operations": [
+          "echo",
+          "grep",
+          "edit"
+        ],
+        "remote_execution": [
+          "python"
+        ],
+        "search": [
+          "find"
+        ],
+        "help": [
+          "help",
+          "exit"
+        ]
+      },
+      "advanced_features": [
+        "Multi-file operations with [[src1, dst1], [src2, dst2]] syntax",
+        "Command chaining with && operator",
+        "Path resolution supporting ~, .., relative and absolute paths",
+        "Automatic download caching with cache management",
+        "Remote Python code execution",
+        "Google Drive API setup wizard",
+        "Remote shell session management",
+        "Google Drive Desktop application control"
+      ],
       "file_hashes": {
         "binary": "44fef98442c7e718bb0ba3f77c414e036031a1ecd0572b812335dea39b659ed3",
         "python": "a0cb6ef88c252e64d09caba42d2a04e3b8439a79b92612818ffa140a0429fb7a",
         "markdown": "3ce9f74117c5b8a348837264722b94ab5b388d3e6158310546fbacc4579b3509"
       },
       "test_command": [
-        "--help"
+        "python",
+        "_UNITTEST/test_google_drive.py"
       ]
     },
     "IMG2TEXT": {
@@ -235,7 +295,7 @@
       },
       "run_compatible": true,
       "testable": true,
-      "test_passed": false,
+      "test_passed": true,
       "ai_usable": true,
       "tool_use_scenario": "When user needs to convert images to text descriptions",
       "file_hashes": {
@@ -361,7 +421,11 @@
         "binary": "9a59306098258957c9a2a1f9202ae96929b0ae583b2a4158315d2fe0be7cd967",
         "python": "060d581cc01ff0be02b6cf9e848e1963325a75b3d26e8ad02e8cd24b4a36c622",
         "markdown": "5e358ab72a61ffe8eda22888b4d57161a9758c4d54972eb84a4993592416849b"
-      }
+      },
+      "test_command": [
+        "python",
+        "_UNITTEST/test_run.py"
+      ]
     },
     "SEARCH_PAPER": {
       "name": "SEARCH_PAPER",
@@ -449,11 +513,42 @@
       "test_command": [
         "--help"
       ]
+    },
+    "HUGGINGFACE": {
+      "name": "HUGGINGFACE",
+      "description": "HuggingFace Credentials Management Tool",
+      "purpose": "Manage HuggingFace credentials, authentication, and model access for projects requiring HuggingFace Hub integration",
+      "usage": "HUGGINGFACE [options]",
+      "examples": [
+        "HUGGINGFACE --login",
+        "HUGGINGFACE --token hf_xxxxxxxxxxxxxxxxxxxxxxxxx",
+        "HUGGINGFACE --status",
+        "HUGGINGFACE --whoami",
+        "HUGGINGFACE --test",
+        "HUGGINGFACE --logout",
+        "RUN --show HUGGINGFACE --status"
+      ],
+      "files": {
+        "python": "HUGGINGFACE.py",
+        "markdown": "HUGGINGFACE.md"
+      },
+      "run_compatible": true,
+      "testable": true,
+      "test_passed": false,
+      "ai_usable": true,
+      "tool_use_scenario": "When user needs to authenticate with HuggingFace for model downloads, uploads, or API access",
+      "file_hashes": {
+        "python": "pending",
+        "markdown": "pending"
+      },
+      "test_command": [
+        "--help"
+      ]
     }
   },
   "metadata": {
     "version": "1.0.0",
     "last_updated": "2025-07-20",
-    "total_tools": 15
+    "total_tools": 16
   }
 }

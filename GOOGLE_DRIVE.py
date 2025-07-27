@@ -1309,7 +1309,7 @@ def open_google_drive(url=None, command_identifier=None):
 
 def show_help():
     """显示帮助信息"""
-    help_text = """GOOGLE_DRIVE - Google Drive access tool
+    help_text = """GOOGLE_DRIVE - Google Drive access tool with GDS (Google Drive Shell)
 
 Usage: GOOGLE_DRIVE [url] [options]
 
@@ -1320,7 +1320,6 @@ Options:
   -my                  Open My Drive (https://drive.google.com/drive/u/0/my-drive)
   --console-setup      Start Google Drive API setup wizard with GUI assistance
   --shell [COMMAND]    Enter interactive shell mode or execute shell command (alias: GDS)
-                       Available commands: pwd, ls, mkdir, cd, rm, rm -rf, upload
   --upload FILE [PATH] Upload a file to Google Drive via local sync (PATH defaults to REMOTE_ROOT)
   --create-remote-shell        Create a new remote shell session
   --list-remote-shell          List all remote shell sessions
@@ -1333,6 +1332,51 @@ Options:
   --desktop --set-local-sync-dir    Set local sync directory path
   --desktop --set-global-sync-dir   Set global sync directory (Drive folder)
   --help, -h           Show this help message
+
+GDS (Google Drive Shell) Commands:
+  When using --shell or in interactive mode, the following commands are available:
+
+  Navigation:
+    pwd                         - show current directory path
+    ls [path] [--detailed] [-R] - list directory contents (recursive with -R)
+    cd <path>                   - change directory (supports ~, .., relative paths)
+
+  File Operations:
+    mkdir [-p] <dir>            - create directory (recursive with -p)
+    rm <file>                   - remove file
+    rm -rf <dir>                - remove directory recursively
+    mv <source> <dest>          - move/rename file or folder
+    cat <file>                  - display file contents
+    read <file> [start end]     - read file content with line numbers
+
+  Upload/Download:
+    upload <files...> [target]  - upload files to Google Drive
+    upload-folder [--keep-zip] <folder> [target] - upload folder (zip->upload->unzip->cleanup)
+    download [--force] <file> [path] - download file with caching
+
+  Text Operations:
+    echo <text>                 - display text
+    echo <text> > <file>        - create file with text
+    grep <pattern> <file>       - search for pattern in file
+    edit [--preview] [--backup] <file> '<spec>' - edit file with multi-segment replacement
+
+  Remote Execution:
+    python <file>               - execute python file remotely
+    python -c '<code>'          - execute python code remotely
+
+  Search:
+    find [path] -name [pattern] - search for files matching pattern
+
+  Help:
+    help                        - show available commands
+    exit                        - exit shell mode
+
+Advanced Features:
+  - Multi-file operations: upload [[src1, dst1], [src2, dst2], ...]
+  - Command chaining: cmd1 && cmd2 && cmd3
+  - Path resolution: supports ~, .., relative and absolute paths
+  - File caching: automatic download caching with cache management
+  - Remote execution: run Python code on remote Google Drive environment
 
 Examples:
   GOOGLE_DRIVE                                    # Open main Google Drive
@@ -1347,8 +1391,9 @@ Examples:
   GOOGLE_DRIVE --shell rm file.txt               # Remove file
   GOOGLE_DRIVE --shell rm -rf folder              # Remove directory
   GOOGLE_DRIVE --shell upload file.txt           # Upload file to current directory
+  GOOGLE_DRIVE --shell "ls && cd test && pwd"     # Chain commands
   GOOGLE_DRIVE --upload file.txt                 # Upload file to REMOTE_ROOT
-GOOGLE_DRIVE --upload file.txt subfolder       # Upload file to REMOTE_ROOT/subfolder
+  GOOGLE_DRIVE --upload file.txt subfolder       # Upload file to REMOTE_ROOT/subfolder
   GDS pwd                                         # Using alias (same as above)
   GOOGLE_DRIVE --create-remote-shell              # Create remote shell
   GOOGLE_DRIVE --list-remote-shell                # List remote shells
@@ -1360,6 +1405,8 @@ GOOGLE_DRIVE --upload file.txt subfolder       # Upload file to REMOTE_ROOT/subf
   GOOGLE_DRIVE --desktop --restart                # Restart Desktop app
   GOOGLE_DRIVE --desktop --set-local-sync-dir     # Set local sync directory
   GOOGLE_DRIVE --desktop --set-global-sync-dir    # Set global sync directory
+  GOOGLE_DRIVE --setup-hf                         # Setup HuggingFace credentials on remote
+  GOOGLE_DRIVE --test-hf                          # Test HuggingFace configuration on remote
   GOOGLE_DRIVE --help                             # Show help"""
     
     print(help_text)
@@ -2221,7 +2268,7 @@ class GoogleDriveService:
         except Exception as e:
             return {
                 "success": False,
-                "error": f"下载文件失败: {e}"
+                "error": f"{e}"
             }
     
     def delete_file(self, file_id):
@@ -3444,12 +3491,44 @@ def main():
     # 处理shell命令（优先处理）
     if len(args) > 0 and args[0] == '--shell':
         if len(args) > 1:
-            # 执行指定的shell命令
-            shell_cmd = ' '.join(args[1:])
-            return handle_shell_command(shell_cmd, command_identifier)
+            # 检查是否有--return标志
+            return_command_only = False
+            shell_args = args[1:]
+            
+            # 检查最后一个参数是否为--return
+            if shell_args and shell_args[-1] == '--return':
+                return_command_only = True
+                shell_args = shell_args[:-1]  # 移除--return标志
+            
+            if shell_args:
+                # 执行指定的shell命令
+                shell_cmd = ' '.join(shell_args)
+                return handle_shell_command(shell_cmd, command_identifier, return_command_only)
+            else:
+                # 如果只有--return标志，没有实际命令
+                error_msg = "用法: GOOGLE_DRIVE --shell <command> [--return]"
+                if is_run_environment(command_identifier):
+                    write_to_json_output({"success": False, "error": error_msg}, command_identifier)
+                else:
+                    print(error_msg)
+                return 1
         else:
             # 进入交互式shell
             return enter_shell_mode(command_identifier)
+    
+    # 处理--return-command选项
+    if len(args) > 0 and args[0] == '--return-command':
+        if len(args) > 1:
+            # 执行指定的shell命令，但只返回生成的远程命令
+            shell_cmd = ' '.join(args[1:])
+            return handle_shell_command(shell_cmd, command_identifier, return_command_only=True)
+        else:
+            error_msg = "用法: GOOGLE_DRIVE --return-command <shell_command>"
+            if is_run_environment(command_identifier):
+                write_to_json_output({"success": False, "error": error_msg}, command_identifier)
+            else:
+                print(error_msg)
+            return 1
     
     # 处理参数
     if len(args) == 0:
@@ -3582,6 +3661,18 @@ def main():
         elif args[0] == '-my':
             # My Drive URL
             url = "https://drive.google.com/drive/u/0/my-drive"
+        elif args[0] == '--setup-hf':
+            # 设置远端HuggingFace认证配置
+            result = setup_remote_hf_credentials(command_identifier)
+            if is_run_environment(command_identifier):
+                write_to_json_output(result, command_identifier)
+            return 0 if result["success"] else 1
+        elif args[0] == '--test-hf':
+            # 测试远端HuggingFace配置
+            result = test_remote_hf_setup(command_identifier)
+            if is_run_environment(command_identifier):
+                write_to_json_output(result, command_identifier)
+            return 0 if result["success"] else 1
         else:
             # 假设是URL
             url = args[0]
@@ -4147,7 +4238,7 @@ def handle_multiple_commands(shell_cmd, command_identifier=None):
             print(f"❌ {error_msg}")
         return 1
 
-def handle_shell_command(shell_cmd, command_identifier=None):
+def handle_shell_command(shell_cmd, command_identifier=None, return_command_only=False):
     """处理shell命令"""
     try:
         if not GoogleDriveShell:
@@ -4161,11 +4252,53 @@ def handle_shell_command(shell_cmd, command_identifier=None):
         shell = GoogleDriveShell()
         
         # 检查是否包含多命令组合（&&）
-        if " && " in shell_cmd:
+        # 对于包含 || 或 | 的命令，应该作为单个bash命令处理
+        has_multi_commands = ' && ' in shell_cmd
+        if has_multi_commands:
+            if return_command_only:
+                # 对于多命令组合，尝试直接处理而不是拒绝
+                try:
+                    # 将整个多命令组合作为单个bash命令处理
+                    result = shell.execute_generic_remote_command("bash", ["-c", shell_cmd], return_command_only)
+                    return result
+                except Exception as e:
+                    error_msg = f"多命令组合处理失败: {str(e)}"
+                    if is_run_environment(command_identifier):
+                        write_to_json_output({"success": False, "error": error_msg}, command_identifier)
+                    else:
+                        print(error_msg)
+                    return 1
             return handle_multiple_commands(shell_cmd, command_identifier)
+        
+        # 对于包含 || 或 | 的命令，直接作为bash命令处理
+        if ' || ' in shell_cmd or ' | ' in shell_cmd:
+            try:
+                result = shell.execute_generic_remote_command("bash", ["-c", shell_cmd], return_command_only)
+                if return_command_only:
+                    return result
+                
+                # 处理执行结果
+                if result.get("success", False):
+                    return 0
+                else:
+                    error_msg = result.get("error", "命令执行失败")
+                    if is_run_environment(command_identifier):
+                        write_to_json_output({"success": False, "error": error_msg}, command_identifier)
+                    else:
+                        print(f"❌ {error_msg}")
+                    return 1
+                    
+            except Exception as e:
+                error_msg = f"bash命令执行失败: {str(e)}"
+                if is_run_environment(command_identifier):
+                    write_to_json_output({"success": False, "error": error_msg}, command_identifier)
+                else:
+                    print(error_msg)
+                return 1
         
         # 解析shell命令 - 使用shlex来正确处理带引号和空格的参数
         import shlex
+        
         try:
             cmd_parts = shlex.split(shell_cmd)
         except ValueError:
@@ -4175,6 +4308,52 @@ def handle_shell_command(shell_cmd, command_identifier=None):
         cmd = cmd_parts[0]
         args = cmd_parts[1:] if len(cmd_parts) > 1 else []
         
+        # 特殊处理：检测python -c命令的参数丢失引号问题
+        if cmd == "python" and len(args) >= 1 and (args[0] == "-c" or "-c" in shell_cmd):
+            # 重新组装python代码参数 - 直接从原始命令中提取，避免shlex分割问题
+            import re
+            # 从原始命令中提取 -c 后面的所有内容，支持多行
+            match = re.search(r'python\s+-c\s+(.+)', shell_cmd, re.DOTALL)
+            if match:
+                python_code = match.group(1).strip()
+                # 处理不同类型的引号包围
+                if python_code.startswith('"""') and python_code.endswith('"""'):
+                    # 三重双引号
+                    python_code = python_code[3:-3]
+                elif python_code.startswith("'''") and python_code.endswith("'''"):
+                    # 三重单引号
+                    python_code = python_code[3:-3]
+                elif (python_code.startswith('"') and python_code.endswith('"')) or \
+                     (python_code.startswith("'") and python_code.endswith("'")):
+                    # 单重引号
+                    python_code = python_code[1:-1]
+                args = ["-c", python_code]
+            else:
+                # 回退到原来的方法
+                if len(args) >= 2 and args[0] == "-c":
+                    python_code = " ".join(args[1:])
+                    args = ["-c", python_code]
+        
+        # 通用路径转换函数：将shell展开的本地路径转换回远程逻辑路径
+        def convert_local_path_to_remote(path):
+            """将shell展开的本地路径转换回远程逻辑路径"""
+            if not path:
+                return path
+                
+            # 获取用户主目录
+            home_path = os.path.expanduser("~")
+            
+            # 如果路径是用户主目录，转换为~
+            if path == home_path:
+                return "~"
+            # 如果是主目录下的子路径，转换为~/相对路径
+            elif path.startswith(home_path + "/"):
+                relative_part = path[len(home_path) + 1:]
+                return f"~/{relative_part}"
+            # 其他情况保持原样
+            else:
+                return path
+
         # 执行对应命令
         if cmd == "pwd":
             result = shell.cmd_pwd()
@@ -4182,38 +4361,48 @@ def handle_shell_command(shell_cmd, command_identifier=None):
             detailed = False
             recursive = False
             show_hidden = False
+            long_format = False  # New flag for -l option
             path = None
             
-            # 解析参数
+            # Parse arguments, including combined flags like -la, -lr, etc.
             for arg in args:
                 if arg == "--detailed":
                     detailed = True
                 elif arg == "-R":
                     recursive = True
-                elif arg == "-a":
-                    show_hidden = True
+                elif arg.startswith("-") and len(arg) > 1:
+                    # Handle combined flags like -la, -lr, -al, etc.
+                    for flag in arg[1:]:  # Skip the first '-'
+                        if flag == "a":
+                            show_hidden = True
+                        elif flag == "l":
+                            long_format = True
+                        elif flag == "R":
+                            recursive = True
+                        # Add more flags as needed
                 else:
                     path = arg
             
-            result = shell.cmd_ls(path, detailed, recursive)
-            # 将show_hidden信息传递给结果处理
+            # Convert local path to remote logical path
+            path = convert_local_path_to_remote(path)
+            
+            result = shell.cmd_ls(path, detailed, recursive, show_hidden)
+            
+            # Pass the long_format flag to the result for proper formatting
+            if result.get("success"):
+                result["long_format"] = long_format
+            
+            # Ensure show_hidden info is passed to result processing
             if 'args' not in locals():
                 args = []
             if show_hidden and '-a' not in args:
                 args.append('-a')
+            if long_format and '-l' not in args:
+                args.append('-l')
         elif cmd == "cd":
             path = args[0] if args else "~"
-            # 防止shell自动展开~，将本地路径转换回远端逻辑路径
-            if path.startswith(os.path.expanduser("~")):
-                # 如果路径是用户主目录，转换为~
-                if path == os.path.expanduser("~"):
-                    path = "~"
-                else:
-                    # 如果是主目录下的子路径，转换为~/相对路径
-                    home_path = os.path.expanduser("~")
-                    if path.startswith(home_path + "/"):
-                        relative_part = path[len(home_path) + 1:]
-                        path = f"~/{relative_part}"
+            # 转换本地路径为远程逻辑路径
+            path = convert_local_path_to_remote(path)
             result = shell.cmd_cd(path)
         elif cmd == "mkdir":
             if not args:
@@ -4232,6 +4421,8 @@ def handle_shell_command(shell_cmd, command_identifier=None):
                 if not path:
                     result = {"success": False, "error": "请指定要创建的目录名称"}
                 else:
+                    # 转换本地路径为远程逻辑路径
+                    path = convert_local_path_to_remote(path)
                     result = shell.cmd_mkdir(path, recursive)
         elif cmd == "rm":
             if not args:
@@ -4260,7 +4451,9 @@ def handle_shell_command(shell_cmd, command_identifier=None):
                     overall_success = True
                     
                     for path in paths:
-                        path_result = shell.cmd_rm(path, recursive=recursive, force=force)
+                        # 转换本地路径为远程逻辑路径
+                        converted_path = convert_local_path_to_remote(path)
+                        path_result = shell.cmd_rm(converted_path, recursive=recursive, force=force)
                         all_results.append({
                             "path": path,
                             "result": path_result
@@ -4299,20 +4492,22 @@ def handle_shell_command(shell_cmd, command_identifier=None):
             if not args:
                 result = {"success": False, "error": "请指定要查看的文件"}
             else:
-                result = shell.cmd_cat(args[0])
+                # 转换本地路径为远程逻辑路径
+                filename = convert_local_path_to_remote(args[0])
+                result = shell.cmd_cat(filename)
         elif cmd == "grep":
             if len(args) < 2:
                 result = {"success": False, "error": "用法: grep <pattern> <file1> [file2] ..."}
             else:
                 pattern = args[0]
-                files = args[1:]
+                files = [convert_local_path_to_remote(f) for f in args[1:]]
                 result = shell.cmd_grep(pattern, *files)
         elif cmd == "python":
             if not args:
                 result = {"success": False, "error": "用法: python <file> 或 python -c '<code>'"}
             else:
                 # 使用统一的远端命令执行接口处理python命令
-                result = shell.execute_generic_remote_command(cmd, args)
+                result = shell.execute_generic_remote_command(cmd, args, return_command_only)
         elif cmd == "download":
             if not args:
                 result = {"success": False, "error": "用法: download [--force] <filename> [local_path]"}
@@ -4335,14 +4530,23 @@ def handle_shell_command(shell_cmd, command_identifier=None):
             if not args:
                 result = {"success": False, "error": "用法: read <filename> [start end] 或 read <filename> [[start1, end1], [start2, end2], ...]"}
             else:
-                filename = args[0]
+                # 转换本地路径为远程逻辑路径
+                filename = convert_local_path_to_remote(args[0])
                 range_args = args[1:] if len(args) > 1 else []
                 result = shell.cmd_read(filename, *range_args)
         elif cmd == "find":
             if not args:
                 result = {"success": False, "error": "用法: find [path] -name [pattern] 或 find [path] -type [f|d] -name [pattern]"}
             else:
-                result = shell.cmd_find(*args)
+                # 转换路径参数（通常是第一个参数，如果不是选项的话）
+                converted_args = []
+                for i, arg in enumerate(args):
+                    if i == 0 and not arg.startswith('-'):
+                        # 第一个参数如果不是选项，则是路径
+                        converted_args.append(convert_local_path_to_remote(arg))
+                    else:
+                        converted_args.append(arg)
+                result = shell.cmd_find(*converted_args)
         elif cmd == "mv":
             if not args:
                 result = {"success": False, "error": "用法: mv <source> <destination> 或 mv [[src1, dst1], [src2, dst2], ...]"}
@@ -4356,7 +4560,10 @@ def handle_shell_command(shell_cmd, command_identifier=None):
                     result = {"success": False, "error": "多文件语法格式错误，应为: [[src1, dst1], [src2, dst2], ...]"}
             elif len(args) == 2:
                 # 原有的单文件语法
-                result = shell.cmd_mv(args[0], args[1])
+                # 转换本地路径为远程逻辑路径
+                src = convert_local_path_to_remote(args[0])
+                dst = convert_local_path_to_remote(args[1])
+                result = shell.cmd_mv(src, dst)
             else:
                 result = {"success": False, "error": "用法: mv <source> <destination> 或 mv [[src1, dst1], [src2, dst2], ...]"}
         elif cmd == "edit":
@@ -4380,7 +4587,19 @@ def handle_shell_command(shell_cmd, command_identifier=None):
                     result = {"success": False, "error": "用法: edit [--preview] [--backup] <filename> '<replacement_spec>'"}
                 else:
                     filename = edit_args[0]
-                    replacement_spec = " ".join(edit_args[1:])  # 支持带空格的JSON
+                    # 转换本地路径为远程逻辑路径
+                    filename = convert_local_path_to_remote(filename)
+                    # 修复：重新从原始shell_cmd中提取JSON参数，避免shlex分割问题
+                    # 找到文件名后的JSON部分
+                    import re
+                    # 匹配 filename 后面的 JSON 部分（可能包含选项）
+                    pattern = r'edit\s+(?:--\w+\s+)*' + re.escape(edit_args[0]) + r'\s+(.*)'  # 使用原始文件名匹配
+                    match = re.search(pattern, shell_cmd)
+                    if match:
+                        replacement_spec = match.group(1).strip()
+                    else:
+                        # 回退到原来的方法
+                        replacement_spec = " ".join(edit_args[1:])
                     result = shell.cmd_edit(filename, replacement_spec, preview=preview_mode, backup=backup_mode)
         elif cmd == "upload":
             if not args:
@@ -4414,7 +4633,7 @@ def handle_shell_command(shell_cmd, command_identifier=None):
                         # 原有的单目标路径语法
                         if len(upload_args) >= 2 and not os.path.exists(upload_args[-1]):
                             source_files = upload_args[:-1]
-                            target_path = upload_args[-1]
+                            target_path = convert_local_path_to_remote(upload_args[-1])
                         else:
                             source_files = upload_args
                             target_path = "."
@@ -4460,7 +4679,7 @@ def handle_shell_command(shell_cmd, command_identifier=None):
                     "grep <pattern> <file>        - search for pattern in file",
                     "python <file>                - execute python file",
                     "python -c '<code>'           - execute python code",
-                                    "download [--force] <file> [path] - download file with caching",
+                    "download [--force] <file> [path] - download file with caching",
                     "read <file> [start end]      - read file content with line numbers",
                     "find [path] -name [pattern]  - search for files matching pattern",
                     "mv <source> <dest>           - move/rename file or folder",
@@ -4471,19 +4690,115 @@ def handle_shell_command(shell_cmd, command_identifier=None):
             }
         else:
             # 使用统一的远端命令执行接口处理未知命令
-            result = shell.execute_generic_remote_command(cmd, args)
+            result = shell.execute_generic_remote_command(cmd, args, return_command_only)
         
         # 输出结果
+        # 处理--return-command选项：直接返回结果，不管是否在RUN环境
+        if return_command_only and result.get("action") == "return_command_only":
+            return result
+            
         if is_run_environment(command_identifier):
             write_to_json_output(result, command_identifier)
         else:
+            
             if result["success"]:
                 if cmd == "pwd":
                     # bash风格：只输出路径
                     print(result['current_path'])
                 elif cmd == "ls":
-                    # 检查是否为详细模式或递归模式
-                    if result.get("mode") in ["detailed", "recursive_detailed"]:
+                    # Check for long format (-l) or extended mode
+                    if result.get("long_format"):
+                        # Long format mode (-l): bash-like detailed listing
+                        folders = result.get("folders", [])
+                        files = result.get("files", [])
+                        
+                        def format_size(size_str):
+                            """Format file size in a readable way"""
+                            if not size_str:
+                                return "0"
+                            try:
+                                size = int(size_str)
+                                if size < 1024:
+                                    return f"{size}"
+                                elif size < 1024*1024:
+                                    return f"{size//1024}K"
+                                elif size < 1024*1024*1024:
+                                    return f"{size//(1024*1024)}M"
+                                else:
+                                    return f"{size//(1024*1024*1024)}G"
+                            except:
+                                return "0"
+                        
+                        def format_time(time_str):
+                            """Format modification time in bash ls -l style"""
+                            if not time_str:
+                                return "Jan  1 00:00"
+                            try:
+                                from datetime import datetime
+                                # Parse Google Drive time format
+                                dt = datetime.fromisoformat(time_str.replace('Z', '+00:00'))
+                                return dt.strftime("%b %d %H:%M")
+                            except:
+                                return "Jan  1 00:00"
+                        
+                        # Display folders first
+                        for folder in folders:
+                            name = folder['name']
+                            time_str = format_time(folder.get('modifiedTime'))
+                            url = folder.get('url', 'N/A')
+                            print(f"drwxr-xr-x    - {time_str} {name}/")
+                            print(f"    URL: {url}")
+                        
+                        # Display files
+                        for file in files:
+                            name = file['name']
+                            size_str = format_size(file.get('size'))
+                            time_str = format_time(file.get('modifiedTime'))
+                            url = file.get('url', 'N/A')
+                            print(f"-rw-r--r-- {size_str:>8} {time_str} {name}")
+                            print(f"    URL: {url}")
+                            
+                    elif result.get("mode") == "extended":
+                        # Legacy extended mode - keeping for backward compatibility
+                        folders = result.get("folders", [])
+                        files = result.get("files", [])
+                        
+                        print(f"Directory: {result.get('path', '.')}")
+                        print(f"Total: {result.get('count', 0)} items")
+                        print()
+                        
+                        # Display folders
+                        if folders:
+                            print("Folders:")
+                            for folder in folders:
+                                print(f"  {folder['name']}/")
+                                print(f"    URL: {folder.get('url', 'N/A')}")
+                                if 'modifiedTime' in folder:
+                                    print(f"    Modified: {folder['modifiedTime']}")
+                                print()
+                        
+                        # Display files
+                        if files:
+                            print("Files:")
+                            for file in files:
+                                print(f"  {file['name']}")
+                                print(f"    URL: {file.get('url', 'N/A')}")
+                                if 'modifiedTime' in file:
+                                    print(f"    Modified: {file['modifiedTime']}")
+                                if 'size' in file:
+                                    # Format file size
+                                    size = int(file['size'])
+                                    if size < 1024:
+                                        size_str = f"{size} B"
+                                    elif size < 1024*1024:
+                                        size_str = f"{size/1024:.1f} KB"
+                                    elif size < 1024*1024*1024:
+                                        size_str = f"{size/(1024*1024):.1f} MB"
+                                    else:
+                                        size_str = f"{size/(1024*1024*1024):.1f} GB"
+                                    print(f"    Size: {size_str}")
+                                print()
+                    elif result.get("mode") in ["detailed", "recursive_detailed"]:
                         # 详细模式：直接输出JSON
                         import json
                         print(json.dumps(result, indent=2, ensure_ascii=False))
@@ -4504,74 +4819,79 @@ def handle_shell_command(shell_cmd, command_identifier=None):
                                     if not item['name'].startswith('.'):
                                         print(f"  {item['name']}")
                     else:
-                        # bash风格：只显示文件名
+                        # bash style: only show file names
                         if result.get("files") is not None:
                             folders = result.get("folders", [])
-                            files = result.get("files", [])  # 现在files字段只包含非文件夹文件
+                            files = result.get("files", [])  # files field now only contains non-folder files
                             all_items = []
                             
-                            # 使用set来避免重复
+                            # Use set to avoid duplicates
                             seen_names = set()
                             
-                            # 添加目录（带/后缀）
+                            # Add directories (with / suffix)
                             for folder in folders:
+                                # Check if hidden file should be shown
+                                show_hidden = "-a" in args if 'args' in locals() else False
+                                if folder['name'].startswith('.') and not show_hidden:
+                                    continue
+                                    
                                 folder_name = f"{folder['name']}/"
                                 if folder_name not in seen_names:
                                     all_items.append(folder_name)
                                     seen_names.add(folder_name)
                             
-                            # 添加文件（排除隐藏文件，除非明确指定-a参数）
-                            # 检查是否有-a参数（显示隐藏文件）
+                            # Add files (exclude hidden files unless -a flag is specified)
+                            # Check if -a parameter exists (show hidden files)
                             show_hidden = "-a" in args if 'args' in locals() else False
                             
                             for file in files:
-                                # 跳过以.开头的隐藏文件（除非有-a参数）
+                                # Skip hidden files starting with . (unless -a flag is present)
                                 if file['name'].startswith('.') and not show_hidden:
                                     continue
                                 if file['name'] not in seen_names:
                                     all_items.append(file['name'])
                                     seen_names.add(file['name'])
                             
-                            # 按行显示，多个项目用适当间距分隔
+                            # Display in lines with appropriate spacing
                             if all_items:
-                                # 计算终端宽度，默认80字符
+                                # Calculate terminal width, default 80 characters
                                 import shutil
                                 try:
                                     terminal_width = shutil.get_terminal_size().columns
                                 except:
                                     terminal_width = 80
                                 
-                                # 如果文件名很长，使用垂直布局
+                                # If filenames are long, use vertical layout
                                 max_item_length = max(len(item) for item in all_items) if all_items else 0
                                 
                                 if max_item_length > 30 or len(all_items) <= 3:
-                                    # 长文件名或文件数量少时，每行一个
+                                    # Long filenames or few files, one per line
                                     for item in all_items:
                                         print(item)
                                 else:
-                                    # 短文件名时，使用列布局
-                                    # 计算合适的列宽，至少15字符，最多30字符
+                                    # Short filenames, use column layout
+                                    # Calculate appropriate column width, at least 15 characters, max 30 characters
                                     col_width = min(max(15, max_item_length + 2), 30)
                                     items_per_line = max(1, terminal_width // col_width)
                                     
-                                    # 按行显示
+                                    # Display by lines
                                     for i in range(0, len(all_items), items_per_line):
                                         line_items = all_items[i:i + items_per_line]
                                         formatted_line = []
                                         
                                         for item in line_items:
                                             if len(item) <= col_width - 2:
-                                                # 正常显示
+                                                # Normal display
                                                 formatted_line.append(f"{item:<{col_width}}")
                                             else:
-                                                # 截断长文件名
+                                                # Truncate long filenames
                                                 truncated = f"{item[:col_width-5]}..."
                                                 formatted_line.append(f"{truncated:<{col_width}}")
                                         
                                         print("".join(formatted_line).rstrip())
                             else:
-                                # 空目录时显示提示信息（可选，或者保持bash风格不显示任何内容）
-                                pass  # bash风格：空目录不显示任何内容
+                                # Empty directory - bash style: don't display anything
+                                pass
                 elif cmd == "help":
                     # 保持help的详细输出
                     for command_help in result["commands"]:
@@ -4863,6 +5183,433 @@ def shell_ls_with_id(folder_id, detailed=False, command_identifier=None):
         else:
             print(error_msg)
         return 1
+
+def get_local_hf_token():
+    """
+    获取本地HuggingFace token
+    
+    Returns:
+        dict: 包含token信息或错误信息
+    """
+    try:
+        # 检查HUGGINGFACE工具是否可用
+        import subprocess
+        result = subprocess.run(['HUGGINGFACE', '--status'], capture_output=True, text=True)
+        
+        if result.returncode != 0:
+            return {"success": False, "error": "HUGGINGFACE tool not available or not authenticated"}
+        
+        # 直接读取token文件
+        import os
+        from pathlib import Path
+        
+        hf_home = os.environ.get("HF_HOME", os.path.expanduser("~/.cache/huggingface"))
+        token_path = Path(hf_home) / "token"
+        
+        if not token_path.exists():
+            return {"success": False, "error": "HuggingFace token file not found"}
+        
+        try:
+            with open(token_path, 'r') as f:
+                token = f.read().strip()
+            
+            if not token:
+                return {"success": False, "error": "HuggingFace token file is empty"}
+            
+            return {
+                "success": True,
+                "token": token,
+                "token_path": str(token_path),
+                "token_length": len(token)
+            }
+        except Exception as e:
+            return {"success": False, "error": f"Failed to read token file: {str(e)}"}
+            
+    except Exception as e:
+        return {"success": False, "error": f"Failed to get local HF token: {str(e)}"}
+
+def setup_remote_hf_credentials(command_identifier=None):
+    """
+    设置远端HuggingFace认证配置
+    
+    Args:
+        command_identifier (str): 命令标识符
+        
+    Returns:
+        dict: 操作结果
+    """
+    try:
+        # 1. 获取本地HF token
+        token_result = get_local_hf_token()
+        if not token_result["success"]:
+            return {
+                "success": False,
+                "error": f"Failed to get local HF token: {token_result['error']}"
+            }
+        
+        token = token_result["token"]
+        
+        # 2. 生成远端设置命令
+        remote_setup_commands = f"""
+# HuggingFace Credentials Setup
+export HF_TOKEN="{token}"
+export HUGGINGFACE_HUB_TOKEN="{token}"
+
+# Create HF cache directory
+mkdir -p ~/.cache/huggingface
+
+# Write token to standard location
+echo "{token}" > ~/.cache/huggingface/token
+chmod 600 ~/.cache/huggingface/token
+
+# Verify setup
+if [ -f ~/.cache/huggingface/token ]; then
+    echo "✅ HuggingFace token configured successfully"
+    echo "Token length: {len(token)}"
+    echo "Token prefix: {token[:8]}..."
+else
+    echo "❌ Failed to configure HuggingFace token"
+    exit 1
+fi
+
+# Test HuggingFace authentication (if python and pip are available)
+if command -v python3 >/dev/null 2>&1; then
+    echo "🧪 Testing HuggingFace authentication..."
+    python3 -c "
+import sys
+import subprocess
+
+try:
+    # Try to install huggingface_hub if not available
+    try:
+        import huggingface_hub
+    except ImportError:
+        print('📦 Installing huggingface_hub...')
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'huggingface_hub', '--quiet'])
+        import huggingface_hub
+    
+    # Test authentication
+    from huggingface_hub import HfApi
+    api = HfApi()
+    user_info = api.whoami()
+    username = user_info.get('name', 'Unknown')
+    email = user_info.get('email', 'Unknown')
+    
+    print('✅ HuggingFace authentication successful!')
+    print(f'   Username: {{username}}')
+    print(f'   Email: {{email}}')
+    
+    # Test model access
+    try:
+        model_info = api.model_info('bert-base-uncased')
+        print('✅ Model access verified (can access public models)')
+    except Exception as model_error:
+        print(f'⚠️  Model access test failed: {{model_error}}')
+    
+    # Final success indicator
+    print('🎉 HuggingFace setup completed successfully!')
+    exit(0)
+    
+except Exception as e:
+    print(f'❌ HuggingFace authentication failed: {{e}}')
+    print('💡 Please check your token and try again')
+    exit(1)
+"
+    
+    # Check the exit code from Python script
+    if [ $? -eq 0 ]; then
+        clear
+        echo "✅ 设置完成"
+    else
+        echo "❌ 设置失败"
+        exit 1
+    fi
+else
+    echo "⚠️  Python not available, skipping authentication test"
+    echo "🎉 Token configured, but manual verification needed"
+fi
+"""
+        
+        # 3. 通过tkinter显示远端命令供用户执行
+        if is_run_environment(command_identifier):
+            return {
+                "success": True,
+                "message": "HuggingFace remote setup command generated",
+                "remote_command": remote_setup_commands.strip(),
+                "token_configured": True,
+                "instructions": "Execute the remote_command in your remote terminal to set up HuggingFace credentials"
+            }
+        else:
+            # 非RUN环境，显示tkinter窗口 - 参考_show_generic_command_window风格
+            import tkinter as tk
+            import queue
+            
+            result_queue = queue.Queue()
+            
+            def show_hf_setup_window():
+                root = tk.Tk()
+                root.title("🤗 HuggingFace 远程设置")
+                root.geometry("400x60")
+                root.resizable(False, False)
+                
+                # 居中窗口
+                root.eval('tk::PlaceWindow . center')
+                
+                # 设置窗口置顶
+                root.attributes('-topmost', True)
+                
+                # 自动复制命令到剪切板
+                root.clipboard_clear()
+                root.clipboard_append(remote_setup_commands.strip())
+                
+                # 主框架
+                main_frame = tk.Frame(root, padx=10, pady=10)
+                main_frame.pack(fill=tk.BOTH, expand=True)
+                
+                # 按钮框架
+                button_frame = tk.Frame(main_frame)
+                button_frame.pack(fill=tk.X, expand=True)
+                
+                def copy_command():
+                    try:
+                        # 使用更可靠的复制方法
+                        root.clipboard_clear()
+                        root.clipboard_append(remote_setup_commands.strip())
+                        
+                        # 验证复制是否成功
+                        try:
+                            clipboard_content = root.clipboard_get()
+                            if clipboard_content == remote_setup_commands.strip():
+                                copy_btn.config(text="✅ 复制成功", bg="#4CAF50")
+                            else:
+                                # 复制不完整，重试一次
+                                root.clipboard_clear()
+                                root.clipboard_append(remote_setup_commands.strip())
+                                copy_btn.config(text="⚠️ 已重试", bg="#FF9800")
+                        except Exception:
+                            # 验证失败但复制可能成功，显示已复制
+                            copy_btn.config(text="✅ 已复制", bg="#4CAF50")
+                        
+                        root.after(1500, lambda: copy_btn.config(text="📋 复制指令", bg="#2196F3"))
+                    except Exception as e:
+                        print(f"复制到剪贴板失败: {e}")
+                        copy_btn.config(text="❌ 复制失败", bg="#f44336")
+                
+                def setup_completed():
+                    result_queue.put({"action": "success", "message": "用户确认设置完成"})
+                    root.destroy()
+                
+                def direct_feedback():
+                    """直接反馈功能 - 让用户提供设置执行结果"""
+                    # 关闭主窗口
+                    root.destroy()
+                    
+                    # 使用命令行输入获取用户反馈
+                    print("\n" + "="*60)
+                    print("🔄 HuggingFace 设置反馈")
+                    print("="*60)
+                    print("请提供远程HuggingFace设置的执行结果 (多行输入，按 Ctrl+D 结束):")
+                    print("💡 提示: 直接粘贴命令的完整输出即可")
+                    print()
+                    
+                    # 获取统一的命令输出
+                    try:
+                        output_lines = []
+                        while True:
+                            try:
+                                line = input()
+                                output_lines.append(line)
+                            except EOFError:
+                                break
+                        full_output = '\n'.join(output_lines)
+                    except KeyboardInterrupt:
+                        print("\n用户取消输入")
+                        full_output = ""
+                    
+                    # 分析输出判断是否成功
+                    success_indicators = ['HuggingFace setup completed successfully', '✅', 'All tests passed']
+                    error_indicators = ['❌', 'failed', 'error', 'Error', 'ERROR', 'exception']
+                    
+                    has_success = any(indicator in full_output for indicator in success_indicators)
+                    has_error = any(indicator in full_output for indicator in error_indicators)
+                    
+                    if has_success and not has_error:
+                        print()
+                        print("="*60)
+                        print("✅ HuggingFace 设置成功！")
+                        print("="*60)
+                        success = True
+                    elif has_error:
+                        print()
+                        print("="*60)
+                        print("❌ HuggingFace 设置失败")
+                        print("="*60)
+                        success = False
+                    else:
+                        print()
+                        print("="*60)
+                        print("⚠️  设置状态不明确，请手动验证")
+                        print("="*60)
+                        success = None
+                    
+                    # 构建反馈结果
+                    feedback_result = {
+                        "action": "direct_feedback",
+                        "success": success,
+                        "output": full_output,
+                        "message": "HuggingFace设置反馈已收集"
+                    }
+                    result_queue.put(feedback_result)
+                
+                # 复制指令按钮
+                copy_btn = tk.Button(
+                    button_frame, 
+                    text="📋 复制指令", 
+                    command=copy_command,
+                    font=("Arial", 9),
+                    bg="#2196F3",
+                    fg="white",
+                    padx=10,
+                    pady=5,
+                    relief=tk.RAISED,
+                    bd=2
+                )
+                copy_btn.pack(side=tk.LEFT, padx=(0, 5), fill=tk.X, expand=True)
+                
+                # 直接反馈按钮
+                feedback_btn = tk.Button(
+                    button_frame, 
+                    text="💬 直接反馈", 
+                    command=direct_feedback,
+                    font=("Arial", 9),
+                    bg="#FF9800",
+                    fg="white",
+                    padx=10,
+                    pady=5,
+                    relief=tk.RAISED,
+                    bd=2
+                )
+                feedback_btn.pack(side=tk.LEFT, padx=(0, 5), fill=tk.X, expand=True)
+                
+                # 设置完成按钮
+                complete_btn = tk.Button(
+                    button_frame, 
+                    text="✅ 设置完成", 
+                    command=setup_completed,
+                    font=("Arial", 9, "bold"),
+                    bg="#4CAF50",
+                    fg="white",
+                    padx=10,
+                    pady=5,
+                    relief=tk.RAISED,
+                    bd=2
+                )
+                complete_btn.pack(side=tk.LEFT, fill=tk.X, expand=True)
+                
+                # 设置焦点到完成按钮
+                complete_btn.focus_set()
+                
+                # 自动复制命令到剪贴板
+                copy_command()
+                
+                root.mainloop()
+            
+            # 显示窗口
+            show_hf_setup_window()
+            
+            # 获取结果
+            try:
+                result = result_queue.get_nowait()
+                return {
+                    "success": True,
+                    "message": "HuggingFace remote setup completed",
+                    "token_configured": True,
+                    "user_action": result
+                }
+            except queue.Empty:
+                return {
+                    "success": True,
+                    "message": "HuggingFace remote setup window closed",
+                    "token_configured": True
+                }
+            
+    except Exception as e:
+        return {"success": False, "error": f"Failed to setup remote HF credentials: {str(e)}"}
+
+def test_remote_hf_setup(command_identifier=None):
+    """
+    测试远端HuggingFace配置
+    
+    Args:
+        command_identifier (str): 命令标识符
+        
+    Returns:
+        dict: 测试结果
+    """
+    try:
+        # 生成远端测试命令
+        test_command = """
+# Test HuggingFace Configuration
+echo "🧪 Testing HuggingFace Configuration..."
+
+# Check environment variables
+echo "Environment Variables:"
+echo "  HF_TOKEN: ${HF_TOKEN:0:8}..."
+echo "  HUGGINGFACE_HUB_TOKEN: ${HUGGINGFACE_HUB_TOKEN:0:8}..."
+
+# Check token file
+if [ -f ~/.cache/huggingface/token ]; then
+    token_content=$(cat ~/.cache/huggingface/token)
+    echo "  Token file: ✅ Exists (${#token_content} chars)"
+else
+    echo "  Token file: ❌ Missing"
+fi
+
+# Test Python integration
+if command -v python3 >/dev/null 2>&1; then
+    echo "Python HuggingFace Test:"
+    python3 -c "
+try:
+    import huggingface_hub
+    from huggingface_hub import HfApi
+    
+    api = HfApi()
+    user_info = api.whoami()
+    print(f'  Authentication: ✅ Success')
+    print(f'  Username: {user_info.get(\"name\", \"Unknown\")}')
+    print(f'  Email: {user_info.get(\"email\", \"Unknown\")}')
+    
+    # Test model access
+    model_info = api.model_info('bert-base-uncased')
+    print(f'  Model Access: ✅ Can access public models')
+    
+except ImportError:
+    print('  HuggingFace Hub: ❌ Not installed')
+    print('  Run: pip install huggingface_hub')
+except Exception as e:
+    print(f'  Authentication: ❌ Failed - {e}')
+"
+else
+    echo "Python: ❌ Not available"
+fi
+
+echo "🏁 HuggingFace configuration test completed"
+"""
+        
+        if is_run_environment(command_identifier):
+            return {
+                "success": True,
+                "message": "HuggingFace test command generated",
+                "test_command": test_command.strip(),
+                "instructions": "Execute the test_command in your remote terminal to verify HuggingFace setup"
+            }
+        else:
+            # 使用GDS执行测试命令
+            result = handle_shell_command(f'bash -c "{test_command}"', command_identifier)
+            return result
+            
+    except Exception as e:
+        return {"success": False, "error": f"Failed to test remote HF setup: {str(e)}"}
 
 if __name__ == "__main__":
     sys.exit(main()) 

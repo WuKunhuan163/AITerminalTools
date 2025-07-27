@@ -31,7 +31,7 @@ EXTRACT_PDF --clean-data  # Clean cached data
 - `--output-dir <dir>`: Output directory (default: same as PDF)
 - `--engine <mode>`: Extraction engine mode (default: mineru):
   - `basic`: Basic extractor with image processing (merge nearby images, generate placeholders)
-  - `basic-asyn`: Basic extractor, async mode (text-only, no image processing)
+  - `basic-asyn`: Basic extractor with PDF screenshot merging (merges nearby images via PDF clipping, adds placeholders, processes text linebreaks, creates extract_data folder)
   - `mineru`: MinerU extractor with full image/formula/table analysis
   - `mineru-asyn`: MinerU extractor, async mode (no image/formula/table analysis)
   - `full`: Full analysis mode (equivalent to mineru - enable all features including image/formula/table processing)
@@ -66,6 +66,9 @@ EXTRACT_PDF document.pdf
 
 # Extract specific page with basic engine
 EXTRACT_PDF document.pdf --page 3 --engine basic
+
+# Extract with PDF screenshot merging (adds placeholders, processes text, creates extract_data folder)
+EXTRACT_PDF document.pdf --engine basic-asyn --output-dir ~/Desktop/output
 
 # Extract page range with custom output directory
 EXTRACT_PDF paper.pdf --page 1-5 --output-dir /path/to/output --engine mineru-asyn
@@ -141,9 +144,14 @@ RUN --show EXTRACT_PDF --full document.pdf --engine full
 - **Page Selection**: Extract specific pages, ranges, or combinations (e.g., 1,3,5-7)
 - **GUI File Selection**: Interactive file picker when no arguments provided
 - **Custom Output**: Specify output directory for organized file management
-- **Image Processing**: Basic engine merges nearby images and creates placeholders
-- **Text Processing**: Smart linebreak handling and paragraph formatting
+- **Image Processing**: 
+  - Basic engine merges nearby images and creates placeholders
+  - Basic-asyn engine uses PDF screenshot technology to merge nearby images by calculating combined bounding boxes and clipping directly from PDF pages (preserves original layout and quality, adds `[placeholder: image]` tags for post-processing)
+- **Text Processing**: 
+  - Smart linebreak handling and paragraph formatting for all engines
+  - Basic-asyn engine includes text processing to prevent sentence fragmentation
 - **Multiple Formats**: Supports various PDF types and structures
+- **Extract Data Folder**: Basic-asyn engine creates `{pdf_name}_extract_data` folder in output directory with organized content
 
 ### Post-processing Features
 - **GUI File Selection**: Uses FILEDIALOG tool for easy markdown file selection
@@ -183,10 +191,18 @@ RUN --show EXTRACT_PDF --full document.pdf --engine full
 ### PDF Extraction Output
 The tool extracts content to markdown format with the following features:
 - Page headers for clear organization
-- Image placeholders with hash-based filenames
+- Image placeholders with hash-based filenames (`[placeholder: image]` tags)
 - Preserved text formatting and structure
-- Smart paragraph breaks based on punctuation
+- Smart paragraph breaks based on punctuation (prevents sentence fragmentation)
 - Absolute paths for reliable image references
+
+#### Basic-asyn Engine Specific Output:
+- **PDF Screenshot Images**: High-quality PNG images created by clipping merged bounding boxes directly from PDF pages
+- **Extract Data Folder**: Creates `{pdf_name}_extract_data/` folder containing:
+  - Main markdown file with processed content
+  - `images/` subfolder with all extracted images
+- **Enhanced Text Processing**: Continuous paragraphs with proper sentence flow
+- **Placeholder Integration**: Properly formatted `[placeholder: image]` tags for seamless post-processing
 
 ### Post-processing Output
 Post-processing transforms placeholders into actual content:
