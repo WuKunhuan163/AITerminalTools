@@ -188,17 +188,10 @@
       "status": "valid"
     },
     "/content/drive/MyDrive/REMOTE_ROOT/GaussianObject/requirements.txt": {
-      "cache_file": "c1cfd41e6debe30d",
-      "cache_path": "/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/remote_files/c1cfd41e6debe30d",
+      "cache_file": "629e282ef361405c",
+      "cache_path": "/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/remote_files/629e282ef361405c",
       "content_hash": "6ac0599ca53efd89440e62429a1ebb4c",
-      "cached_time": "2025-07-27T18:34:27.833681",
-      "status": "valid"
-    },
-    "/content/drive/MyDrive/REMOTE_ROOT/GaussianObject/_TAKEAWAY/PROGRESS.md": {
-      "cache_file": "656457bbd346aaf7",
-      "cache_path": "/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/remote_files/656457bbd346aaf7",
-      "content_hash": "b931fa2f69ef446aac99640e033b0b06",
-      "cached_time": "2025-07-27T18:47:51.224779",
+      "cached_time": "2025-07-27T19:31:33.273213",
       "status": "valid"
     }
   },

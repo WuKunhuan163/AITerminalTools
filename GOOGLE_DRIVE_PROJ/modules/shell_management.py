@@ -1,0 +1,273 @@
+#!/usr/bin/env python3
+"""
+Google Drive Shell - Shell Management Module
+从google_drive_shell.py重构而来的shell_management模块
+"""
+
+import os
+import sys
+import json
+import time
+import hashlib
+import warnings
+import subprocess
+import shutil
+import zipfile
+import tempfile
+from pathlib import Path
+import platform
+import psutil
+from typing import Dict
+from ..google_drive_api import GoogleDriveService
+
+class ShellManagement:
+    """Google Drive Shell Shell Management"""
+
+    def __init__(self, drive_service, main_instance=None):
+        """初始化管理器"""
+        self.drive_service = drive_service
+        self.main_instance = main_instance  # 引用主实例以访问其他属性
+
+    def load_shells(self):
+        """加载远程shell配置"""
+        try:
+            if self.main_instance.shells_file.exists():
+                with open(self.main_instance.shells_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            else:
+                return {"shells": {}, "active_shell": None}
+        except Exception as e:
+            print(f"❌ 加载shell配置失败: {e}")
+            return {"shells": {}, "active_shell": None}
+
+    def save_shells(self, shells_data):
+        """保存远程shell配置"""
+        try:
+            with open(self.main_instance.shells_file, 'w', encoding='utf-8') as f:
+                json.dump(shells_data, f, indent=2, ensure_ascii=False)
+            return True
+        except Exception as e:
+            print(f"❌ 保存shell配置失败: {e}")
+            return False
+
+    def generate_shell_id(self):
+        """生成shell ID"""
+        timestamp = str(int(time.time() * 1000))
+        random_str = os.urandom(8).hex()
+        hash_input = f"{timestamp}_{random_str}"
+        return hashlib.sha256(hash_input.encode()).hexdigest()[:16]
+
+    def get_current_shell(self):
+        """获取当前活跃的shell，如果没有则创建默认shell"""
+        shells_data = self.load_shells()
+        active_shell_id = shells_data.get("active_shell")
+        
+        if active_shell_id and active_shell_id in shells_data["shells"]:
+            shell = shells_data["shells"][active_shell_id]
+            # 更新最后访问时间
+            shell["last_accessed"] = time.strftime("%Y-%m-%d %H:%M:%S")
+            self.save_shells(shells_data)
+            return shell
+        
+        # 如果没有活跃shell，创建默认shell
+        return self._create_default_shell()
+
+    def get_current_folder_id(self, current_shell=None):
+        """
+        获取当前shell的文件夹ID，如果没有则返回REMOTE_ROOT_FOLDER_ID
+        
+        Args:
+            current_shell (dict, optional): 当前shell信息，如果为None则自动获取
+            
+        Returns:
+            str: 当前文件夹ID
+        """
+        if current_shell is None:
+            current_shell = self.main_instance.get_current_shell()
+        
+        if current_shell:
+            return current_shell.get("current_folder_id", self.main_instance.REMOTE_ROOT_FOLDER_ID)
+        else:
+            return self.main_instance.REMOTE_ROOT_FOLDER_ID
+
+    def _create_default_shell(self):
+        """创建默认shell"""
+        try:
+            # 生成默认shell ID
+            shell_id = "default_shell"
+            shell_name = "default"
+            
+            # 默认shell配置，总是从根目录开始
+            shell_config = {
+                "id": shell_id,
+                "name": shell_name,
+                "folder_id": self.main_instance.REMOTE_ROOT_FOLDER_ID,  # 根目录
+                "current_path": "~",  # 根路径
+                "current_folder_id": self.main_instance.REMOTE_ROOT_FOLDER_ID,
+                "created_time": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "last_accessed": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "status": "active",
+                "type": "default"
+            }
+            
+            # 加载现有shells数据
+            shells_data = self.load_shells()
+            
+            # 添加默认shell
+            shells_data["shells"][shell_id] = shell_config
+            shells_data["active_shell"] = shell_id
+            
+            # 保存配置
+            self.save_shells(shells_data)
+            
+            return shell_config
+            
+        except Exception as e:
+            print(f"创建默认shell时出错: {e}")
+            # 返回最基本的shell配置
+            return {
+                "id": "emergency_shell",
+                "name": "emergency",
+                "folder_id": self.main_instance.REMOTE_ROOT_FOLDER_ID,
+                "current_path": "~",
+                "current_folder_id": self.main_instance.REMOTE_ROOT_FOLDER_ID,
+                "created_time": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "last_accessed": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "status": "active",
+                "type": "emergency"
+            }
+
+    def create_shell(self, name=None, folder_id=None):
+        """创建新的远程shell"""
+        try:
+            shell_id = self.generate_shell_id()
+            shell_name = name or f"shell_{shell_id[:8]}"
+            created_time = time.strftime("%Y-%m-%d %H:%M:%S")
+            
+            shell_config = {
+                "id": shell_id,
+                "name": shell_name,
+                "folder_id": folder_id or self.main_instance.REMOTE_ROOT_FOLDER_ID,
+                "current_path": "~",
+                "current_folder_id": self.main_instance.REMOTE_ROOT_FOLDER_ID,
+                "created_time": created_time,
+                "last_accessed": created_time,
+                "status": "active"
+            }
+            
+            shells_data = self.load_shells()
+            shells_data["shells"][shell_id] = shell_config
+            shells_data["active_shell"] = shell_id
+            
+            if self.save_shells(shells_data):
+                return {
+                    "success": True,
+                    "shell_id": shell_id,
+                    "shell_name": shell_name,
+                    "message": f"✅ 创建远程shell成功: {shell_name}"
+                }
+            else:
+                return {"success": False, "error": "保存shell配置失败"}
+                
+        except Exception as e:
+            return {"success": False, "error": f"创建shell时出错: {e}"}
+
+    def list_shells(self):
+        """列出所有shell"""
+        try:
+            shells_data = self.load_shells()
+            active_id = shells_data.get("active_shell")
+            
+            shells_list = []
+            for shell_id, shell_info in shells_data["shells"].items():
+                shell_info["is_active"] = (shell_id == active_id)
+                shells_list.append(shell_info)
+            
+            return {
+                "success": True,
+                "shells": shells_list,
+                "active_shell": active_id,
+                "total": len(shells_list)
+            }
+            
+        except Exception as e:
+            return {"success": False, "error": f"列出shell时出错: {e}"}
+
+    def checkout_shell(self, shell_id):
+        """切换到指定shell"""
+        try:
+            shells_data = self.load_shells()
+            
+            if shell_id not in shells_data["shells"]:
+                return {"success": False, "error": f"Shell不存在: {shell_id}"}
+            
+            shells_data["active_shell"] = shell_id
+            shells_data["shells"][shell_id]["last_accessed"] = time.strftime("%Y-%m-%d %H:%M:%S")
+            
+            # 切换shell时重置到根目录
+            shells_data["shells"][shell_id]["current_path"] = "~"
+            shells_data["shells"][shell_id]["current_folder_id"] = self.main_instance.REMOTE_ROOT_FOLDER_ID
+            
+            if self.save_shells(shells_data):
+                shell_name = shells_data["shells"][shell_id]["name"]
+                return {
+                    "success": True,
+                    "shell_id": shell_id,
+                    "shell_name": shell_name,
+                    "current_path": "~",
+                    "message": f"✅ 已切换到shell: {shell_name}，路径重置为根目录"
+                }
+            else:
+                return {"success": False, "error": "保存shell状态失败"}
+                
+        except Exception as e:
+            return {"success": False, "error": f"切换shell时出错: {e}"}
+
+    def terminate_shell(self, shell_id):
+        """终止指定shell"""
+        try:
+            shells_data = self.load_shells()
+            
+            if shell_id not in shells_data["shells"]:
+                return {"success": False, "error": f"Shell不存在: {shell_id}"}
+            
+            shell_name = shells_data["shells"][shell_id]["name"]
+            del shells_data["shells"][shell_id]
+            
+            if shells_data["active_shell"] == shell_id:
+                shells_data["active_shell"] = None
+            
+            if self.save_shells(shells_data):
+                return {
+                    "success": True,
+                    "shell_id": shell_id,
+                    "shell_name": shell_name,
+                    "message": f"✅ 已终止shell: {shell_name}"
+                }
+            else:
+                return {"success": False, "error": "保存shell状态失败"}
+                
+        except Exception as e:
+            return {"success": False, "error": f"终止shell时出错: {e}"}
+
+    def exit_shell(self):
+        """退出当前shell"""
+        try:
+            current_shell = self.main_instance.get_current_shell()
+            if not current_shell:
+                return {"success": False, "error": "没有活跃的远程shell"}
+            
+            shells_data = self.load_shells()
+            shells_data["active_shell"] = None
+            
+            if self.save_shells(shells_data):
+                return {
+                    "success": True,
+                    "shell_name": current_shell["name"],
+                    "message": f"✅ 已退出远程shell: {current_shell['name']}"
+                }
+            else:
+                return {"success": False, "error": "保存shell状态失败"}
+                
+        except Exception as e:
+            return {"success": False, "error": f"退出shell时出错: {e}"}

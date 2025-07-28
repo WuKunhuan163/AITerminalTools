@@ -18,7 +18,7 @@ from pathlib import Path
 import platform
 import psutil
 from typing import Dict
-from .google_drive_api import GoogleDriveService
+from google_drive_api import GoogleDriveService
 
 # 导入重构后的模块
 from .modules import (
@@ -42,14 +42,14 @@ class GoogleDriveShell:
         self.config_file = Path(__file__).parent / "cache_config.json"
         self.deletion_cache_file = Path(__file__).parent / "deletion_cache.json"  # 新增删除时间缓存文件
         
-        # 直接初始化shell配置（不通过委托）
-        self.shells_data = self._load_shells_direct()
+        # 初始化shell配置
+        self.shells_data = self.load_shells()
         
-        # 直接加载缓存配置（不通过委托）
-        self._load_cache_config_direct()
+        # 加载缓存配置
+        self.load_cache_config()
         
-        # 直接初始化删除时间缓存（不通过委托）
-        self.deletion_cache = self._load_deletion_cache_direct()
+        # 初始化删除时间缓存
+        self.deletion_cache = self.load_deletion_cache()
         
         # 设置常量
         self.HOME_URL = "https://drive.google.com/drive/u/0/my-drive"
@@ -77,68 +77,10 @@ class GoogleDriveShell:
             self.REMOTE_ROOT_FOLDER_ID = "1LSndouoVj8pkoyi-yTYnC4Uv03I77T8f"
         
         # 尝试加载Google Drive API服务
-        self.drive_service = self._load_drive_service_direct()
+        self.drive_service = self.load_drive_service()
 
         # 初始化管理器
         self._initialize_managers()
-
-    def _load_shells_direct(self):
-        """直接加载远程shell配置（不通过委托）"""
-        try:
-            if self.shells_file.exists():
-                with open(self.shells_file, 'r', encoding='utf-8') as f:
-                    return json.load(f)
-            else:
-                return {"shells": {}, "active_shell": None}
-        except Exception as e:
-            print(f"❌ 加载shell配置失败: {e}")
-            return {"shells": {}, "active_shell": None}
-
-    def _load_cache_config_direct(self):
-        """直接加载缓存配置（不通过委托）"""
-        try:
-            if self.config_file.exists():
-                with open(self.config_file, 'r', encoding='utf-8') as f:
-                    self.cache_config = json.load(f)
-                    self.cache_config_loaded = True
-            else:
-                self.cache_config = {}
-                self.cache_config_loaded = False
-        except Exception as e:
-            print(f"⚠️ 加载缓存配置失败: {e}")
-            self.cache_config = {}
-            self.cache_config_loaded = False
-
-    def _load_deletion_cache_direct(self):
-        """直接加载删除时间缓存（不通过委托）"""
-        try:
-            if self.deletion_cache_file.exists():
-                with open(self.deletion_cache_file, 'r', encoding='utf-8') as f:
-                    cache_data = json.load(f)
-                    return cache_data.get("deletion_records", [])
-            else:
-                return []
-        except Exception as e:
-            print(f"⚠️ 加载删除缓存失败: {e}")
-            return []
-
-    def _load_drive_service_direct(self):
-        """直接加载Google Drive API服务（不通过委托）"""
-        try:
-            import sys
-            from pathlib import Path
-            
-            # 添加GOOGLE_DRIVE_PROJ到Python路径
-            api_service_path = Path(__file__).parent / "google_drive_api.py"
-            if api_service_path.exists():
-                sys.path.insert(0, str(api_service_path.parent))
-                from .google_drive_api import GoogleDriveService
-                return GoogleDriveService()
-            else:
-                return None
-        except Exception as e:
-            print(f"⚠️ 加载Google Drive API服务失败: {e}")
-            return None
 
     def _initialize_managers(self):
         """初始化各个管理器"""

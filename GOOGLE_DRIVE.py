@@ -4748,6 +4748,7 @@ def handle_shell_command(shell_cmd, command_identifier=None, return_command_only
                             url = folder.get('url', 'N/A')
                             print(f"drwxr-xr-x    - {time_str} {name}/")
                             print(f"    URL: {url}")
+                            print()  # 添加空行分割
                         
                         # Display files
                         for file in files:
@@ -4757,6 +4758,7 @@ def handle_shell_command(shell_cmd, command_identifier=None, return_command_only
                             url = file.get('url', 'N/A')
                             print(f"-rw-r--r-- {size_str:>8} {time_str} {name}")
                             print(f"    URL: {url}")
+                            print()  # 添加空行分割
                             
                     elif result.get("mode") == "extended":
                         # Legacy extended mode - keeping for backward compatibility
