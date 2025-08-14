@@ -463,7 +463,7 @@ def enter_shell_mode(command_identifier=None):
                         else:
                             result = shell.cmd_find(*args)
                     else:
-                        print(f"❌ Unknown command: {cmd}")
+                        print(f"Unknown command: {cmd}")
                         print("💡 Enter 'help' to view available commands")
                         print()
                     

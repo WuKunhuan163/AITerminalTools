@@ -293,25 +293,43 @@ class GoogleDriveShell:
         return self.remote_commands.execute_remote_command_interface(*args, **kwargs)
     
     def _handle_unified_echo_command(self, args):
-        """统一的echo命令处理逻辑 - 支持文件重定向、普通输出和中文字符"""
+        """统一的echo命令处理逻辑 - 支持文件重定向、普通输出、-e参数和中文字符"""
         # 空echo命令
         if not args:
             print("")
             return 0
         
+        # 检查是否有-e参数
+        enable_escapes = False
+        filtered_args = []
+        for arg in args:
+            if arg == '-e':
+                enable_escapes = True
+            else:
+                filtered_args.append(arg)
+        
         # 重建完整的参数字符串，保持原始格式
-        args_str = ' '.join(args)
+        # 注意：这里不包含-e参数，因为-e会在远程命令生成时单独处理
+        args_str = ' '.join(filtered_args)
         
         # 检查是否有重定向（简化版本，避免复杂的引号解析）
-        if ' > ' in args_str:
-            # 文件重定向：echo "content" > filename
-            return self._handle_echo_file_redirect(args_str)
+        # 检查过滤后的args列表中是否包含重定向符号
+        has_redirect = '>' in filtered_args
+        if has_redirect:
+            # 文件重定向：echo [-e] "content" > filename
+            return self._handle_echo_file_redirect(args_str, enable_escapes)
         else:
-            # 普通输出：echo "content"
-            return self._handle_echo_output(args_str)
+            # 普通输出：echo [-e] "content"
+            # 对于普通输出，需要移除内容的外层引号
+            content = args_str.strip()
+            if content.startswith('"') and content.endswith('"'):
+                content = content[1:-1]
+            elif content.startswith("'") and content.endswith("'"):
+                content = content[1:-1]
+            return self._handle_echo_output(content, enable_escapes)
     
-    def _handle_echo_file_redirect(self, args_str):
-        """处理echo文件重定向：echo "content" > filename"""
+    def _handle_echo_file_redirect(self, args_str, enable_escapes=False):
+        """处理echo文件重定向：echo [-e] "content" > filename"""
         # 简单分割重定向
         parts = args_str.split(' > ', 1)
         if len(parts) != 2:
@@ -320,6 +338,12 @@ class GoogleDriveShell:
         
         text = parts[0].strip()
         filename = parts[1].strip()
+        
+        # 移除text内容的引号（如果有）
+        if text.startswith('"') and text.endswith('"'):
+            text = text[1:-1]
+        elif text.startswith("'") and text.endswith("'"):
+            text = text[1:-1]
         
         # 移除文件名的引号（如果有）
         if filename.startswith('"') and filename.endswith('"'):
@@ -342,7 +366,13 @@ class GoogleDriveShell:
         content_base64 = base64.b64encode(content_bytes).decode('ascii')
         
         # 构建远程命令
-        remote_command = f'echo "{content_base64}" | base64 -d > "{remote_absolute_path}"'
+        if enable_escapes:
+            # 对于echo -e，直接使用echo -e命令，让bash处理转义序列
+            import shlex
+            quoted_text = shlex.quote(text)
+            remote_command = f'echo -e {quoted_text} > "{remote_absolute_path}"'
+        else:
+            remote_command = f'echo "{content_base64}" | base64 -d > "{remote_absolute_path}"'
         
         # 执行远程命令
         result = self.execute_remote_command_interface(remote_command, "echo", {
@@ -359,30 +389,32 @@ class GoogleDriveShell:
             print(error_msg)
             return 1
     
-    def _handle_echo_output(self, text):
-        """处理echo普通输出：echo "content" """
-        # 使用base64编码避免引号问题，然后在远端解码并输出
-        import base64
-        content_bytes = text.encode('utf-8')
-        content_base64 = base64.b64encode(content_bytes).decode('ascii')
+    def _handle_echo_output(self, text, enable_escapes=False):
+        """处理echo普通输出：echo [-e] "content" """
+        if enable_escapes:
+            # 对于echo -e，直接构建echo -e命令，让bash处理转义序列
+            # 使用shlex.quote确保特殊字符正确转义
+            import shlex
+            quoted_text = shlex.quote(text)
+            remote_command = f'echo -e {quoted_text}'
+        else:
+            # 使用base64编码避免引号问题，然后在远端解码并输出
+            import base64
+            content_bytes = text.encode('utf-8')
+            content_base64 = base64.b64encode(content_bytes).decode('ascii')
+            remote_command = f'echo "{content_base64}" | base64 -d'
         
-        # 构建远程命令 - 解码并输出到stdout
-        remote_command = f'echo "{content_base64}" | base64 -d'
-        
-        # 执行远程命令
-        result = self.execute_remote_command_interface(remote_command, "echo", {
-            "text": text
-        })
+        # 使用execute_generic_remote_command自动生成JSON结果文件并下载
+        result = self.execute_generic_remote_command("bash", ["-c", remote_command])
         
         if result.get("success", False):
-            # 显示远程执行的输出
-            if result.get("source") != "direct_feedback":
-                stdout = result.get("stdout", "").strip()
-                stderr = result.get("stderr", "").strip()
-                if stdout:
-                    print(stdout)
-                if stderr:
-                    print(stderr)
+            # 直接显示远程执行的输出
+            stdout = result.get("stdout", "").strip()
+            stderr = result.get("stderr", "").strip()
+            if stdout:
+                print(stdout)
+            if stderr:
+                print(stderr, file=sys.stderr)
             return 0
         else:
             error_msg = result.get("error", "Echo output failed")
@@ -396,7 +428,7 @@ class GoogleDriveShell:
         max_attempts = 10  # 最多尝试10次
         delay = 1  # 每次延迟1秒
         
-        print("⏳ Waiting for file creation", end="", flush=True)
+        print("⏳ Waiting for result ...", end="", flush=True)
         
         for attempt in range(max_attempts):
             try:
@@ -525,6 +557,13 @@ class GoogleDriveShell:
     def execute_shell_command(self, shell_cmd, command_identifier=None):
         """执行shell命令 - 新的架构入口点"""
         try:
+            # 保存原始命令信息，用于检测引号包围的命令
+            original_shell_cmd = shell_cmd
+            
+            # 检测引号命令标记
+            is_quoted_command = shell_cmd.startswith("__QUOTED_COMMAND__")
+            if is_quoted_command:
+                shell_cmd = shell_cmd[len("__QUOTED_COMMAND__"):]  # 移除标记
             # 显示命令分割线
             print("=" * 13)
             # 在banner中将换行符替换为空格，以便单行显示
@@ -532,31 +571,65 @@ class GoogleDriveShell:
             print(f"GDS {display_cmd}")
             print("=" * 13)
             
-            # 解析命令 - 对edit和echo命令特殊处理
-            if shell_cmd.strip().startswith('edit '):
-                # edit命令特殊处理：使用正则表达式提取JSON部分
+            # 首先检测引号包围的完整命令（在命令解析之前）
+            shell_cmd_clean = shell_cmd.strip()
+            if ((shell_cmd_clean.startswith("'") and shell_cmd_clean.endswith("'")) or 
+                (shell_cmd_clean.startswith('"') and shell_cmd_clean.endswith('"'))):
+                # 去除外层引号，这是一个完整的远程命令
+                shell_cmd_clean = shell_cmd_clean[1:-1]
+                shell_cmd = shell_cmd_clean  # 更新shell_cmd以便后续使用
+
+            # 解析命令 - 对edit命令特殊处理
+            if shell_cmd_clean.strip().startswith('edit '):
+                # edit命令特殊处理：使用正则表达式提取JSON部分，直接调用处理
                 import re
-                match = re.match(r'^(edit)\s+((?:--\w+\s+)*)([\w.]+)\s+(.+)$', shell_cmd.strip())
+                match = re.match(r'^(edit)\s+((?:--\w+\s+)*)([\w.]+)\s+(.+)$', shell_cmd_clean.strip())
                 if match:
-                    cmd = match.group(1)
                     flags_str = match.group(2).strip()
                     filename = match.group(3)
                     json_spec = match.group(4)
                     
-                    args = []
-                    if flags_str:
-                        args.extend(flags_str.split())
-                    args.append(filename)
-                    args.append(json_spec)
+                    # 移除JSON参数外层的引号（如果存在）
+                    json_spec = json_spec.strip()
+                    if ((json_spec.startswith("'") and json_spec.endswith("'")) or 
+                        (json_spec.startswith('"') and json_spec.endswith('"'))):
+                        json_spec = json_spec[1:-1]
+                    
+                    # 解析选项参数
+                    preview = '--preview' in flags_str
+                    backup = '--backup' in flags_str
+                    
+                    # 直接调用edit命令，避免参数重新处理
+                    try:
+                        result = self.cmd_edit(filename, json_spec, preview=preview, backup=backup)
+                    except KeyboardInterrupt:
+                        result = {"success": False, "error": "Operation interrupted by user"}
+                    
+                    if result.get("success", False):
+                        # 显示diff比较（预览模式和正常模式都显示）
+                        diff_output = result.get("diff_output", "")
+                        
+                        if diff_output and diff_output != "No changes detected":
+                            print(f"\nEdit comparison: {filename}")
+                            print("=" * 50)
+                            print(diff_output)
+                            print("=" * 50)
+                        
+                        # 对于正常模式，显示成功信息
+                        if result.get("mode") != "preview":
+                            print(result.get("message", "\nFile edited successfully"))
+                        return 0
+                    else:
+                        print(result.get("error", "Failed to edit file"))
+                        return 1
                 else:
                     # 回退到简单分割
-                    cmd_parts = shell_cmd.strip().split()
+                    cmd_parts = shell_cmd_clean.strip().split()
                     cmd = cmd_parts[0] if cmd_parts else ''
                     args = cmd_parts[1:] if len(cmd_parts) > 1 else []
-            # 删除特殊echo解析分支 - 统一到下面的通用处理
             else:
                 # 其他命令使用正常分割
-                cmd_parts = shell_cmd.strip().split()
+                cmd_parts = shell_cmd_clean.split()
                 if not cmd_parts:
                     return 1
                 cmd = cmd_parts[0]
@@ -662,6 +735,25 @@ class GoogleDriveShell:
                     return 1
                 return shell_rm(target, recursive, command_identifier)
             elif cmd == 'echo':
+                # 检测是否是引号包围的完整命令（包含重定向）
+                if len(args) >= 3 and '>' in args:
+
+
+                    
+                    if is_quoted_command:
+
+                        # 这是引号包围的远程命令，正常处理
+                        pass  # 继续到_handle_unified_echo_command
+                    else:
+                        # 重建完整的echo内容（除了重定向部分）
+                        redirect_index = args.index('>')
+                        echo_content = ' '.join(args[:redirect_index])
+                        target_file = args[-1]
+                        
+                        print("Local redirection may happen")
+                        print("For remote file creation, use quotes:")
+                        print(f"GDS 'echo {echo_content} > {target_file}'")
+                        return 1
                 # 统一的echo处理逻辑 - 支持文件重定向和普通输出
                 return self._handle_unified_echo_command(args)
             elif cmd == 'help':
@@ -716,7 +808,8 @@ class GoogleDriveShell:
                     return 1
                 result = self.cmd_cat(args[0])
                 if result.get("success", False):
-                    print(result.get("output", ""))
+                    if not result.get("direct_feedback", False):
+                        print(result.get("output", ""))
                     return 0
                 else:
                     print(result.get("error", "Failed to read file"))
@@ -745,7 +838,29 @@ class GoogleDriveShell:
                     return 1
                     
                 filename = remaining_args[0]
-                edit_spec = ' '.join(remaining_args[1:])
+                # 对于edit命令，JSON参数不能用空格连接，需要从原始命令中提取
+                # 使用正则表达式从原始shell_cmd中提取JSON部分
+                import re
+                # 构建选项字符串用于匹配
+                options_pattern = ""
+                if preview:
+                    options_pattern += r"(?:--preview\s+)?"
+                if backup:
+                    options_pattern += r"(?:--backup\s+)?"
+                
+                # 匹配命令：edit [options] filename JSON_spec
+                pattern = rf'^edit\s+{options_pattern}(\S+)\s+(.+)$'
+                match = re.search(pattern, shell_cmd)
+                if match:
+                    edit_spec = match.group(2)  # 直接提取JSON部分，不做空格连接
+                else:
+                    # 回退方案：如果只有一个JSON参数，直接使用
+                    if len(remaining_args) == 2:
+                        edit_spec = remaining_args[1]
+                    else:
+                        # 多个参数时，可能是引号被分割了，尝试重新组合
+                        edit_spec = ' '.join(remaining_args[1:])
+                
                 try:
                     result = self.cmd_edit(filename, edit_spec, preview=preview, backup=backup)
                 except KeyboardInterrupt:
@@ -810,7 +925,8 @@ class GoogleDriveShell:
                 read_args = remaining_args[1:] if len(remaining_args) > 1 else []
                 result = self.cmd_read(filename, *read_args, force=force)
                 if result.get("success", False):
-                    print(result.get("output", ""))
+                    if not result.get("direct_feedback", False):
+                        print(result.get("output", ""))
                     return 0
                 else:
                     print(result.get("error", "Failed to read file"))
@@ -970,7 +1086,8 @@ class GoogleDriveShell:
                 # 使用委托方法处理find命令
                 result = self.cmd_find(*args)
                 if result.get("success", False):
-                    print(result.get("output", ""))
+                    if not result.get("direct_feedback", False):
+                        print(result.get("output", ""))
                     return 0
                 else:
                     print(result.get("error", "Find failed"))
@@ -1020,7 +1137,7 @@ class GoogleDriveShell:
                     print(result.get("error", "Grep failed"))
                     return 1
             else:
-                print(f"❌ Unknown command: {cmd}")
+                print(f"Unknown command: {cmd}")
                 return 1
                 
         except Exception as e:

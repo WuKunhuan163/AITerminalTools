@@ -77,11 +77,6 @@ def debug_print(*args, **kwargs):
     # 如果正在捕获，只添加到缓存，不输出到控制台
     if debug_capture.capturing:
         debug_capture.add_debug(message)
-        # 只显示真正的进度指示器（不是debug信息）给用户
-        # 排除所有包含"DEBUG"、"检查"、"发现"等调试关键词的消息
-        if (any(indicator in message for indicator in ['⏳', '✅', '❌']) 
-            and not any(debug_keyword in message for debug_keyword in ['🔧 DEBUG:', '检查', '发现', '处理'])):
-            print(*args, **kwargs)
     else:
         # 不在捕获期间，正常输出到控制台
         print(*args, **kwargs)

@@ -16,7 +16,7 @@ import uuid
 import warnings
 from pathlib import Path
 
-from GOOGLE_DRIVE_PROJ.modules.remote_commands import debug_print
+from GOOGLE_DRIVE_PROJ.modules.remote_commands import debug_print, debug_capture
 warnings.filterwarnings('ignore', message='urllib3 v2 only supports OpenSSL 1.1.1+')
 from dotenv import load_dotenv
 load_dotenv()
@@ -542,25 +542,34 @@ def main():
             return enter_shell_mode(command_identifier) if enter_shell_mode else 1
         else:
             # 执行指定的shell命令 - 使用GoogleDriveShell
-            # 不要用空格连接参数，这会破坏引号结构
-            # 而是重新构建带引号的命令字符串
-            import shlex
+            # 检测引号包围的完整命令（用于远端重定向等）
             shell_cmd_parts = args[1:]
             
-            # 对于包含空格的参数，需要重新加上引号
-            quoted_parts = []
-            for part in shell_cmd_parts:
-                if ' ' in part or '"' in part or "'" in part:
-                    # 如果参数包含空格或引号，用shlex.quote重新引用
-                    quoted_parts.append(shlex.quote(part))
-                else:
-                    quoted_parts.append(part)
-            
-            shell_cmd = ' '.join(quoted_parts)
+            # 如果只有一个参数且包含空格，可能是引号包围的完整命令
+            if len(shell_cmd_parts) == 1 and (' > ' in shell_cmd_parts[0] or ' && ' in shell_cmd_parts[0] or ' || ' in shell_cmd_parts[0]):
+                # 这是一个引号包围的完整命令，直接使用
+                shell_cmd = shell_cmd_parts[0]
+                quoted_parts = shell_cmd_parts  # 为调试信息设置
+                # 添加标记，表示这是引号包围的命令
+                shell_cmd = f"__QUOTED_COMMAND__{shell_cmd}"
+
+            else:
+                # 正常的多参数命令，需要重新引用
+                import shlex
+                quoted_parts = []
+                for part in shell_cmd_parts:
+                    if ' ' in part or '"' in part or "'" in part:
+                        # 如果参数包含空格或引号，用shlex.quote重新引用
+                        quoted_parts.append(shlex.quote(part))
+                    else:
+                        quoted_parts.append(part)
+                shell_cmd = ' '.join(quoted_parts)
+            debug_capture.start_capture()
             debug_print(f"DEBUG: args[1:] = {args[1:]}")
             debug_print(f"DEBUG: shell_cmd_parts = {shell_cmd_parts}")
             debug_print(f"DEBUG: quoted_parts = {quoted_parts}")
             debug_print(f"DEBUG: final shell_cmd = {repr(shell_cmd)}")
+            debug_capture.stop_capture()
             
             try:
                 # 动态导入GoogleDriveShell避免循环导入

@@ -1060,7 +1060,7 @@ class FileOperations:
             # 查找文件
             file_info = self._find_file(filename, current_shell)
             if not file_info:
-                return {"success": False, "error": f"文件或目录不存在: {filename}"}
+                return {"success": False, "error": f"File or directory does not exist: {filename}"}
             
             # 检查是否为文件
             if file_info['mimeType'] == 'application/vnd.google-apps.folder':
@@ -1863,7 +1863,7 @@ class FileOperations:
             else:
                 return {
                     "success": False,
-                    "error": f"远程Python文件执行失败: {result.get('error', 'Unknown error')}",
+                    "error": f"Remote Python file execution failed: {result.get('error', '')}",
                     "stdout": result.get("stdout", ""),
                     "stderr": result.get("stderr", "")
                 }
@@ -3020,7 +3020,19 @@ class FileOperations:
                 if not isinstance(replacements, list):
                     return {"success": False, "error": "Replacement specification must be an array"}
             except json.JSONDecodeError as e:
-                return {"success": False, "error": f"Failed to parse replacement specification JSON: {e}"}
+                # 提供更有建设性的错误信息
+                error_msg = f"JSON parsing failed: {e}\n\n"
+                error_msg += "Common issues:\n"
+                error_msg += "1. Missing quotes around strings\n"
+                error_msg += "2. Unescaped quotes inside strings (use \\\" instead of \")\n" 
+                error_msg += "3. Missing commas between array elements\n"
+                error_msg += "4. Shell quote conflicts. Try using single quotes around JSON\n\n"
+                error_msg += f"Your input: {repr(replacement_spec)}\n"
+                error_msg += "Correct format examples:\n"
+                error_msg += "  Text replacement: '[[\"old\", \"new\"]]'\n"
+                error_msg += "  Line replacement: '[[[1, 3], \"new content\"]]'\n"
+                error_msg += "  Mixed: '[[[1, 2], \"line\"], [\"old\", \"new\"]]'"
+                return {"success": False, "error": error_msg}
             
             # 2. 下载文件到缓存
             download_result = self.cmd_download(filename, force=True)  # 强制重新下载确保最新内容
