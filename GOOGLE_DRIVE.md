@@ -13,9 +13,10 @@ GOOGLE_DRIVE 是一个强大的 Google Drive 远程控制工具，支持通过�
 
 ### EDIT 功能全新发布 ✅ 已修复
 - **多段同步替换**: 支持行号替换和文本搜索替换的混合编辑
-- **0-based 索引**: 行号使用 [a, b) 语法，与 Python 和 read 命令对齐  
+- **插入模式**: 支持 `[line, null]` 语法在指定行后插入内容，不替换现有内容
+- **0-based 索引**: 行号使用 [a, b] 包含语法，与 read 命令对齐  
 - **预览模式**: `--preview` 选项查看修改结果而不保存
-- **备份功能**: `--backup` 选项创建修改前的备份文件
+- **备份功能**: `--backup` 选项创建修改前的备份文件，支持批量上传
 - **JSON解析修复**: 解决了shlex分割JSON字符串导致的解析失败问题
 - **路径重复修复**: 修复了多文件上传中文件名重复添加的路径错误
 
@@ -394,6 +395,287 @@ greet()
 4. **验证结果**: 编辑后使用 `cat` 或 `read` 命令验证修改结果
 5. **JSON转义**: 替换内容包含特殊字符时注意JSON转义
 
+## 🐍 虚拟环境管理功能
+
+### 概述
+GDS Shell 提供了完整的虚拟环境管理功能，支持在远程 Google Colab 环境中创建、管理和使用 Python 虚拟环境。这个功能特别适用于需要隔离不同项目依赖的场景。
+
+### ✨ 核心特性
+- **多环境支持**: 可以创建和管理多个独立的虚拟环境
+- **Shell 隔离**: 每个 Shell 会话可以独立激活不同的虚拟环境
+- **自动 pip 集成**: pip 命令自动识别当前激活的虚拟环境
+- **状态持久化**: 虚拟环境状态在 Shell 会话间保持
+- **Google Drive 集成**: 虚拟环境存储在 Google Drive 中，支持跨设备访问
+
+### 工作原理
+
+#### 存储结构
+```
+REMOTE_ROOT/
+├── .env/              # 虚拟环境根目录
+│   ├── .tmp/          # 状态文件目录（隐藏）
+│   │   └── current_venv_<shell_id>.txt  # 当前激活环境记录
+│   ├── myproject/     # 虚拟环境目录
+│   │   ├── env_info.txt        # 环境信息
+│   │   └── <packages>/         # 安装的包
+│   └── dataanalysis/  # 另一个虚拟环境
+│       └── ...
+```
+
+#### 环境变量管理
+- **激活时**: `PYTHONPATH=/env/python:<env_path>`
+- **未激活时**: `PYTHONPATH=/env/python`
+- **状态跟踪**: 通过隐藏的状态文件跟踪每个 Shell 的激活状态
+
+### 命令参考
+
+#### 虚拟环境管理
+```bash
+# 创建虚拟环境
+GDS venv --create <env_name>
+
+# 列出所有虚拟环境
+GDS venv --list
+
+# 激活虚拟环境
+GDS venv --activate <env_name>
+
+# 取消激活虚拟环境
+GDS venv --deactivate
+
+# 删除虚拟环境
+GDS venv --delete <env_name>
+```
+
+#### 包管理
+```bash
+# 在激活的虚拟环境中安装包
+GDS pip install <package_name>
+
+# 在激活的虚拟环境中列出包
+GDS pip list
+
+# 在激活的虚拟环境中卸载包
+GDS pip uninstall <package_name>
+
+# 在系统环境中安装包（未激活虚拟环境时）
+GDS pip install <package_name>
+```
+
+### 使用示例
+
+#### 基础工作流程
+```bash
+# 1. 创建新的虚拟环境
+GDS venv --create myproject
+# 输出: Virtual environment 'myproject' created successfully
+
+# 2. 查看所有环境
+GDS venv --list
+# 输出: 
+# Virtual environments (1 total):
+#   myproject
+
+# 3. 激活环境
+GDS venv --activate myproject
+# 输出: Virtual environment 'myproject' activated successfully
+
+# 4. 在虚拟环境中安装包
+GDS pip install numpy pandas matplotlib
+# 输出: pip install numpy pandas matplotlib executed successfully in environment 'myproject'
+
+# 5. 查看当前环境状态
+GDS venv --list
+# 输出:
+# Virtual environments (1 total):
+# * myproject    # 星号表示当前激活的环境
+
+# 6. 取消激活
+GDS venv --deactivate
+# 输出: Virtual environment deactivated
+
+# 7. 删除环境（可选）
+GDS venv --delete myproject
+# 输出: Virtual environment 'myproject' deleted successfully
+```
+
+#### 多项目管理示例
+```bash
+# 创建数据分析项目环境
+GDS venv --create dataanalysis
+GDS venv --activate dataanalysis
+GDS pip install numpy pandas scikit-learn jupyter
+
+# 创建Web开发项目环境
+GDS venv --create webapp
+GDS venv --activate webapp
+GDS pip install flask django requests
+
+# 在不同项目间切换
+GDS venv --activate dataanalysis  # 切换到数据分析环境
+GDS python analyze_data.py        # 运行数据分析脚本
+
+GDS venv --activate webapp        # 切换到Web开发环境
+GDS python run_server.py          # 运行Web服务器
+```
+
+#### 实际开发场景
+```bash
+# 场景：开发一个需要特定版本库的机器学习项目
+
+# 1. 创建项目专用环境
+GDS venv --create ml_project_v1
+GDS venv --activate ml_project_v1
+
+# 2. 安装项目依赖
+GDS pip install numpy==1.21.0 tensorflow==2.8.0 scikit-learn==1.0.2
+
+# 3. 创建并运行项目代码
+GDS echo 'import numpy as np
+import tensorflow as tf
+print(f"NumPy version: {np.__version__}")
+print(f"TensorFlow version: {tf.__version__}")
+print("ML environment is ready!")' > ml_setup_test.py
+
+GDS python ml_setup_test.py
+
+# 4. 项目完成后，可以保留环境或删除
+GDS venv --deactivate
+# GDS venv --delete ml_project_v1  # 可选：删除环境
+```
+
+### 高级功能
+
+#### Shell 会话隔离
+```bash
+# Shell A 中激活环境1
+GOOGLE_DRIVE --checkout-remote-shell shell_a
+GDS venv --activate project_a
+GDS pip install requests
+
+# Shell B 中激活环境2（在新终端中）
+GOOGLE_DRIVE --checkout-remote-shell shell_b
+GDS venv --activate project_b
+GDS pip install flask
+
+# 两个Shell可以同时使用不同的虚拟环境
+```
+
+#### 环境状态检查
+```bash
+# 检查当前激活的环境
+GDS venv --list
+# 输出中带 * 的是当前激活环境
+
+# 查看环境详细信息
+GDS cat ~/.env/myproject/env_info.txt
+# 显示环境创建时间、路径等信息
+```
+
+### 输出格式
+
+#### 创建环境
+```bash
+GDS venv --create testenv
+```
+```
+Virtual environment 'testenv' created successfully
+Environment path: /content/drive/MyDrive/REMOTE_ROOT/.env/testenv
+```
+
+#### 激活环境
+```bash
+GDS venv --activate testenv
+```
+```
+Virtual environment 'testenv' activated successfully
+PYTHONPATH has been set in the remote environment
+Environment path: /content/drive/MyDrive/REMOTE_ROOT/.env/testenv
+```
+
+#### 列出环境
+```bash
+GDS venv --list
+```
+```
+Virtual environments (2 total):
+* testenv
+  production
+```
+
+#### pip 安装
+```bash
+GDS pip install numpy
+```
+```
+pip install numpy executed successfully in environment 'testenv'
+Target path: /content/drive/MyDrive/REMOTE_ROOT/.env/testenv
+```
+
+### 错误处理
+
+#### 常见错误和解决方案
+
+1. **环境名称冲突**
+   ```
+   Virtual environment 'myproject' already exists
+   ```
+   - 使用不同的环境名称或先删除现有环境
+
+2. **环境不存在**
+   ```
+   Virtual environment 'nonexistent' does not exist
+   ```
+   - 使用 `GDS venv --list` 查看可用环境
+
+3. **非法环境名称**
+   ```
+   Environment name cannot start with '.'
+   ```
+   - 避免使用以点号开头的环境名称
+
+4. **激活失败**
+   ```
+   Failed to activate virtual environment: environment variables not set correctly
+   ```
+   - 检查远程环境连接状态，重试激活命令
+
+### 最佳实践
+
+1. **环境命名**: 使用描述性名称，如 `ml_project`、`web_api`、`data_analysis`
+2. **定期清理**: 删除不再使用的虚拟环境以节省空间
+3. **依赖管理**: 为每个项目创建独立环境，避免依赖冲突
+4. **状态检查**: 使用 `GDS venv --list` 确认当前激活的环境
+5. **Shell 隔离**: 利用多Shell功能为不同项目维护独立的开发环境
+
+### 与其他功能的集成
+
+#### 与文件操作的结合
+```bash
+# 在虚拟环境中开发
+GDS venv --activate myproject
+GDS echo 'import requests
+response = requests.get("https://api.github.com")
+print(response.status_code)' > api_test.py
+GDS python api_test.py
+```
+
+#### 与编辑功能的结合
+```bash
+# 激活环境后编辑代码
+GDS venv --activate dataproject
+GDS edit analysis.py '[["import pandas", "import pandas as pd\nimport numpy as np"]]'
+GDS python analysis.py
+```
+
+#### 与上传下载的结合
+```bash
+# 上传本地代码到激活的环境中
+GDS venv --activate myproject
+GDS upload ~/local_project/main.py
+GDS python main.py
+```
+
 ## UPLOAD 功能详解
 
 ### 概述
@@ -486,7 +768,7 @@ rm <file>                   # 删除文件
 rm -rf <dir>                # 递归删除目录
 mv <source> <dest>          # 移动/重命名文件或文件夹
 edit [--preview] [--backup] <file> '<spec>' # 多段文本同sync替换编辑
-upload [--force] <files...> [target]  # 上传文件到Google Drive (--force强制覆盖)
+upload [--target-dir TARGET] <files...>  # 上传文件到Google Drive (默认：当前目录)
 ```
 
 ### 文件内容
@@ -496,7 +778,56 @@ echo <text>                 # 显示文本
 echo <text> > <file>        # 创建文件并写入文本
 grep <pattern> <file>       # 在文件中搜索模式
 read <file> [start end]     # 读取文件内容（带行号）
-find [path] -name [pattern] # 查找匹配模式的文件和目录```
+read [--force] <file>       # 强制重新下载并读取文件内容
+find [path] -name [pattern] # 查找匹配模式的文件和目录
+```
+
+**READ 命令详细语法**:
+```bash
+# 基本用法
+read filename               # 显示整个文件（带行号）
+read filename 5             # 从第5行开始显示到文件末尾
+read filename 2 8           # 显示第2行到第8行（包含第8行）[a, b]包含语法
+read --force filename       # 强制重新下载，忽略缓存
+
+# 多范围读取（JSON格式）
+read filename "[[0, 2], [5, 7]]"  # 显示第0-2行和第5-7行
+
+# 注意事项
+# - 行号从0开始（0-based索引）
+# - [start, end] 使用包含语法，end行会被显示
+# - --force 选项会跳过缓存，从远端重新下载最新版本
+```
+
+**EDIT 命令详细语法**:
+```bash
+# 基本用法
+edit filename 'spec'                    # 编辑文件并保存
+edit --preview filename 'spec'          # 预览修改结果，不保存
+edit --backup filename 'spec'           # 编辑前创建备份文件
+
+# 行号替换模式 [a, b] 包含语法
+edit file.py '[[[1, 3], "new content"]]'              # 替换第1-3行
+edit file.py '[[[0, 0], "# Header"], [[5, 7], "..."]]' # 多段替换
+
+# 插入模式 [a, null] 语法  
+edit file.py '[[[2, null], "# Inserted comment"]]'    # 在第2行后插入
+edit file.py '[[[0, null], "import os"], [[5, null], "# Note"]]' # 多处插入
+
+# 文本搜索替换
+edit file.py '[["old_text", "new_text"]]'             # 文本替换
+edit file.py '[["hello", "hi"], ["world", "earth"]]'  # 多个文本替换
+
+# 混合模式（替换+插入+文本搜索）
+edit file.py '[[[1, 1], "new line"], [[3, null], "inserted"], ["old", "new"]]'
+
+# 注意事项
+# - 行号从0开始（0-based索引）
+# - [a, b] 替换第a行到第b行（包含第b行）
+# - [a, null] 在第a行后插入内容
+# - 支持 \n 换行符和 _4SP_ 等空格占位符
+# - --backup 创建 filename.backup.timestamp 备份文件
+```
 
 ### 下载功能
 ```bash
@@ -507,6 +838,16 @@ download [--force] <file> [path] # 下载文件到本地 (带缓存)
 ```bash
 python <file>               # 执行Python文件
 python -c '<code>'          # 执行Python代码
+```
+
+### 虚拟环境管理
+```bash
+venv --create <env_name>    # 创建虚拟环境
+venv --delete <env_name>    # 删除虚拟环境
+venv --activate <env_name>  # 激活虚拟环境（设置PYTHONPATH）
+venv --deactivate          # 取消激活虚拟环境（清除PYTHONPATH）
+venv --list                # 列出所有虚拟环境
+pip <command> [options]     # pip包管理器（自动识别激活的虚拟环境）
 ```
 
 ### 远程命令执行 ⭐ **新功能**
@@ -554,6 +895,41 @@ GOOGLE_DRIVE --shell "python3 -m http.server 8000"
 5. 可选择跳过输入（直接按Enter）
 
 ## 使用示例
+
+### Upload 文件上传 ⭐ **已优化**
+
+**新语法** (2024年更新):
+```bash
+# 上传单个文件到当前目录
+GDS upload file.txt
+
+# 上传多个文件到当前目录  
+GDS upload file1.txt file2.txt file3.txt
+
+# 上传文件到指定目录
+GDS upload --target-dir docs file.txt
+
+# 上传多个文件到指定目录
+GDS upload --target-dir backup file1.txt file2.txt file3.txt
+
+# 上传到嵌套目录（自动创建）
+GDS upload --target-dir projects/myproject file.txt
+```
+
+**功能特性**:
+- ✅ **即时进度反馈**: "⏳ Waiting for upload" 立即显示，快速点显示
+- ✅ **自动目录创建**: 目标目录不存在时自动创建
+- ✅ **智能验证**: 使用ls-based validation确保准确的成功计数
+- ✅ **清晰语法**: 所有参数都是文件，除非使用 `--target-dir`
+- ✅ **双阶段进度**: "⏳ Waiting for upload" → "⏳ Validating the result"
+
+**示例输出**:
+```bash
+$ GDS upload --target-dir backup file1.txt file2.txt
+⏳ Waiting for upload ........
+⏳ Validating the result....
+Upload completed: 2/2 files
+```
 
 ### 基础操作
 ```bash

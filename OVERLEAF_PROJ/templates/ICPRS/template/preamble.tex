@@ -1,0 +1,33 @@
+% ICPRS Template Preamble
+% Defines custom commands for the ICPRS conference template
+
+% Page geometry for ICPRS format (18cm x 24cm on A4)
+\usepackage[a4paper,top=2.85cm,bottom=2.85cm,left=1.5cm,right=1.5cm,columnsep=0.4cm]{geometry}
+
+\makeatletter
+
+% Author and affiliation commands
+\newcommand{\authorname}[1]{\gdef\@authorname{#1}}
+\newcommand{\authoraddr}[1]{\gdef\@authoraddr{#1}}
+\newcommand{\secondauthoraddr}[1]{\gdef\@secondauthoraddr{#1}}
+
+% Keywords command
+\newcommand{\keywords}{\noindent\textbf{Keywords:} }
+
+% Abstract command (redefine existing command to match section format)
+\renewcommand{\abstract}{\section*{Abstract}}
+
+% Custom maketitle for ICPRS format (spans both columns)
+\renewcommand{\maketitle}{%
+  \twocolumn[{%
+    \begin{center}
+      {\Large\textbf{\@title}}\\[0.5em]
+      {\large\textbf{\@authorname}}\\[0.3em]
+      {\@authoraddr}\\
+      \@ifundefined{@secondauthoraddr}{}{\@secondauthoraddr\\}
+    \end{center}
+    \vspace{1em}
+  }]%
+}
+
+\makeatother 

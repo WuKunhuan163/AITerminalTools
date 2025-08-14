@@ -16,5 +16,5 @@ if openrouter_py.exists():
     # 执行OPENROUTER.py并传递所有参数
     os.execv(sys.executable, [sys.executable, str(openrouter_py)] + sys.argv[1:])
 else:
-    print(f"错误：找不到OPENROUTER.py文件: {openrouter_py}", file=sys.stderr)
+    print(f"Error: OPENROUTER.py file not found: {openrouter_py}", file=sys.stderr)
     sys.exit(1) 

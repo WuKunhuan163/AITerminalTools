@@ -17,13 +17,15 @@ class GDSCacheManager:
     
     def __init__(self, cache_root: str = None):
         if cache_root is None:
-            cache_root = Path(__file__).parent
+            # 更新缓存根目录到GOOGLE_DRIVE_DATA
+            cache_root = Path(__file__).parent.parent / "GOOGLE_DRIVE_DATA"
         
         self.cache_root = Path(cache_root)
         self.remote_files_dir = self.cache_root / "remote_files"
         self.cache_config_file = self.cache_root / "cache_config.json"
         
         # 确保目录存在
+        self.cache_root.mkdir(exist_ok=True)
         self.remote_files_dir.mkdir(exist_ok=True)
         
         # 初始化配置
@@ -41,7 +43,7 @@ class GDSCacheManager:
                 with open(self.cache_config_file, 'r', encoding='utf-8') as f:
                     return json.load(f)
             except Exception as e:
-                print(f"⚠️  加载缓存配置失败: {e}")
+                print(f"⚠️  Failed to load cache config: {e}")
         
         # 默认配置
         return {
@@ -56,7 +58,7 @@ class GDSCacheManager:
             with open(self.cache_config_file, 'w', encoding='utf-8') as f:
                 json.dump(self.cache_config, f, indent=2, ensure_ascii=False)
         except Exception as e:
-            print(f"❌ 保存缓存配置失败: {e}")
+            print(f"❌ Failed to save cache config: {e}")
     
     def _generate_file_hash(self, file_path: str) -> str:
         """为文件生成哈希值作为缓存文件名"""
@@ -77,7 +79,7 @@ class GDSCacheManager:
                     hasher.update(chunk)
             return hasher.hexdigest()
         except Exception as e:
-            print(f"❌ 计算文件哈希失败: {e}")
+            print(f"❌ Failed to calculate file hash: {e}")
             return ""
     
     def cache_file(self, remote_path: str, temp_file_path: str) -> Dict:
@@ -145,7 +147,7 @@ class GDSCacheManager:
         except Exception as e:
             return {
                 "success": False,
-                "error": f"缓存文件失败: {e}"
+                "error": f"Failed to cache file: {e}"
             }
     
     def is_file_cached(self, remote_path: str) -> bool:
@@ -182,7 +184,7 @@ class GDSCacheManager:
             if old_remote_path not in self.cache_config["files"]:
                 return {
                     "success": False,
-                    "error": f"缓存中未找到文件: {old_remote_path}"
+                    "error": f"File not found in cache: {old_remote_path}"
                 }
             
             # 获取旧缓存信息
@@ -221,7 +223,7 @@ class GDSCacheManager:
         except Exception as e:
             return {
                 "success": False,
-                "error": f"移动缓存文件失败: {e}"
+                "error": f"Failed to move cached file: {e}"
             }
     
     def cleanup_cache(self, remote_path: str = None) -> Dict:
@@ -259,7 +261,7 @@ class GDSCacheManager:
                 else:
                     return {
                         "success": False,
-                        "error": f"缓存中未找到文件: {remote_path}"
+                        "error": f"File not found in cache: {remote_path}"
                     }
             else:
                 # 清理所有缓存
@@ -282,7 +284,7 @@ class GDSCacheManager:
         except Exception as e:
             return {
                 "success": False,
-                "error": f"清理缓存失败: {e}"
+                "error": f"Failed to clean cache: {e}"
             }
     
     def get_cache_stats(self) -> Dict:
@@ -308,7 +310,7 @@ class GDSCacheManager:
         except Exception as e:
             return {
                 "success": False,
-                "error": f"获取缓存统计失败: {e}"
+                "error": f"Failed to get cache stats: {e}"
             } 
     def _update_cached_file_modified_time(self, remote_path: str, remote_modified_time: str):
         """
@@ -325,7 +327,7 @@ class GDSCacheManager:
                 return True
             return False
         except Exception as e:
-            print(f"更新缓存文件修改时间失败: {e}")
+            print(f"Failed to update cached file modified time: {e}")
             return False
 
 
@@ -348,7 +350,7 @@ class GDSCacheManager:
             self._save_cache_config()
             return True
         except Exception as e:
-            print(f"存储待处理修改时间失败: {e}")
+            print(f"Failed to store pending modified time: {e}")
             return False
     
     def get_pending_modified_time(self, remote_path: str):
@@ -367,7 +369,7 @@ class GDSCacheManager:
                 return pending_times[remote_path]["modified_time"]
             return None
         except Exception as e:
-            print(f"获取待处理修改时间失败: {e}")
+            print(f"Failed to get pending modified time: {e}")
             return None
     
     def clear_pending_modified_time(self, remote_path: str):
@@ -384,6 +386,6 @@ class GDSCacheManager:
                 return True
             return False
         except Exception as e:
-            print(f"清除待处理修改时间失败: {e}")
+            print(f"Failed to clear pending modified time: {e}")
             return False
 

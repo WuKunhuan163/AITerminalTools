@@ -166,7 +166,7 @@ def get_image_analysis(image_path: str, mode: str = "general", api: str = "googl
             model = genai.GenerativeModel('gemini-1.5-flash-latest')
             response = model.generate_content([prompt_instruction, img], stream=False)
             response.resolve()
-            print(f"✅ 成功！使用 {key_type} 密钥获得回复。", file=sys.stderr)
+            print(f"✅ Success! Using {key_type} key to get response.", file=sys.stderr)
             if is_run_environment(command_identifier):
                 output = create_json_output(True, "Success", response.text, image_path, api)
                 with open(os.environ['RUN_DATA_FILE'], 'w', encoding='utf-8') as f:
@@ -174,31 +174,31 @@ def get_image_analysis(image_path: str, mode: str = "general", api: str = "googl
                 return json.dumps(output, ensure_ascii=False)
             return response.text
         except (exceptions.ResourceExhausted, exceptions.PermissionDenied, Exception) as e:
-            error_detail = f"使用 {key_type} 密钥时失败: {str(e)}"
+            error_detail = f"Using {key_type} key failed: {str(e)}"
             failed_reasons.append(error_detail)
-            print(f"⚠️ 警告: {error_detail[:100]}... 正在尝试下一个...", file=sys.stderr)
+            print(f"⚠️ Warning: {error_detail[:100]}... Trying next...", file=sys.stderr)
             continue
     
     # 构建详细的失败原因
-    detailed_reason = "所有配置的API密钥都无法成功获取回复。详细信息:\n" + "\n".join([f"- {reason}" for reason in failed_reasons])
+    detailed_reason = "All configured API keys failed to get a response. Detailed information:\n" + "\n".join([f"- {reason}" for reason in failed_reasons])
     
     if is_run_environment(command_identifier):
         output = create_json_output(False, "All API keys failed", None, image_path, api, detailed_reason)
         with open(os.environ['RUN_DATA_FILE'], 'w', encoding='utf-8') as f:
             json.dump(output, f, ensure_ascii=False, indent=2)
         return json.dumps(output, ensure_ascii=False)
-    return f"*[API调用失败：{detailed_reason}]*"
+    return f"*[API call failed: {detailed_reason}]*"
 
 def main():
     """命令行接口"""
-    parser = argparse.ArgumentParser(description="图片转文字描述工具（IMG2TEXT）")
+    parser = argparse.ArgumentParser(description="Image to text description tool (IMG2TEXT)")
     parser.add_argument("positional_args", nargs="*", help="Positional arguments (command_identifier and/or image_path)")
     parser.add_argument("--mode", default="general", 
                        choices=["academic", "general", "code_snippet"],
-                       help="分析模式")
-    parser.add_argument("--api", default="google", choices=["google"], help="API接口，当前仅支持google")
-    parser.add_argument("--key", default=None, help="手动指定API key，优先级高于环境变量")
-    parser.add_argument("--prompt", default=None, help="自定义分析指令，会覆盖默认的模式提示")
+                       help="Analysis mode")
+    parser.add_argument("--api", default="google", choices=["google"], help="API interface, currently only supports google")
+    parser.add_argument("--key", default=None, help="Manually specify API key, priority over environment variables")
+    parser.add_argument("--prompt", default=None, help="Custom analysis instruction, will override default mode prompt")
     parser.add_argument("--output", help="输出结果到文件")
     parser.add_argument("--output-dir", help="输出结果到指定目录（自动生成文件名）")
     parser.add_argument("--test-connection", action="store_true", help="测试API连接状态，不处理任何图片")
@@ -252,13 +252,13 @@ def main():
         if args.output:
             with open(args.output, 'w', encoding='utf-8') as f:
                 f.write(result)
-            print(f"✅ 分析结果已保存到: {args.output}")
+            print(f"✅ Analysis result saved to: {args.output}")
         elif args.output_dir:
             # 如果指定了输出目录，则将结果保存到该目录
             output_file = os.path.join(args.output_dir, f"{os.path.splitext(os.path.basename(args.image_path))[0]}.json")
             with open(output_file, 'w', encoding='utf-8') as f:
                 f.write(result)
-            print(f"✅ 分析结果已保存到: {output_file}")
+            print(f"✅ Analysis result saved to: {output_file}")
         else:
             print(result)
 

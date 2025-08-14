@@ -248,7 +248,7 @@ def check_and_show_post_processing_status(result_path: str):
         if not status_file or not status_file.exists():
             # Try to regenerate status file from markdown if possible
             if result_path.endswith('.md') and result_path_obj.exists():
-                print("📄 状态文件不存在，尝试从Markdown重新生成...")
+                print("📄 Status file does not exist, trying to regenerate from Markdown...")
                 
                 # Import MinerU wrapper to use regeneration function
                 from mineru_wrapper import mineru_wrapper
@@ -258,13 +258,13 @@ def check_and_show_post_processing_status(result_path: str):
                     if regenerated_status:
                         status_file = Path(regenerated_status)
                     else:
-                        print("ℹ️  无需后处理，未找到有效的placeholder")
+                        print("ℹ️  No post-processing needed, no valid placeholders found")
                         return
                 else:
-                    print("ℹ️  未找到对应的PDF文件，无法重新生成状态")
+                    print("ℹ️  No corresponding PDF file found, cannot regenerate status")
                     return
             else:
-                print("ℹ️  无需后处理，未找到状态文件")
+                print("ℹ️  No post-processing needed, no status file found")
                 return
         
         # Read and display status from JSON file
@@ -272,47 +272,47 @@ def check_and_show_post_processing_status(result_path: str):
             status_data = json.load(f)
         
         print("\n" + "="*50)
-        print("🔄 异步处理状态")
+        print("🔄 Async processing status")
         print("="*50)
         
         # Display basic info
-        print(f"PDF文件: {status_data.get('pdf_file', 'Unknown')}")
-        print(f"创建时间: {status_data.get('created_at', 'Unknown')}")
-        print(f"总计项目: {status_data.get('total_items', 0)} 个需要后处理")
+        print(f"PDF file: {status_data.get('pdf_file', 'Unknown')}")
+        print(f"Created at: {status_data.get('created_at', 'Unknown')}")
+        print(f"Total items: {status_data.get('total_items', 0)} items need post-processing")
         
         # Display counts
         counts = status_data.get('counts', {})
         if counts.get('images', 0) > 0:
-            print(f"- 🖼️  图片: {counts['images']} 个 [需要Google API处理]")
+            print(f"- 🖼️  Images: {counts['images']} [need Google API processing]")
         if counts.get('formulas', 0) > 0:
-            print(f"- 🧮 公式: {counts['formulas']} 个 [需要UnimerNet处理]")
+            print(f"- 🧮 Formulas: {counts['formulas']} [need UnimerNet processing]")
         if counts.get('tables', 0) > 0:
-            print(f"- 📊 表格: {counts['tables']} 个 [需要UnimerNet处理]")
+            print(f"- 📊 Tables: {counts['tables']} [need UnimerNet processing]")
         
         # Display processing commands
         commands = status_data.get('processing_commands', {})
         if commands:
-            print("\n**后处理指令:**")
+            print("\n**Post-processing commands:**")
             if counts.get('images', 0) > 0:
-                print(f"- 图片分析: `{commands.get('image_analysis', 'N/A')}`")
+                print(f"- Image analysis: `{commands.get('image_analysis', 'N/A')}`")
             if counts.get('formulas', 0) > 0:
-                print(f"- 公式识别: `{commands.get('formula_recognition', 'N/A')}`")
+                print(f"- Formula recognition: `{commands.get('formula_recognition', 'N/A')}`")
             if counts.get('tables', 0) > 0:
-                print(f"- 表格识别: `{commands.get('table_recognition', 'N/A')}`")
-            print(f"- 全部处理: `{commands.get('process_all', 'N/A')}`")
+                print(f"- Table recognition: `{commands.get('table_recognition', 'N/A')}`")
+            print(f"- Process all: `{commands.get('process_all', 'N/A')}`")
         
         # Display detailed item information if requested
         items = status_data.get('items', [])
         if items:
-            print(f"\n📋 状态文件位置: {status_file}")
-            print("💡 提示：可以编辑Markdown文件中的placeholder标记来控制处理项目")
-            print("   - 移除 [placeholder: type] 标记可跳过该项目的处理")
-            print("   - 重新添加标记后运行命令可重新生成状态文件")
+            print(f"\n📋 Status file location: {status_file}")
+            print("💡 Hint: You can edit the placeholder markers in the Markdown file to control processing items")
+            print("   - Remove [placeholder: type] markers to skip processing for that item")
+            print("   - Re-add markers and run the command to regenerate the status file")
         
     except json.JSONDecodeError as e:
-        print(f"❌ 状态文件格式错误: {e}")
+        print(f"❌ Status file format error: {e}")
     except Exception as e:
-        print(f"⚠️  检查后处理状态时出错: {e}")
+        print(f"⚠️  Error checking post-processing status: {e}")
         
         # Fallback to old method if JSON method fails
         try:
@@ -322,7 +322,7 @@ def check_and_show_post_processing_status(result_path: str):
                 
                 if "## 📋 异步处理状态" in content:
                     print("\n" + "="*50)
-                    print("🔄 异步处理状态检测 (从Markdown)")
+                    print("🔄 Async processing status detection (from Markdown)")
                     print("="*50)
                     
                     # Extract the async processing section
@@ -331,7 +331,7 @@ def check_and_show_post_processing_status(result_path: str):
                     status_lines = []
                     
                     for line in lines:
-                        if "## 📋 异步处理状态" in line:
+                        if "## 📋 Async processing status" in line:
                             in_async_section = True
                             continue
                         elif in_async_section and line.startswith("## "):
@@ -344,9 +344,9 @@ def check_and_show_post_processing_status(result_path: str):
                         if line.strip():
                             print(line)
                     
-                    print("\n💡 建议：运行处理命令后将自动创建JSON状态文件")
+                    print("\n💡 Suggestion: JSON status file will be automatically created after running the processing command")
         except Exception as fallback_error:
-            print(f"⚠️  Fallback处理也失败: {fallback_error}")
+            print(f"⚠️  Fallback processing also failed: {fallback_error}")
 
 
 def list_processing_items(pdf_path: str, item_type: str = 'all', show_processed: bool = False):
@@ -359,7 +359,7 @@ def list_processing_items(pdf_path: str, item_type: str = 'all', show_processed:
         # Find status file
         status_file = pdf_directory / f"{pdf_stem}_postprocess.json"
         if not status_file.exists():
-            print(f"❌ 状态文件不存在: {status_file}")
+            print(f"❌ Status file does not exist: {status_file}")
             return False
         
         with open(status_file, 'r', encoding='utf-8') as f:
@@ -386,25 +386,25 @@ def list_processing_items(pdf_path: str, item_type: str = 'all', show_processed:
             filtered_items.append(item)
         
         if not filtered_items:
-            print(f"ℹ️  没有找到符合条件的项目 (类型: {item_type}, 显示已处理: {show_processed})")
+            print(f"ℹ️  No items found matching criteria (type: {item_type}, show processed: {show_processed})")
             return True
         
-        print(f"\n📋 {item_type.upper() if item_type != 'all' else 'ALL'} 项目列表:")
+        print(f"\n📋 {item_type.upper() if item_type != 'all' else 'ALL'} item list:")
         print("=" * 40)
         
         for i, item in enumerate(filtered_items, 1):
             status_icon = "✅" if item.get('processed', False) else "⏳"
             processed_at = item.get('processed_at', '')
-            processed_info = f" (处理时间: {processed_at})" if processed_at else ""
+            processed_info = f" (processing time: {processed_at})" if processed_at else ""
             
             print(f"{i:2d}. {status_icon} [{item['type'].upper()}] ID: {item['id'][:16]}...")
-            print(f"     处理器: {item['processor']} | 页面: {item['page']} | 状态: {'已处理' if item.get('processed', False) else '未处理'}{processed_info}")
+            print(f"     Processor: {item['processor']} | Page: {item['page']} | Status: {'processed' if item.get('processed', False) else 'not processed'}{processed_info}")
         
-        print(f"\n总计: {len(filtered_items)} 个项目")
+        print(f"\nTotal: {len(filtered_items)} items")
         return True
         
     except Exception as e:
-        print(f"❌ 列出项目失败: {e}")
+        print(f"❌ Failed to list items: {e}")
         return False
 
 
@@ -416,14 +416,14 @@ def process_by_hash_ids(pdf_path: str, hash_ids: list, processing_type: str = 'a
         result = mineru_wrapper.process_items_by_hash_ids(pdf_path, hash_ids, processing_type)
         
         if result:
-            print(f"\n🎉 批量处理完成！")
-            print("📊 更新后的状态:")
+            print(f"\n🎉 Batch processing completed!")
+            print("📊 Updated status:")
             check_and_show_post_processing_status(pdf_path)
         
         return result
         
     except Exception as e:
-        print(f"❌ 批量处理失败: {e}")
+        print(f"❌ Batch processing failed: {e}")
         return False
 
 

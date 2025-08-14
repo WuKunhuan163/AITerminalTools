@@ -12,7 +12,7 @@ from unittest.mock import patch, MagicMock
 # Add parent directory to path to import the module
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from _UNITTEST.base_test import BaseTest, APITest
+from _UNITTEST._base_test import BaseTest, APITest
 
 
 class TestOpenRouter(BaseTest):

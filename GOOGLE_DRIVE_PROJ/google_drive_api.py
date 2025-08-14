@@ -25,15 +25,74 @@ class GoogleDriveService:
         """
         self.service = None
         self.credentials = None
+        self.key_path = None
+        self.key_data = None
         
-        # 获取密钥文件路径
-        if service_account_key_path:
+        # 优先尝试从环境变量加载密钥信息
+        if self._load_from_environment():
+            pass  # 已从环境变量加载
+        elif service_account_key_path:
             self.key_path = service_account_key_path
+            if not os.path.exists(self.key_path):
+                raise FileNotFoundError(f"服务账户密钥文件不存在: {self.key_path}")
         else:
+            # 回退到文件路径模式
             self.key_path = os.environ.get('GOOGLE_DRIVE_SERVICE_ACCOUNT_KEY')
+            if not self.key_path:
+                raise ValueError("未找到服务账户密钥文件路径或环境变量")
+            if not os.path.exists(self.key_path):
+                raise FileNotFoundError(f"服务账户密钥文件不存在: {self.key_path}")
         
-        # 尝试认证
         self._authenticate()
+    
+    def _load_from_environment(self):
+        """
+        从环境变量加载服务账户密钥信息
+        
+        Returns:
+            bool: 是否成功从环境变量加载
+        """
+        try:
+            # 检查是否有完整的环境变量集合
+            required_env_vars = {
+                'type': 'GOOGLE_DRIVE_SERVICE_TYPE',
+                'project_id': 'GOOGLE_DRIVE_PROJECT_ID',
+                'private_key_id': 'GOOGLE_DRIVE_PRIVATE_KEY_ID',
+                'private_key': 'GOOGLE_DRIVE_PRIVATE_KEY',
+                'client_email': 'GOOGLE_DRIVE_CLIENT_EMAIL',
+                'client_id': 'GOOGLE_DRIVE_CLIENT_ID',
+                'auth_uri': 'GOOGLE_DRIVE_AUTH_URI',
+                'token_uri': 'GOOGLE_DRIVE_TOKEN_URI',
+                'auth_provider_x509_cert_url': 'GOOGLE_DRIVE_AUTH_PROVIDER_CERT_URL',
+                'client_x509_cert_url': 'GOOGLE_DRIVE_CLIENT_CERT_URL'
+            }
+            
+            # 构建密钥数据字典
+            key_data = {}
+            missing_vars = []
+            
+            for json_key, env_var in required_env_vars.items():
+                value = os.environ.get(env_var)
+                if value is None:
+                    missing_vars.append(env_var)
+                else:
+                    key_data[json_key] = value
+            
+            # 检查可选字段
+            universe_domain = os.environ.get('GOOGLE_DRIVE_UNIVERSE_DOMAIN')
+            if universe_domain:
+                key_data['universe_domain'] = universe_domain
+            
+            # 如果有缺失的必需变量，返回False
+            if missing_vars:
+                return False
+            
+            # 保存密钥数据
+            self.key_data = key_data
+            return True
+            
+        except Exception as e:
+            return False
     
     def _authenticate(self):
         """认证并创建服务对象"""
@@ -44,72 +103,25 @@ class GoogleDriveService:
                 'https://www.googleapis.com/auth/drive.file'
             ]
             
-            # 尝试从文件认证
-            if self.key_path and os.path.exists(self.key_path):
+            # 根据加载方式创建凭据
+            if self.key_data:
+                # 从环境变量中的密钥数据创建凭据
+                self.credentials = service_account.Credentials.from_service_account_info(
+                    self.key_data, scopes=SCOPES
+                )
+            elif self.key_path:
                 # 从服务账户密钥文件创建凭据
                 self.credentials = service_account.Credentials.from_service_account_file(
                     self.key_path, scopes=SCOPES
                 )
             else:
-                # 尝试从环境变量构建服务账户信息
-                service_account_info = self._build_service_account_info_from_env()
-                if service_account_info:
-                    self.credentials = service_account.Credentials.from_service_account_info(
-                        service_account_info, scopes=SCOPES
-                    )
-                else:
-                    raise ValueError("无法找到有效的服务账户认证信息")
+                raise ValueError("无法创建凭据：既没有密钥数据也没有密钥文件")
             
             # 创建Drive API服务对象
             self.service = build('drive', 'v3', credentials=self.credentials)
             
         except Exception as e:
             raise Exception(f"Google Drive API认证失败: {e}")
-    
-    def _build_service_account_info_from_env(self):
-        """从环境变量构建服务账户信息"""
-        try:
-            # 检查必需的环境变量
-            required_vars = [
-                'GOOGLE_DRIVE_SERVICE_TYPE',
-                'GOOGLE_DRIVE_PROJECT_ID',
-                'GOOGLE_DRIVE_PRIVATE_KEY_ID',
-                'GOOGLE_DRIVE_PRIVATE_KEY',
-                'GOOGLE_DRIVE_CLIENT_EMAIL',
-                'GOOGLE_DRIVE_CLIENT_ID',
-                'GOOGLE_DRIVE_AUTH_URI',
-                'GOOGLE_DRIVE_TOKEN_URI',
-                'GOOGLE_DRIVE_AUTH_PROVIDER_CERT_URL',
-                'GOOGLE_DRIVE_CLIENT_CERT_URL'
-            ]
-            
-            # 检查所有必需变量是否存在
-            env_values = {}
-            for var in required_vars:
-                value = os.environ.get(var)
-                if not value:
-                    return None
-                env_values[var] = value
-            
-            # 构建服务账户信息字典
-            service_account_info = {
-                "type": env_values['GOOGLE_DRIVE_SERVICE_TYPE'],
-                "project_id": env_values['GOOGLE_DRIVE_PROJECT_ID'],
-                "private_key_id": env_values['GOOGLE_DRIVE_PRIVATE_KEY_ID'],
-                "private_key": env_values['GOOGLE_DRIVE_PRIVATE_KEY'].replace('\\n', '\n'),
-                "client_email": env_values['GOOGLE_DRIVE_CLIENT_EMAIL'],
-                "client_id": env_values['GOOGLE_DRIVE_CLIENT_ID'],
-                "auth_uri": env_values['GOOGLE_DRIVE_AUTH_URI'],
-                "token_uri": env_values['GOOGLE_DRIVE_TOKEN_URI'],
-                "auth_provider_x509_cert_url": env_values['GOOGLE_DRIVE_AUTH_PROVIDER_CERT_URL'],
-                "client_x509_cert_url": env_values['GOOGLE_DRIVE_CLIENT_CERT_URL']
-            }
-            
-            return service_account_info
-            
-        except Exception as e:
-            print(f"从环境变量构建服务账户信息失败: {e}")
-            return None
     
     def test_connection(self):
         """测试API连接"""
@@ -198,7 +210,7 @@ class GoogleDriveService:
         except Exception as e:
             return {
                 "success": False,
-                "error": f"创建文件夹失败: {e}"
+                "error": f"Failed to create folder: {e}"
             }
     
     def upload_file(self, local_file_path, drive_folder_id=None, drive_filename=None):
@@ -217,7 +229,7 @@ class GoogleDriveService:
             if not os.path.exists(local_file_path):
                 return {
                     "success": False,
-                    "error": f"本地文件不存在: {local_file_path}"
+                    "error": f"Local file does not exist: {local_file_path}"
                 }
             
             # 确定文件名
@@ -246,7 +258,7 @@ class GoogleDriveService:
         except Exception as e:
             return {
                 "success": False,
-                "error": f"上传文件失败: {e}"
+                "error": f"Failed to upload file: {e}"
             }
     
     def download_file(self, file_id, local_save_path):
@@ -276,7 +288,7 @@ class GoogleDriveService:
             return {
                 "success": True,
                 "local_path": local_save_path,
-                "message": "文件下载成功"
+                "message": "File downloaded successfully"
             }
         except Exception as e:
             return {
@@ -298,12 +310,12 @@ class GoogleDriveService:
             self.service.files().delete(fileId=file_id).execute()
             return {
                 "success": True,
-                "message": "文件删除成功"
+                "message": "File deleted successfully"
             }
         except Exception as e:
             return {
                 "success": False,
-                "error": f"删除文件失败: {e}"
+                "error": f"Failed to delete file: {e}"
             }
     
     def share_file(self, file_id, email_address, role='reader'):
@@ -333,19 +345,19 @@ class GoogleDriveService:
             
             return {
                 "success": True,
-                "message": f"文件已分享给 {email_address}"
+                "message": f"File shared with {email_address}"
             }
         except Exception as e:
             return {
                 "success": False,
-                "error": f"分享文件失败: {e}"
+                "error": f"Failed to share file: {e}"
             }
 
 # 测试函数
 def test_drive_service():
     """测试Google Drive服务"""
     try:
-        print("🧪 正在测试Google Drive API连接...")
+        print("🧪 Testing Google Drive API connection...")
         
         # 创建服务实例
         drive_service = GoogleDriveService()
@@ -354,28 +366,28 @@ def test_drive_service():
         result = drive_service.test_connection()
         
         if result['success']:
-            print("✅ API连接测试成功！")
-            print(f"📧 服务账户邮箱: {result.get('user_email', 'Unknown')}")
-            print(f"👤 用户名: {result.get('user_name', 'Unknown')}")
+            print("✅ API connection test successful!")
+            print(f"📧 Service account email: {result.get('user_email', 'Unknown')}")
+            print(f"👤 User name: {result.get('user_name', 'Unknown')}")
             
             # 测试列出文件
-            print("\n📂 正在测试文件列表功能...")
+            print("\n📂 Testing file list...")
             files_result = drive_service.list_files(max_results=5)
             
             if files_result['success']:
-                print(f"✅ 文件列表获取成功！找到 {files_result['count']} 个文件")
+                print(f"✅ File list retrieval successful! Found {files_result['count']} files")
                 for file in files_result['files'][:3]:  # 显示前3个文件
                     print(f"   📄 {file['name']} ({file['mimeType']})")
             else:
-                print(f"❌ 文件列表获取失败: {files_result['error']}")
+                print(f"❌ File list retrieval failed: {files_result['error']}")
             
             return True
         else:
-            print(f"❌ API连接测试失败: {result['error']}")
+            print(f"❌ API connection test failed: {result['error']}")
             return False
             
     except Exception as e:
-        print(f"❌ 测试过程中出错: {e}")
+        print(f"❌ Error during test: {e}")
         return False
 
 if __name__ == "__main__":

@@ -525,7 +525,7 @@ class BinManager:
             'not_found': []
         }
         
-        print("🔧 正在初始化工具权限...")
+        print("🔧 Initializing tool permissions...")
         print("=" * 40)
         
         bin_dir = Path(__file__).parent
@@ -542,13 +542,13 @@ class BinManager:
                     new_mode = current_mode | stat.S_IEXEC | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
                     script_file.chmod(new_mode)
                     results['success'].append(f"{tool_name} (script)")
-                    print(f"✅ {tool_name}: 脚本权限已设置")
+                    print(f"✅ {tool_name}: Script permissions set")
                 except Exception as e:
                     results['failed'].append(f"{tool_name} (script): {e}")
-                    print(f"❌ {tool_name}: 脚本权限设置失败 - {e}")
+                    print(f"❌ {tool_name}: Script permissions set failed - {e}")
             else:
                 results['not_found'].append(f"{tool_name} (script)")
-                print(f"⚠️  {tool_name}: 脚本文件不存在")
+                print(f"⚠️  {tool_name}: Script file not found")
             
             # 处理Python文件
             if py_file.exists():
@@ -558,23 +558,23 @@ class BinManager:
                     new_mode = current_mode | stat.S_IEXEC | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
                     py_file.chmod(new_mode)
                     results['success'].append(f"{tool_name}.py")
-                    print(f"✅ {tool_name}.py: Python文件权限已设置")
+                    print(f"✅ {tool_name}.py: Python file permissions set")
                 except Exception as e:
                     results['failed'].append(f"{tool_name}.py: {e}")
-                    print(f"❌ {tool_name}.py: Python文件权限设置失败 - {e}")
+                    print(f"❌ {tool_name}.py: Python file permissions set failed - {e}")
         
-        print("\n📊 初始化结果:")
-        print(f"✅ 成功: {len(results['success'])} 个文件")
-        print(f"❌ 失败: {len(results['failed'])} 个文件")
-        print(f"⚠️  未找到: {len(results['not_found'])} 个文件")
+        print("\n📊 Initialization results:")
+        print(f"✅ Success: {len(results['success'])} files")
+        print(f"❌ Failed: {len(results['failed'])} files")
+        print(f"⚠️  Not found: {len(results['not_found'])} files")
         
         if results['failed']:
-            print("\n❌ 失败详情:")
+            print("\n❌ Failed details:")
             for item in results['failed']:
                 print(f"  - {item}")
         
         if results['not_found']:
-            print("\n⚠️  未找到的文件:")
+            print("\n⚠️  Not found files:")
             for item in results['not_found']:
                 print(f"  - {item}")
         
@@ -582,27 +582,27 @@ class BinManager:
 
 def show_help():
     """显示帮助信息"""
-    print("""_bin.py - 工具管理系统
+    print("""_bin.py - Tool management system
 
 Usage: python _bin.py <command> [options]
 
 Commands:
-  list                                  列出所有工具
+  list                                 List all tools
   add <name> <desc> <purpose> <usage> <examples> [scenario]
-                                       添加新工具
-  remove <name>                        删除工具
-  update <name> <field>=<value> ...    更新工具信息
-  check                               检查工具文件是否存在
-  --init                              初始化所有工具权限 (chmod +x)
-  --generate-user-rule                生成用户规则文件
-  --update-hashes [tool_name]         更新工具文件哈希值
-  --detect-changes [tool_name]        检测工具文件变更
-  --sync-docs [tool_name]             同步工具文档与功能
-  --test [tool_name]                  运行自动化测试
+                                       Add new tool
+  remove <name>                        Remove tool
+  update <name> <field>=<value> ...    Update tool information
+  check                                Check if tool files exist
+  --init                               Initialize all tool permissions (chmod +x)
+  --generate-user-rule                 Generate user rule file
+  --update-hashes [tool_name]          Update tool file hashes
+  --detect-changes [tool_name]         Detect tool file changes
+  --sync-docs [tool_name]              Sync tool documentation with functionality
+  --test [tool_name]                   Run automated tests
 
 Examples:
   python _bin.py list
-  python _bin.py add MYTOOL "描述" "目的" "用法" "示例1,示例2"
+  python _bin.py add MYTOOL "Description" "Purpose" "Usage" "Example1,Example2"
   python _bin.py update MYTOOL test_passed=true
   python _bin.py check
   python _bin.py --init

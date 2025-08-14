@@ -16,5 +16,5 @@ if img2text_py.exists():
     # 执行IMG2TEXT.py并传递所有参数
     os.execv(sys.executable, [sys.executable, str(img2text_py)] + sys.argv[1:])
 else:
-    print(f"错误：找不到IMG2TEXT.py文件: {img2text_py}", file=sys.stderr)
+    print(f"Error: IMG2TEXT not found: {img2text_py}", file=sys.stderr)
     sys.exit(1)

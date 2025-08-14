@@ -371,11 +371,14 @@
     },
     "OVERLEAF": {
       "name": "OVERLEAF",
-      "description": "LaTeX文件编译工具，支持GUI文件选择和JSON返回值",
-      "purpose": "Compile LaTeX files to PDF",
-      "usage": "OVERLEAF [file.tex]",
+      "description": "LaTeX文件编译工具，支持GUI文件选择、JSON返回值和模板管理功能",
+      "purpose": "Compile LaTeX files to PDF and manage LaTeX project templates",
+      "usage": "OVERLEAF [file.tex] [options] | OVERLEAF --template <name> <dir> | OVERLEAF --list-templates",
       "examples": [
         "OVERLEAF document.tex",
+        "OVERLEAF main.tex --output-dir /path/to/output",
+        "OVERLEAF --list-templates",
+        "OVERLEAF --template ICPRS my_paper",
         "OVERLEAF"
       ],
       "files": {
@@ -387,7 +390,22 @@
       "testable": true,
       "test_passed": true,
       "ai_usable": true,
-      "tool_use_scenario": "When user needs to compile LaTeX documents",
+      "tool_use_scenario": "When user needs to compile LaTeX documents or manage LaTeX project templates",
+      "template_features": {
+        "available_templates": ["ICPRS"],
+        "template_operations": [
+          "List available templates",
+          "Copy template to new project directory",
+          "Automatic empty directory validation",
+          "Complete project structure deployment"
+        ],
+        "cleanup_features": [
+          "Automatic removal of .bbl files",
+          "Cleanup of .aux, .blg, .fdb_latexmk files",
+          "Removal of .run.xml, .bcf files",
+          "Complete temporary file management"
+        ]
+      },
       "file_hashes": {
         "binary": "a510b3f3eb3db8571b8690856653236e69adc7008125071ed2536db9a95b666b",
         "python": "846845bde48561fa08778c48f6cdef6b07cfe4ecb59053d3126d67d59dcf8473",

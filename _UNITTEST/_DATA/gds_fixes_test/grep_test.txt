@@ -1,0 +1,9 @@
+def hello_world():
+    print("Hello World")
+    
+def goodbye_world():
+    print("Goodbye World")
+    
+class TestClass:
+    def __init__(self):
+        self.name = "test"

@@ -335,10 +335,10 @@ def main():
         return exit_code
         
     except KeyboardInterrupt:
-        print("\n操作已取消", file=sys.stderr)
+        print("\nOperation cancelled", file=sys.stderr)
         return 130
     except Exception as e:
-        print(f"RUN执行出错: {e}", file=sys.stderr)
+        print(f"RUN error: {e}", file=sys.stderr)
         return 1
 
 if __name__ == '__main__':

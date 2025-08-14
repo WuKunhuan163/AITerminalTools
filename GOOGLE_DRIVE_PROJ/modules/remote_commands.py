@@ -18,7 +18,73 @@ from pathlib import Path
 import platform
 import psutil
 from typing import Dict
-from ..google_drive_api import GoogleDriveService
+try:
+    from ..google_drive_api import GoogleDriveService
+except ImportError:
+    from GOOGLE_DRIVE_PROJ.google_drive_api import GoogleDriveService
+
+import threading
+import time
+import json
+import subprocess
+import os
+import sys
+
+class DebugCapture:
+    """Debug信息捕获和存储系统"""
+    _instance = None
+    _lock = threading.Lock()
+    
+    def __new__(cls):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+                    cls._instance.debug_buffer = []
+                    cls._instance.capturing = False
+        return cls._instance
+    
+    def start_capture(self):
+        """开始捕获debug信息"""
+        self.debug_buffer = []
+        self.capturing = True
+    
+    def stop_capture(self):
+        """停止捕获debug信息"""
+        self.capturing = False
+    
+    def add_debug(self, message):
+        """添加debug信息到缓存"""
+        if self.capturing:
+            self.debug_buffer.append(message)
+    
+    def get_debug_info(self):
+        """获取所有捕获的debug信息"""
+        return '\n'.join(self.debug_buffer)
+    
+    def clear_buffer(self):
+        """清空debug缓存"""
+        self.debug_buffer = []
+
+# 全局debug捕获实例
+debug_capture = DebugCapture()
+
+def debug_print(*args, **kwargs):
+    """统一的debug输出函数，捕获时只存储，不捕获时正常输出"""
+    # 构建消息字符串
+    message = ' '.join(str(arg) for arg in args)
+    
+    # 如果正在捕获，只添加到缓存，不输出到控制台
+    if debug_capture.capturing:
+        debug_capture.add_debug(message)
+        # 只显示真正的进度指示器（不是debug信息）给用户
+        # 排除所有包含"DEBUG"、"检查"、"发现"等调试关键词的消息
+        if (any(indicator in message for indicator in ['⏳', '✅', '❌']) 
+            and not any(debug_keyword in message for debug_keyword in ['🔧 DEBUG:', '检查', '发现', '处理'])):
+            print(*args, **kwargs)
+    else:
+        # 不在捕获期间，正常输出到控制台
+        print(*args, **kwargs)
 
 class RemoteCommands:
     """Google Drive Shell Remote Commands"""
@@ -26,7 +92,411 @@ class RemoteCommands:
     def __init__(self, drive_service, main_instance=None):
         """初始化管理器"""
         self.drive_service = drive_service
-        self.main_instance = main_instance  # 引用主实例以访问其他属性
+        self.main_instance = main_instance
+        
+        # 特殊命令列表 - 这些命令在本地处理，不需要远端执行
+        self.SPECIAL_COMMANDS = {
+            'ls', 'cd', 'pwd', 'mkdir', 'rm', 'mv', 'cat', 'echo', 'grep', 
+            'upload', 'download', 'edit', 'read', 'find', 'help', 'exit', 'quit', 'venv'
+        }
+    
+    def generate_remote_commands(self, file_moves, target_path, folder_upload_info=None):
+        """
+        生成远程命令
+        
+        Args:
+            file_moves (list): 文件移动信息列表
+            target_path (str): 目标路径
+            folder_upload_info (dict, optional): 文件夹上传信息
+            
+        Returns:
+            str: 生成的远程命令
+        """
+        try:
+            # 准备文件移动信息
+            all_file_moves = []
+            for file_move in file_moves:
+                all_file_moves.append({
+                    "filename": file_move["filename"],
+                    "original_filename": file_move.get("original_filename", file_move["filename"]),
+                    "renamed": file_move.get("renamed", False),
+                    "target_path": target_path
+                })
+            
+            # 调用多文件远程命令生成方法
+            base_command = self._generate_multi_file_remote_commands(all_file_moves)
+            
+            # 如果是文件夹上传，需要添加解压和清理命令
+            if folder_upload_info and folder_upload_info.get("is_folder_upload", False):
+                zip_filename = folder_upload_info.get("zip_filename", "")
+                keep_zip = folder_upload_info.get("keep_zip", False)
+                
+                if zip_filename:
+                    # 计算目标路径
+                    current_shell = self.main_instance.get_current_shell()
+                    if target_path == "." or target_path == "":
+                        if current_shell and current_shell.get("current_path") != "~":
+                            current_path = current_shell.get("current_path", "~")
+                            if current_path.startswith("~/"):
+                                relative_path = current_path[2:]
+                                remote_target_path = f"{self.main_instance.REMOTE_ROOT}/{relative_path}" if relative_path else self.main_instance.REMOTE_ROOT
+                            else:
+                                remote_target_path = self.main_instance.REMOTE_ROOT
+                        else:
+                            remote_target_path = self.main_instance.REMOTE_ROOT
+                    elif target_path.startswith("/"):
+                        remote_target_path = f"{self.main_instance.REMOTE_ROOT}{target_path}"
+                    else:
+                        remote_target_path = f"{self.main_instance.REMOTE_ROOT}/{target_path}"
+                    
+                    # 生成解压命令
+                    if keep_zip:
+                        unzip_command = f'''cd "{remote_target_path}" && echo "=== 开始解压 ===" && unzip -o "{zip_filename}" && echo "=== 验证结果 ===" && ls -la'''
+                    else:
+                        unzip_command = f'''cd "{remote_target_path}" && echo "=== 开始解压 ===" && unzip -o "{zip_filename}" && echo "=== 删除zip ===" && rm "{zip_filename}" && echo "=== 验证结果 ===" && ls -la'''
+                    
+                    # 将解压命令添加到基础命令之后
+                    combined_command = f"{base_command}\n\n# 解压和清理zip文件\n({unzip_command}) && clear && echo \"✅ 执行完成\" || echo \"❌ 执行失败\""
+                    return combined_command
+            
+            return base_command
+            
+        except Exception as e:
+            return f"# Error generating remote commands: {e}"
+
+    def _escape_for_display(self, command):
+        """
+        为在echo中显示创建安全的命令版本
+        处理特殊字符，避免破坏bash语法
+        
+        注意：这个函数的输出将用在双引号包围的echo命令中，
+        在双引号内，大多数特殊字符会失去特殊含义，只需要转义少数字符
+        """
+        display_command = command
+        
+        # 处理反斜杠 - 必须首先处理，避免重复转义
+        display_command = display_command.replace('\\', '\\\\')
+        
+        # 处理双引号 - 转义为\"
+        display_command = display_command.replace('"', '\\"')
+        
+        # 处理美元符号 - 转义为\$（在双引号中仍有特殊含义）
+        display_command = display_command.replace('$', '\\$')
+        
+        # 处理反引号 - 转义为\`（在双引号中仍有特殊含义）
+        display_command = display_command.replace('`', '\\`')
+        
+        # 注意：在双引号内，圆括号()、方括号[]、花括号{}等不需要转义
+        # 因为它们在双引号内失去了特殊含义
+        # 过度转义会导致显示时出现不必要的反斜杠
+        
+        return display_command
+
+    def validate_bash_syntax_fast(self, command):
+        """
+        快速验证bash命令语法
+        
+        Args:
+            command (str): 要验证的bash命令
+            
+        Returns:
+            dict: 验证结果，包含success和error字段
+        """
+        try:
+            import tempfile
+            import subprocess
+            import os
+            
+            # 创建临时文件存储命令
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.sh', delete=False) as f:
+                f.write('#!/bin/bash\n')
+                f.write(command)
+                temp_file = f.name
+            
+            try:
+                # 使用bash -n检查语法，设置短超时
+                result = subprocess.run(
+                    ['bash', '-n', temp_file], 
+                    capture_output=True, 
+                    text=True, 
+                    timeout=0.1  # 0.1秒超时
+                )
+                
+                if result.returncode == 0:
+                    return {"success": True, "message": "Bash syntax is valid"}
+                else:
+                    return {
+                        "success": False, 
+                        "error": f"Bash syntax error: {result.stderr.strip()}"
+                    }
+            finally:
+                # 清理临时文件
+                try:
+                    os.unlink(temp_file)
+                except:
+                    pass
+                    
+        except subprocess.TimeoutExpired:
+            return {
+                "success": False, 
+                "error": "Bash syntax check timeout"
+            }
+        except Exception as e:
+            return {
+                "success": False, 
+                "error": f"Syntax check failed: {str(e)}"
+            }
+
+    def _wait_and_read_result_file(self, result_filename):
+        """
+        等待并读取远端结果文件，最多等待60秒
+        
+        Args:
+            result_filename (str): 远端结果文件名（在tmp目录中）
+            
+        Returns:
+            dict: 读取结果
+        """
+        try:
+            import sys
+            import time
+            
+            # 远端文件路径（在REMOTE_ROOT/tmp目录中）
+            remote_file_path = f"~/tmp/{result_filename}"
+            
+            # 输出等待指示器
+            print("⏳", end="", flush=True)
+            
+            # 等待文件出现，最多60秒
+            max_wait_time = 60
+            for wait_count in range(max_wait_time):
+                # 检查文件是否存在
+                check_result = self._check_remote_file_exists_absolute(remote_file_path)
+                
+                if check_result.get("exists"):
+                    # 文件存在，读取内容
+                    print()  # 换行
+                    return self._read_result_file_via_gds(result_filename)
+                
+                # 文件不存在，等待1秒并输出进度点
+                time.sleep(1)
+                print(".", end="", flush=True)
+            
+            # 超时，提供用户输入fallback
+            print()  # 换行
+            print(f"⚠️  等待远端结果文件超时（60秒）: {remote_file_path}")
+            print("这可能是因为:")
+            print("  1. 命令正在后台运行（如http-server等服务）")
+            print("  2. 命令执行时间超过60秒")
+            print("  3. 远端出现意外错误")
+            print()
+            print("请手动提供执行结果:")
+            print("- 输入多行内容描述命令执行情况")
+            print("- 按 Ctrl+D 结束输入")
+            print("- 或直接按 Enter 跳过")
+            print()
+            
+            # 获取用户手动输入
+            user_feedback = self._get_multiline_user_input()
+            
+            if user_feedback.strip():
+                # 用户提供了反馈
+                return {
+                    "success": True,
+                    "data": {
+                        "cmd": "unknown",
+                        "args": [],
+                        "working_dir": "unknown", 
+                        "timestamp": "unknown",
+                        "exit_code": 0,  # 假设成功
+                        "stdout": user_feedback,
+                        "stderr": "",
+                        "source": "user_input",  # 标记来源
+                        "note": "用户手动输入的执行结果"
+                    }
+                }
+            else:
+                # 用户跳过了输入
+                return {
+                    "success": False,
+                    "error": f"等待远端结果文件超时（60秒），用户未提供反馈: {remote_file_path}"
+                }
+            
+        except Exception as e:
+            print()  # 换行
+            return {
+                "success": False,
+                "error": f"等待结果文件时出错: {str(e)}"
+            }
+
+    def _get_multiline_user_input(self):
+        """
+        获取用户的多行输入，支持Ctrl+D结束
+        类似USERINPUT的机制
+        
+        Returns:
+            str: 用户输入的多行内容
+        """
+        try:
+            import sys
+            
+            lines = []
+            print("请输入内容 (按 Ctrl+D 结束):")
+            
+            try:
+                while True:
+                    try:
+                        line = input()
+                        lines.append(line)
+                    except KeyboardInterrupt:
+                        # Ctrl+C，询问是否取消
+                        print("\n是否取消输入？(y/N): ", end="", flush=True)
+                        response = input().strip().lower()
+                        if response in ['y', 'yes']:
+                            return ""
+                        else:
+                            print("继续输入 (按 Ctrl+D 结束):")
+                            continue
+            except EOFError:
+                # Ctrl+D，正常结束输入
+                pass
+            
+            return "\n".join(lines)
+            
+        except Exception as e:
+            print(f"获取用户输入时出错: {e}")
+            return ""
+
+    def _read_result_file_via_gds(self, result_filename):
+        """
+        使用GDS ls和cat机制读取远端结果文件
+        
+        Args:
+            result_filename (str): 远端结果文件名（在tmp目录中）
+            
+        Returns:
+            dict: 读取结果
+        """
+        try:
+            # 远端文件路径（在REMOTE_ROOT/tmp目录中）
+            # 需要先cd到根目录，然后访问tmp目录
+            remote_file_path = f"~/tmp/{result_filename}"
+            
+            # 首先使用ls检查文件是否存在
+            check_result = self._check_remote_file_exists_absolute(remote_file_path)
+            if not check_result.get("exists"):
+                return {
+                    "success": False,
+                    "error": f"远端结果文件不存在: {remote_file_path}"
+                }
+            
+            # 使用cat命令读取文件内容
+            cat_result = self.main_instance.cmd_cat(remote_file_path)
+            
+            if not cat_result.get("success"):
+                return {
+                    "success": False,
+                    "error": f"读取文件内容失败: {cat_result.get('error', 'unknown error')}"
+                }
+            
+            # 获取文件内容
+            content = cat_result.get("output", "")
+            
+            # 尝试解析JSON
+            try:
+                import json
+                # 预处理JSON内容以修复格式问题
+                cleaned_content = self._preprocess_json_content(content)
+                result_data = json.loads(cleaned_content)
+                
+                return {
+                    "success": True,
+                    "data": result_data
+                }
+            except json.JSONDecodeError as e:
+                # 如果JSON解析失败，返回原始内容
+                return {
+                    "success": True,
+                    "data": {
+                        "exit_code": -1,
+                        "stdout": content,
+                        "stderr": f"JSON解析失败: {str(e)}",
+                        "raw_content": content
+                    }
+                }
+                
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"读取结果文件时出错: {str(e)}"
+            }
+
+    def _check_remote_file_exists_absolute(self, file_path):
+        """
+        检查远端文件是否存在（绝对路径）
+        
+        Args:
+            file_path (str): 绝对路径的文件路径（如~/tmp/filename.json）
+            
+        Returns:
+            dict: 检查结果
+        """
+        try:
+            # 解析路径
+            if "/" in file_path:
+                dir_path, filename = file_path.rsplit("/", 1)
+            else:
+                dir_path = "~"
+                filename = file_path
+            
+            # 列出目录内容
+            ls_result = self.main_instance.cmd_ls(dir_path)
+            
+            if not ls_result.get("success"):
+                return {"exists": False, "error": f"无法访问目录: {dir_path}"}
+            
+            # 检查文件和文件夹是否在列表中
+            files = ls_result.get("files", [])
+            folders = ls_result.get("folders", [])
+            all_items = files + folders
+            
+            # 检查文件或文件夹是否存在
+            file_exists = any(f.get("name") == filename for f in all_items)
+            
+            return {"exists": file_exists}
+                
+        except Exception as e:
+            return {"exists": False, "error": f"检查文件存在性时出错: {str(e)}"}
+
+    def _preprocess_json_content(self, content):
+        """
+        预处理JSON内容以修复常见格式问题
+        
+        Args:
+            content (str): 原始JSON内容
+            
+        Returns:
+            str: 清理后的JSON内容
+        """
+        try:
+            # 移除首尾空白
+            content = content.strip()
+            
+            # 如果内容为空，返回默认JSON
+            if not content:
+                return '{"exit_code": -1, "stdout": "", "stderr": "empty content"}'
+            
+            # 简单的JSON修复：确保以{开头，}结尾
+            if not content.startswith('{'):
+                content = '{' + content
+            if not content.endswith('}'):
+                content = content + '}'
+            
+            return content
+            
+        except Exception as e:
+            # 如果预处理失败，返回包装的原始内容
+            return f'{{"exit_code": -1, "stdout": "{content}", "stderr": "preprocess failed: {str(e)}"}}'
 
     def _generate_unzip_and_delete_command(self, zip_filename, remote_target_path, keep_zip=False):
         """
@@ -46,282 +516,83 @@ class RemoteCommands:
             # 构建远程命令
             if keep_zip:
                 # 保留zip文件的版本：只解压，不删除
-                remote_command = f'''cd "{remote_target_path}" && echo "=== 开始解压 ===" && unzip -o "{zip_filename}" && echo "=== 验证结果 ===" && ls -la && clear && echo "✅ 执行成功" || echo "❌ 执行失败"'''
+                remote_command = f'''cd "{remote_target_path}" && echo "=== 开始解压 ===" && unzip -o "{zip_filename}" && echo "=== 验证结果 ===" && ls -la && clear && echo "✅ 执行完成" || echo "❌ 执行失败"'''
             else:
                 # 默认版本：解压后删除zip文件
-                remote_command = f'''cd "{remote_target_path}" && echo "=== 开始解压 ===" && unzip -o "{zip_filename}" && echo "=== 删除zip ===" && rm "{zip_filename}" && echo "=== 验证结果 ===" && ls -la && clear && echo "✅ 执行成功" || echo "❌ 执行失败"'''
+                remote_command = f'''cd "{remote_target_path}" && echo "=== 开始解压 ===" && unzip -o "{zip_filename}" && echo "=== 删除zip ===" && rm "{zip_filename}" && echo "=== 验证结果 ===" && ls -la && clear && echo "✅ 执行完成" || echo "❌ 执行失败"'''
             
             print(f"🔧 生成的远程解压命令: {remote_command}")
             
-            # 使用tkinter窗口显示命令并等待用户反馈
+            # 使用subprocess方法显示命令窗口
             try:
-                import tkinter as tk
-                from tkinter import messagebox, scrolledtext
-                import threading
-                import queue
+                from .core_utils import show_command_window_subprocess
                 
-                # 创建结果队列
-                result_queue = queue.Queue()
-                
-                def show_command_window():
-                    """显示远程解压命令窗口"""
-                    root = tk.Tk()
-                    root.title("远程文件夹解压命令 - Google Drive")
-                    root.geometry("800x600")
-                    
-                    # 标题
-                    title_label = tk.Label(root, text=f"远程文件夹解压: {zip_filename}", 
-                                         font=("Arial", 14, "bold"))
-                    title_label.pack(pady=10)
-                    
-                    # 说明文字
-                    action_text = "解压并删除zip文件" if not keep_zip else "解压但保留zip文件"
-                    instruction_text = f"""
-请在远程终端执行以下命令来完成文件夹解压：
+                title = f"远程文件夹解压: {zip_filename}"
+                instruction = f"""请在远程环境中执行以下命令来解压文件夹：
 
-操作: {action_text}
+1. 解压zip文件到指定目录
+2. 自动删除zip文件（如果设置了删除选项）
+3. 验证解压结果
+
 目标路径: {remote_target_path}
-
-1. 复制下面的命令到剪切板
-2. 在远程终端粘贴并执行
-3. 根据执行结果选择相应按钮
 """
-                    instruction_label = tk.Label(root, text=instruction_text, 
-                                               justify=tk.LEFT, wraplength=750)
-                    instruction_label.pack(pady=10)
-                    
-                    # 命令文本框
-                    command_frame = tk.Frame(root)
-                    command_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-                    
-                    command_text = scrolledtext.ScrolledText(command_frame, height=8, 
-                                                           font=("Consolas", 10))
-                    command_text.pack(fill=tk.BOTH, expand=True)
-                    command_text.insert(tk.END, remote_command)
-                    command_text.config(state=tk.DISABLED)
-                    
-                    # 复制按钮
-                    def copy_command():
-                        root.clipboard_clear()
-                        root.clipboard_append(remote_command)
-                        messagebox.showinfo("已复制", "命令已复制到剪切板")
-                    
-                    copy_btn = tk.Button(root, text="📋 复制命令到剪切板", 
-                                       command=copy_command, font=("Arial", 12))
-                    copy_btn.pack(pady=10)
-                    
-                    # 结果按钮框架
-                    result_frame = tk.Frame(root)
-                    result_frame.pack(pady=20)
-                    
-                    # 结果按钮
-                    def on_success():
-                        result_queue.put({"success": True, "message": "用户确认解压成功"})
-                        root.destroy()
-                    
-                    def on_failure():
-                        result_queue.put({"success": False, "error": "用户报告解压失败"})
-                        root.destroy()
-                    
-                    def on_cancel():
-                        result_queue.put({"success": False, "error": "用户取消操作"})
-                        root.destroy()
-                    
-                    success_btn = tk.Button(result_frame, text="✅ 执行成功", 
-                                          command=on_success, bg="lightgreen",
-                                          font=("Arial", 12), width=12)
-                    success_btn.pack(side=tk.LEFT, padx=10)
-                    
-                    failure_btn = tk.Button(result_frame, text="❌ 执行失败", 
-                                          command=on_failure, bg="lightcoral",
-                                          font=("Arial", 12), width=12)
-                    failure_btn.pack(side=tk.LEFT, padx=10)
-                    
-                    cancel_btn = tk.Button(result_frame, text="🚫 取消操作", 
-                                         command=on_cancel, bg="lightgray",
-                                         font=("Arial", 12), width=12)
-                    cancel_btn.pack(side=tk.LEFT, padx=10)
-                    
-                    # 居中显示窗口
-                    root.update_idletasks()
-                    x = (root.winfo_screenwidth() // 2) - (root.winfo_width() // 2)
-                    y = (root.winfo_screenheight() // 2) - (root.winfo_height() // 2)
-                    root.geometry(f"+{x}+{y}")
-                    
-                    root.mainloop()
                 
-                # 在单独线程中显示窗口
-                window_thread = threading.Thread(target=show_command_window)
-                window_thread.start()
-                window_thread.join()
+                # 使用subprocess方法显示窗口
+                result = show_command_window_subprocess(
+                    title=title,
+                    command_text=remote_command,
+                    instruction_text=instruction,
+                    timeout_seconds=300
+                )
                 
-                # 获取用户反馈结果
-                try:
-                    user_result = result_queue.get_nowait()
-                    if user_result["success"]:
-                        return {
-                            "success": True,
-                            "message": f"成功解压 {zip_filename}",
-                            "zip_deleted": not keep_zip,
-                            "method": "manual_execution",
-                            "command": remote_command
-                        }
-                    else:
-                        return {
-                            "success": False,
-                            "error": user_result["error"],
-                            "method": "manual_execution",
-                            "command": remote_command
-                        }
-                except queue.Empty:
-                    return {
-                        "success": False,
-                        "error": "用户未提供反馈",
-                        "method": "manual_execution",
-                        "command": remote_command
-                    }
+                # 转换结果格式
+                if result["action"] == "success":
+                    return {"success": True, "message": f"文件夹 {zip_filename} 解压完成"}
+                elif result["action"] == "copy":
+                    return {"success": True, "message": "命令已复制到剪切板，请手动执行"}
+                else:
+                    return {"success": False, "message": f"操作取消或失败: {result.get('error', 'Unknown error')}"}
                     
             except Exception as e:
-                return {
-                    "success": False,
-                    "error": f"显示命令窗口失败: {e}",
-                    "command": remote_command
-                }
+                return {"success": False, "message": f"显示命令窗口失败: {str(e)}"}
                 
         except Exception as e:
             return {"success": False, "error": f"生成远程解压命令失败: {e}"}
     
-    def show_remote_command_window(self, remote_command, command_type="upload"):
+    def show_remote_command_window(self, remote_command, command_type="upload", debug_info=None):
         """
-        显示远端命令的 tkinter 窗口（简化版本，只有按钮）
+        显示远端命令的 tkinter 窗口（统一版本，使用_show_generic_command_window）
         
         Args:
             remote_command (str): 要显示的远端命令
-            command_type (str): 命令类型，用于设置窗口标题
+            command_type (str): 命令类型，默认为 "upload"
+            debug_info (str): debug信息，仅在直接反馈时输出
             
         Returns:
-            dict: 包含用户选择和可能的错误信息的字典
+            dict: 用户操作结果，包含 action 和相关信息
         """
         try:
-            import tkinter as tk
-            from tkinter import messagebox
-            import webbrowser
+            # 调用统一的通用窗口
+            debug_info = debug_capture.get_debug_info()
+            window_result = self._show_generic_command_window(command_type, [], remote_command, debug_info)
             
-            result = {"success": False, "action": None, "error_info": None}
-            
-            # 创建窗口
-            root = tk.Tk()
-            window_title = f"Google Drive - {command_type} Command"
-            root.title(window_title)
-            root.geometry("500x60")
-            root.resizable(False, False)
-            
-            # 居中窗口
-            root.eval('tk::PlaceWindow . center')
-            
-            # 设置窗口置顶
-            root.attributes('-topmost', True)
-            
-            # 主框架
-            main_frame = tk.Frame(root, padx=10, pady=10)
-            main_frame.pack(fill=tk.BOTH, expand=True)
-            
-            # 按钮框架
-            button_frame = tk.Frame(main_frame)
-            button_frame.pack(fill=tk.X, expand=True)
-            
-            def copy_command():
-                try:
-                    root.clipboard_clear()
-                    root.clipboard_append(remote_command)
-                    copy_btn.config(text="✅ 已复制", bg="#4CAF50")
-                    root.after(1500, lambda: copy_btn.config(text="📋 复制命令", bg="#2196F3"))
-                except Exception as e:
-                    print(f"复制到剪贴板失败: {e}")
-            
-            def execution_success():
-                result["success"] = True
-                result["action"] = "success"
-                root.destroy()
-            
-            def execution_failed():
-                result["success"] = False
-                result["action"] = "failed"
-                root.destroy()
-            
-            # 复制命令按钮
-            copy_btn = tk.Button(
-                button_frame, 
-                text="📋 复制命令", 
-                command=copy_command,
-                font=("Arial", 10),
-                bg="#2196F3",
-                fg="white",
-                padx=15,
-                pady=5,
-                relief=tk.RAISED,
-                bd=2
-            )
-            copy_btn.pack(side=tk.LEFT, padx=(0, 10), fill=tk.X, expand=True)
-            
-            # 执行成功按钮
-            success_btn = tk.Button(
-                button_frame, 
-                text="✅ 执行成功", 
-                command=execution_success,
-                font=("Arial", 10, "bold"),
-                bg="#4CAF50",
-                fg="white",
-                padx=15,
-                pady=5,
-                relief=tk.RAISED,
-                bd=2
-            )
-            success_btn.pack(side=tk.LEFT, padx=(0, 10), fill=tk.X, expand=True)
-            
-            # 执行失败按钮
-            failed_btn = tk.Button(
-                button_frame, 
-                text="❌ 执行失败", 
-                command=execution_failed,
-                font=("Arial", 10),
-                bg="#f44336",
-                fg="white",
-                padx=15,
-                pady=5,
-                relief=tk.RAISED,
-                bd=2
-            )
-            failed_btn.pack(side=tk.LEFT, fill=tk.X, expand=True)
-            
-            # 只自动复制到剪贴板，不再自动打开Drive链接
-            copy_command()
-            
-            # 运行窗口
-            root.mainloop()
-            
-            # 如果用户选择了执行失败，进行交互式错误收集
-            if result["action"] == "failed":
-                print("\n" + "=" * 60)
-                print("🚨 远端命令执行失败")
-                print("=" * 60)
-                print(f"命令: {remote_command}")
-                print()
-                
-                try:
-                    error_description = get_multiline_input_safe("请描述失败的原因或错误信息: ", single_line=False)
-                    if error_description:
-                        result["error_info"] = error_description
-                        print(f"✅ 已记录错误信息: {error_description}")
-                    else:
-                        result["error_info"] = "用户未提供具体错误信息"
-                        print("⚠️ 未提供具体错误信息")
-                except KeyboardInterrupt:
-                    print("\n❌ 错误信息收集已取消")
-                    result["error_info"] = "用户取消了错误信息输入"
-                print("=" * 60)
-            
-            return result
+            # 适配返回格式以保持向后兼容
+            if window_result.get("action") == "success":
+                return {"success": True, "action": "success", "error_info": None}
+            elif window_result.get("action") == "direct_feedback":
+                # 处理直接反馈，保持direct_feedback action类型，跳过验证
+                data = window_result.get("data", {})
+                exit_code = data.get("exit_code", 0)
+                return {
+                    "success": exit_code == 0, 
+                    "action": "direct_feedback", 
+                    "exit_code": exit_code,
+                    "stdout": data.get("stdout", ""),
+                    "stderr": data.get("stderr", ""),
+                    "source": "direct_feedback"
+                }
+            else:
+                return {"success": False, "action": "cancel", "error_info": "Operation cancelled"}
             
         except ImportError:
             # tkinter 不可用，回退到终端显示
@@ -337,14 +608,14 @@ class RemoteCommands:
             
             try:
                 while True:
-                    user_choice = get_multiline_input_safe("命令执行结果 [s=成功/f=失败/c=取消]: ", single_line=True)
+                    user_choice = self.get_multiline_input_safe("命令执行结果 [s=成功/f=失败/c=取消]: ", single_line=True)
                     if user_choice is None:
                         return {"success": False, "action": "cancelled", "error_info": "用户取消操作"}
                     user_choice = user_choice.lower()
                     if user_choice in ['s', 'success', '成功']:
                         return {"success": True, "action": "success", "error_info": None}
                     elif user_choice in ['f', 'failed', '失败']:
-                        error_info = get_multiline_input_safe("请描述失败的原因: ", single_line=False)
+                        error_info = self.get_multiline_input_safe("请描述失败的原因: ", single_line=False)
                         return {
                             "success": False, 
                             "action": "failed", 
@@ -369,10 +640,14 @@ class RemoteCommands:
             # 生成文件信息数组
             file_info_list = []
             for i, file_info in enumerate(all_file_moves):
-                filename = file_info["filename"]
+                filename = file_info["filename"]  # 重命名后的文件名（在DRIVE_EQUIVALENT中）
+                original_filename = file_info.get("original_filename", filename)  # 原始文件名（目标文件名）
+                renamed = file_info.get("renamed", False)
                 target_path = file_info["target_path"]
                 
-                # 计算目标绝对路径
+                # 计算目标绝对路径 - 使用original_filename作为最终文件名
+                target_filename = original_filename  # 最终目标文件名应该是原始文件名
+                
                 if target_path == "." or target_path == "":
                     # 当前目录
                     current_shell = self.main_instance.get_current_shell()
@@ -385,37 +660,70 @@ class RemoteCommands:
                             target_absolute = self.main_instance.REMOTE_ROOT
                     else:
                         target_absolute = self.main_instance.REMOTE_ROOT
-                    dest_absolute = f"{target_absolute.rstrip('/')}/{filename}"
+                    dest_absolute = f"{target_absolute.rstrip('/')}/{target_filename}"
                 elif target_path.startswith("/"):
                     # 绝对路径
                     target_absolute = f"{self.main_instance.REMOTE_ROOT}{target_path}"
-                    dest_absolute = f"{target_absolute.rstrip('/')}/{filename}"
+                    dest_absolute = f"{target_absolute.rstrip('/')}/{target_filename}"
                 else:
                     # 相对路径，需要判断是文件名还是目录名
                     last_part = target_path.split('/')[-1]
                     is_file = '.' in last_part and last_part != '.' and last_part != '..'
                     
+                    # 获取当前路径信息
+                    current_shell = self.main_instance.get_current_shell()
+                    current_path = current_shell.get("current_path", "~") if current_shell else "~"
+                    
                     if is_file:
                         # target_path 是文件名，直接使用
-                        current_shell = self.main_instance.get_current_shell()
-                        current_path = current_shell.get("current_path", "~") if current_shell else "~"
-                        if current_path == "~":
+                        if target_path.startswith("~/"):
+                            # target_path是绝对路径（从~开始），直接使用
+                            dest_absolute = f"{self.main_instance.REMOTE_ROOT}/{target_path[2:]}"
+                            debug_print(f"🔧 DEBUG: target_path starts with '~/', dest_absolute='{dest_absolute}'")
+                        elif current_path == "~":
                             dest_absolute = f"{self.main_instance.REMOTE_ROOT}/{target_path}"
+                            debug_print(f"🔧 DEBUG: current_path is '~', dest_absolute='{dest_absolute}'")
                         else:
-                            dest_absolute = f"{self.main_instance.REMOTE_ROOT}/{current_path[2:]}/{target_path}" if current_path.startswith("~/") else f"{self.main_instance.REMOTE_ROOT}/{target_path}"
+                            # current_path不是~，需要包含当前路径
+                            if current_path.startswith("~/"):
+                                # 去掉~/前缀，添加当前路径
+                                current_subpath = current_path[2:]  # 去掉~/
+                                dest_absolute = f"{self.main_instance.REMOTE_ROOT}/{current_subpath}/{target_path}"
+                            else:
+                                # 不应该发生，但作为fallback
+                                dest_absolute = f"{self.main_instance.REMOTE_ROOT}/{target_path}"
+                            debug_print(f"🔧 DEBUG: current_path is '{current_path}', dest_absolute='{dest_absolute}'")
                     else:
-                        # target_path 是目录名，在后面添加文件名
-                        target_absolute = f"{self.main_instance.REMOTE_ROOT}/{target_path.lstrip('/')}"
-                        dest_absolute = f"{target_absolute.rstrip('/')}/{filename}"
+                        # target_path 是目录名，需要包含当前路径，在后面添加原始文件名
+                        if current_path == "~":
+                            target_absolute = f"{self.main_instance.REMOTE_ROOT}/{target_path.lstrip('/')}"
+                        else:
+                            # 包含当前路径
+                            current_subpath = current_path[2:] if current_path.startswith("~/") else current_path
+                            target_absolute = f"{self.main_instance.REMOTE_ROOT}/{current_subpath}/{target_path.lstrip('/')}"
+                        
+                        dest_absolute = f"{target_absolute.rstrip('/')}/{target_filename}"
                 
+                # 源文件路径使用重命名后的文件名
                 source_absolute = f"{self.main_instance.DRIVE_EQUIVALENT}/{filename}"
                 
+                debug_print(f"🔧 DEBUG: File {i}: filename='{filename}', original_filename='{original_filename}', renamed={renamed}")
+                debug_print(f"🔧 DEBUG: File {i}: source_absolute='{source_absolute}', dest_absolute='{dest_absolute}'")
+                
                 file_info_list.append({
-                    'filename': filename,
+                    'filename': filename,  # 源文件名（重命名后）
+                    'original_filename': original_filename,  # 目标文件名（原始）
+                    'renamed': renamed,
                     'source': source_absolute,
                     'dest': dest_absolute,
                     'index': i
                 })
+            
+            # 收集所有需要创建的目录
+            target_dirs = set()
+            for file_info in file_info_list:
+                dest_dir = '/'.join(file_info['dest'].split('/')[:-1])  # 获取目标目录路径
+                target_dirs.add(dest_dir)
             
             # 生成分布式移动脚本
             full_command = f'''
@@ -424,35 +732,49 @@ declare -a completed
 total_files={len(file_info_list)}
 completed_count=0
 
-# 为每个文件启动独立的移动进程
+# 确保所有目标目录存在
+'''
+            
+            for target_dir in sorted(target_dirs):
+                full_command += f'mkdir -p "{target_dir}"\n'
+            
+            # 生成文件名列表用于显示
+            if len(file_info_list) <= 3:
+                file_display = ", ".join([f['original_filename'] for f in file_info_list])
+            else:
+                first_three = ", ".join([f['original_filename'] for f in file_info_list[:3]])
+                file_display = f"{first_three}, ... ({len(file_info_list)} files)"
+            
+            full_command += f'''
+# 显示统一的上传进度
+echo -n "⏳ Uploading {file_display}: "
+
+# 按顺序处理每个文件（序列化）
 '''
             
             for file_info in file_info_list:
                 full_command += f'''
-(
-    echo -n "⏳ {file_info['filename']}: "
-    for attempt in {{1..60}}; do
-        if mv "{file_info['source']}" "{file_info['dest']}" 2>/dev/null; then
-            echo "✅"
-            completed[{file_info['index']}]=1
+# 处理文件 {file_info['index'] + 1}/{len(file_info_list)}: {file_info['original_filename']}
+for attempt in {{1..60}}; do
+    if mv "{file_info['source']}" "{file_info['dest']}" 2>/dev/null; then
+        echo -n "√"
+        completed[{file_info['index']}]=1
+        break
+    else
+        if [ $attempt -eq 60 ]; then
+            echo -n "✗"
+            completed[{file_info['index']}]=0
             break
         else
-            if [ $attempt -eq 60 ]; then
-                echo "❌ (已重试60次失败)"
-                completed[{file_info['index']}]=0
-            else
-                echo -n "."
-                sleep 1
-            fi
+            echo -n "."
+            sleep 1
         fi
-    done
-) &
+    fi
+done
 '''
             
-            # 等待所有进程完成并检查结果
+            # 检查结果（序列化执行，无需等待）
             full_command += f'''
-# 等待所有后台进程完成
-wait
 
 # 简化结果统计 - 检查目标文件是否存在
 success_count=0
@@ -473,9 +795,11 @@ fi
 # 输出最终结果
 total_files={len(file_info_list)}
 if [ $fail_count -eq 0 ]; then
-    clear && echo "✅ 执行成功"
+    echo " ✅"
+    clear && echo "✅ 执行完成"
 else
-    echo "⚠️  部分文件处理完成: $success_count/$total_files 成功, $fail_count 失败"
+    echo " ❌"
+    echo "Partially completed: $success_count/$total_files success, $fail_count failed"
 fi
 '''
             
@@ -483,6 +807,78 @@ fi
             
         except Exception as e:
             return f"echo '❌ 生成多文件命令失败: {e}'"
+    
+    def _verify_upload_with_progress(self, expected_files, target_path, current_shell):
+        """
+        带进度显示的验证逻辑，类似上传过程
+        对每个文件进行最多60次重试，显示⏳和点的进度
+        """
+        import time
+        
+        try:
+            # 生成文件名列表用于显示
+            if len(expected_files) <= 3:
+                file_display = ", ".join(expected_files)
+            else:
+                first_three = ", ".join(expected_files[:3])
+                file_display = f"{first_three}, ... ({len(expected_files)} files)"
+            
+            print(f"⏳ Validating {file_display} ...", end="", flush=True)
+            
+            found_files = []
+            missing_files = []
+            
+            # 序列化验证每个文件
+            for i, expected_file in enumerate(expected_files):
+                debug_print(f"🔧 DEBUG: Validating file {i+1}/{len(expected_files)}: {expected_file}")
+                file_found = False
+                
+                # 对每个文件最多重试60次
+                for attempt in range(1, 61):
+                    # 使用ls命令检查文件是否存在
+                    validation_result = self.main_instance.validation.verify_upload_success_by_ls(
+                        expected_files=[expected_file],
+                        target_path=target_path,
+                        current_shell=current_shell
+                    )
+                    
+                    if validation_result["success"] and len(validation_result.get("found_files", [])) > 0:
+                        print("√", end="", flush=True)
+                        found_files.append(expected_file)
+                        debug_print(f"🔧 DEBUG: File {expected_file} found on attempt {attempt}")
+                        break
+                    elif attempt == 60:
+                        print("✗", end="", flush=True)
+                        missing_files.append(expected_file)
+                        debug_print(f"🔧 DEBUG: File {expected_file} not found after 60 attempts")
+                        break
+                    else:
+                        print(".", end="", flush=True)
+                        time.sleep(1)
+            print()
+            
+            # 输出最终结果
+            all_found = len(missing_files) == 0
+            return {
+                "success": all_found,
+                "found_files": found_files,
+                "missing_files": missing_files,
+                "total_found": len(found_files),
+                "total_expected": len(expected_files),
+                "search_path": target_path
+            }
+            
+        except Exception as e:
+            print(" ❌")
+            debug_print(f"🔧 DEBUG: Validation error: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "found_files": [],
+                "missing_files": expected_files,
+                "total_found": 0,
+                "total_expected": len(expected_files)
+            }
 
     def _generate_multi_mv_remote_commands(self, file_pairs, current_shell):
         """生成多文件mv的分布式远端命令，每个文件独立重试60次"""
@@ -513,7 +909,7 @@ total_files={len(file_info_list)}
             for file_info in file_info_list:
                 full_command += f'''
 (
-    echo -n "⏳ {file_info['source_name']} -> {file_info['dest_name']}: "
+    echo -n "⏳ Moving {file_info['source_name']} -> {file_info['dest_name']}: "
     for attempt in {{1..60}}; do
         if mv {file_info['source_path']} {file_info['dest_path']} 2>/dev/null; then
             echo "✅"
@@ -556,7 +952,7 @@ fi
 # 输出最终结果
 total_files={len(file_info_list)}
 if [ $fail_count -eq 0 ]; then
-    clear && echo "✅ 执行成功"
+    clear && echo "✅ 执行完成"
 else
     echo "⚠️  部分文件移动完成: $success_count/$total_files 成功, $fail_count 失败"
 fi
@@ -591,7 +987,7 @@ fi
                 full_target_path = f"{self.main_instance.REMOTE_ROOT}/{target_path.lstrip('/')}"
             
             # 生成 mkdir -p 命令来创建整个目录结构，添加清屏和成功/失败提示
-            mkdir_command = f'mkdir -p "{full_target_path}" && clear && echo "✅ 执行成功" || echo "❌ 执行失败"'
+            mkdir_command = f'mkdir -p "{full_target_path}" && clear && echo "✅ 执行完成" || echo "❌ 执行失败"'
             
             return mkdir_command
             
@@ -612,12 +1008,13 @@ fi
             dict: 执行结果
         """
         try:
-            # 显示远端命令（用于调试和协作）
-            print(f"   {remote_command}")
+            # 显示远端命令（用于调试和协作） - 根据用户要求移除自动显示
+            # print(f"   {remote_command}")
             
             # 显示tkinter窗口获取用户确认
-            window_result = self.show_remote_command_window(remote_command, command_type)
-            os.system("clear") if os.name == "posix" else os.system("cls")
+            debug_info = debug_capture.get_debug_info()
+            window_result = self.show_remote_command_window(remote_command, command_type, debug_info)
+            # os.system("clear") if os.name == "posix" else os.system("cls")  # 注释掉清屏，保留调试信息
             
             # 统一处理用户确认结果
             if window_result["action"] == "cancel":
@@ -625,13 +1022,6 @@ fi
                     "success": False,
                     "cancelled": True,
                     "message": "Operation cancelled. "
-                }
-            elif window_result["action"] == "failed":
-                return {
-                    "success": False,
-                    "user_reported_failure": True,
-                    "error_info": window_result.get('error_info'),
-                    "message": "User reported failure: " + window_result.get('error_info')
                 }
             elif window_result["action"] == "error":
                 return {
@@ -643,6 +1033,20 @@ fi
             elif window_result["action"] == "success":
                 # 根据命令类型进行相应的后处理
                 return self._handle_successful_remote_execution(command_type, context_info)
+            elif window_result["action"] == "direct_feedback":
+                # 调用相应的后处理逻辑（包括validation）
+                result = self._handle_successful_remote_execution(command_type, context_info)
+                
+                # 添加direct feedback的额外信息
+                result.update({
+                    "user_confirmed": True,
+                    "exit_code": window_result.get("exit_code", 0),
+                    "stdout": window_result.get("stdout", ""),
+                    "stderr": window_result.get("stderr", ""),
+                    "source": "direct_feedback"
+                })
+                
+                return result
             else:
                 return {
                     "success": False,
@@ -657,6 +1061,48 @@ fi
                 "error": str(e),
                 "message": f"Remote command interface error: {e}"
             }
+
+    def get_multiline_input_safe(self, prompt, single_line=False):
+        """
+        安全的多行输入函数，支持Ctrl+D结束输入
+        
+        Args:
+            prompt (str): 输入提示
+            single_line (bool): 是否只接受单行输入
+            
+        Returns:
+            str: 用户输入的内容，如果用户取消则返回None
+        """
+        try:
+            print(prompt, end="", flush=True)
+            
+            if single_line:
+                # 单行输入
+                try:
+                    return input()
+                except EOFError:
+                    return None
+            else:
+                # 多行输入，直到Ctrl+D
+                lines = []
+                print("(多行输入，按 Ctrl+D 结束):")
+                try:
+                    while True:
+                        line = input()
+                        lines.append(line)
+                except EOFError:
+                    # Ctrl+D被按下，结束输入
+                    pass
+                
+                return '\n'.join(lines) if lines else None
+                
+        except KeyboardInterrupt:
+            # Ctrl+C被按下
+            print("\n输入已取消")
+            return None
+        except Exception as e:
+            print(f"\n输入错误: {e}")
+            return None
 
     def _handle_successful_remote_execution(self, command_type, context_info):
         """
@@ -674,6 +1120,8 @@ fi
                 return self._handle_upload_success(context_info)
             elif command_type == "mkdir":
                 return self._handle_mkdir_success(context_info)
+            elif command_type == "touch":
+                return self._handle_touch_success(context_info)
             elif command_type == "move":
                 return self._handle_move_success(context_info)
             else:
@@ -682,7 +1130,7 @@ fi
                     "success": True,
                     "user_confirmed": True,
                     "command_type": command_type,
-                    "message": "远端命令执行成功"
+                    "message": "远端命令执行完成"
                 }
                 
         except Exception as e:
@@ -693,14 +1141,237 @@ fi
                 "message": f"成功后处理错误: {e}"
             }
 
-    def execute_generic_remote_command(self, cmd, args, return_command_only=False):
+    def _handle_touch_success(self, context_info):
+        """处理touch命令成功后的逻辑，包含延迟检测机制"""
+        try:
+            import time
+            
+            filename = context_info.get("filename", "")
+            absolute_path = context_info.get("absolute_path", "")
+            
+            if not filename:
+                return {
+                    "success": True,
+                    "user_confirmed": True,
+                    "command_type": "touch",
+                    "message": "Touch command executed successfully"
+                }
+            
+            # 添加延迟检测机制，参考mkdir的检测逻辑
+            print("⏳ Validating file creation", end="", flush=True)
+            
+            max_attempts = 60
+            for attempt in range(max_attempts):
+                try:
+                    # 检查文件是否存在
+                    check_result = self._check_remote_file_exists_absolute(absolute_path)
+                    
+                    if check_result.get("exists"):
+                        print("√")  # 成功标记
+                        return {
+                            "success": True,
+                            "user_confirmed": True,
+                            "command_type": "touch",
+                            "message": f"File '{filename}' created and verified successfully",
+                            "filename": filename,
+                            "absolute_path": absolute_path
+                        }
+                    
+                    # 文件不存在，等待1秒并输出进度点
+                    time.sleep(1)
+                    print(".", end="", flush=True)
+                    
+                except Exception as e:
+                    print(f"\n⚠️ Error checking file: {str(e)[:50]}")
+                    # 检测失败，但不影响整体结果
+                    break
+            
+            # 超时或检测失败，但仍然返回成功（用户已确认执行）
+            print(f"\n💡 File creation completed (validation timeout after {max_attempts}s)")
+            return {
+                "success": True,
+                "user_confirmed": True,
+                "command_type": "touch",
+                "message": f"File '{filename}' creation completed",
+                "filename": filename,
+                "absolute_path": absolute_path,
+                "validation_timeout": True
+            }
+            
+        except Exception as e:
+            # 验证过程出错，但不影响touch的成功状态
+            return {
+                "success": True,
+                "user_confirmed": True,
+                "command_type": "touch",
+                "message": f"File created successfully (validation error: {str(e)[:50]})",
+                "validation_error": str(e)
+            }
+
+    def _handle_move_success(self, context_info):
+        """处理move命令成功后的逻辑"""
+        return {
+            "success": True,
+            "user_confirmed": True,
+            "command_type": "move",
+            "message": "Move command executed successfully"
+        }
+
+    def _handle_upload_success(self, context_info):
+        """处理upload命令成功后的逻辑"""
+        try:
+            # debug_print is already defined in this module
+            
+            # 获取期望的文件名列表和目标文件夹信息
+            expected_filenames = context_info.get("expected_filenames", [])
+            target_folder_id = context_info.get("target_folder_id")
+            target_path = context_info.get("target_path")
+            
+            # 如果target_folder_id为None（目标目录不存在），需要重新解析路径
+            if expected_filenames and target_folder_id is None and target_path:
+                debug_print(f"🔧 DEBUG: target_folder_id is None, re-resolving target_path='{target_path}' after remote execution")
+                current_shell = self.main_instance.get_current_shell()
+                if current_shell:
+                    # 尝试重新解析目标路径（目录现在应该存在了）
+                    resolved_folder_id, resolved_display_path = self.main_instance.resolve_path(target_path, current_shell)
+                    if resolved_folder_id:
+                        target_folder_id = resolved_folder_id
+                        debug_print(f"🔧 DEBUG: re-resolved target_folder_id='{target_folder_id}', display_path='{resolved_display_path}'")
+                    else:
+                        debug_print(f"🔧 DEBUG: failed to re-resolve target_path='{target_path}', will use parent folder for validation")
+                        # 如果重新解析失败，使用父目录作为fallback
+                        target_folder_id = current_shell.get("current_folder_id", self.main_instance.REMOTE_ROOT_FOLDER_ID)
+                        debug_print(f"🔧 DEBUG: using parent folder_id='{target_folder_id}' as fallback")
+            
+            # 如果有验证信息，进行文件验证
+            debug_print(f"🔧 DEBUG: Validation check - expected_filenames={expected_filenames}, target_path='{target_path}'")
+            if expected_filenames and target_path is not None:
+                debug_print(f"🔧 DEBUG: Starting ls-based validation with {len(expected_filenames)} files")
+                current_shell = self.main_instance.get_current_shell()
+                
+                # 使用带进度显示的验证逻辑，类似上传过程
+                validation_result = self._verify_upload_with_progress(
+                    expected_files=expected_filenames,
+                    target_path=target_path,
+                    current_shell=current_shell
+                )
+                
+                debug_print(f"🔧 DEBUG: Validation completed - validation_result={validation_result}")
+                return {
+                    "success": validation_result["success"],
+                    "user_confirmed": True,
+                    "command_type": "upload",
+                    "message": "Upload completed successfully" if validation_result["success"] else "Upload command executed but files not found in target location",
+                    "found_files": validation_result.get("found_files", []),
+                    "missing_files": validation_result.get("missing_files", []),
+                    "total_found": validation_result.get("total_found", 0),
+                    "total_expected": validation_result.get("total_expected", 0)
+                }
+            else:
+                # 没有验证信息或文件夹上传，返回基本成功状态
+                is_folder_upload = context_info.get("is_folder_upload", False)
+                if is_folder_upload:
+                    debug_print(f"🔧 DEBUG: Skipping validation for folder upload - trusting remote command execution")
+                    return {
+                        "success": True,
+                        "user_confirmed": True,
+                        "command_type": "upload",
+                        "message": "Folder upload and extraction completed successfully"
+                    }
+                else:
+                    debug_print(f"🔧 DEBUG: Skipping validation - expected_filenames={expected_filenames}, target_path='{target_path}'")
+                    return {
+                        "success": True,
+                        "user_confirmed": True,
+                        "command_type": "upload",
+                        "message": "Upload completed successfully"
+                    }
+                
+        except Exception as e:
+            # 验证失败，但用户确认成功，记录错误但返回成功
+            return {
+                "success": True,
+                "user_confirmed": True,
+                "command_type": "upload",
+                "message": f"Upload command executed but verification failed: {str(e)}",
+                "found_files": [],
+                "verification_error": str(e)
+            }
+
+    def _handle_mkdir_success(self, context_info):
+        """处理mkdir命令成功后的逻辑，包含延迟检测机制"""
+        try:
+            import time
+            
+            target_path = context_info.get("target_path", "")
+            absolute_path = context_info.get("absolute_path", "")
+            
+            if not target_path:
+                return {
+                    "success": True,
+                    "user_confirmed": True,
+                    "command_type": "mkdir",
+                    "message": "Mkdir command executed successfully"
+                }
+            
+            # 添加延迟检测机制，参考echo > file的检测逻辑
+            print("⏳ Validating directory creation", end="", flush=True)
+            
+            max_attempts = 60
+            for attempt in range(max_attempts):
+                try:
+                    # 检查目录是否存在
+                    check_result = self._check_remote_file_exists_absolute(absolute_path)
+                    
+                    if check_result.get("exists"):
+                        print("√")  # 成功标记
+                        return {
+                            "success": True,
+                            "user_confirmed": True,
+                            "command_type": "mkdir",
+                            "message": f"Directory '{target_path}' created and verified successfully",
+                            "path": target_path,
+                            "absolute_path": absolute_path
+                        }
+                    
+                    # 目录不存在，等待1秒并输出进度点
+                    time.sleep(1)
+                    print(".", end="", flush=True)
+                    
+                except Exception as e:
+                    print(f"\n⚠️ Error checking directory: {str(e)[:50]}")
+                    # 检测失败，但不影响整体结果
+                    break
+            
+            # 超时或检测失败，但仍然返回成功（用户已确认执行）
+            print(f"\n💡 Directory creation completed (validation timeout after {max_attempts}s)")
+            return {
+                "success": True,
+                "user_confirmed": True,
+                "command_type": "mkdir",
+                "message": f"Directory '{target_path}' creation completed",
+                "path": target_path,
+                "absolute_path": absolute_path,
+                "validation_timeout": True
+            }
+            
+        except Exception as e:
+            # 验证过程出错，但不影响mkdir的成功状态
+            return {
+                "success": True,
+                "user_confirmed": True,
+                "command_type": "mkdir",
+                "message": f"Directory created successfully (validation error: {str(e)[:50]})",
+                "validation_error": str(e)
+            }
+
+    def execute_generic_remote_command(self, cmd, args):
         """
         统一远端命令执行接口 - 处理除特殊命令外的所有命令
         
         Args:
             cmd (str): 命令名称
             args (list): 命令参数
-            return_command_only (bool): 如果为True，只返回生成的命令而不执行
             
         Returns:
             dict: 执行结果，包含stdout、stderr、path等字段
@@ -734,25 +1405,8 @@ fi
                 else:
                     raise e
             
-            # 如果只需要返回命令，进行语法检查并返回
-            if return_command_only:
-                # 验证bash语法
-                syntax_check = self.validate_bash_syntax_fast(remote_command)
-                
-                return {
-                    "success": True,
-                    "cmd": cmd,
-                    "args": args,
-                    "remote_command": remote_command,
-                    "result_filename": result_filename,
-                    "syntax_valid": syntax_check["success"],
-                    "syntax_error": syntax_check.get("error") if not syntax_check["success"] else None,
-                    "action": "return_command_only"
-                }
-            
             # 正常执行流程：显示远端命令并通过tkinter获取用户执行结果
             result = self._execute_with_result_capture(remote_command_info, cmd, args)
-            
             return result
             
         except Exception as e:
@@ -793,8 +1447,18 @@ fi
             
             # 重新构建命令，避免双重转义问题
             if args:
-                # 直接重建完整命令，不进行预转义
-                full_command = f"{cmd} {' '.join(args)}"
+                # 正确处理命令参数，特别是bash -c的情况
+                if cmd == "bash" and len(args) >= 2 and args[0] == "-c":
+                    # 对于bash -c命令，第二个参数需要用引号包围
+                    script_content = args[1]
+                    full_command = f'bash -c "{script_content}"'
+                elif cmd == "sh" and len(args) >= 2 and args[0] == "-c":
+                    # 对于sh -c命令，第二个参数需要用引号包围
+                    script_content = args[1]
+                    full_command = f'sh -c "{script_content}"'
+                else:
+                    # 其他命令直接拼接
+                    full_command = f"{cmd} {' '.join(args)}"
             else:
                 full_command = cmd
             
@@ -813,11 +1477,19 @@ fi
                 if cmd == "python" and len(args) >= 2 and args[0] == "-c":
                     # 对于python -c命令，将整个python代码作为一个参数进行转义
                     python_code = args[1]
-                    # 使用双引号包围python代码，并转义内部的双引号和反斜杠
-                    escaped_python_code = python_code.replace('\\', '\\\\').replace('"', '\\"')
+                    # 使用双引号包围python代码，并转义内部的双引号、反斜杠和美元符号
+                    escaped_python_code = (python_code.replace('\\', '\\\\')
+                                                     .replace('"', '\\"')
+                                                     .replace('$', '\\$'))
                     bash_safe_command = f'python -c "{escaped_python_code}"'
                     # 对于python -c命令，也需要更新显示命令
                     full_command = bash_safe_command
+                elif cmd in ("bash", "sh") and len(args) >= 2 and args[0] == "-c":
+                    # 对于bash/sh -c命令，正确处理脚本内容
+                    script_content = args[1]
+                    # 转义脚本内容中的双引号和反斜杠
+                    escaped_script = script_content.replace('\\', '\\\\').replace('"', '\\"')
+                    bash_safe_command = f'{cmd} -c "{escaped_script}"'
                 else:
                     # 分别转义命令和每个参数
                     escaped_cmd = shlex.quote(cmd)
@@ -1008,20 +1680,20 @@ fi
                 }
             
             # 通过tkinter显示命令并获取用户反馈
-            window_result = self._show_generic_command_window(remote_command, cmd, args)
+            debug_info = debug_capture.get_debug_info()
+            window_result = self._show_generic_command_window(cmd, args, remote_command, debug_info)
             
             if window_result.get("action") == "direct_feedback":
-                # 用户选择了直接反馈，直接返回用户提供的数据
-                user_data = window_result.get("data", {})
+                # 处理直接反馈，保持direct_feedback action类型，跳过验证
+                data = window_result.get("data", {})
+                exit_code = data.get("exit_code", 0)
+                print () # an empty line
                 return {
-                    "success": True,
-                    "cmd": cmd,
-                    "args": args,
-                    "exit_code": user_data.get("exit_code", 0),
-                    "stdout": user_data.get("stdout", ""),
-                    "stderr": user_data.get("stderr", ""),
-                    "working_dir": user_data.get("working_dir", "user_provided"),
-                    "timestamp": user_data.get("timestamp", "user_provided"),
+                    "success": exit_code == 0, 
+                    "action": "direct_feedback", 
+                    "exit_code": exit_code,
+                    "stdout": data.get("stdout", ""),
+                    "stderr": data.get("stderr", ""),
                     "source": "direct_feedback"
                 }
             elif window_result.get("action") != "success":
@@ -1060,200 +1732,114 @@ fi
                 "error": f"执行结果捕获失败: {str(e)}"
             }
 
-    def _show_generic_command_window(self, remote_command, cmd, args):
+    def _show_generic_command_window(self, cmd, args, remote_command, debug_info=None):
         """
-        显示简化的命令执行窗口
+        显示远端命令的窗口（使用subprocess方法，完全抑制IMK信息）
         
         Args:
-            remote_command (str): 远端命令
-            cmd (str): 原始命令名
-            args (list): 原始命令参数
-            
+            cmd (str): 命令名称
+            args (list): 命令参数
+            remote_command (str): 远端命令内容
+            debug_info (str): debug信息，仅在直接反馈时输出
+        
         Returns:
             dict: 用户操作结果
         """
         try:
-            import tkinter as tk
-            from tkinter import messagebox
-            import queue
+            from .core_utils import show_command_window_subprocess
             
-            result_queue = queue.Queue()
+            title = f"GDS Remote Command: {cmd}"
+            instruction = f"Command: {cmd} {' '.join(args)}\n\nPlease execute the following command in your remote environment:"
             
-            def show_command_window():
-                root = tk.Tk()
-                root.title("Google Drive Shell")
-                root.geometry("400x60")
-                root.resizable(False, False)
-                
-                # 居中窗口
-                root.eval('tk::PlaceWindow . center')
-                
-                # 设置窗口置顶
-                root.attributes('-topmost', True)
-                
-                # 自动复制命令到剪切板
-                root.clipboard_clear()
-                root.clipboard_append(remote_command)
-                
-                # 主框架
-                main_frame = tk.Frame(root, padx=10, pady=10)
-                main_frame.pack(fill=tk.BOTH, expand=True)
-                
-                # 按钮框架
-                button_frame = tk.Frame(main_frame)
-                button_frame.pack(fill=tk.X, expand=True)
-                
-                def copy_command():
-                    try:
-                        # 使用更可靠的复制方法 - 一次性复制完整命令
-                        root.clipboard_clear()
-                        root.clipboard_append(remote_command)
-                        
-                        # 验证复制是否成功
-                        try:
-                            clipboard_content = root.clipboard_get()
-                            if clipboard_content == remote_command:
-                                copy_btn.config(text="✅ 复制成功", bg="#4CAF50")
-                            else:
-                                # 复制不完整，重试一次
-                                root.clipboard_clear()
-                                root.clipboard_append(remote_command)
-                                copy_btn.config(text="⚠️ 已重试", bg="#FF9800")
-                                print(f"复制验证: 原始{len(remote_command)}字符，剪切板{len(clipboard_content)}字符")
-                        except Exception as verify_error:
-                            # 验证失败但复制可能成功，显示已复制
-                            copy_btn.config(text="✅ 已复制", bg="#4CAF50")
-                            print(f"复制验证失败但命令已复制: {verify_error}")
-                        
-                        root.after(1500, lambda: copy_btn.config(text="📋 复制指令", bg="#2196F3"))
-                    except Exception as e:
-                        print(f"复制到剪贴板失败: {e}")
-                        copy_btn.config(text="❌ 复制失败", bg="#f44336")
-                
-                def execution_completed():
-                    result_queue.put({"action": "success", "message": "用户确认执行完成"})
-                    root.destroy()
-                
-                def direct_feedback():
-                    """直接反馈功能 - 使用命令行输入让用户提供命令执行结果"""
-                    # 关闭主窗口
-                    root.destroy()
-                    
-                    # 使用命令行输入获取用户反馈
-                    print(f"命令: {cmd} {' '.join(args)}")
-                    print("请提供命令执行结果 (多行输入，按 Ctrl+D 结束):")
-                    print()
-                    
-                    # 获取统一的命令输出
-                    try:
-                        output_lines = []
-                        while True:
-                            try:
-                                line = input()
-                                output_lines.append(line)
-                            except EOFError:
-                                break
-                        full_output = '\n'.join(output_lines)
-                    except KeyboardInterrupt:
-                        print("\n用户取消输入")
-                        full_output = ""
-                    
-                    # 简单解析输出：如果包含错误关键词，放到stderr，否则放到stdout
-                    error_keywords = ['error', 'Error', 'ERROR', 'exception', 'Exception', 'EXCEPTION', 
-                                     'traceback', 'Traceback', 'TRACEBACK', 'failed', 'Failed', 'FAILED']
-                    
-                    # 检查是否包含错误信息
-                    has_error = any(keyword in full_output for keyword in error_keywords)
-                    
-                    if has_error:
-                        stdout_content = ""
-                        stderr_content = full_output
-                        exit_code = 1  # 有错误时默认退出码为1
-                    else:
-                        stdout_content = full_output
-                        stderr_content = ""
-                        exit_code = 0 
-                    
-                    # 构建反馈结果
-                    feedback_result = {
+            # 使用subprocess方法显示窗口
+            result = show_command_window_subprocess(
+                title=title,
+                command_text=remote_command,
+                instruction_text=instruction,
+                timeout_seconds=300
+            )
+            
+            # 转换结果格式以保持兼容性
+            if result["action"] == "success":
+                return {
+                    "success": True,
+                    "action": "success",
+                    "data": {
+                        "cmd": cmd,
+                        "args": args,
+                        "exit_code": 0,
+                        "stdout": "Command executed successfully",
+                        "stderr": "",
+                        "source": "subprocess_window"
+                    }
+                }
+            elif result["action"] == "direct_feedback":
+                # 处理直接反馈 - 调用原来的直接反馈逻辑
+                print () # shift a newline since ctrl+D
+                try:
+                    feedback_result = self.direct_feedback(remote_command, debug_info)
+                    return {
+                        "success": feedback_result.get("success", False),
                         "action": "direct_feedback",
+                        "data": feedback_result.get("data", {}),
+                        "source": "direct_feedback"
+                    }
+                except Exception as e:
+                    return {
+                        "success": False,
+                        "action": "direct_feedback_error",
                         "data": {
-                            "cmd": cmd,
-                            "args": args,
-                            "working_dir": "user_provided",
-                            "timestamp": "user_provided", 
-                            "exit_code": exit_code,
-                            "stdout": stdout_content,
-                            "stderr": stderr_content,
+                            "error": f"Direct feedback failed: {str(e)}",
                             "source": "direct_feedback"
                         }
                     }
-                    result_queue.put(feedback_result)
-                
-                # 复制指令按钮
-                copy_btn = tk.Button(
-                    button_frame, 
-                    text="📋 复制指令", 
-                    command=copy_command,
-                    font=("Arial", 9),
-                    bg="#2196F3",
-                    fg="white",
-                    padx=10,
-                    pady=5,
-                    relief=tk.RAISED,
-                    bd=2
-                )
-                copy_btn.pack(side=tk.LEFT, padx=(0, 5), fill=tk.X, expand=True)
-                
-                # 直接反馈按钮
-                feedback_btn = tk.Button(
-                    button_frame, 
-                    text="💬 直接反馈", 
-                    command=direct_feedback,
-                    font=("Arial", 9),
-                    bg="#FF9800",
-                    fg="white",
-                    padx=10,
-                    pady=5,
-                    relief=tk.RAISED,
-                    bd=2
-                )
-                feedback_btn.pack(side=tk.LEFT, padx=(0, 5), fill=tk.X, expand=True)
-                
-                # 执行完成按钮
-                complete_btn = tk.Button(
-                    button_frame, 
-                    text="✅ 执行完成", 
-                    command=execution_completed,
-                    font=("Arial", 9, "bold"),
-                    bg="#4CAF50",
-                    fg="white",
-                    padx=10,
-                    pady=5,
-                    relief=tk.RAISED,
-                    bd=2
-                )
-                complete_btn.pack(side=tk.LEFT, fill=tk.X, expand=True)
-                
-                # 设置焦点到完成按钮
-                complete_btn.focus_set()
-                
-                # 自动复制命令到剪贴板
-                copy_command()
-                
-                root.mainloop()
-            
-            # 直接在主线程中显示窗口，避免tkinter线程问题
-            show_command_window()
-            
-            # 获取结果
-            try:
-                return result_queue.get_nowait()
-            except queue.Empty:
-                return {"action": "error", "error_info": "窗口关闭但未获取到用户操作"}
+            elif result["action"] == "failure":
+                return {
+                    "success": False,
+                    "action": "failure", 
+                    "data": {
+                        "cmd": cmd,
+                        "args": args,
+                        "exit_code": 1,
+                        "stdout": "",
+                        "stderr": "Command execution failed",
+                        "source": "subprocess_window"
+                    }
+                }
+            elif result["action"] == "copy":
+                return {
+                    "success": True,
+                    "action": "copy",
+                    "data": {
+                        "cmd": cmd,
+                        "args": args,
+                        "message": "Command copied to clipboard",
+                        "source": "subprocess_window"
+                    }
+                }
+            else:  # timeout, cancel, error
+                return {
+                    "success": False,
+                    "action": result["action"],
+                    "data": {
+                        "cmd": cmd,
+                        "args": args,
+                        "error": result.get("error", "Operation cancelled or timed out"),
+                        "source": "subprocess_window"
+                    }
+                }
                 
         except Exception as e:
-            return {"action": "error", "error_info": f"显示命令窗口失败: {str(e)}"}
+            return {
+                "success": False,
+                "action": "error",
+                "data": {
+                    "cmd": cmd,
+                    "args": args,
+                    "error": f"Failed to show command window: {str(e)}",
+                    "source": "subprocess_window"
+                }
+            }
 
     def _cleanup_remote_result_file(self, result_filename):
         """
@@ -1269,3 +1855,141 @@ fi
         except:
             # 清理失败不影响主要功能
             pass
+
+    def direct_feedback(self, remote_command, debug_info=None):
+        """
+        直接反馈功能 - 粘贴远端命令和用户反馈，用=分割
+        基于用户提供的原始逻辑
+        """
+        # 先输出debug信息（如果有的话）
+        if debug_info:
+            print("Debug information:")
+            print(debug_info)
+            print("=" * 20)  # 20个等号分割线
+        
+        # 然后粘贴生成的远端指令
+        print("Generated remote command:")
+        print(remote_command)
+        print("=" * 20)  # 20个等号分割线
+        
+        # 使用命令行输入获取用户反馈
+        print("Please provide command execution result (multi-line input, press Ctrl+D to finish):")
+        print()
+        
+        # 采用和USERINPUT相同的输入流捕获机制
+        import signal
+        import readline
+        
+        # 确保readline正确配置以支持中文全角字符
+        try:
+            # 设置readline配置以支持中文字符
+            readline.set_startup_hook(None)
+            # 启用历史记录
+            readline.clear_history()
+            
+            # 设置编辑模式为emacs（支持更好的中文编辑）
+            readline.parse_and_bind("set editing-mode emacs")
+            
+            # 启用UTF-8和中文字符支持
+            readline.parse_and_bind("set input-meta on")
+            readline.parse_and_bind("set output-meta on")
+            readline.parse_and_bind("set convert-meta off")
+            
+            # 支持中文字符的字符宽度计算
+            readline.parse_and_bind("set enable-meta-key on")
+            readline.parse_and_bind("set meta-flag on")
+            
+            # 设置字符编码
+            readline.parse_and_bind("set completion-display-width -1")
+            
+            # 处理中文字符的删除行为 - 按字符而不是字节删除
+            readline.parse_and_bind("set bind-tty-special-chars off")
+            
+            # 设置中文字符的显示宽度处理
+            import locale
+            try:
+                locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+            except:
+                try:
+                    locale.setlocale(locale.LC_ALL, 'C.UTF-8')
+                except:
+                    pass  # 如果设置locale失败，继续使用默认
+                    
+        except Exception:
+            pass  # 如果配置失败，继续使用默认设置
+        
+        lines = []
+        timeout_seconds = 180  # 3分钟超时，和USERINPUT一致
+        
+        class TimeoutException(Exception):
+            pass
+        
+        def timeout_handler(signum, frame):
+            raise TimeoutException("Input timeout")
+        
+        original_handler = signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(timeout_seconds)
+        
+        try:
+            while True:
+                try:
+                    line = input()
+                    lines.append(line)
+                    # 重置超时计时器，因为用户正在输入
+                    signal.alarm(timeout_seconds)
+                except EOFError:
+                    # Ctrl+D 被按下，结束输入
+                    break
+                except TimeoutException:
+                    # 超时发生 - 尝试捕获当前正在输入的行
+                    try:
+                        # 获取当前输入缓冲区的内容
+                        current_line = readline.get_line_buffer()
+                        if current_line.strip():
+                            lines.append(current_line.strip())
+                    except:
+                        pass  # 如果无法获取缓冲区内容，忽略错误
+                    print(f"\n[TIMEOUT] 输入超时 ({timeout_seconds}秒)")
+                    break
+        except KeyboardInterrupt:
+            print("\nUser cancelled input")
+            lines = []
+        finally:
+            # 清理超时设置
+            signal.alarm(0)
+            signal.signal(signal.SIGALRM, original_handler)
+        
+        # 组合所有行为最终输入
+        full_output = '\n'.join(lines).strip()
+        
+        # 简单解析输出：如果包含错误关键词，放到stderr，否则放到stdout
+        error_keywords = ['error', 'Error', 'ERROR', 'exception', 'Exception', 'EXCEPTION', 
+                         'traceback', 'Traceback', 'TRACEBACK', 'failed', 'Failed', 'FAILED']
+        
+        # 检查是否包含错误信息
+        has_error = any(keyword in full_output for keyword in error_keywords)
+        
+        if has_error:
+            stdout_content = ""
+            stderr_content = full_output
+            exit_code = 1  # 有错误时默认退出码为1
+        else:
+            stdout_content = full_output
+            stderr_content = ""
+            exit_code = 0 
+        
+        # 构建反馈结果
+        feedback_result = {
+            "success": exit_code == 0,
+            "action": "direct_feedback",
+            "data": {
+                "working_dir": "user_provided",
+                "timestamp": "user_provided", 
+                "exit_code": exit_code,
+                "stdout": stdout_content,
+                "stderr": stderr_content,
+                "source": "direct_feedback"
+            }
+        }
+        
+        return feedback_result

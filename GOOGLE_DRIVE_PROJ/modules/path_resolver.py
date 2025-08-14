@@ -18,7 +18,10 @@ from pathlib import Path
 import platform
 import psutil
 from typing import Dict
-from ..google_drive_api import GoogleDriveService
+try:
+    from ..google_drive_api import GoogleDriveService
+except ImportError:
+    from GOOGLE_DRIVE_PROJ.google_drive_api import GoogleDriveService
 
 class PathResolver:
     """Google Drive Shell Path Resolver"""
@@ -104,7 +107,7 @@ class PathResolver:
             
         if self.drive_service:
             if target_path == ".":
-                target_folder_id = self.get_current_folder_id(current_shell)
+                target_folder_id = self.main_instance.get_current_folder_id(current_shell)
                 target_display_path = current_shell.get("current_path", "~")
             else:
                 target_folder_id, target_display_path = self.main_instance.resolve_path(target_path, current_shell)
@@ -121,6 +124,9 @@ class PathResolver:
         """解析路径，返回对应的Google Drive文件夹ID和逻辑路径"""
         if not self.drive_service:
             return None, None
+        
+        # 处理bash shell自动扩展的本地路径
+        path = self._convert_local_path_to_remote(path)
             
         if not current_shell:
             current_shell = self.main_instance.get_current_shell()
@@ -147,9 +153,6 @@ class PathResolver:
             elif path.startswith("~/"):
                 relative_path = path[2:]
                 return self._resolve_relative_path(relative_path, self.main_instance.REMOTE_ROOT_FOLDER_ID, "~")
-            elif path.startswith("~"):
-                # 处理 ~something 的情况，这在远端逻辑中无效
-                return None, None
             
             # 处理完整的绝对路径（如 /content/drive/MyDrive/REMOTE_ROOT/...）
             elif path.startswith("/content/drive/MyDrive/REMOTE_ROOT"):
@@ -158,6 +161,16 @@ class PathResolver:
                 elif path.startswith("/content/drive/MyDrive/REMOTE_ROOT/"):
                     relative_path = path[len("/content/drive/MyDrive/REMOTE_ROOT/"):]
                     return self._resolve_relative_path(relative_path, self.main_instance.REMOTE_ROOT_FOLDER_ID, "~")
+                else:
+                    return None, None
+            
+            # 处理REMOTE_ENV的绝对路径
+            elif path.startswith("/content/drive/MyDrive/REMOTE_ENV"):
+                if path == "/content/drive/MyDrive/REMOTE_ENV":
+                    return self.main_instance.REMOTE_ENV_FOLDER_ID, "/content/drive/MyDrive/REMOTE_ENV"
+                elif path.startswith("/content/drive/MyDrive/REMOTE_ENV/"):
+                    relative_path = path[len("/content/drive/MyDrive/REMOTE_ENV/"):]
+                    return self._resolve_relative_path(relative_path, self.main_instance.REMOTE_ENV_FOLDER_ID, "/content/drive/MyDrive/REMOTE_ENV")
                 else:
                     return None, None
             
@@ -306,6 +319,33 @@ class PathResolver:
             print(f"❌ 转换GDS路径时出错: {e}")
             return gds_path
 
+    def _convert_local_path_to_remote(self, path):
+        """
+        将bash shell扩展的本地路径转换回远程路径格式
+        
+        当用户输入 'GDS cd ~/tmp/test' 时，bash会将 ~/tmp/test 扩展为 /Users/username/tmp/test
+        这个函数将其转换回 ~/tmp/test 格式，以便正确解析为远程路径
+        """
+        try:
+            import os
+            
+            # 获取用户的home目录
+            home_dir = os.path.expanduser("~")
+            
+            # 如果路径以用户home目录开头，将其转换为~/格式
+            if path.startswith(home_dir + "/"):
+                relative_path = path[len(home_dir + "/"):]
+                return f"~/{relative_path}"
+            elif path == home_dir:
+                return "~"
+            else:
+                # 不是home目录下的路径，保持原样
+                # 这包括：相对路径、绝对的远程路径（如/content/drive/...）等
+                return path
+        except Exception as e:
+            # 如果转换失败，返回原路径，避免破坏用户输入
+            return path
+
     def resolve_remote_absolute_path(self, path, current_shell=None):
         """
         通用路径解析接口：将相对路径解析为远端绝对路径
@@ -329,7 +369,7 @@ class PathResolver:
             
             # 获取当前路径和REMOTE_ROOT路径
             current_path = current_shell.get("current_path", "~")
-            remote_root_path = getattr(self, 'REMOTE_ROOT', '/content/drive/MyDrive/REMOTE_ROOT')
+            remote_root_path = self.main_instance.REMOTE_ROOT
             
             # 处理特殊路径
             if path == "~":

@@ -15,7 +15,7 @@ import subprocess
 import shutil
 from pathlib import Path
 from unittest.mock import patch, MagicMock
-from base_test import BaseTest, APITest, LongRunningTest
+from _base_test import BaseTest, APITest, LongRunningTest
 
 # Add parent directory to path to import the module
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -726,7 +726,6 @@ class TestExtractPDFProjectStructure(BaseTest):
             # 检查关键文件是否存在
             expected_files = [
                 "extract_paper_layouts.py",
-                "fix_formula_templates.py",
                 "image2text_api.py"
             ]
             

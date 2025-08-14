@@ -1,0 +1,4 @@
+# Test File 3
+Third test file for multi-file testing.
+Some more content
+End of file

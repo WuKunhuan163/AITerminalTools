@@ -18,7 +18,13 @@ from pathlib import Path
 import platform
 import psutil
 from typing import Dict
-from ..google_drive_api import GoogleDriveService
+try:
+    from ..google_drive_api import GoogleDriveService
+except ImportError:
+    from GOOGLE_DRIVE_PROJ.google_drive_api import GoogleDriveService
+
+# 导入debug捕获系统
+from .remote_commands import debug_capture, debug_print
 
 class SyncManager:
     """Google Drive Shell Sync Manager"""
@@ -42,11 +48,11 @@ class SyncManager:
             # 确保 LOCAL_EQUIVALENT 目录存在
             local_equiv_path = Path(self.main_instance.LOCAL_EQUIVALENT)
             if not local_equiv_path.exists():
-                return self._create_error_result(f"LOCAL_EQUIVALENT 目录不存在: {self.main_instance.LOCAL_EQUIVALENT}")
+                return self._create_error_result(f"LOCAL_EQUIVALENT directory does not exist: {self.main_instance.LOCAL_EQUIVALENT}")
             
             source_path = Path(file_path)
             if not source_path.exists():
-                return self._create_error_result(f"源文件不存在: {file_path}")
+                return self._create_error_result(f"File does not exist: {file_path}")
             
             # 获取文件名和扩展名
             filename = source_path.name
@@ -60,7 +66,7 @@ class SyncManager:
             
             if target_path.exists():
                 # 如果远端也有同名文件，使用重命名策略
-                print(f"🔄 LOCAL_EQUIVALENT中发现同名文件，检查远端是否也存在: {filename}")
+                debug_print(f"🔄 LOCAL_EQUIVALENT found a file with the same name, checking if it exists on the remote: {filename}")
                 
                 # 检查远端是否有同名文件
                 remote_has_same_file = self._check_remote_file_exists(filename)
@@ -81,21 +87,21 @@ class SyncManager:
                     renamed = True
                     
                     if cache_suggests_rename:
-                        print(f"🏷️  基于删除缓存重命名文件: {filename} -> {final_filename}")
+                        debug_print(f"🏷️  Rename file based on deletion cache: {filename} -> {final_filename}")
                     else:
-                        print(f"🏷️  重命名文件以避免冲突: {filename} -> {final_filename}")
+                        debug_print(f"🏷️  Rename file to avoid conflict: {filename} -> {final_filename} (renamed)")
                 else:
                     # 远端没有同名文件且缓存无风险，删除本地旧文件并记录删除
                     try:
                         target_path.unlink()
-                        print(f"🗑️  删除LOCAL_EQUIVALENT中的旧文件: {filename}")
+                        debug_print(f"🗑️  Delete old file in LOCAL_EQUIVALENT: {filename} (deleted)")
                         
                         # 记录删除到缓存
                         self.add_deletion_record(filename)
                     except Exception as e:
                         return {
                             "success": False,
-                            "error": f"删除旧文件失败: {e}"
+                            "error": f"Failed to delete old file: {e}"
                         }
             
             # 复制文件而不是移动（保留原文件）
@@ -111,7 +117,7 @@ class SyncManager:
             }
             
         except Exception as e:
-            return self._handle_exception(e, "移动文件")
+            return self._handle_exception(e, "Moving file")
 
     def check_network_connection(self):
         """
@@ -127,9 +133,9 @@ class SyncManager:
                     # 尝试一个简单的API调用
                     result = self.drive_service.test_connection()
                     if result.get('success'):
-                        return self._create_success_result("Google Drive API连接正常")
+                        return self._create_success_result("Google Drive API connection is normal")
                     else:
-                        return {"success": False, "error": f"Google Drive API连接失败: {result.get('error', '未知错误')}"}
+                        return {"success": False, "error": f"Google Drive API connection failed: {result.get('error', 'Unknown error')}"}
                 except Exception as e:
                     # API测试失败，继续尝试ping
                     pass
@@ -149,15 +155,15 @@ class SyncManager:
             )
             
             if result.returncode == 0:
-                return self._create_success_result("网络连接正常")
+                return self._create_success_result("Network connection is normal")
             else:
                 # 网络测试失败但不影响功能
-                return {"success": True, "message": "网络状态未知，但将继续执行"}
+                return {"success": True, "message": "Network status unknown, but will continue"}
                 
         except subprocess.TimeoutExpired:
-            return {"success": True, "message": "网络检测超时，但将继续执行"}
+            return {"success": True, "message": "Network detection timeout, but will continue"}
         except Exception as e:
-            return {"success": True, "message": f"网络检测失败，但将继续执行: {e}"}
+            return {"success": True, "message": f"Network detection failed, but will continue: {e}"}
 
     def calculate_timeout_from_file_sizes(self, file_moves):
         """
@@ -187,7 +193,7 @@ class SyncManager:
             return timeout
             
         except Exception as e:
-            print(f"计算超时时间时出错: {e}")
+            debug_print(f"Error calculating timeout: {e}")
             return 60  # 默认60秒（10秒基础 + 50秒传输）
 
     def wait_for_file_sync(self, expected_files, file_moves):
@@ -208,33 +214,50 @@ class SyncManager:
             start_time = time.time()
             synced_files = []
             check_count = 0
-            next_check_delay = 1.0  # 第一次检测等待1秒
+            next_check_delay = 1
             
-            # 只显示一行简洁的开始信息
-            print(f"⏳", end="", flush=True)
+            # 继续之前显示的进度消息（不重复显示）
             
             while time.time() - start_time < timeout:
                 check_count += 1
                 elapsed_time = time.time() - start_time
                 
-                # 直接使用 ls_with_folder_id 检查 DRIVE_EQUIVALENT 目录
+                # 直接使用 drive_service API 检查 DRIVE_EQUIVALENT 目录
                 try:
-                    # 使用内部API直接检查DRIVE_EQUIVALENT目录
-                    ls_result = self.ls_with_folder_id(self.main_instance.DRIVE_EQUIVALENT_FOLDER_ID, detailed=False)
+                    # 显示第一个点，表示API调用开始
+                    if check_count == 1:
+                        print(".", end="", flush=True)
+                    
+                    # 直接使用Google Drive API检查DRIVE_EQUIVALENT目录
+                    if hasattr(self.main_instance, 'drive_service') and self.main_instance.drive_service:
+                        ls_result = self.main_instance.drive_service.list_files(
+                            folder_id=self.main_instance.DRIVE_EQUIVALENT_FOLDER_ID, 
+                            max_results=100
+                        )
+                    else:
+                        ls_result = {"success": False, "error": "Drive service not available"}
                     
                     if ls_result.get("success"):
                         files = ls_result.get("files", [])
                         current_synced = []
                         
+                        # Debug information (only print if not in progress mode)
+                        if check_count == 1:  # Only print debug info on first check
+                            debug_print(f"\\n🔧 DEBUG: Checking for expected_files={expected_files}")
+                            debug_print(f"🔧 DEBUG: Found files in DRIVE_EQUIVALENT: {[f.get('name') for f in files]}")
+                        
                         for filename in expected_files:
                             # 检查文件名是否在DRIVE_EQUIVALENT中
                             file_found = any(f.get("name") == filename for f in files)
+                            if check_count == 1:  # Only print debug info on first check
+                                debug_print(f"🔧 DEBUG: Looking for '{filename}', found: {file_found}")
                             if file_found:
                                 current_synced.append(filename)
                         
                         # 如果所有文件都已同步，返回成功
                         if len(current_synced) == len(expected_files):
-                            print(f" ({elapsed_time:.1f}s)")
+                            debug_print(f" ({elapsed_time:.1f}s)")
+                            print()  # Add empty line after detection ends
                             return {
                                 "success": True,
                                 "synced_files": current_synced,
@@ -257,19 +280,20 @@ class SyncManager:
             
             # 超时，返回当前状态
             missing_files = [f for f in expected_files if f not in synced_files]
-            print(f" ⏰ 超时 ({timeout}s)")
+            debug_print(f" ⏰ Timeout ({timeout}s)")
+            print()  # Add empty line after detection ends
             
             return {
                 "success": len(synced_files) > 0,
-                "error": "文件同步超时，但部分文件可能已同步",
+                "error": "File sync timeout, but some files may have been synced",
                 "synced_files": synced_files,
                 "missing_files": missing_files,
                 "sync_time": timeout
             }
             
         except Exception as e:
-            print(f" ❌ 检测失败: {e}")
-            return {"success": False, "error": f"文件同步检测失败: {e}"}
+            debug_print(f" ❌ Detection failed: {e}")
+            return {"success": False, "error": f"File sync detection failed: {e}"}
 
     def _wait_for_zip_sync(self, zip_filename, timeout=60):
         """
@@ -285,14 +309,14 @@ class SyncManager:
         try:
             import time
             
-            print(f"⏳ 等待zip文件同步: {zip_filename}")
+            debug_print(f"⏳ Waiting for zip file to sync: {zip_filename}")
             
             start_time = time.time()
             check_count = 0
-            next_check_delay = 1.0  # 第一次检测等待1秒
+            next_check_delay = 0.2  # 第一次检测等待0.2秒，让点快速出现
             
             # 只显示一行简洁的开始信息
-            print(f"⏳", end="", flush=True)
+            debug_print(f"⏳", end="", flush=True)
             
             while time.time() - start_time < timeout:
                 check_count += 1
@@ -306,10 +330,10 @@ class SyncManager:
                         zip_exists = any(f.get("name") == zip_filename for f in files)
                         
                         if zip_exists:
-                            print(f" ({elapsed_time:.1f}s)")
+                            debug_print(f" ({elapsed_time:.1f}s)")
                             return {
                                 "success": True,
-                                "message": f"zip文件同步完成: {zip_filename}",
+                                "message": f"Zip file sync completed: {zip_filename}",
                                 "sync_time": elapsed_time
                             }
                         
@@ -324,16 +348,16 @@ class SyncManager:
                 next_check_delay *= 1.414  # √2 ≈ 1.414
             
             # 超时，返回失败
-            print(f" ⏰ 超时 ({timeout}s)")
+            debug_print(f" ⏰ Timeout ({timeout}s)")
             return {
                 "success": False,
-                "error": f"zip文件同步超时: {zip_filename}",
+                "error": f"Zip file sync timeout: {zip_filename}",
                 "sync_time": timeout
             }
             
         except Exception as e:
-            print(f" ❌ 检测失败: {e}")
-            return {"success": False, "error": f"zip文件同步检测失败: {e}"}
+            debug_print(f" ❌ Detection failed: {e}")
+            return {"success": False, "error": f"File sync detection failed: {e}"}
 
     def _wait_for_file_sync_with_timeout(self, expected_files, file_moves, custom_timeout):
         """
@@ -351,10 +375,10 @@ class SyncManager:
             start_time = time.time()
             synced_files = []
             check_count = 0
-            next_check_delay = 1.0  # 第一次检测等待1秒
+            next_check_delay = 0.2  # 第一次检测等待0.2秒，让点快速出现
             
             # 只显示一行简洁的开始信息
-            print(f"⏳", end="", flush=True)
+            debug_print(f"⏳", end="", flush=True)
             
             while time.time() - start_time < custom_timeout:
                 check_count += 1
@@ -384,7 +408,7 @@ class SyncManager:
                         
                         # 如果所有文件都已同步，返回成功
                         if len(current_synced) == len(expected_files):
-                            print(f" ({elapsed_time:.1f}s)")
+                            debug_print(f" ({elapsed_time:.1f}s)")
                             return {
                                 "success": True,
                                 "synced_files": current_synced,
@@ -409,19 +433,19 @@ class SyncManager:
             
             # 超时，返回当前状态
             missing_files = [f for f in expected_files if f not in synced_files]
-            print(f" ⏰ 重试超时 ({custom_timeout}s)")
+            debug_print(f" ⏰ Retry timeout ({custom_timeout}s)")
             
             return {
                 "success": len(synced_files) > 0,
-                "error": "文件同步重试超时，但部分文件可能已同步",
+                "error": "File sync retry timeout, but some files may have been synced",
                 "synced_files": synced_files,
                 "missing_files": missing_files,
                 "sync_time": custom_timeout
             }
             
         except Exception as e:
-            print(f" ❌ 重试检测失败: {e}")
-            return {"success": False, "error": f"文件同步重试检测失败: {e}"}
+            debug_print(f" ❌ Retry detection failed: {e}")
+            return {"success": False, "error": f"File sync retry detection failed: {e}"}
 
     def _restart_google_drive_desktop(self):
         """
@@ -434,7 +458,7 @@ class SyncManager:
             import subprocess
             import sys
             
-            print("🔄 正在重启Google Drive Desktop...")
+            debug_print("🔄 Restarting Google Drive Desktop...")
             
             # 调用主GOOGLE_DRIVE.py的重启功能
             result = subprocess.run([
@@ -442,17 +466,15 @@ class SyncManager:
             ], capture_output=True, text=True, timeout=30)
             
             if result.returncode == 0:
-                # print("✅ Google Drive Desktop重启成功")
                 return True
             else:
-                # print(f"❌ Google Drive Desktop重启失败: {result.stderr}")
                 return False
                 
         except subprocess.TimeoutExpired:
-            print("❌ Google Drive Desktop重启超时")
+            debug_print("❌ Google Drive Desktop restart timeout")
             return False
         except Exception as e:
-            print(f"❌ 重启Google Drive Desktop时出错: {e}")
+            debug_print(f"❌ Error restarting Google Drive Desktop: {e}")
             return False
 
     def _wait_for_drive_equivalent_file_deletion(self, filename, timeout=60):
@@ -469,8 +491,8 @@ class SyncManager:
         try:
             import time
             
-            print(f"⏳ 等待DRIVE_EQUIVALENT中的文件删除: {filename}")
-            print(f"🔍 检查远端目录ID: {self.main_instance.DRIVE_EQUIVALENT_FOLDER_ID}")
+            debug_print(f"⏳ Waiting for file deletion in DRIVE_EQUIVALENT: {filename}")
+            debug_print(f"🔍 Checking remote directory ID: {self.main_instance.DRIVE_EQUIVALENT_FOLDER_ID}")
             
             start_time = time.time()
             
@@ -485,33 +507,33 @@ class SyncManager:
                         file_found = any(f.get("name") == filename for f in files)
                         
                         if not file_found:
-                            print(f"✅ DRIVE_EQUIVALENT中的文件已删除: {filename}")
+                            debug_print(f"✅ File deleted in DRIVE_EQUIVALENT: {filename}")
                             return {"success": True, "message": f"File {filename} deleted from DRIVE_EQUIVALENT"}
                     else:
-                        print(f"⚠️ ls检查失败: {ls_result.get('error')}")
+                        debug_print(f"⚠️ ls check failed: {ls_result.get('error')} (ls check failed)")
                 
                 except Exception as check_error:
-                    print(f"⚠️ 检查文件时出错: {check_error}")
+                    debug_print(f"⚠️ Error checking file: {check_error} (error checking file)")
                 
                 # 显示进度点，类似上传时的显示
                 if attempt % 5 == 0 and attempt > 0:
                     elapsed = time.time() - start_time
-                    print(f"⏳ 等待删除中... ({elapsed:.0f}s)")
+                    debug_print(f"⏳ Waiting for deletion... ({elapsed:.0f}s) (waiting for deletion)")
                 else:
-                    print(".", end="", flush=True)
+                    debug_print(".", end="", flush=True)
                 
                 time.sleep(1)
             
             # 超时
-            print(f"\n⏰ 删除等待超时 ({timeout}s): {filename}")
-            print(f"⚠️ 警告: DRIVE_EQUIVALENT中的文件删除检测超时，但将继续上传")
+            debug_print(f"\n⏰ Timeout waiting for deletion ({timeout}s): {filename}")
+            debug_print(f"⚠️ Warning: File deletion detection timed out in DRIVE_EQUIVALENT, but upload will continue")
             return {
                 "success": False, 
                 "error": f"Timeout waiting for {filename} deletion in DRIVE_EQUIVALENT"
             }
             
         except Exception as e:
-            print(f"⚠️ 删除等待过程中出错: {e}")
+            debug_print(f"⚠️ Error waiting for file deletion: {e}")
             return {"success": False, "error": f"Error waiting for file deletion: {e}"}
 
     def _wait_and_read_result_file(self, result_filename):
@@ -531,7 +553,7 @@ class SyncManager:
             remote_file_path = f"~/tmp/{result_filename}"
             
             # 输出等待指示器
-            print("⏳", end="", flush=True)
+            debug_print("⏳", end="", flush=True)
             
             # 等待文件出现，最多60秒
             max_wait_time = 60
@@ -541,26 +563,26 @@ class SyncManager:
                 
                 if check_result.get("exists"):
                     # 文件存在，读取内容
-                    print()  # 换行
+                    debug_print()  # 换行
                     return self._read_result_file_via_gds(result_filename)
                 
                 # 文件不存在，等待1秒并输出进度点
                 time.sleep(1)
-                print(".", end="", flush=True)
+                debug_print(".", end="", flush=True)
             
             # 超时，提供用户输入fallback
-            print()  # 换行
-            print(f"⚠️  等待远端结果文件超时（60秒）: {remote_file_path}")
-            print("这可能是因为:")
-            print("  1. 命令正在后台运行（如http-server等服务）")
-            print("  2. 命令执行时间超过60秒")
-            print("  3. 远端出现意外错误")
-            print()
-            print("请手动提供执行结果:")
-            print("- 输入多行内容描述命令执行情况")
-            print("- 按 Ctrl+D 结束输入")
-            print("- 或直接按 Enter 跳过")
-            print()
+            debug_print()  # 换行
+            debug_print(f"⚠️  等待远端结果文件超时（60秒）: {remote_file_path}")
+            debug_print("这可能是因为:")
+            debug_print("  1. 命令正在后台运行（如http-server等服务）")
+            debug_print("  2. 命令执行时间超过60秒")
+            debug_print("  3. 远端出现意外错误")
+            debug_print()
+            debug_print("请手动提供执行结果:")
+            debug_print("- 输入多行内容描述命令执行情况")
+            debug_print("- 按 Ctrl+D 结束输入")
+            debug_print("- 或直接按 Enter 跳过")
+            debug_print()
             
             # 获取用户手动输入
             user_feedback = self._get_multiline_user_input()
@@ -589,8 +611,80 @@ class SyncManager:
                 }
             
         except Exception as e:
-            print()  # 换行
+            debug_print()  # 换行
             return {
                 "success": False,
                 "error": f"等待结果文件时出错: {str(e)}"
             }
+    
+    def _create_error_result(self, error_message):
+        """
+        创建标准的错误返回结果
+        
+        Args:
+            error_message (str): 错误消息
+            
+        Returns:
+            dict: 标准错误结果字典
+        """
+        return {"success": False, "error": error_message}
+    
+    def _handle_exception(self, e, operation_name, default_message=None):
+        """
+        通用异常处理方法
+        
+        Args:
+            e (Exception): 异常对象
+            operation_name (str): 操作名称
+            default_message (str, optional): 默认错误消息
+            
+        Returns:
+            dict: 错误结果字典
+        """
+        if default_message:
+            error_msg = f"{default_message}: {str(e)}"
+        else:
+            error_msg = f"{operation_name}时出错: {str(e)}"
+        return self._create_error_result(error_msg)
+    
+    def _check_remote_file_exists(self, file_path):
+        """
+        检查远端文件是否存在
+        
+        Args:
+            file_path (str): 相对于当前目录的文件路径
+            
+        Returns:
+            dict: 检查结果
+        """
+        try:
+            # 使用ls命令检查文件是否存在
+            # 解析路径
+            if "/" in file_path:
+                dir_path, filename = file_path.rsplit("/", 1)
+            else:
+                dir_path = "."
+                filename = file_path
+            
+            # 列出目录内容
+            ls_result = self.main_instance.cmd_ls(dir_path)
+            
+            if not ls_result.get("success"):
+                return {"exists": False, "error": f"无法访问目录: {dir_path}"}
+            
+            # 检查文件是否在列表中
+            files = ls_result.get("files", [])
+            file_exists = any(f.get("name") == filename for f in files)
+            
+            return {"exists": file_exists}
+            
+        except Exception as e:
+            return {"exists": False, "error": f"检查文件存在性时出错: {str(e)}"}
+    
+    def should_rename_file(self, filename):
+        """委托到cache_manager的文件重命名检查"""
+        return self.main_instance.cache_manager.should_rename_file(filename)
+    
+    def add_deletion_record(self, filename):
+        """委托到cache_manager的删除记录添加"""
+        return self.main_instance.cache_manager.add_deletion_record(filename)

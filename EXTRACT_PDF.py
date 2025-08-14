@@ -163,7 +163,7 @@ def create_postprocess_status_file(pdf_path: Path, page_spec: str = None, images
     with open(status_file, 'w', encoding='utf-8') as f:
         json.dump(status_data, f, ensure_ascii=False, indent=2)
     
-    print(f"📄 后处理状态保存至: {status_file.name}")
+    print(f"📄 Post-processing status saved to: {status_file.name}")
     return str(status_file)
 
 # 加载环境变量
@@ -303,7 +303,7 @@ class PDFExtractor:
                             if src_file.exists():
                                 shutil.copy2(src_file, dst_file)
                 
-                print(f"📁 创建extract_data文件夹: {extract_data_dir}")
+                print(f"📁 Created extract_data folder: {extract_data_dir}")
             
             # 创建postprocess状态文件
             if images_data:
@@ -313,10 +313,10 @@ class PDFExtractor:
             end_time = time.time()
             processing_time = end_time - start_time
             
-            print(f"⏱️  总处理时间: {processing_time:.2f} 秒")
-            print(f"📄 数据已保存到: {data_md_path}")
+            print(f"⏱️  Total processing time: {processing_time:.2f} seconds")
+            print(f"📄 Data saved to: {data_md_path}")
             if images_data:
-                print(f"🖼️  提取了 {len(images_data)} 张图片")
+                print(f"🖼️  Extracted {len(images_data)} images")
             
             return True, f"Basic extraction completed: {pdf_md_path}"
             
@@ -370,10 +370,10 @@ class PDFExtractor:
             if result.returncode == 0:
                 # 检查是否有输出文件被创建，并复制到用户指定的目录
                 output_file = self._handle_mineru_output(pdf_path, output_dir, result.stdout, page_spec)
-                print(f"⏱️  总处理时间: {processing_time:.2f} 秒")
+                print(f"⏱️  Total processing time: {processing_time:.2f} seconds")
                 return True, f"MinerU extraction completed: {output_file}"
             else:
-                print(f"⏱️  总处理时间: {processing_time:.2f} 秒")
+                print(f"⏱️  Total processing time: {processing_time:.2f} seconds")
                 return False, f"MinerU extraction failed: {result.stderr}"
                 
         except Exception as e:
@@ -479,14 +479,14 @@ class PDFExtractor:
             if markdown_dir.exists():
                 for md_file in markdown_dir.glob("*.md"):
                     md_file.unlink()
-                print(f"🗑️  已删除 {md_count} 个markdown文件")
+                print(f"🗑️ Deleted {md_count} markdown files")
             
             # 删除图片文件
             if images_dir.exists():
                 for img_file in images_dir.glob("*"):
                     if img_file.is_file():
                         img_file.unlink()
-                print(f"🗑️  已删除 {img_count} 个图片文件")
+                print(f"🗑️ Deleted {img_count} image files")
             
             # 删除其他缓存文件
             cache_files = [
@@ -500,7 +500,7 @@ class PDFExtractor:
                     cache_count += 1
             
             if cache_count > 0:
-                print(f"🗑️  已删除 {cache_count} 个缓存文件")
+                print(f"🗑️ Deleted {cache_count} cache files")
             
             total_deleted = md_count + img_count + cache_count
             if total_deleted > 0:
@@ -518,15 +518,15 @@ class PDFExtractor:
         
         # 显示处理信息
         engine_descriptions = {
-            "basic": "基础提取器（无图像/公式/表格处理）",
-            "basic-asyn": "基础提取器异步模式（禁用分析）",
-            "mineru": "MinerU提取器（无图像/公式/表格处理）",
-            "mineru-asyn": "MinerU提取器异步模式（禁用分析）",
-            "full": "完整处理流程（包含图像/公式/表格处理）"
+            "basic": "Basic extractor (no image/formula/table processing)",
+            "basic-asyn": "Basic extractor asynchronous mode (disable analysis)",
+            "mineru": "MinerU extractor (no image/formula/table processing)",
+            "mineru-asyn": "MinerU extractor asynchronous mode (disable analysis)",
+            "full": "Full processing pipeline (includes image/formula/table processing)"
         }
         
         if engine_mode in engine_descriptions:
-            print(f"🚀 使用引擎: {engine_descriptions[engine_mode]}")
+            print(f"🚀 Using engine: {engine_descriptions[engine_mode]}")
         
         if not pdf_path.exists():
             return False, f"PDF file not found: {pdf_path}"
@@ -619,10 +619,10 @@ class PDFExtractor:
             end_time = time.time()
             processing_time = end_time - start_time
             
-            print(f"⏱️  总处理时间: {processing_time:.2f} 秒")
-            print(f"📄 数据已保存到: {data_md_path}")
+            print(f"⏱️ Total processing time: {processing_time:.2f} seconds")
+            print(f"📄 Data saved to: {data_md_path}")
             if images_data:
-                print(f"🖼️  提取并合并了 {len(images_data)} 张图片")
+                print(f"🖼️ Extracted and merged {len(images_data)} images")
             
             return True, f"Basic extraction with images completed: {pdf_md_path}"
             
@@ -656,7 +656,7 @@ class PDFExtractor:
                                 'page': page_num
                             })
                 except Exception as e:
-                    print(f"⚠️  获取图片 {img_index} 位置时出错: {e}")
+                    print(f"⚠️ Error getting image {img_index} position: {e}")
                     continue
             
             if not image_rects:
@@ -682,7 +682,7 @@ class PDFExtractor:
                 })
                 
                 pix = None
-                print(f"🖼️  截屏保存单张图片: {img_filename}")
+                print(f"🖼️ Screenshot saved single image: {img_filename}")
                 
             else:
                 # 多张图片：计算合并后的bbox并截屏
@@ -710,10 +710,10 @@ class PDFExtractor:
                 })
                 
                 pix = None
-                print(f"🖼️  截屏合并了 {len(image_rects)} 张图片成一张大图: {img_filename}")
+                print(f"🖼️ Screenshot merged {len(image_rects)} images into one large image: {img_filename}")
                 
         except Exception as e:
-            print(f"⚠️  PDF截屏过程出错: {e}")
+            print(f"⚠️ PDF screenshot process error: {e}")
             # 如果截屏失败，回退到传统方式处理
             for img_index, img in enumerate(image_list):
                 try:
@@ -751,7 +751,7 @@ class PDFExtractor:
                     pix = None
                     
                 except Exception as e:
-                    print(f"⚠️  回退处理图片 {img_index} 失败: {e}")
+                    print(f"⚠️ Failed to process image {img_index}: {e}")
         
         return images_data
     
@@ -846,20 +846,20 @@ class PDFPostProcessor:
             # 尝试找到对应的PDF文件
             pdf_file_path = file_path.parent / f"{file_path.stem}.pdf"
         else:
-            print(f"❌ 不支持的文件类型: {file_path.suffix}")
+            print(f"❌ Unsupported file type: {file_path.suffix}")
             return False
             
         if not md_file.exists():
-            print(f"❌ Markdown文件不存在: {md_file}")
+            print(f"❌ Markdown file not found: {md_file}")
             return False
             
-        print(f"🔄 开始统一后处理 {md_file.name}...")
+        print(f"🔄 Starting unified post-processing {md_file.name}...")
         
         try:
             # 第一步：确保有postprocess状态文件
             status_file = self._ensure_postprocess_status_file(pdf_file_path, md_file)
             if not status_file:
-                print("❌ 无法创建或找到状态文件")
+                print("❌ Failed to create or find status file")
                 return False
             
             # 第二步：读取状态文件
@@ -867,14 +867,14 @@ class PDFPostProcessor:
                 status_data = json.load(f)
             
             # 第三步：同步markdown和JSON中的placeholder信息
-            print("🔄 同步markdown和JSON中的placeholder信息...")
+            print("🔄 Syncing markdown and JSON placeholder information...")
             status_data = self._sync_placeholders_with_markdown(md_file, status_data, status_file)
             
             # 第四步：筛选要处理的项目
             items_to_process = self._filter_items_to_process(status_data, process_type, specific_ids, force)
             
             if not items_to_process:
-                print("ℹ️  没有需要处理的项目")
+                print("ℹ️ No items to process")
                 return True
             
             # 第五步：使用统一的混合处理方式
@@ -884,7 +884,7 @@ class PDFPostProcessor:
             return success
             
         except Exception as e:
-            print(f"❌ 统一后处理异常: {e}")
+            print(f"❌ Unified post-processing error: {e}")
             return False
     
     def _ensure_postprocess_status_file(self, pdf_file_path: Path, md_file: Path) -> Optional[Path]:
@@ -894,7 +894,7 @@ class PDFPostProcessor:
         if status_file.exists():
             return status_file
         
-        print("📄 状态文件不存在，从markdown重新生成...")
+        print("📄 Status file not found, regenerating from markdown...")
         
         # 从markdown文件分析placeholder，创建状态文件
         try:
@@ -909,7 +909,7 @@ class PDFPostProcessor:
             matches = re.findall(placeholder_pattern, content, re.DOTALL)
             
             if not matches:
-                print("ℹ️  未找到placeholder，无需后处理")
+                print("ℹ️ No placeholder found, no post-processing needed")
                 return None
             
             # 创建状态数据
@@ -946,11 +946,11 @@ class PDFPostProcessor:
             with open(status_file, 'w', encoding='utf-8') as f:
                 json.dump(status_data, f, ensure_ascii=False, indent=2)
             
-            print(f"✅ 创建状态文件: {status_file.name}")
+            print(f"✅ Created status file: {status_file.name}")
             return status_file
             
         except Exception as e:
-            print(f"❌ 创建状态文件失败: {e}")
+            print(f"❌ Failed to create status file: {e}")
             return None
     
     def _filter_items_to_process(self, status_data: dict, process_type: str, specific_ids: str, force: bool) -> list:
@@ -1014,23 +1014,23 @@ class PDFPostProcessor:
                         break
                 
                 if not item:
-                    print(f"⚠️  未找到项目: {item_id}")
+                    print(f"⚠️ Item not found: {item_id}")
                     continue
                 
                 item_type = item.get('type')
                 image_path = item.get('image_path', '')
                 
                 if not image_path:
-                    print(f"⚠️  图片路径为空: {item_id}")
+                    print(f"⚠️ Image path is empty: {item_id}")
                     continue
                 
                 # 查找实际的图片文件路径
                 actual_image_path = self._find_actual_image_path(pdf_file, image_path)
                 if not actual_image_path:
-                    print(f"⚠️  图片文件不存在: {image_path}")
+                    print(f"⚠️ Image file not found: {image_path}")
                     continue
                 
-                print(f"\n🔄 处理 {item_type} 项目: {item_id}")
+                print(f"\n🔄 Processing {item_type} item: {item_id}")
                 
                 # 根据类型选择处理方式
                 result_text = ""
@@ -1048,11 +1048,11 @@ class PDFPostProcessor:
                         md_content = success
                         item['processed'] = True
                         updated = True
-                        print(f"✅ 完成 {item_type} 处理: {item_id}")
+                        print(f"✅ Completed {item_type} processing: {item_id}")
                     else:
-                        print(f"⚠️  更新markdown失败: {item_id}")
+                        print(f"⚠️ Failed to update markdown: {item_id}")
                 else:
-                    print(f"❌ 处理失败: {item_id}")
+                    print(f"❌ Processing failed: {item_id}")
             
             if updated:
                 # 保存更新的markdown文件
@@ -1064,14 +1064,14 @@ class PDFPostProcessor:
                 with open(status_file, 'w', encoding='utf-8') as f:
                     json.dump(status_data, f, indent=2, ensure_ascii=False)
                 
-                print(f"📝 已更新文件: {Path(md_file).name}")
+                print(f"📝 Updated file: {Path(md_file).name}")
                 return True
             else:
-                print("ℹ️  没有内容需要更新")
+                print("ℹ️ No content to update")
                 return True
                 
         except Exception as e:
-            print(f"❌ 统一处理异常: {e}")
+            print(f"❌ Unified processing error: {e}")
             return False
     def _find_actual_image_path(self, pdf_file: str, image_filename: str) -> Optional[str]:
         """查找图片文件的实际路径"""
@@ -1098,7 +1098,7 @@ class PDFPostProcessor:
             # 调用IMG2TEXT工具
             img2text_path = self.script_dir / "IMG2TEXT"
             if not img2text_path.exists():
-                return "IMG2TEXT工具不可用"
+                return "IMG2TEXT tool not available"
             
             cmd = [str(img2text_path), image_path, "--json"]
             if custom_prompt:
@@ -1113,21 +1113,21 @@ class PDFPostProcessor:
                     # 尝试解析JSON输出
                     output_data = json.loads(result.stdout)
                     if output_data.get('success'):
-                        description = output_data.get('result', '图片分析完成')
+                        description = output_data.get('result', 'Image analysis completed')
                         return description
                     else:
                         error_msg = output_data.get('error', 'Unknown error')
-                        return f"图片分析失败: {error_msg}"
+                        return f"Image analysis failed: {error_msg}"
                 except json.JSONDecodeError:
                     # 如果不是JSON格式，直接使用输出
-                    return result.stdout.strip() if result.stdout.strip() else "图片分析完成"
+                    return result.stdout.strip() if result.stdout.strip() else "Image analysis completed"
             else:
-                return f"IMG2TEXT执行失败: {result.stderr}"
+                return f"IMG2TEXT execution failed: {result.stderr}"
                 
         except subprocess.TimeoutExpired:
-            return f"IMG2TEXT处理超时 (超时时间: {int(120 * timeout_multi)}秒)"
+            return f"IMG2TEXT processing timeout (timeout: {int(120 * timeout_multi)} seconds)"
         except Exception as e:
-            return f"图片处理异常: {e}"
+            return f"Image processing error: {e}"
     
     def _sync_placeholders_with_markdown(self, md_file: Path, status_data: dict, status_file: Path) -> dict:
         """同步markdown和JSON文件中的placeholder信息"""
@@ -1189,7 +1189,7 @@ class PDFPostProcessor:
             return status_data
             
         except Exception as e:
-            print(f"❌ 同步placeholder信息失败: {e}")
+            print(f"❌ Failed to sync placeholder information: {e}")
             return status_data
     
     def _update_markdown_with_result(self, md_content: str, item: dict, result_text: str) -> Optional[str]:
@@ -1212,7 +1212,7 @@ class PDFPostProcessor:
         # 查找placeholder和图片的位置
         placeholder_match = re.search(placeholder_img_pattern, md_content)
         if not placeholder_match:
-            print(f"⚠️  未找到匹配的placeholder模式")
+            print(f"⚠️ No matching placeholder pattern found")
             return None
         
         placeholder_and_img = placeholder_match.group(0)
@@ -1245,13 +1245,13 @@ class PDFPostProcessor:
         
         if earliest_match:
             # 有现有分析结果，替换它
-            print(f"🔍 找到现有分析结果，位置: {earliest_pos}, 长度: {earliest_match.end() - earliest_match.start()}")
+            print(f"🔍 Found existing analysis result, position: {earliest_pos}, length: {earliest_match.end() - earliest_match.start()}")
             analysis_end = end_pos + earliest_match.end()
             before_analysis = md_content[:start_pos]
             after_analysis = md_content[analysis_end:]
         else:
             # 没有现有分析结果，在placeholder后直接添加
-            print(f"🔍 未找到现有分析结果，直接添加")
+            print(f"🔍 No existing analysis result found, adding directly")
             before_analysis = md_content[:start_pos]
             after_analysis = md_content[end_pos:]
         
@@ -1276,7 +1276,7 @@ class PDFPostProcessor:
             # 使用EXTRACT_IMG工具（整合了UNIMERNET和cache）
             extract_img_tool = self.script_dir / "EXTRACT_IMG"
             if not extract_img_tool.exists():
-                print(f"⚠️  EXTRACT_IMG工具不可用: {extract_img_tool}")
+                print(f"⚠️ EXTRACT_IMG tool not available: {extract_img_tool}")
                 return ""
             
             # 构建EXTRACT_IMG命令
@@ -1302,38 +1302,38 @@ class PDFPostProcessor:
                         recognition_result = extract_result.get('result', '')
                         if recognition_result:
                             # Check if it's from cache
-                            cache_info = " (来自缓存)" if extract_result.get('from_cache') else ""
+                            cache_info = " (from cache)" if extract_result.get('from_cache') else ""
                             # Get processing time if available
                             processing_time = extract_result.get('processing_time', 0)
-                            time_info = f" (耗时: {processing_time:.2f}秒)" if processing_time > 0 else ""
-                            print(f"✅ EXTRACT_IMG识别成功{cache_info}{time_info}: {len(recognition_result)} 字符")
+                            time_info = f" (processing time: {processing_time:.2f} seconds)" if processing_time > 0 else ""
+                            print(f"✅ EXTRACT_IMG recognition successful{cache_info}{time_info}: {len(recognition_result)} characters")
                             # Directly format as $$ without description wrapper
                             cleaned_result = recognition_result.strip()
                             return f"$$\n{cleaned_result}\n$$"
                         else:
-                            print("⚠️  EXTRACT_IMG返回空结果")
-                            return f"$$\n\\text{{[公式识别失败: EXTRACT_IMG返回空结果]}}\n$$"
+                            print("⚠️ EXTRACT_IMG returned empty result")
+                            return f"$$\n\\text{{[formula recognition failed: EXTRACT_IMG returned empty result]}}\n$$"
                     else:
                         error_msg = extract_result.get('error', 'Unknown error')
-                        print(f"❌ EXTRACT_IMG处理失败: {error_msg}")
-                        return f"$$\n\\text{{[公式识别失败: {error_msg}]}}\n$$"
+                        print(f"❌ EXTRACT_IMG processing failed: {error_msg}")
+                        return f"$$\n\\text{{[formula recognition failed: {error_msg}]}}\n$$"
                 except json.JSONDecodeError as e:
-                    error_msg = f"JSON解析失败: {e}"
-                    print(f"❌ 无法解析EXTRACT_IMG JSON输出: {e}")
-                    print(f"   原始输出: {result.stdout[:200]}...")
-                    return f"$$\n\\text{{[公式识别失败: {error_msg}]}}\n$$"
+                    error_msg = f"JSON parsing failed: {e}"
+                    print(f"❌ Failed to parse EXTRACT_IMG JSON output: {e}")
+                    print(f"   original output: {result.stdout[:200]}...")
+                    return f"$$\n\\text{{[formula recognition failed: {error_msg}]}}\n$$"
             else:
-                error_msg = f"EXTRACT_IMG执行失败: {result.stderr}"
-                print(f"❌ EXTRACT_IMG执行失败: {result.stderr}")
-                return f"$$\n\\text{{[公式识别失败: {error_msg}]}}\n$$"
+                error_msg = f"EXTRACT_IMG execution failed: {result.stderr}"
+                print(f"❌ EXTRACT_IMG execution failed: {result.stderr}")
+                return f"$$\n\\text{{[formula recognition failed: {error_msg}]}}\n$$"
                 
         except subprocess.TimeoutExpired:
-            timeout_msg = f"EXTRACT_IMG处理超时 (超时时间: {int(120 * timeout_multi)}秒)"
+            timeout_msg = f"EXTRACT_IMG processing timeout (timeout: {int(120 * timeout_multi)} seconds)"
             print(f"❌ {timeout_msg}")
-            return f"$$\n\\text{{[公式识别失败: {timeout_msg}]}}\n$$"
+            return f"$$\n\\text{{[formula recognition failed: {timeout_msg}]}}\n$$"
         except Exception as e:
-            print(f"❌ UNIMERNET处理异常: {e}")
-            return f"$$\n\\text{{[公式识别失败: UNIMERNET处理异常: {e}]}}\n$$"
+            print(f"❌ UNIMERNET processing error: {e}")
+            return f"$$\n\\text{{[formula recognition failed: UNIMERNET processing error: {e}]}}\n$$"
     
 
     
@@ -1341,13 +1341,13 @@ class PDFPostProcessor:
     
     def _select_markdown_file_interactive(self) -> str:
         """交互式选择markdown文件"""
-        print("🔍 选择markdown文件进行后处理...")
+        print("🔍 Selecting markdown file for post-processing...")
         
         # 使用FILEDIALOG工具选择文件
         try:
             filedialog_path = self.script_dir / "FILEDIALOG"
             if not filedialog_path.exists():
-                print("⚠️  FILEDIALOG工具不可用，使用传统方式选择文件")
+                print("⚠️ FILEDIALOG tool not available, using traditional file selection")
                 return self._select_markdown_file_traditional()
             
             # 调用FILEDIALOG工具选择.md文件
@@ -1365,10 +1365,10 @@ class PDFPostProcessor:
                         if "✅ Selected file:" in line:
                             selected_file = line.split("✅ Selected file: ", 1)[1].strip()
                             if selected_file and Path(selected_file).exists():
-                                print(f"✅ 已选择: {Path(selected_file).name}")
+                                print(f"✅ Selected: {Path(selected_file).name}")
                                 return selected_file
                             break
-                    print("❌ 无法解析选择的文件路径")
+                    print("❌ Failed to parse selected file path")
                     return None
                 else:
                     # 尝试解析JSON输出（RUN环境下）
@@ -1376,31 +1376,31 @@ class PDFPostProcessor:
                         output_data = json.loads(output_text)
                         if output_data.get('success') and output_data.get('selected_file'):
                             selected_file = output_data['selected_file']
-                            print(f"✅ 已选择: {Path(selected_file).name}")
+                            print(f"✅ Selected: {Path(selected_file).name}")
                             return selected_file
                         else:
-                            print("❌ 用户取消了文件选择")
+                            print("❌ User cancelled file selection")
                             return None
                     except json.JSONDecodeError:
                         # 如果既不是标准格式也不是JSON，直接使用输出
                         if output_text and Path(output_text).exists():
-                            print(f"✅ 已选择: {Path(output_text).name}")
+                            print(f"✅ Selected: {Path(output_text).name}")
                             return output_text
                         else:
-                            print("❌ 用户取消了文件选择")
+                            print("❌ User cancelled file selection")
                             return None
             else:
-                print("❌ 文件选择失败")
+                print("❌ File selection failed")
                 return None
                 
         except Exception as e:
-            print(f"⚠️  使用FILEDIALOG时出错: {e}")
-            print("使用传统方式选择文件")
+            print(f"⚠️ Error using FILEDIALOG: {e}")
+            print("Using traditional file selection")
             return self._select_markdown_file_traditional()
     
     def _select_markdown_file_traditional(self) -> str:
         """传统方式选择markdown文件（备用方案）"""
-        print("🔍 搜索EXTRACT_PDF生成的markdown文件...")
+        print("🔍 Searching for EXTRACT_PDF generated markdown files...")
         
         # 搜索当前目录及其子目录中的markdown文件
         md_files = []
@@ -1425,11 +1425,11 @@ class PDFPostProcessor:
                         md_files.append(md_file)
         
         if not md_files:
-            print("❌ 未找到任何EXTRACT_PDF生成的markdown文件")
+            print("❌ No EXTRACT_PDF generated markdown files found")
             return None
         
         # 显示文件列表
-        print("\n📄 找到以下markdown文件:")
+        print("\n📄 Found the following markdown files:")
         for i, md_file in enumerate(md_files, 1):
             # 检查是否有待处理的placeholder
             try:
@@ -1441,35 +1441,35 @@ class PDFPostProcessor:
                 table_count = len(re.findall(r'\[placeholder: table\]', content))
                 total_count = image_count + formula_count + table_count
                 
-                status = f"({total_count}个待处理项目: 🖼️{image_count} 🧮{formula_count} 📊{table_count})" if total_count > 0 else "(已处理)"
+                status = f"({total_count} items to process: 🖼️{image_count} 🧮{formula_count} 📊{table_count})" if total_count > 0 else "(processed)"
                 print(f"  {i}. {md_file.name} {status}")
-                print(f"     路径: {md_file}")
+                print(f"     path: {md_file}")
                 
             except Exception as e:
-                print(f"  {i}. {md_file.name} (无法读取)")
-                print(f"     路径: {md_file}")
+                print(f"  {i}. {md_file.name} (cannot read)")
+                print(f"     path: {md_file}")
         
         # 用户选择
         while True:
             try:
-                choice = input(f"\n请选择要处理的文件 (1-{len(md_files)}, 或按回车取消): ").strip()
+                choice = input(f"\nPlease select the file to process (1-{len(md_files)}, or press Enter to cancel): ").strip()
                 
                 if not choice:
-                    print("❌ 已取消")
+                    print("❌ Cancelled")
                     return None
                 
                 choice_num = int(choice)
                 if 1 <= choice_num <= len(md_files):
                     selected_file = md_files[choice_num - 1]
-                    print(f"✅ 已选择: {selected_file.name}")
+                    print(f"✅ Selected: {selected_file.name}")
                     return str(selected_file)
                 else:
-                    print(f"❌ 请输入1-{len(md_files)}之间的数字")
+                    print(f"❌ Please enter a number between 1 and {len(md_files)}")
                     
             except ValueError:
-                print("❌ 请输入有效的数字")
+                print("❌ Please enter a valid number")
             except KeyboardInterrupt:
-                print("\n❌ 已取消")
+                print("\n❌ Cancelled")
                 return None
         
     def process_file(self, file_path: str, process_type: str, specific_ids: str = None, custom_prompt: str = None, force: bool = False, timeout_multi: float = 1.0) -> bool:
@@ -1516,11 +1516,11 @@ class PDFPostProcessor:
             
             # 解析markdown中的placeholder信息
             md_placeholders = self._parse_placeholders_from_markdown(md_content)
-            print(f"   📋 从markdown中识别到 {len(md_placeholders)} 个placeholder")
+            print(f"   📋 Found {len(md_placeholders)} placeholders in markdown")
             
             # 创建JSON中现有项目的映射
             json_items = {item['id']: item for item in status_data.get('items', [])}
-            print(f"   📄 JSON中现有 {len(json_items)} 个项目")
+            print(f"   📄 {len(json_items)} items in JSON")
             
             # 同步过程
             updated_items = []
@@ -1533,7 +1533,7 @@ class PDFPostProcessor:
                     item = json_items[img_id]
                     old_type = item.get('type', 'unknown')
                     if old_type != placeholder_type:
-                        print(f"   🔄 更新项目 {img_id[:8]}... 类型: {old_type} → {placeholder_type}")
+                        print(f"   🔄 Updating item {img_id[:8]}... type: {old_type} → {placeholder_type}")
                         item['type'] = placeholder_type
                         item['processed'] = False  # 重置处理状态
                         # 更新处理器
@@ -1547,7 +1547,7 @@ class PDFPostProcessor:
                     del json_items[img_id]  # 从待处理列表中移除
                 else:
                     # 新增项目到JSON
-                    print(f"   ➕ 新增项目 {img_id[:8]}... 类型: {placeholder_type}")
+                    print(f"   ➕ Adding new item {img_id[:8]}... type: {placeholder_type}")
                     new_item = {
                         "id": img_id,
                         "type": placeholder_type,
@@ -1562,7 +1562,7 @@ class PDFPostProcessor:
             
             # 2. 处理JSON中剩余的项目（markdown中缺失的）
             for img_id, item in json_items.items():
-                print(f"   🔧 恢复缺失的placeholder {img_id[:8]}... 类型: {item['type']}")
+                print(f"   🔧 Restoring missing placeholder {img_id[:8]}... type: {item['type']}")
                 # 在markdown中恢复placeholder
                 md_content = self._restore_placeholder_in_markdown(md_content, img_id, item['type'])
                 md_content_modified = True
@@ -1572,7 +1572,7 @@ class PDFPostProcessor:
             if md_content_modified:
                 with open(md_file, 'w', encoding='utf-8') as f:
                     f.write(md_content)
-                print(f"   💾 已更新markdown文件")
+                print(f"   💾 Updated markdown file")
             
             # 4. 更新状态数据
             status_data['items'] = updated_items
@@ -1596,11 +1596,11 @@ class PDFPostProcessor:
             with open(status_file, 'w', encoding='utf-8') as f:
                 json.dump(status_data, f, ensure_ascii=False, indent=2)
             
-            print(f"   ✅ 同步完成: {len(updated_items)} 个项目")
+            print(f"   ✅ Sync completed: {len(updated_items)} items")
             return status_data
             
         except Exception as e:
-            print(f"   ⚠️  同步过程中出现错误: {e}")
+            print(f"   ⚠️ Sync error: {e}")
             return status_data
     
     def _parse_placeholders_from_markdown(self, md_content: str) -> dict:
@@ -1660,11 +1660,11 @@ Options:
   --output <dir>       Output directory (default: same as PDF)
   --output-dir <dir>   Alias for --output
   --engine <mode>      Processing engine mode:
-                       basic        - Basic extractor, no image/formula/table processing
+                       basic        - Basic extractor, with image/formula/table analysis
                        basic-asyn   - Basic extractor, async mode (disable analysis)
-                       mineru       - MinerU extractor, no image/formula/table processing
+                       mineru       - MinerU extractor, with image/formula/table analysis
                        mineru-asyn  - MinerU extractor, async mode (disable analysis)
-                       full         - Full pipeline with image/formula/table processing
+                       full         - Full pipeline with image/formula/table analysis
                        (default: mineru)
   --post [<file>]      Post-process markdown file (replace placeholders)
                        If no file specified, enter interactive mode
@@ -1705,7 +1705,7 @@ def select_pdf_file():
         root.withdraw()
         
         file_path = filedialog.askopenfilename(
-            title="选择PDF文件",
+            title="Select PDF file",
             filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
         )
         
@@ -1733,9 +1733,9 @@ def main(args=None, command_identifier=None):
         # 如果没有参数，尝试使用GUI选择文件
         pdf_file = select_pdf_file()
         if pdf_file:
-            print(f"📄 已选择文件: {Path(pdf_file).name}")
-            print(f"🔄 开始使用 MinerU 引擎处理...")
-            print("⏳ 处理中，请稍候...")
+            print(f"📄 Selected file: {Path(pdf_file).name}")
+            print(f"🔄 Starting MinerU engine processing...")
+            print("⏳ Please wait ...")
             
             extractor = PDFExtractor()
             success, message = extractor.extract_pdf(pdf_file)
@@ -2007,7 +2007,7 @@ def main(args=None, command_identifier=None):
     
     # 处理完整流程模式
     if full_pipeline:
-        print(f"🚀 开始完整流程处理: {pdf_file}")
+        print(f"🚀 Starting full pipeline processing: {pdf_file}")
         
         # 构造第一步命令：PDF提取
         step1_cmd = [sys.executable, __file__, pdf_file]
@@ -2020,8 +2020,8 @@ def main(args=None, command_identifier=None):
         if clean_data:
             step1_cmd.append("--clean-data")
         
-        print("📄 第一步：PDF提取...")
-        print(f"   🔧 执行命令: {' '.join(step1_cmd)}")
+        print("📄 Step 1: PDF extraction...")
+        print(f"   🔧 Executing command: {' '.join(step1_cmd)}")
         
         try:
             result1 = subprocess.run(step1_cmd, capture_output=True, text=True, check=False)
@@ -2036,10 +2036,10 @@ def main(args=None, command_identifier=None):
                 if is_run_environment(command_identifier):
                     write_to_json_output(error_data, command_identifier)
                 else:
-                    print(f"❌ PDF提取失败: {result1.stderr}")
+                    print(f"❌ PDF extraction failed: {result1.stderr}")
                 return 1
             
-            print(f"✅ PDF提取完成")
+            print(f"✅ PDF extraction completed")
             
             # 根据PDF文件路径推断markdown文件路径
             pdf_path = Path(pdf_file).expanduser().resolve()
@@ -2070,8 +2070,8 @@ def main(args=None, command_identifier=None):
                 if post_force:
                     step2_cmd.append("--force")
                 
-                print("🔄 第二步：自动后处理...")
-                print(f"   🔧 执行命令: {' '.join(step2_cmd)}")
+                print("🔄 Step 2: Automatic post-processing...")
+                print(f"   🔧 Executing command: {' '.join(step2_cmd)}")
                 
                 result2 = subprocess.run(step2_cmd, capture_output=True, text=True, check=False)
                 
@@ -2089,7 +2089,7 @@ def main(args=None, command_identifier=None):
                     if is_run_environment(command_identifier):
                         write_to_json_output(success_data, command_identifier)
                     else:
-                        print(f"✅ 完整流程完成: {pdf_file} -> {md_file}")
+                        print(f"✅ Full pipeline completed: {pdf_file} -> {md_file}")
                     return 0
                 else:
                     # 即使后处理失败，PDF提取已成功
@@ -2106,9 +2106,9 @@ def main(args=None, command_identifier=None):
                     if is_run_environment(command_identifier):
                         write_to_json_output(warning_data, command_identifier)
                     else:
-                        print(f"✅ PDF提取完成，但后处理失败: {md_file}")
-                        print("💡 您可以稍后使用 EXTRACT_PDF --post 手动进行后处理")
-                        print(f"⚠️  后处理错误: {result2.stderr}")
+                        print(f"✅ PDF extraction completed, but post-processing failed: {md_file}")
+                        print("💡 You can later use EXTRACT_PDF --post to manually perform post-processing")
+                        print(f"⚠️ Post-processing error: {result2.stderr}")
                     return 0
             else:
                 # markdown文件不存在
@@ -2122,7 +2122,7 @@ def main(args=None, command_identifier=None):
                 if is_run_environment(command_identifier):
                     write_to_json_output(warning_data, command_identifier)
                 else:
-                    print(f"✅ PDF提取完成，但未找到markdown文件: {md_file}")
+                    print(f"✅ PDF extraction completed, but markdown file not found: {md_file}")
                 return 0
                 
         except Exception as e:
@@ -2134,7 +2134,7 @@ def main(args=None, command_identifier=None):
             if is_run_environment(command_identifier):
                 write_to_json_output(error_data, command_identifier)
             else:
-                print(f"❌ 完整流程执行失败: {str(e)}")
+                print(f"❌ Full pipeline execution failed: {str(e)}")
             return 1
     
     # 处理后处理模式
@@ -2151,7 +2151,7 @@ def main(args=None, command_identifier=None):
             if is_run_environment(command_identifier):
                 write_to_json_output(success_data, command_identifier)
             else:
-                print(f"✅ 后处理完成: {post_file}")
+                print(f"✅ Post-processing completed: {post_file}")
             return 0
         else:
             error_data = {
@@ -2162,7 +2162,7 @@ def main(args=None, command_identifier=None):
             if is_run_environment(command_identifier):
                 write_to_json_output(error_data, command_identifier)
             else:
-                print(f"❌ 后处理失败: {post_file}")
+                print(f"❌ Post-processing failed: {post_file}")
             return 1
     
     # 检查是否提供了PDF文件
@@ -2224,7 +2224,7 @@ def cleanup_images_folder():
                 )
                 if all_images and len(contents) < 10:  # Safety check: only clean small image folders
                     shutil.rmtree(images_path)
-                    print(f"🧹 已清理包含 {len(contents)} 个图片文件的 images 文件夹")
+                    print(f"🧹 Cleaned images folder containing {len(contents)} image files")
         except Exception as e:
             # Silently ignore cleanup errors
             pass
@@ -2236,9 +2236,9 @@ if __name__ == "__main__":
         sys.exit(exit_code)
     except KeyboardInterrupt:
         cleanup_images_folder()
-        print("\n❌ 已取消")
+        print("\n❌ Cancelled")
         sys.exit(1)
     except Exception as e:
         cleanup_images_folder()
-        print(f"❌ 程序异常: {e}")
+        print(f"❌ Program exception: {e}")
         sys.exit(1) 

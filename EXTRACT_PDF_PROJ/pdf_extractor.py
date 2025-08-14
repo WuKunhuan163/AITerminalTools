@@ -32,9 +32,8 @@ try:
         extract_img_proj = parent_dir / "EXTRACT_IMG_PROJ"
         if str(extract_img_proj) not in sys.path:
             sys.path.insert(0, str(extract_img_proj))
-        from cache_system import ImageCacheSystem
 except ImportError as e:
-    print(f"错误: 无法导入必要的本地模块. {e}", file=sys.stderr)
+    print(f"Error: Failed to import necessary local modules. {e}", file=sys.stderr)
     sys.exit(1)
     
 # External library imports
@@ -47,11 +46,11 @@ except ImportError:
 try:
     import fitz
 except ImportError:
-    print("错误: PyMuPDF 库未安装。", file=sys.stderr); sys.exit(1)
+    print("Error: PyMuPDF library not installed.", file=sys.stderr); sys.exit(1)
 
 # --- Configuration using Absolute Paths ---
 SCRIPT_DIR = Path(__file__).parent.resolve()
-# 使用EXTRACT_PDF_DATA目录（数据与代码分离）
+# Use EXTRACT_PDF_DATA directory (data separated from code)
 DATA_DIR = SCRIPT_DIR.parent / "EXTRACT_PDF_DATA"
 if not DATA_DIR.exists():
     DATA_DIR.mkdir(parents=True, exist_ok=True)

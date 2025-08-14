@@ -1,9 +1,13 @@
 {
   "deletion_records": [
     {
-      "filename": "progress_final.md",
-      "deletion_time": 1753617589.723031
+      "filename": "test_simple.txt",
+      "timestamp": 1753798534.614353
+    },
+    {
+      "filename": "test_final.txt",
+      "timestamp": 1753798680.8806689
     }
   ],
-  "last_updated": 1753617589.723073
+  "last_updated": 1753798680.880675
 }

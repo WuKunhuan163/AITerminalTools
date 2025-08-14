@@ -786,19 +786,19 @@ def main():
                 if args.json or is_run_environment(command_identifier):
                     print(json.dumps(result, indent=2))
                 else:
-                    print("✅ 缓存已清除")
+                    print("✅ Cache cleared successfully")
             except Exception as e:
                 result = {"success": False, "error": f"Failed to clear cache: {e}"}
                 if args.json or is_run_environment(command_identifier):
                     print(json.dumps(result, indent=2))
                 else:
-                    print(f"❌ 清除缓存失败: {e}")
+                    print(f"❌ Failed to clear cache: {e}")
         else:
             result = {"success": False, "error": "Cache system not available"}
             if args.json or is_run_environment(command_identifier):
                 print(json.dumps(result, indent=2))
             else:
-                print("❌ 缓存系统不可用")
+                print("❌ Cache system not available")
         return
     
     # Check for image path
@@ -823,12 +823,12 @@ def main():
         print(output)
     else:
         if result.get('success'):
-            cache_info = " (来自缓存)" if result.get('from_cache') else ""
+            cache_info = " (from cache)" if result.get('from_cache') else ""
             processor_info = result.get('processor', 'unknown').upper()
-            print(f"✅ {processor_info}处理成功{cache_info}")
-            print(f"📄 结果:\n{result.get('result', 'No result')}")
+            print(f"✅ {processor_info} processing successful{cache_info}")
+            print(f"📄 Result:\n{result.get('result', 'No result')}")
         else:
-            print(f"❌ 处理失败: {result.get('error', 'Unknown error')}")
+            print(f"❌ Processing failed: {result.get('error', 'Unknown error')}")
             output = json.dumps(result, indent=2, ensure_ascii=False)
             print(output)
     
@@ -840,9 +840,9 @@ def main():
                     f.write(output)
                 else:
                     json.dump(result, f, indent=2, ensure_ascii=False)
-            print(f"💾 结果已保存到: {args.output}")
+            print(f"💾 Result saved to: {args.output}")
         except Exception as e:
-            print(f"❌ 保存文件失败: {e}")
+            print(f"❌ Failed to save file: {e}")
 
 
 if __name__ == "__main__":

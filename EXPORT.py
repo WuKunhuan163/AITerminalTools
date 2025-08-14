@@ -129,11 +129,11 @@ def copy_source_commands_to_clipboard(updated_files):
     
     # 尝试复制到剪贴板
     if copy_to_clipboard(source_command_line):
-        print(f"📋 Source命令已复制到剪贴板:")
+        print(f"📋 Source command copied to clipboard:")
         print(f"   {source_command_line}")
-        print("💡 粘贴并执行以在当前会话中立即生效")
+        print("💡 Paste and execute to take effect immediately in the current session")
     else:
-        print(f"⚠️ 无法复制到剪贴板，请手动执行:")
+        print(f"⚠️ Cannot copy to clipboard, please execute manually:")
         print(f"   {source_command_line}")
 
 def get_shell_config_files():

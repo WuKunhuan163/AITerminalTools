@@ -1,0 +1,9 @@
+{
+    "debug": false,
+    "host": "localhost",
+    "port": 8080,
+    "features": {
+        "logging": true,
+        "auth": false
+    }
+}

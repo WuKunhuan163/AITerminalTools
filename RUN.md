@@ -165,11 +165,11 @@ with open(output_file, 'r') as f:
 
 # 检查结果
 if data['success']:
-    print(f"搜索成功: 找到 {data['total_papers_found']} 篇论文")
+    print(f"Search successful: Found {data['total_papers_found']} papers")
     for paper in data['papers']:
         print(f"- {paper['title']}")
 else:
-    print(f"搜索失败: {data['error']}")
+    print(f"Search failed: {data['error']}")
 ```
 
 ### 2. 使用 --show 进行调试

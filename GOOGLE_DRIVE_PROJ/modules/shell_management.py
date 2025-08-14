@@ -18,7 +18,10 @@ from pathlib import Path
 import platform
 import psutil
 from typing import Dict
-from ..google_drive_api import GoogleDriveService
+try:
+    from ..google_drive_api import GoogleDriveService
+except ImportError:
+    from GOOGLE_DRIVE_PROJ.google_drive_api import GoogleDriveService
 
 class ShellManagement:
     """Google Drive Shell Shell Management"""
@@ -160,11 +163,28 @@ class ShellManagement:
             shells_data["active_shell"] = shell_id
             
             if self.save_shells(shells_data):
+                # 生成远程命令来初始化shell环境变量
+                tmp_dir = f"{self.main_instance.REMOTE_ENV}/.tmp"
+                current_venv_file = f"{tmp_dir}/current_venv_{shell_id}.txt"
+                commands = [
+                    f"mkdir -p {tmp_dir}",
+                    f"rm -f {current_venv_file}",  # 清除虚拟环境状态
+                    "export PYTHONPATH=/env/python",  # 重置为默认PYTHONPATH
+                    f"echo 'Shell {shell_name} created with default environment'"
+                ]
+                
+                command = " && ".join(commands) + ' && clear && echo "✅ 执行完成" || echo "❌ 执行失败"'
+                
+                # 执行远程命令来初始化环境
+                result = self.main_instance.execute_generic_remote_command("bash", ["-c", command])
+                
                 return {
                     "success": True,
                     "shell_id": shell_id,
                     "shell_name": shell_name,
-                    "message": f"✅ 创建远程shell成功: {shell_name}"
+                    "message": f"✅ 创建远程shell成功: {shell_name}",
+                    "remote_command": command,
+                    "remote_result": result
                 }
             else:
                 return {"success": False, "error": "保存shell配置失败"}
@@ -210,12 +230,48 @@ class ShellManagement:
             
             if self.save_shells(shells_data):
                 shell_name = shells_data["shells"][shell_id]["name"]
+                
+                # 生成远程命令来恢复shell的虚拟环境状态
+                tmp_dir = f"{self.main_instance.REMOTE_ENV}/.tmp"
+                current_venv_file = f"{tmp_dir}/current_venv_{shell_id}.txt"
+                
+                # 检查该shell是否有激活的虚拟环境
+                try:
+                    current_env_result = self.main_instance.cmd_cat(current_venv_file)
+                    if current_env_result.get("success") and current_env_result.get("output"):
+                        # 有激活的虚拟环境，恢复PYTHONPATH
+                        env_name = current_env_result["output"].strip()
+                        env_path = f"{self.main_instance.REMOTE_ENV}/{env_name}"
+                        pythonpath = f"/env/python:{env_path}"
+                        env_message = f"Restored virtual environment: {env_name}"
+                    else:
+                        # 没有激活的虚拟环境，使用默认PYTHONPATH
+                        pythonpath = "/env/python"
+                        env_message = "Using default environment"
+                except Exception:
+                    # 出错时使用默认环境
+                    pythonpath = "/env/python"
+                    env_message = "Using default environment (fallback)"
+                
+                commands = [
+                    f"export PYTHONPATH={pythonpath}",
+                    f"echo 'Switched to shell: {shell_name}'",
+                    f"echo '{env_message}'"
+                ]
+                
+                command = " && ".join(commands) + ' && clear && echo "✅ 执行完成" || echo "❌ 执行失败"'
+                
+                # 执行远程命令来设置环境
+                result = self.main_instance.execute_generic_remote_command("bash", ["-c", command])
+                
                 return {
                     "success": True,
                     "shell_id": shell_id,
                     "shell_name": shell_name,
                     "current_path": "~",
-                    "message": f"✅ 已切换到shell: {shell_name}，路径重置为根目录"
+                    "message": f"✅ 已切换到shell: {shell_name}，路径重置为根目录",
+                    "remote_command": command,
+                    "remote_result": result
                 }
             else:
                 return {"success": False, "error": "保存shell状态失败"}
@@ -232,6 +288,21 @@ class ShellManagement:
                 return {"success": False, "error": f"Shell不存在: {shell_id}"}
             
             shell_name = shells_data["shells"][shell_id]["name"]
+            
+            # 生成远程命令来清理shell相关的环境变量文件
+            tmp_dir = f"{self.main_instance.REMOTE_ENV}/.tmp"
+            current_venv_file = f"{tmp_dir}/current_venv_{shell_id}.txt"
+            commands = [
+                f"rm -f {current_venv_file}",  # 删除该shell的虚拟环境状态文件
+                "export PYTHONPATH=/env/python",  # 重置为默认PYTHONPATH
+                f"echo 'Shell {shell_name} terminated and environment cleaned'"
+            ]
+            
+            command = " && ".join(commands) + ' && clear && echo "✅ 执行完成" || echo "❌ 执行失败"'
+            
+            # 执行远程命令来清理环境
+            result = self.main_instance.execute_generic_remote_command("bash", ["-c", command])
+            
             del shells_data["shells"][shell_id]
             
             if shells_data["active_shell"] == shell_id:
@@ -242,7 +313,9 @@ class ShellManagement:
                     "success": True,
                     "shell_id": shell_id,
                     "shell_name": shell_name,
-                    "message": f"✅ 已终止shell: {shell_name}"
+                    "message": f"✅ 已终止shell: {shell_name}",
+                    "remote_command": command,
+                    "remote_result": result
                 }
             else:
                 return {"success": False, "error": "保存shell状态失败"}

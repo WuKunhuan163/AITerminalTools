@@ -18,7 +18,10 @@ from pathlib import Path
 import platform
 import psutil
 from typing import Dict
-from ..google_drive_api import GoogleDriveService
+try:
+    from ..google_drive_api import GoogleDriveService
+except ImportError:
+    from GOOGLE_DRIVE_PROJ.google_drive_api import GoogleDriveService
 
 class CacheManager:
     """Google Drive Shell Cache Manager"""
@@ -36,7 +39,7 @@ class CacheManager:
             
             # 获取文件的哈希值作为本地文件名
             file_hash = hashlib.md5(remote_path.encode()).hexdigest()[:16]
-            local_path = cache_manager.cache_dir / "remote_files" / file_hash
+            local_path = cache_manager.remote_files_dir / file_hash
             
             if local_path.exists():
                 return str(local_path)
@@ -71,21 +74,19 @@ class CacheManager:
                         original_filename = file_info.get("original_filename", filename)
                         self.add_deletion_record(original_filename)
                     else:
-                        print(f"⚠️ 文件已不存在，跳过清理: {filename}")
+                        print(f"File already deleted: {filename} (skipped)")
                 except Exception as e:
                     failed_cleanups.append({"file": filename, "error": str(e)})
-                    print(f"⚠️ 清理文件失败: {filename} - {e}")
+                    print(f"Failed to clean file: {filename} - {e}")
             
             if cleaned_files:
                 pass
-                # print(f"✅ 成功清理 {len(cleaned_files)} 个LOCAL_EQUIVALENT文件")
             
             if failed_cleanups:
                 pass
-                # print(f"⚠️ {len(failed_cleanups)} 个文件清理失败")
                 
         except Exception as e:
-            print(f"⚠️ 清理LOCAL_EQUIVALENT文件时出错: {e}")
+            print(f"Error cleaning LOCAL_EQUIVALENT files: {e}")
 
     def load_deletion_cache(self):
         """
@@ -121,6 +122,59 @@ class CacheManager:
                 json.dump(cache_data, f, indent=2, ensure_ascii=False)
         except Exception as e:
             print(f"⚠️ 保存删除缓存失败: {e}")
+    
+    def should_rename_file(self, filename):
+        """
+        检查是否应该重命名文件（基于删除缓存）
+        
+        Args:
+            filename (str): 文件名
+            
+        Returns:
+            bool: 是否应该重命名
+        """
+        try:
+            deletion_records = self.load_deletion_cache()
+            current_time = time.time()
+            
+            # 检查5分钟内是否删除过同名文件
+            for record in deletion_records:
+                if (record.get("filename") == filename and 
+                    current_time - record.get("timestamp", 0) < 300):  # 5分钟 = 300秒
+                    return True
+            
+            return False
+        except Exception as e:
+            print(f"⚠️ 检查文件重命名建议时出错: {e}")
+            return False
+    
+    def add_deletion_record(self, filename):
+        """
+        添加文件删除记录
+        
+        Args:
+            filename (str): 被删除的文件名
+        """
+        try:
+            deletion_records = self.load_deletion_cache()
+            
+            # 添加新的删除记录
+            deletion_records.append({
+                "filename": filename,
+                "timestamp": time.time()
+            })
+            
+            # 清理5分钟以前的记录
+            current_time = time.time()
+            deletion_records = [
+                record for record in deletion_records
+                if current_time - record.get("timestamp", 0) < 300
+            ]
+            
+            # 保存更新的缓存
+            self.save_deletion_cache(deletion_records)
+        except Exception as e:
+            print(f"⚠️ 添加删除记录时出错: {e}")
 
     def load_cache_config(self):
         """加载缓存配置"""

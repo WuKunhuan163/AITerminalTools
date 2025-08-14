@@ -4,22 +4,6 @@ Google Drive Shell - Verification Module
 从google_drive_shell.py重构而来的verification模块
 """
 
-import os
-import sys
-import json
-import time
-import hashlib
-import warnings
-import subprocess
-import shutil
-import zipfile
-import tempfile
-from pathlib import Path
-import platform
-import psutil
-from typing import Dict
-from ..google_drive_api import GoogleDriveService
-
 class Verification:
     """Google Drive Shell Verification"""
 
@@ -50,22 +34,22 @@ class Verification:
                             if folder["name"] == dir_name:
                                 return {
                                     "success": True,
-                                    "message": f"✅ 验证成功，目录已创建: {dir_name}",
+                                    "message": f"✅ Validation successful, directory created: {dir_name}",
                                     "folder_id": folder["id"]
                                 }
                         return {
                             "success": False,
-                            "error": f"验证失败，目录未找到: {dir_name}"
+                            "error": f"Validation failed, directory not found: {dir_name}"
                         }
                     else:
                         return {
                             "success": False,
-                            "error": f"验证失败，无法列出父目录: {ls_result.get('error', '未知错误')}"
+                            "error": f"Validation failed, cannot list parent directory: {ls_result.get('error', 'Unknown error')}"
                         }
                 else:
                     return {
                         "success": False,
-                        "error": f"验证失败，父目录不存在: {parent_path}"
+                        "error": f"Validation failed, parent directory does not exist: {parent_path}"
                     }
             else:
                 # 单级目录，在当前目录下检查
@@ -79,23 +63,23 @@ class Verification:
                         if folder["name"] == path:
                             return {
                                 "success": True,
-                                "message": f"✅ 验证成功，目录已创建: {path}",
+                                "message": f"✅ Validation successful, directory created: {path}",
                                 "folder_id": folder["id"]
                             }
                     return {
                         "success": False,
-                        "error": f"验证失败，目录未找到: {path}"
+                        "error": f"Validation failed, directory not found: {path}"
                     }
                 else:
                     return {
                         "success": False,
-                        "error": f"验证失败，无法列出当前目录: {ls_result.get('error', '未知错误')}"
+                        "error": f"Validation failed, cannot list current directory: {ls_result.get('error', 'Unknown error')}"
                     }
                     
         except Exception as e:
             return {
                 "success": False,
-                "error": f"验证mkdir结果时出错: {e}"
+                "error": f"Error verifying mkdir result: {e}"
             }
 
     def _verify_mkdir_with_ls(self, path, current_shell):
@@ -120,30 +104,30 @@ class Verification:
                         if folder["name"] == path:
                             return {
                                 "success": True,
-                                "message": f"验证成功，目录已创建: {path}",
+                                "message": f"Validation successful, directory created: {path}",
                                 "folder_id": folder["id"]
                             }
                     
                     if attempt == 0:
-                        print(f"📂 当前目录包含: {[f['name'] for f in folders]}")
-                        print(f"🔍 未找到目标目录 '{path}'，可能需要等待同步")
+                        print(f"📂 Current directory contains: {[f['name'] for f in folders]}")
+                        print(f"🔍 Target directory '{path}' not found, possible sync delay")
                 else:
                     return {
                         "success": False,
-                        "error": f"验证失败，无法执行ls命令: {ls_result.get('error', '未知错误')}"
+                        "error": f"Validation failed, cannot execute ls command: {ls_result.get('error', 'Unknown error')}"
                     }
             
             # 所有重试都失败了
-            print(f"❌ 验证失败，3次尝试后仍未找到目录: {path}")
+            print(f"❌ Validation failed, directory not found after 3 attempts: {path}")
             return {
                 "success": False,
-                "error": f"验证失败，目录可能已创建但Google Drive同步延迟: {path}"
+                "error": f"Validation failed, directory may have been created but Google Drive sync delay: {path}"
             }
             
         except Exception as e:
             return {
                 "success": False,
-                "error": f"验证过程出错: {e}"
+                "error": f"Verification process error: {e}"
             }
 
     def _verify_mkdir_with_ls_recursive(self, path, current_shell):
@@ -169,24 +153,24 @@ class Verification:
                         if expected_parent_path in item_path or item_path.endswith(expected_parent_path):
                             return {
                                 "success": True,
-                                "message": f"验证成功，多层目录已创建: {path}",
+                                "message": f"Validation successful, multi-level directory created: {path}",
                                 "folder_id": item["id"],
                                 "full_path": item_path
                             }
                 
                 return {
                     "success": False,
-                    "error": f"验证失败，多层目录未找到: {path}"
+                    "error": f"Validation failed, multi-level directory not found: {path}"
                 }
             else:
                 return {
                     "success": False,
-                    "error": f"验证失败，无法执行ls -R命令: {ls_result.get('error', '未知错误')}"
+                    "error": f"Validation failed, cannot execute ls -R command: {ls_result.get('error', 'Unknown error')}"
                 }
         except Exception as e:
             return {
                 "success": False,
-                "error": f"递归验证过程出错: {e}"
+                "error": f"Recursive verification process error: {e}"
             }
 
     def _verify_mv_with_ls(self, source, destination, current_shell, max_retries=3, delay_seconds=2):
@@ -218,7 +202,7 @@ class Verification:
                 
                 # 如果源文件不存在且目标文件存在，则移动成功
                 if not source_still_exists and destination_exists:
-                    return {"success": True, "message": "mv验证成功"}
+                    return {"success": True, "message": "mv validation successful"}
                 
                 # 如果还没成功，等待一下再试（Google Drive API延迟）
                 if attempt < max_retries - 1:
@@ -228,9 +212,9 @@ class Verification:
                 if attempt < max_retries - 1:
                     time.sleep(delay_seconds)
                 else:
-                    return {"success": False, "error": f"验证mv操作时出错: {e}"}
+                    return {"success": False, "error": f"Error verifying mv operation: {e}"}
         
-        return {"success": False, "error": f"mv验证失败：经过{max_retries}次尝试后，文件移动状态不明确"}
+        return {"success": False, "error": f"mv validation failed: after {max_retries} attempts, file move status unclear"}
 
     def _update_cache_after_mv(self, source, destination, current_shell):
         """在mv命令成功后更新缓存路径映射"""
@@ -240,7 +224,7 @@ class Verification:
             from pathlib import Path
             cache_manager_path = Path(__file__).parent / "cache_manager.py"
             if not cache_manager_path.exists():
-                return {"success": False, "error": "缓存管理器未找到"}
+                return {"success": False, "error": "Cache manager not found"}
             
             sys.path.insert(0, str(Path(__file__).parent))
             from cache_manager import GDSCacheManager
@@ -257,7 +241,7 @@ class Verification:
                 if move_result["success"]:
                     return {
                         "success": True,
-                        "message": f"✅ 已更新缓存路径映射: {old_remote_path} -> {new_remote_path}",
+                        "message": f"✅ Cache path mapping updated: {old_remote_path} -> {new_remote_path}",
                         "old_path": old_remote_path,
                         "new_path": new_remote_path,
                         "cache_file": move_result["cache_file"]
@@ -265,18 +249,18 @@ class Verification:
                 else:
                     return {
                         "success": False,
-                        "error": f"更新缓存路径映射失败: {move_result.get('error')}"
+                        "error": f"Failed to update cache path mapping: {move_result.get('error')}"
                     }
             else:
                 return {
                     "success": True,
-                    "message": "无需更新缓存（文件未缓存）",
+                    "message": "No cache update needed (file not cached)",
                     "old_path": old_remote_path,
                     "new_path": new_remote_path
                 }
                 
         except Exception as e:
-            return {"success": False, "error": f"更新缓存映射时出错: {e}"}
+            return {"success": False, "error": f"Error updating cache mapping: {e}"}
 
     def _verify_rm_with_find(self, path, current_shell, max_retries=60):
         """

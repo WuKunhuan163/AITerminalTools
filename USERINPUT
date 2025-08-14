@@ -1,5 +1,5 @@
 #!/bin/bash
 # USERINPUT - User Input Command for Cursor AI
-# Simple wrapper to execute USERINPUT.py
+# Simple wrapper to execute USERINPUT.py with automatic IGNOREEOF setup
 
 exec /usr/bin/python3 "$(dirname "$0")/USERINPUT.py" "$@"

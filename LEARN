@@ -15,5 +15,5 @@ if learn_py.exists():
     # 执行LEARN.py并传递所有参数
     os.execv(sys.executable, [sys.executable, str(learn_py)] + sys.argv[1:])
 else:
-    print(f"错误：找不到LEARN.py文件: {learn_py}", file=sys.stderr)
+    print(f"Error: LEARN.py file not found: {learn_py}", file=sys.stderr)
     sys.exit(1) 

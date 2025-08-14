@@ -241,8 +241,7 @@ When used with RUN, returns structured JSON with:
 
 ```
 EXTRACT_PDF_PROJ/
-├── extract_paper_layouts.py     # Layout analysis utilities
-├── fix_formula_templates.py     # Formula template processing
+├── extract_paper_layouts.py     # Layout template processing
 ├── image2text_api.py           # Image analysis API wrapper
 ├── pdf_extractor_data/         # Cached extraction data
 │   ├── images/                 # Extracted images

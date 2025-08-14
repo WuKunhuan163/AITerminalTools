@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 OVERLEAF.py - LaTeX文件编译工具
-支持GUI文件选择和JSON返回值，能够检测RUN环境
+支持GUI文件选择、JSON返回值、模板复制功能，能够检测RUN环境
 """
 
 import os
@@ -9,7 +9,7 @@ import sys
 import json
 import subprocess
 import tempfile
-import hashlib
+import shutil
 from pathlib import Path
 
 # 加载环境变量
@@ -72,6 +72,137 @@ def write_to_json_output(data, command_identifier=None):
         print(f"Error writing to JSON output file: {e}")
         return False
 
+def get_templates_dir():
+    """获取模板目录路径"""
+    # 获取脚本所在目录
+    script_dir = Path(__file__).parent
+    templates_dir = script_dir / "OVERLEAF_PROJ" / "templates"
+    return templates_dir
+
+def list_available_templates():
+    """列出可用的模板"""
+    templates_dir = get_templates_dir()
+    if not templates_dir.exists():
+        return []
+    
+    templates = []
+    for item in templates_dir.iterdir():
+        if item.is_dir() and not item.name.startswith('.'):
+            templates.append(item.name)
+    return templates
+
+def copy_template(template_name, target_dir, command_identifier=None):
+    """复制模板到目标目录"""
+    templates_dir = get_templates_dir()
+    template_path = templates_dir / template_name
+    target_path = Path(target_dir).resolve()
+    
+    # 检查模板是否存在
+    if not template_path.exists() or not template_path.is_dir():
+        available_templates = list_available_templates()
+        error_msg = f"Template '{template_name}' not found. Available templates: {', '.join(available_templates)}"
+        error_data = {
+            "success": False,
+            "error": error_msg,
+            "available_templates": available_templates
+        }
+        
+        if is_run_environment(command_identifier):
+            write_to_json_output(error_data, command_identifier)
+        else:
+            print(f"Error: {error_msg}")
+        return 1
+    
+    # 检查目标目录
+    if target_path.exists():
+        # 检查目录是否为空
+        if target_path.is_dir():
+            if any(target_path.iterdir()):
+                error_msg = f"Target directory '{target_dir}' is not empty"
+                error_data = {
+                    "success": False,
+                    "error": error_msg,
+                    "target_dir": str(target_path)
+                }
+                
+                if is_run_environment(command_identifier):
+                    write_to_json_output(error_data, command_identifier)
+                else:
+                    print(f"Error: {error_msg}")
+                return 1
+        else:
+            error_msg = f"Target path '{target_dir}' exists but is not a directory"
+            error_data = {
+                "success": False,
+                "error": error_msg,
+                "target_dir": str(target_path)
+            }
+            
+            if is_run_environment(command_identifier):
+                write_to_json_output(error_data, command_identifier)
+            else:
+                print(f"Error: {error_msg}")
+            return 1
+    else:
+        # 创建目标目录
+        try:
+            target_path.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            error_msg = f"Failed to create target directory '{target_dir}': {str(e)}"
+            error_data = {
+                "success": False,
+                "error": error_msg,
+                "target_dir": str(target_path)
+            }
+            
+            if is_run_environment(command_identifier):
+                write_to_json_output(error_data, command_identifier)
+            else:
+                print(f"Error: {error_msg}")
+            return 1
+    
+    # 复制模板内容
+    try:
+        for item in template_path.iterdir():
+            if item.name.startswith('.'):
+                continue  # 跳过隐藏文件
+            
+            target_item = target_path / item.name
+            if item.is_dir():
+                shutil.copytree(item, target_item)
+            else:
+                shutil.copy2(item, target_item)
+        
+        success_data = {
+            "success": True,
+            "message": f"Template '{template_name}' copied successfully",
+            "template": template_name,
+            "target_dir": str(target_path),
+            "files_copied": [item.name for item in template_path.iterdir() if not item.name.startswith('.')]
+        }
+        
+        if is_run_environment(command_identifier):
+            write_to_json_output(success_data, command_identifier)
+        else:
+            print(f"Template '{template_name}' copied successfully to '{target_path}'")
+            print(f"Files copied: {', '.join(success_data['files_copied'])}")
+        return 0
+        
+    except Exception as e:
+        error_msg = f"Failed to copy template: {str(e)}"
+        error_data = {
+            "success": False,
+            "error": error_msg,
+            "template": template_name,
+            "target_dir": str(target_path)
+        }
+        
+        if is_run_environment(command_identifier):
+            write_to_json_output(error_data, command_identifier)
+        else:
+            print(f"Error: {error_msg}")
+        return 1
+
 def compile_latex(tex_file, command_identifier=None, output_dir=None):
     """编译LaTeX文件"""
     # 简化路径处理：使用绝对路径
@@ -97,7 +228,6 @@ def compile_latex(tex_file, command_identifier=None, output_dir=None):
         # 创建临时工作目录
         work_dir = Path(tempfile.mkdtemp(prefix=f"overleaf_{filename}_"))
         # 复制tex文件到临时目录
-        import shutil
         temp_tex = work_dir / f"{filename}.tex"
         shutil.copy2(tex_path, temp_tex)
         directory = work_dir
@@ -141,10 +271,19 @@ def compile_latex(tex_file, command_identifier=None, output_dir=None):
             cleanup_cmd = ['latexmk', '-c', '-quiet', f'{filename}.tex']
             subprocess.run(cleanup_cmd, cwd=directory, capture_output=True)
             
-            # 删除 .fdb_latexmk 文件
-            fdb_file = directory / f"{filename}.fdb_latexmk"
-            if fdb_file.exists():
-                fdb_file.unlink()
+            # 手动删除额外的临时文件
+            temp_files = [
+                f"{filename}.fdb_latexmk",
+                f"{filename}.bbl",
+                f"{filename}.blg",
+                f"{filename}.run.xml",
+                f"{filename}.bcf"
+            ]
+            
+            for temp_file in temp_files:
+                temp_path = directory / temp_file
+                if temp_path.exists():
+                    temp_path.unlink()
             
             # 检查PDF是否生成
             pdf_file = directory / f"{filename}.pdf"
@@ -158,7 +297,6 @@ def compile_latex(tex_file, command_identifier=None, output_dir=None):
                     final_pdf_path = output_path / f"{filename}.pdf"
                     
                     try:
-                        import shutil
                         shutil.move(str(pdf_file), str(final_pdf_path))
                     except Exception as e:
                         error_data = {
@@ -251,7 +389,6 @@ def compile_latex(tex_file, command_identifier=None, output_dir=None):
         # 在RUN环境下，清理临时工作目录
         if is_run_environment(command_identifier) and 'work_dir' in locals():
             try:
-                import shutil
                 shutil.rmtree(work_dir)
             except:
                 pass
@@ -284,15 +421,53 @@ def main():
     
     # 解析命令行参数
     import argparse
-    parser = argparse.ArgumentParser(description='OVERLEAF - LaTeX文件编译工具')
+    parser = argparse.ArgumentParser(description='OVERLEAF - LaTeX文件编译工具，支持模板复制')
     parser.add_argument('tex_file', nargs='?', help='LaTeX文件路径')
     parser.add_argument('--output-dir', help='输出目录，编译完成后将PDF移动到此目录')
+    parser.add_argument('--template', nargs=2, metavar=('TEMPLATE_NAME', 'TARGET_DIR'), 
+                       help='复制模板到指定目录：--template TEMPLATE_NAME TARGET_DIR')
+    parser.add_argument('--list-templates', action='store_true', 
+                       help='列出所有可用的模板')
     
     try:
         parsed_args = parser.parse_args(args)
     except SystemExit:
         # argparse的--help会导致SystemExit，我们需要正常处理
         return 0
+    
+    # 处理列出模板选项
+    if parsed_args.list_templates:
+        templates = list_available_templates()
+        if templates:
+            list_data = {
+                "success": True,
+                "available_templates": templates,
+                "message": f"Available templates: {', '.join(templates)}"
+            }
+            
+            if is_run_environment(command_identifier):
+                write_to_json_output(list_data, command_identifier)
+            else:
+                print("Available templates:")
+                for template in templates:
+                    print(f"  - {template}")
+        else:
+            error_data = {
+                "success": False,
+                "error": "No templates found",
+                "available_templates": []
+            }
+            
+            if is_run_environment(command_identifier):
+                write_to_json_output(error_data, command_identifier)
+            else:
+                print("No templates found")
+        return 0
+    
+    # 处理模板复制选项
+    if parsed_args.template:
+        template_name, target_dir = parsed_args.template
+        return copy_template(template_name, target_dir, command_identifier)
     
     if not parsed_args.tex_file:
         # 没有文件参数时，打开文件选择器
