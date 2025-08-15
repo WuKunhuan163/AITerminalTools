@@ -102,17 +102,37 @@ def shell_ls(path=None, command_identifier=None):
             target_folder_id = current_shell.get("current_folder_id", REMOTE_ROOT_FOLDER_ID)
             display_path = current_shell.get("current_path", "~")
         else:
-            # 实现基本路径解析
+            # 实现基本路径解析，支持文件路径
             try:
-                # 使用本模块的路径解析功能
+                # 首先尝试作为目录解析
                 target_folder_id, display_path = resolve_path(path, current_shell)
+                
                 if not target_folder_id:
-                    error_msg = f"Path not found: {path}"
-                    if is_run_environment(command_identifier):
-                        write_to_json_output({"success": False, "error": error_msg}, command_identifier)
+                    # 如果作为目录解析失败，尝试作为文件路径解析
+                    file_info = resolve_file_path(path, current_shell)
+                    if file_info:
+                        # 这是一个文件路径，直接显示文件信息
+                        if file_info['mimeType'] == 'application/vnd.google-apps.folder':
+                            print(f"{file_info['name']}/")
+                        else:
+                            print(f"{file_info['name']}")
+                        
+                        if is_run_environment(command_identifier):
+                            write_to_json_output({
+                                "success": True,
+                                "path": path,
+                                "files": [file_info] if file_info['mimeType'] != 'application/vnd.google-apps.folder' else [],
+                                "folders": [file_info] if file_info['mimeType'] == 'application/vnd.google-apps.folder' else [],
+                                "count": 1
+                            }, command_identifier)
+                        return 0
                     else:
-                        print(error_msg)
-                    return 1
+                        error_msg = f"Path not found: {path}"
+                        if is_run_environment(command_identifier):
+                            write_to_json_output({"success": False, "error": error_msg}, command_identifier)
+                        else:
+                            print(error_msg)
+                        return 1
             except Exception as e:
                 error_msg = f"Path resolution failed: {path} ({e})"
                 if is_run_environment(command_identifier):
@@ -298,6 +318,52 @@ def resolve_relative_path(relative_path, base_folder_id, base_path):
         print(f"Error resolving relative path: {e}")
         return None, None
 
+def resolve_file_path(file_path, current_shell):
+    """解析文件路径，返回文件信息（如果存在）"""
+    try:
+        # 分离目录和文件名
+        if "/" in file_path:
+            dir_path = "/".join(file_path.split("/")[:-1])
+            filename = file_path.split("/")[-1]
+        else:
+            # 相对于当前目录
+            dir_path = "."
+            filename = file_path
+        
+        # 解析目录路径
+        if dir_path == ".":
+            parent_folder_id = current_shell.get("current_folder_id", REMOTE_ROOT_FOLDER_ID)
+        else:
+            parent_folder_id, _ = resolve_path(dir_path, current_shell)
+            if not parent_folder_id:
+                return None
+        
+        # 导入API服务
+        import sys
+        api_service_path = Path(__file__).parent.parent / "google_drive_api.py"
+        if not api_service_path.exists():
+            return None
+        
+        sys.path.insert(0, str(api_service_path.parent))
+        from google_drive_api import GoogleDriveService #type: ignore
+        
+        drive_service = GoogleDriveService()
+        
+        # 在父目录中查找文件
+        result = drive_service.list_files(folder_id=parent_folder_id, max_results=100)
+        if not result['success']:
+            return None
+        
+        for file in result['files']:
+            if file['name'] == filename:
+                return file
+        
+        return None
+        
+    except Exception as e:
+        print(f"Error resolving file path: {e}")
+        return None
+        
 def resolve_parent_directory(folder_id, current_path):
     """解析父目录"""
     try:

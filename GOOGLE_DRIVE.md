@@ -776,11 +776,38 @@ upload [--target-dir TARGET] <files...>  # 上传文件到Google Drive (默认�
 cat <file>                  # 显示文件内容
 echo <text>                 # 显示文本
 echo <text> > <file>        # 创建文件并写入文本
+echo -e <text> > <file>     # 创建文件并处理转义字符（\n, \t等）
 grep <pattern> <file>       # 在文件中搜索模式
 read <file> [start end]     # 读取文件内容（带行号）
 read [--force] <file>       # 强制重新下载并读取文件内容
 find [path] -name [pattern] # 查找匹配模式的文件和目录
 ```
+
+**ECHO 命令详细语法**:
+```bash
+# 基本用法
+echo "Hello World"                    # 显示文本
+echo "Hello World" > file.txt         # 创建文件并写入文本
+
+# 处理转义字符
+echo -e "Line1\nLine2\nLine3"        # 显示多行文本（处理\n）
+echo -e "Tab\tSeparated\tText"       # 处理制表符（\t）
+
+# JSON文件创建（推荐语法）
+echo '{"name": "test", "value": 123}' > config.json    # 单引号包围，无需转义
+echo '{"debug": true, "items": [1,2,3]}' > settings.json
+
+# Python脚本创建
+echo -e 'import json\nprint("Hello Python")' > script.py
+
+# 复杂内容创建
+echo -e 'Line 1\nLine 2 with "quotes"\nLine 3' > multiline.txt
+```
+
+**重要提示**: 
+- 对于JSON内容，使用单引号包围整个字符串，避免转义问题
+- 使用 `-e` 参数处理换行符（\n）、制表符（\t）等转义字符
+- 复杂脚本建议使用多行echo -e语法
 
 **READ 命令详细语法**:
 ```bash
@@ -848,6 +875,64 @@ venv --activate <env_name>  # 激活虚拟环境（设置PYTHONPATH）
 venv --deactivate          # 取消激活虚拟环境（清除PYTHONPATH）
 venv --list                # 列出所有虚拟环境
 pip <command> [options]     # pip包管理器（自动识别激活的虚拟环境）
+```
+
+### 代码质量检查 ⭐ **新功能**
+```bash
+linter [--language LANG] <file>  # 多语言语法和代码风格检查
+```
+
+**支持的语言**:
+- **Python**: flake8, pylint, pycodestyle
+- **JavaScript/TypeScript**: eslint, jshint
+- **Java**: javac, checkstyle
+- **C/C++**: gcc, cppcheck, clang-tidy
+- **Go**: gofmt
+- **JSON**: jsonlint, python内置JSON验证
+- **YAML**: yamllint
+- **Shell**: shellcheck
+
+**功能特性**:
+- ✅ **自动语言检测**: 根据文件扩展名自动识别语言
+- ✅ **多linter支持**: 自动检测并使用可用的linter工具
+- ✅ **详细报告**: 提供错误、警告和信息级别的反馈
+- ✅ **语法验证**: 检查基本语法错误
+- ✅ **代码风格**: 检查代码风格和最佳实践
+- ✅ **集成编辑**: 在edit命令中自动运行linter检查
+
+**使用示例**:
+```bash
+# 自动检测语言并检查
+GDS linter main.py
+
+# 指定语言检查
+GDS linter --language python script.py
+GDS linter --language javascript app.js
+GDS linter --language bash deploy.sh
+
+# 检查JSON配置文件
+GDS linter config.json
+
+# 检查多种文件类型
+GDS linter *.py          # 检查所有Python文件
+GDS linter src/          # 检查目录中的文件
+```
+
+**输出示例**:
+```
+🔍 Linter Results for main.py
+
+✅ Language: python (detected from .py extension)
+🛠️  Linter: flake8
+
+🚫 Linter Errors:
+  Line 15: E302 expected 2 blank lines, found 1
+  Line 23: F401 'os' imported but unused
+
+⚠️  Linter Warnings:
+  Line 8: W291 trailing whitespace
+
+📊 Summary: 2 errors, 1 warning, 0 info
 ```
 
 ### 远程命令执行 ⭐ **新功能**

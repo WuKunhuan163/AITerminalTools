@@ -276,6 +276,10 @@ class GoogleDriveShell:
         """委托到file_operations管理器"""
         return self.file_operations.cmd_venv(*args, **kwargs)
     
+    def cmd_linter(self, *args, **kwargs):
+        """委托到file_operations管理器"""
+        return self.file_operations.cmd_linter(*args, **kwargs)
+    
     def cmd_pip(self, *args, **kwargs):
         """委托到file_operations管理器"""
         return self.file_operations.cmd_pip(*args, **kwargs)
@@ -288,124 +292,17 @@ class GoogleDriveShell:
         """委托到remote_commands管理器"""
         return self.remote_commands.execute_generic_remote_command(*args, **kwargs)
     
-    def execute_remote_command_interface(self, *args, **kwargs):
-        """委托到remote_commands管理器"""
-        return self.remote_commands.execute_remote_command_interface(*args, **kwargs)
+
     
     def _handle_unified_echo_command(self, args):
-        """统一的echo命令处理逻辑 - 支持文件重定向、普通输出、-e参数和中文字符"""
+        """统一的echo命令处理逻辑 - 简化版本，使用通用的远程命令执行"""
         # 空echo命令
         if not args:
             print("")
             return 0
         
-        # 检查是否有-e参数
-        enable_escapes = False
-        filtered_args = []
-        for arg in args:
-            if arg == '-e':
-                enable_escapes = True
-            else:
-                filtered_args.append(arg)
-        
-        # 重建完整的参数字符串，保持原始格式
-        # 注意：这里不包含-e参数，因为-e会在远程命令生成时单独处理
-        args_str = ' '.join(filtered_args)
-        
-        # 检查是否有重定向（简化版本，避免复杂的引号解析）
-        # 检查过滤后的args列表中是否包含重定向符号
-        has_redirect = '>' in filtered_args
-        if has_redirect:
-            # 文件重定向：echo [-e] "content" > filename
-            return self._handle_echo_file_redirect(args_str, enable_escapes)
-        else:
-            # 普通输出：echo [-e] "content"
-            # 对于普通输出，需要移除内容的外层引号
-            content = args_str.strip()
-            if content.startswith('"') and content.endswith('"'):
-                content = content[1:-1]
-            elif content.startswith("'") and content.endswith("'"):
-                content = content[1:-1]
-            return self._handle_echo_output(content, enable_escapes)
-    
-    def _handle_echo_file_redirect(self, args_str, enable_escapes=False):
-        """处理echo文件重定向：echo [-e] "content" > filename"""
-        # 简单分割重定向
-        parts = args_str.split(' > ', 1)
-        if len(parts) != 2:
-            print("❌ Echo redirection syntax error")
-            return 1
-        
-        text = parts[0].strip()
-        filename = parts[1].strip()
-        
-        # 移除text内容的引号（如果有）
-        if text.startswith('"') and text.endswith('"'):
-            text = text[1:-1]
-        elif text.startswith("'") and text.endswith("'"):
-            text = text[1:-1]
-        
-        # 移除文件名的引号（如果有）
-        if filename.startswith('"') and filename.endswith('"'):
-            filename = filename[1:-1]
-        elif filename.startswith("'") and filename.endswith("'"):
-            filename = filename[1:-1]
-        
-        # 获取当前shell
-        current_shell = self.get_current_shell()
-        if not current_shell:
-            print("❌ 没有活跃的远程shell")
-            return 1
-        
-        # 解析远程路径
-        remote_absolute_path = self.resolve_remote_absolute_path(filename, current_shell)
-        
-        # 使用base64编码避免所有引号和特殊字符问题
-        import base64
-        content_bytes = text.encode('utf-8')
-        content_base64 = base64.b64encode(content_bytes).decode('ascii')
-        
-        # 构建远程命令
-        if enable_escapes:
-            # 对于echo -e，直接使用echo -e命令，让bash处理转义序列
-            import shlex
-            quoted_text = shlex.quote(text)
-            remote_command = f'echo -e {quoted_text} > "{remote_absolute_path}"'
-        else:
-            remote_command = f'echo "{content_base64}" | base64 -d > "{remote_absolute_path}"'
-        
-        # 执行远程命令
-        result = self.execute_remote_command_interface(remote_command, "echo", {
-            "filename": filename,
-            "content": text,
-            "absolute_path": remote_absolute_path
-        })
-        
-        if result.get("success", False):
-            # 添加延迟验证机制，确认文件真正创建了
-            return self._validate_echo_file_creation(filename, text)
-        else:
-            error_msg = result.get("error", "Echo file redirection failed")
-            print(error_msg)
-            return 1
-    
-    def _handle_echo_output(self, text, enable_escapes=False):
-        """处理echo普通输出：echo [-e] "content" """
-        if enable_escapes:
-            # 对于echo -e，直接构建echo -e命令，让bash处理转义序列
-            # 使用shlex.quote确保特殊字符正确转义
-            import shlex
-            quoted_text = shlex.quote(text)
-            remote_command = f'echo -e {quoted_text}'
-        else:
-            # 使用base64编码避免引号问题，然后在远端解码并输出
-            import base64
-            content_bytes = text.encode('utf-8')
-            content_base64 = base64.b64encode(content_bytes).decode('ascii')
-            remote_command = f'echo "{content_base64}" | base64 -d'
-        
-        # 使用execute_generic_remote_command自动生成JSON结果文件并下载
-        result = self.execute_generic_remote_command("bash", ["-c", remote_command])
+        # 使用通用的远程命令执行机制
+        result = self.execute_generic_remote_command('echo', args)
         
         if result.get("success", False):
             # 直接显示远程执行的输出
@@ -417,51 +314,83 @@ class GoogleDriveShell:
                 print(stderr, file=sys.stderr)
             return 0
         else:
-            error_msg = result.get("error", "Echo output failed")
+            error_msg = result.get("error", "Echo command failed")
             print(error_msg)
             return 1
     
-    def _validate_echo_file_creation(self, filename, expected_content):
-        """验证echo创建的文件是否真正存在并包含正确内容"""
-        import time
+    def _normalize_quotes_and_escapes(self, args):
+        """通用引号和转义处理：重组被分割的参数并统一处理转义字符"""
+        if not args:
+            return args
         
-        max_attempts = 10  # 最多尝试10次
-        delay = 1  # 每次延迟1秒
+        # 重组参数：将被shell分割的引号包围的字符串重新组合
+        reconstructed = []
+        temp_parts = []
+        in_quoted_string = False
+        quote_char = None
         
-        print("⏳ Waiting for result ...", end="", flush=True)
-        
-        for attempt in range(max_attempts):
-            try:
-                # 尝试读取文件
-                result = self.file_operations.cmd_cat(filename)
-                if result.get("success", False):
-                    actual_content = result.get("output", "").strip()
-                    expected_content_clean = expected_content.strip()
-                    
-                    # 检查内容是否匹配
-                    if actual_content == expected_content_clean:
-                        print("√")
-                        return 0
-                    elif actual_content:
-                        # 文件存在但内容不匹配
-                        print(f"\n⚠️ File created but content mismatch:")
-                        print(f"Expected: {expected_content_clean}")
-                        print(f"Actual: {actual_content}")
-                        return 0  # 仍然认为成功，因为文件创建了
+        for arg in args:
+            # 检查是否开始一个引号包围的字符串
+            if not in_quoted_string and (arg.startswith('"') or arg.startswith("'")):
+                quote_char = arg[0]
+                in_quoted_string = True
+                temp_parts = [arg]
                 
-                # 文件还不存在，继续等待
-                print(".", end="", flush=True)
-                time.sleep(delay)
+                # 检查是否在同一个参数中结束
+                if len(arg) > 1 and arg.endswith(quote_char):
+                    # 单个参数完成
+                    reconstructed.append(self._process_quoted_string(arg))
+                    in_quoted_string = False
+                    temp_parts = []
+                    quote_char = None
+            elif in_quoted_string and arg.endswith(quote_char):
+                # 结束引号包围的字符串
+                temp_parts.append(arg)
+                # 重组完整的字符串
+                full_string = ' '.join(temp_parts)
+                reconstructed.append(self._process_quoted_string(full_string))
                 
-            except Exception as e:
-                print(".", end="", flush=True)
-                time.sleep(delay)
+                temp_parts = []
+                in_quoted_string = False
+                quote_char = None
+            elif in_quoted_string:
+                # 引号字符串中间部分
+                temp_parts.append(arg)
+            else:
+                # 普通参数
+                reconstructed.append(arg)
         
-        # 超过最大尝试次数
-        print(f"\n⚠️ File validation timeout after {max_attempts} attempts")
-        print("File may not be synchronized yet, but command was executed")
-        return 0  # 仍然返回成功，因为远端命令执行了
+        # 如果还有未完成的引号字符串（异常情况）
+        if temp_parts:
+            reconstructed.extend(temp_parts)
+        
+        return reconstructed
     
+    def _process_quoted_string(self, quoted_string):
+        """处理引号包围的字符串：保留外层引号，统一处理转义字符"""
+        if not quoted_string:
+            return quoted_string
+        
+        # 保留原始的外层引号（不额外嵌套）
+        if ((quoted_string.startswith('"') and quoted_string.endswith('"')) or 
+            (quoted_string.startswith("'") and quoted_string.endswith("'"))):
+            
+            quote_char = quoted_string[0]
+            content = quoted_string[1:-1]  # 提取内容
+            
+            # 统一处理转义字符：将 \\ 变成 \
+            # 注意：对于echo命令，我们需要保留\n、\t等转义序列，不要在这里处理它们
+            content = content.replace('\\\\', '\\')
+            content = content.replace('\\"', '"')
+            content = content.replace("\\'", "'")
+            
+            result = f"{quote_char}{content}{quote_char}"
+            return result
+        
+        return quoted_string
+    
+
+
     def exit_shell(self, *args, **kwargs):
         """委托到shell_management管理器"""
         return self.shell_management.exit_shell(*args, **kwargs)
@@ -546,10 +475,6 @@ class GoogleDriveShell:
         """委托到shell_management管理器"""
         return self.shell_management.terminate_shell(*args, **kwargs)
     
-    def verify_upload_success(self, *args, **kwargs):
-        """委托到validation管理器"""
-        return self.validation.verify_upload_success(*args, **kwargs)
-    
     def wait_for_file_sync(self, *args, **kwargs):
         """委托到sync_manager管理器"""
         return self.sync_manager.wait_for_file_sync(*args, **kwargs)
@@ -578,6 +503,7 @@ class GoogleDriveShell:
                 # 去除外层引号，这是一个完整的远程命令
                 shell_cmd_clean = shell_cmd_clean[1:-1]
                 shell_cmd = shell_cmd_clean  # 更新shell_cmd以便后续使用
+                is_quoted_command = True  # 设置引号命令标记
 
             # 解析命令 - 对edit命令特殊处理
             if shell_cmd_clean.strip().startswith('edit '):
@@ -628,12 +554,27 @@ class GoogleDriveShell:
                     cmd = cmd_parts[0] if cmd_parts else ''
                     args = cmd_parts[1:] if len(cmd_parts) > 1 else []
             else:
-                # 其他命令使用正常分割
-                cmd_parts = shell_cmd_clean.split()
-                if not cmd_parts:
-                    return 1
-                cmd = cmd_parts[0]
-                args = cmd_parts[1:] if len(cmd_parts) > 1 else []
+                # 使用shlex进行智能分割，保留引号内的换行符
+                import shlex
+                try:
+                    cmd_parts = shlex.split(shell_cmd_clean)
+                    if not cmd_parts:
+                        return 1
+                    cmd = cmd_parts[0]
+                    args = cmd_parts[1:] if len(cmd_parts) > 1 else []
+                except ValueError as e:
+                    # 如果shlex解析失败，回退到简单分割
+                    print(f"⚠️ Shell command parsing failed with shlex: {e}")
+                    print("⚠️ Falling back to simple space splitting")
+                    cmd_parts = shell_cmd_clean.split()
+                    if not cmd_parts:
+                        return 1
+                    cmd = cmd_parts[0]
+                    args = cmd_parts[1:] if len(cmd_parts) > 1 else []
+            
+            # 对所有命令应用通用引号和转义处理
+            if args:
+                args = self._normalize_quotes_and_escapes(args)
             
             # 检查是否包含多命令组合（&& 或 ||）
             if ' && ' in shell_cmd or ' || ' in shell_cmd:
@@ -735,26 +676,7 @@ class GoogleDriveShell:
                     return 1
                 return shell_rm(target, recursive, command_identifier)
             elif cmd == 'echo':
-                # 检测是否是引号包围的完整命令（包含重定向）
-                if len(args) >= 3 and '>' in args:
-
-
-                    
-                    if is_quoted_command:
-
-                        # 这是引号包围的远程命令，正常处理
-                        pass  # 继续到_handle_unified_echo_command
-                    else:
-                        # 重建完整的echo内容（除了重定向部分）
-                        redirect_index = args.index('>')
-                        echo_content = ' '.join(args[:redirect_index])
-                        target_file = args[-1]
-                        
-                        print("Local redirection may happen")
-                        print("For remote file creation, use quotes:")
-                        print(f"GDS 'echo {echo_content} > {target_file}'")
-                        return 1
-                # 统一的echo处理逻辑 - 支持文件重定向和普通输出
+                # 简化的echo处理：直接使用统一的echo命令处理
                 return self._handle_unified_echo_command(args)
             elif cmd == 'help':
                 # 导入shell_commands模块中的具体函数
@@ -789,6 +711,16 @@ class GoogleDriveShell:
                     if user_error:
                         print(f"\n👤 用户提供的错误信息:\n{user_error}")
                     
+                    return 1
+            elif cmd == 'linter':
+                # 使用委托方法处理linter命令
+                result = self.cmd_linter(*args)
+                if result.get("success", False):
+                    print(result.get("output", "Linting completed"))
+                    return 0 if not result.get("has_errors", False) else 1
+                else:
+                    error_message = result.get("error", "Linter operation failed")
+                    print(error_message)
                     return 1
             elif cmd == 'pip':
                 # 使用委托方法处理pip命令
@@ -946,14 +878,15 @@ class GoogleDriveShell:
                     for arg in args[1:]:
                         if not arg.startswith('--'):
                             code_args.append(arg)
+                    
+                    # 统一处理已经在execute_shell_command中完成
                     code = ' '.join(code_args)
-                    # 移除外层引号并正确处理内部转义引号
+                    
+                    # 移除外层引号
                     if code.startswith('"') and code.endswith('"'):
-                        # 移除外层双引号，并将内部的转义双引号还原
-                        code = code[1:-1].replace('\\"', '"')
+                        code = code[1:-1]
                     elif code.startswith("'") and code.endswith("'"):
-                        # 移除外层单引号，并将内部的转义单引号还原
-                        code = code[1:-1].replace("\\'", "'")
+                        code = code[1:-1]
                     result = self.cmd_python_code(code)
                 else:
                     # 执行Python文件
@@ -988,6 +921,7 @@ class GoogleDriveShell:
                 
                 # 参数解析规则：
                 # 格式: upload [--target-dir TARGET] [--force] [--remove-local] file1 file2 file3 ...
+                # 或者: upload file1 file2 file3 ... [--force] [--remove-local]
                 
                 target_path = "."  # 默认上传到当前目录
                 source_files = []
@@ -1030,15 +964,20 @@ class GoogleDriveShell:
                     print("❌ upload-folder command needs a folder path")
                     return 1
                 
-                # 解析参数: upload-folder [--keep-zip] <folder> [target]
+                # 解析参数: upload-folder [--keep-zip] [--force] <folder> [target]
+                # 或者: upload-folder <folder> [target] [--keep-zip] [--force]
                 folder_path = None
                 target_path = "."
                 keep_zip = False
+                force = False
                 
                 i = 0
                 while i < len(args):
                     if args[i] == '--keep-zip':
                         keep_zip = True
+                        i += 1
+                    elif args[i] == '--force':
+                        force = True
                         i += 1
                     elif folder_path is None:
                         folder_path = args[i]
@@ -1051,7 +990,7 @@ class GoogleDriveShell:
                     print("❌ upload-folder command needs a folder path")
                     return 1
                 
-                result = self.cmd_upload_folder(folder_path, target_path, keep_zip)
+                result = self.cmd_upload_folder(folder_path, target_path, keep_zip, force)
                 if result.get("success", False):
                     print(result.get("message", "Folder upload completed"))
                     return 0
@@ -1097,15 +1036,13 @@ class GoogleDriveShell:
                 if len(args) < 2:
                     print("❌ grep command needs a pattern and file name")
                     return 1
-                # 传递模式和所有文件名参数
+                # 统一转义处理已经在execute_shell_command中完成
                 pattern = args[0]
-                # 移除pattern的外层引号并正确处理内部转义引号
+                # 移除pattern的外层引号
                 if pattern.startswith('"') and pattern.endswith('"'):
-                    # 移除外层双引号，并将内部的转义双引号还原
-                    pattern = pattern[1:-1].replace('\\"', '"')
+                    pattern = pattern[1:-1]
                 elif pattern.startswith("'") and pattern.endswith("'"):
-                    # 移除外层单引号，并将内部的转义单引号还原
-                    pattern = pattern[1:-1].replace("\\'", "'")
+                    pattern = pattern[1:-1]
                 filenames = args[1:]
                 result = self.cmd_grep(pattern, *filenames)
                 if result.get("success", False):

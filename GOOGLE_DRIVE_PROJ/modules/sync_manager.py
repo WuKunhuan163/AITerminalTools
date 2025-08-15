@@ -243,14 +243,14 @@ class SyncManager:
                         
                         # Debug information (only print if not in progress mode)
                         if check_count == 1:  # Only print debug info on first check
-                            debug_print(f"\\n🔧 DEBUG: Checking for expected_files={expected_files}")
-                            debug_print(f"🔧 DEBUG: Found files in DRIVE_EQUIVALENT: {[f.get('name') for f in files]}")
+                            debug_print(f"\\nChecking for expected_files={expected_files}")
+                            debug_print(f"Found files in DRIVE_EQUIVALENT: {[f.get('name') for f in files]}")
                         
                         for filename in expected_files:
                             # 检查文件名是否在DRIVE_EQUIVALENT中
                             file_found = any(f.get("name") == filename for f in files)
                             if check_count == 1:  # Only print debug info on first check
-                                debug_print(f"🔧 DEBUG: Looking for '{filename}', found: {file_found}")
+                                debug_print(f"Looking for '{filename}', found: {file_found}")
                             if file_found:
                                 current_synced.append(filename)
                         
@@ -536,87 +536,7 @@ class SyncManager:
             debug_print(f"⚠️ Error waiting for file deletion: {e}")
             return {"success": False, "error": f"Error waiting for file deletion: {e}"}
 
-    def _wait_and_read_result_file(self, result_filename):
-        """
-        等待并读取远端结果文件，最多等待60秒
-        
-        Args:
-            result_filename (str): 远端结果文件名（在tmp目录中）
-            
-        Returns:
-            dict: 读取结果
-        """
-        try:
-            import sys
-            
-            # 远端文件路径（在REMOTE_ROOT/tmp目录中）
-            remote_file_path = f"~/tmp/{result_filename}"
-            
-            # 输出等待指示器
-            debug_print("⏳", end="", flush=True)
-            
-            # 等待文件出现，最多60秒
-            max_wait_time = 60
-            for wait_count in range(max_wait_time):
-                # 检查文件是否存在
-                check_result = self._check_remote_file_exists_absolute(remote_file_path)
-                
-                if check_result.get("exists"):
-                    # 文件存在，读取内容
-                    debug_print()  # 换行
-                    return self._read_result_file_via_gds(result_filename)
-                
-                # 文件不存在，等待1秒并输出进度点
-                time.sleep(1)
-                debug_print(".", end="", flush=True)
-            
-            # 超时，提供用户输入fallback
-            debug_print()  # 换行
-            debug_print(f"⚠️  等待远端结果文件超时（60秒）: {remote_file_path}")
-            debug_print("这可能是因为:")
-            debug_print("  1. 命令正在后台运行（如http-server等服务）")
-            debug_print("  2. 命令执行时间超过60秒")
-            debug_print("  3. 远端出现意外错误")
-            debug_print()
-            debug_print("请手动提供执行结果:")
-            debug_print("- 输入多行内容描述命令执行情况")
-            debug_print("- 按 Ctrl+D 结束输入")
-            debug_print("- 或直接按 Enter 跳过")
-            debug_print()
-            
-            # 获取用户手动输入
-            user_feedback = self._get_multiline_user_input()
-            
-            if user_feedback.strip():
-                # 用户提供了反馈
-                return {
-                    "success": True,
-                    "data": {
-                        "cmd": "unknown",
-                        "args": [],
-                        "working_dir": "unknown", 
-                        "timestamp": "unknown",
-                        "exit_code": 0,  # 假设成功
-                        "stdout": user_feedback,
-                        "stderr": "",
-                        "source": "user_input",  # 标记来源
-                        "note": "用户手动输入的执行结果"
-                    }
-                }
-            else:
-                # 用户跳过了输入
-                return {
-                    "success": False,
-                    "error": f"等待远端结果文件超时（60秒），用户未提供反馈: {remote_file_path}"
-                }
-            
-        except Exception as e:
-            debug_print()  # 换行
-            return {
-                "success": False,
-                "error": f"等待结果文件时出错: {str(e)}"
-            }
-    
+
     def _create_error_result(self, error_message):
         """
         创建标准的错误返回结果

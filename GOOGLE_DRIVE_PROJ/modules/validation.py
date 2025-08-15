@@ -4,25 +4,6 @@ Google Drive Shell - Validation Module
 从google_drive_shell.py重构而来的validation模块
 """
 
-import os
-import sys
-import json
-import time
-import hashlib
-import warnings
-import subprocess
-import shutil
-import zipfile
-import tempfile
-from pathlib import Path
-import platform
-import psutil
-from typing import Dict
-try:
-    from ..google_drive_api import GoogleDriveService
-except ImportError:
-    from GOOGLE_DRIVE_PROJ.google_drive_api import GoogleDriveService
-
 class Validation:
     """Google Drive Shell Validation"""
 
@@ -47,8 +28,12 @@ class Validation:
         from .remote_commands import debug_print
         
         try:
-            debug_print(f"🔧 DEBUG: Starting ls-based validation for {len(expected_files)} files")
-            debug_print(f"🔧 DEBUG: target_path='{target_path}', current_path='{current_shell.get('current_path', '~')}'")
+            # 启动debug capture以避免验证过程中的输出干扰
+            from .remote_commands import debug_capture
+            debug_capture.start_capture()
+            
+            debug_print(f"Starting ls-based validation for {len(expected_files)} files")
+            debug_print(f"target_path='{target_path}', current_path='{current_shell.get('current_path', '~')}'")
             
             # 构造目标目录的完整逻辑路径
             current_path = current_shell.get("current_path", "~")
@@ -66,7 +51,7 @@ class Validation:
                 if "/" not in target_path and ("." in target_path or target_path in expected_files):
                     # 这是一个文件名，应该在当前目录中查找
                     search_path = current_path
-                    debug_print(f"🔧 DEBUG: target_path '{target_path}' identified as filename, searching in current directory: {search_path}")
+                    debug_print(f"target_path '{target_path}' identified as filename, searching in current directory: {search_path}")
                 else:
                     # 相对路径，拼接到当前路径
                     if current_path == "~":
@@ -74,14 +59,16 @@ class Validation:
                     else:
                         search_path = f"{current_path}/{target_path}"
             
-            debug_print(f"🔧 DEBUG: constructed search_path='{search_path}'")
+            debug_print(f"constructed search_path='{search_path}'")
             
             # 使用ls命令检查目录内容
             ls_result = self.main_instance.file_operations.cmd_ls(path=search_path)
-            debug_print(f"🔧 DEBUG: ls_result success={ls_result.get('success')}")
+            debug_print(f"ls_result success={ls_result.get('success')}")
             
             if not ls_result.get("success"):
-                debug_print(f"🔧 DEBUG: ls failed: {ls_result.get('error')}")
+                debug_print(f"ls failed: {ls_result.get('error')}")
+                # 停止debug capture
+                debug_capture.stop_capture()
                 return {
                     "success": False,
                     "error": f"无法访问目标目录 {search_path}: {ls_result.get('error')}",
@@ -92,9 +79,10 @@ class Validation:
                 }
             
             # 获取目录中的文件列表
+            debug_capture.start_capture()
             files_in_dir = ls_result.get("files", [])
             file_names_in_dir = [f.get("name") for f in files_in_dir if f.get("name")]
-            debug_print(f"🔧 DEBUG: found files in directory: {file_names_in_dir}")
+            debug_print(f"found files in directory: {file_names_in_dir}")
             
             # 检查每个期望的文件是否存在
             found_files = []
@@ -103,13 +91,16 @@ class Validation:
             for expected_file in expected_files:
                 if expected_file in file_names_in_dir:
                     found_files.append(expected_file)
-                    debug_print(f"🔧 DEBUG: ✅ Found file: {expected_file}")
+                    debug_print(f"✅ Found file: {expected_file}")
                 else:
                     missing_files.append(expected_file)
-                    debug_print(f"🔧 DEBUG: ❌ Missing file: {expected_file}")
+                    debug_print(f"❌ Missing file: {expected_file}")
             
             success = len(found_files) == len(expected_files)
-            debug_print(f"🔧 DEBUG: Validation result: {len(found_files)}/{len(expected_files)} files found")
+            debug_print(f"Validation result: {len(found_files)}/{len(expected_files)} files found")
+            
+            # 停止debug capture
+            debug_capture.stop_capture()
             
             return {
                 "success": success,
@@ -121,7 +112,9 @@ class Validation:
             }
             
         except Exception as e:
-            debug_print(f"🔧 DEBUG: Exception in ls-based validation: {e}")
+            debug_print(f"Exception in ls-based validation: {e}")
+            # 停止debug capture
+            debug_capture.stop_capture()
             return {
                 "success": False,
                 "error": f"验证过程中出错: {e}",
@@ -129,106 +122,6 @@ class Validation:
                 "missing_files": expected_files,
                 "total_found": 0,
                 "total_expected": len(expected_files)
-            }
-
-    def verify_upload_success(self, expected_files, target_folder_id):
-        """
-        验证文件是否成功上传到目标文件夹
-        
-        Args:
-            expected_files (list): 期望上传的文件名列表
-            target_folder_id (str): 目标文件夹ID
-            
-        Returns:
-            dict: 验证结果
-        """
-        import time
-        from .remote_commands import debug_print
-        
-        try:
-            debug_print(f"🔧 DEBUG: verify_upload_success called with expected_files={expected_files}, target_folder_id='{target_folder_id}'")
-            
-            if not self.drive_service:
-                return {
-                    "success": False,
-                    "error": "Google Drive API 服务未初始化"
-                }
-            
-            # 重试机制：最多60秒，每秒重试一次
-            max_attempts = 60
-            attempt = 0
-            
-            print("⏳ Validating the result ...", end="", flush=True)
-            
-            while attempt < max_attempts:
-                attempt += 1
-                
-                # 列出目标文件夹内容
-                result = self.drive_service.list_files(folder_id=target_folder_id, max_results=100)
-                if not result['success']:
-                    debug_print(f"🔧 DEBUG: list_files failed for folder_id='{target_folder_id}', error: {result.get('error')}")
-                    if attempt == max_attempts:
-                        print(f"\n❌ 验证失败: 无法访问目标文件夹")
-                        return {
-                            "success": False,
-                            "error": f"无法访问目标文件夹: {result['error']}"
-                        }
-                    print(".", end="", flush=True)
-                    time.sleep(1)
-                    continue
-                
-                # 检查每个期望的文件是否存在
-                found_files = []
-                missing_files = []
-                existing_files = [f['name'] for f in result['files']]
-                debug_print(f"🔧 DEBUG: found {len(existing_files)} files in target folder: {existing_files}")
-                
-                for filename in expected_files:
-                    if filename in existing_files:
-                        # 找到对应的文件信息
-                        file_info = next(f for f in result['files'] if f['name'] == filename)
-                        file_id = file_info['id']
-                        found_files.append({
-                            "name": filename,
-                            "id": file_id,
-                            "size": file_info.get('size', 'Unknown'),
-                            "modified": file_info.get('modifiedTime', 'Unknown'),
-                            "url": f"https://drive.google.com/file/d/{file_id}/view"
-                        })
-                    else:
-                        missing_files.append(filename)
-                
-                if len(missing_files) == 0:
-                    return {
-                        "success": True,
-                        "found_files": found_files,
-                        "missing_files": missing_files,
-                        "total_expected": len(expected_files),
-                        "total_found": len(found_files),
-                        "attempts": attempt
-                    }
-                
-                # 如果还有文件没找到且未超时，等待1秒后重试
-                if attempt < max_attempts:
-                    print(".", end="", flush=True)
-                    time.sleep(1)
-            
-            # 超时后返回最后一次的结果
-            print(f"\n⚠️ 验证超时: {len(missing_files)} 个文件未找到")
-            return {
-                "success": len(missing_files) == 0,
-                "found_files": found_files,
-                "missing_files": missing_files,
-                "total_expected": len(expected_files),
-                "total_found": len(found_files),
-                "attempts": max_attempts,
-                "timeout": True
-            }
-            
-        except Exception as e:
-            return {
-                "success": False,
-                "error": f"验证上传结果时出错: {e}"
             }
 
     def _create_error_result(self, error_message):

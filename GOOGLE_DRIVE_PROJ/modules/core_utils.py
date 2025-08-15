@@ -21,6 +21,34 @@ warnings.filterwarnings('ignore', message='urllib3 v2 only supports OpenSSL 1.1.
 from dotenv import load_dotenv
 load_dotenv()
 
+def generate_unzip_command(remote_target_path, zip_filename, delete_zip=True, handle_empty_zip=True):
+    """
+    统一生成解压命令的工具函数，消除重复代码
+    
+    Args:
+        remote_target_path: 远程目标路径
+        zip_filename: zip文件名
+        delete_zip: 是否删除zip文件
+        handle_empty_zip: 是否处理空zip文件的警告
+    
+    Returns:
+        str: 生成的解压命令
+    """
+    if handle_empty_zip:
+        # 处理空zip文件警告的版本：过滤掉"zipfile is empty"警告，但不影响实际执行结果
+        if delete_zip:
+            unzip_command = f'''cd "{remote_target_path}" && echo "Start decompressing {zip_filename}" && (unzip -o "{zip_filename}" 2>&1 | grep -v "zipfile is empty" || true) && echo "=== 删除zip ===" && rm "{zip_filename}" && echo "Verifying decompression result ..." && ls -la'''
+        else:
+            unzip_command = f'''cd "{remote_target_path}" && echo "Start decompressing {zip_filename}" && (unzip -o "{zip_filename}" 2>&1 | grep -v "zipfile is empty" || true) && echo "Verifying decompression result ..." && ls -la'''
+    else:
+        # 原始版本（保持向后兼容）
+        if delete_zip:
+            unzip_command = f'''cd "{remote_target_path}" && echo "Start decompressing {zip_filename}" && unzip -o "{zip_filename}" && echo "=== 删除zip ===" && rm "{zip_filename}" && echo "Verifying decompression result ..." && ls -la'''
+        else:
+            unzip_command = f'''cd "{remote_target_path}" && echo "Start decompressing {zip_filename}" && unzip -o "{zip_filename}" && echo "Verifying decompression result ..." && ls -la'''
+    
+    return unzip_command
+
 # 导入Google Drive Shell管理类 - 注释掉避免循环导入
 # from .google_drive_shell import GoogleDriveShell
 
@@ -124,8 +152,11 @@ try:
     
     def direct_feedback():
         """直接反馈功能"""
+        # 使用print而不是debug_print，因为这里在子进程中
+        print("🔍 [DEBUG] tkinter窗口：direct_feedback按钮被点击")
         result_queue.put({{"action": "direct_feedback", "message": "启动直接反馈模式"}})
         result["action"] = "direct_feedback"
+        print("🔍 [DEBUG] tkinter窗口：设置action为direct_feedback，即将关闭窗口")
         root.destroy()
     
     # 复制指令按钮
@@ -201,13 +232,36 @@ except Exception as e:
             timeout=timeout_seconds + 10  # 给子进程额外时间
         )
         
-        # 解析结果
+        # 解析结果 - 在core_utils中不能使用debug_print，因为这是在子进程中
+        # print(f"🔍 [DEBUG] core_utils: subprocess返回码: {result.returncode}")
+        # print(f"🔍 [DEBUG] core_utils: subprocess stdout: {repr(result.stdout)}")
+        # print(f"🔍 [DEBUG] core_utils: subprocess stderr: {repr(result.stderr)}")
+        
         if result.returncode == 0 and result.stdout.strip():
             try:
-                return json.loads(result.stdout.strip())
-            except json.JSONDecodeError:
+                # 尝试解析整个输出
+                parsed_result = json.loads(result.stdout.strip())
+                # print(f"🔍 [DEBUG] core_utils: JSON解析成功: {parsed_result}")
+                return parsed_result
+            except json.JSONDecodeError as e:
+                # print(f"🔍 [DEBUG] core_utils: 整体JSON解析失败: {e}")
+                # 尝试解析最后一行（可能包含debug信息）
+                lines = result.stdout.strip().split('\n')
+                for line in reversed(lines):
+                    line = line.strip()
+                    if line.startswith('{') and line.endswith('}'):
+                        try:
+                            parsed_result = json.loads(line)
+                            # print(f"🔍 [DEBUG] core_utils: 从最后一行JSON解析成功: {parsed_result}")
+                            return parsed_result
+                        except json.JSONDecodeError:
+                            continue
+                
+                # print(f"🔍 [DEBUG] core_utils: 所有JSON解析尝试都失败")
+                # print(f"🔍 [DEBUG] core_utils: 原始输出: {repr(result.stdout.strip())}")
                 return {"action": "error", "error": "Failed to parse result"}
         else:
+            # print(f"🔍 [DEBUG] core_utils: subprocess失败，返回码: {result.returncode}")
             return {"action": "error", "error": "Subprocess failed"}
             
     except subprocess.TimeoutExpired:
@@ -239,6 +293,15 @@ def get_multiline_input_safe(prompt_text="请输入内容", single_line=True):
                 readline.set_startup_hook(None)
                 # 启用历史记录
                 readline.clear_history()
+                
+                # 设置编辑模式为emacs（支持更好的中文编辑）
+                readline.parse_and_bind("set editing-mode emacs")
+                # 启用UTF-8支持
+                readline.parse_and_bind("set input-meta on")
+                readline.parse_and_bind("set output-meta on")
+                readline.parse_and_bind("set convert-meta off")
+                # 启用中文字符显示
+                readline.parse_and_bind("set print-completions-horizontally off")
             except:
                 pass  # 如果配置失败，继续使用默认设置
                 
@@ -269,6 +332,10 @@ def get_multiline_input_safe(prompt_text="请输入内容", single_line=True):
             readline.parse_and_bind("set input-meta on")
             readline.parse_and_bind("set output-meta on")
             readline.parse_and_bind("set convert-meta off")
+            # 启用中文字符显示
+            readline.parse_and_bind("set print-completions-horizontally off")
+            # 支持中文字符的正确删除和编辑
+            readline.parse_and_bind("set skip-completed-text on")
         except Exception:
             pass  # 如果配置失败，继续使用默认设置
         
@@ -554,16 +621,10 @@ def main():
                 shell_cmd = f"__QUOTED_COMMAND__{shell_cmd}"
 
             else:
-                # 正常的多参数命令，需要重新引用
-                import shlex
-                quoted_parts = []
-                for part in shell_cmd_parts:
-                    if ' ' in part or '"' in part or "'" in part:
-                        # 如果参数包含空格或引号，用shlex.quote重新引用
-                        quoted_parts.append(shlex.quote(part))
-                    else:
-                        quoted_parts.append(part)
-                shell_cmd = ' '.join(quoted_parts)
+                # 正常的多参数命令，直接组合，不进行额外的引号转义
+                # 因为参数已经由shell正确解析过了
+                shell_cmd = ' '.join(shell_cmd_parts)
+                quoted_parts = shell_cmd_parts  # 为调试信息设置
             debug_capture.start_capture()
             debug_print(f"DEBUG: args[1:] = {args[1:]}")
             debug_print(f"DEBUG: shell_cmd_parts = {shell_cmd_parts}")

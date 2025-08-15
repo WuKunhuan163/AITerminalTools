@@ -18,6 +18,7 @@ from pathlib import Path
 import platform
 import psutil
 from typing import Dict
+from .linter import GDSLinter
 
 try:
     from ..google_drive_api import GoogleDriveService
@@ -126,16 +127,7 @@ class FileOperations:
         """等待文件同步完成"""
         return self.main_instance.sync_manager.wait_for_file_sync(file_names, file_moves)
     
-    def _resolve_target_path_for_upload(self, target_path, current_shell):
-        """解析上传目标路径 - 委托给path_resolver"""
-        debug_print(f"🔧 DEBUG: Before _resolve_target_path_for_upload - target_path='{target_path}'")
-        debug_print(f"🔧 DEBUG: current_shell={current_shell}")
-        
-        # 委托给path_resolver中的完整实现
-        result = self.main_instance.path_resolver._resolve_target_path_for_upload(target_path, current_shell)
-        
-        debug_print(f"🔧 DEBUG: After _resolve_target_path_for_upload - target_folder_id='{result[0]}', target_display_path='{result[1]}'")
-        return result
+
     
     def _check_target_file_conflicts_before_move(self, file_moves, force=False):
         """检查目标文件冲突"""
@@ -164,7 +156,7 @@ class FileOperations:
         return {"success": True, "conflicts": []}
     
 
-    def cmd_upload_folder(self, folder_path, target_path=".", keep_zip=False):
+    def cmd_upload_folder(self, folder_path, target_path=".", keep_zip=False, force=False):
         """
         上传文件夹到Google Drive
         
@@ -174,13 +166,14 @@ class FileOperations:
             folder_path (str): 要上传的文件夹路径
             target_path (str): 目标路径（相对于当前shell路径）
             keep_zip (bool): 是否保留本地zip文件（远端总是保留zip文件）
+            force (bool): 是否强制覆盖现有文件
             
         Returns:
             dict: 上传结果
         """
         try:
             folder_name = Path(folder_path).name
-            print(f"📦 Packing {folder_name} ...", end="", flush=True)
+            print(f"Packing {folder_name} ...", end="", flush=True)
             
             # 步骤1: 打包文件夹
             zip_result = self.main_instance.file_utils._zip_folder(folder_path)
@@ -196,7 +189,7 @@ class FileOperations:
             try:
                 # 步骤2: 上传zip文件并自动解压
                 # 传递文件夹上传的特殊参数
-                upload_result = self.cmd_upload([zip_path], target_path, force=False, 
+                upload_result = self.cmd_upload([zip_path], target_path, force=force, 
                                               folder_upload_info={
                                                   "is_folder_upload": True,
                                                   "zip_filename": zip_filename,
@@ -226,11 +219,11 @@ class FileOperations:
                     try:
                         if Path(zip_path).exists():
                             Path(zip_path).unlink()
-                            print(f"🧹 Cleaned up local temporary file: {zip_filename}")
+                            print(f"Cleaned up local temporary file: {zip_filename}")
                     except Exception as e:
                         print(f"⚠️ Failed to clean up temporary file: {e}")
                 else:
-                    print(f"📁 保留本地zip文件: {zip_path}")
+                    print(f"Saved local zip file: {zip_path}")
                     
         except Exception as e:
             # 如果出错，也要清理临时文件
@@ -260,7 +253,7 @@ class FileOperations:
             
             # 启动debug信息捕获
             debug_capture.start_capture()
-            debug_print(f"🔧 DEBUG: cmd_upload called with source_files={source_files}, target_path='{target_path}', force={force}")
+            debug_print(f"cmd_upload called with source_files={source_files}, target_path='{target_path}', force={force}")
             
             # 0. 检查Google Drive Desktop是否运行
             if not self.ensure_google_drive_desktop_running():
@@ -318,10 +311,10 @@ class FileOperations:
                 return {"success": False, "error": "No active remote shell, please create or switch to a shell"}
             
             # 3. 解析目标路径
-            debug_print(f"🔧 DEBUG: Before _resolve_target_path_for_upload - target_path='{target_path}'")
-            debug_print(f"🔧 DEBUG: current_shell={current_shell}")
-            target_folder_id, target_display_path = self._resolve_target_path_for_upload(target_path, current_shell)
-            debug_print(f"🔧 DEBUG: After _resolve_target_path_for_upload - target_folder_id='{target_folder_id}', target_display_path='{target_display_path}'")
+            debug_print(f"Before _resolve_target_path_for_upload - target_path='{target_path}'")
+            debug_print(f"current_shell={current_shell}")
+            target_folder_id, target_display_path = self.main_instance.path_resolver._resolve_target_path_for_upload(target_path, current_shell)
+            debug_print(f"After _resolve_target_path_for_upload - target_folder_id='{target_folder_id}', target_display_path='{target_display_path}'")
             if target_folder_id is None and self.drive_service:
                 # 目标路径不存在，但这是正常的，我们会在远端创建它
                 # 静默处理目标路径创建
@@ -344,7 +337,15 @@ class FileOperations:
                     for file_path in overridden_files:
                         print(f"⚠️ Warning: Overriding remote file {file_path}")
             
-            # 4. 移动文件到 LOCAL_EQUIVALENT
+            # 4. 检查是否有文件夹，提示正确语法
+            for source_file in source_files:
+                if Path(source_file).is_dir():
+                    print(f"\nError: '{source_file}' is a directory")
+                    print(f"To upload folders, use: GDS upload-folder {source_file}")
+                    print(f"   Options: --keep-zip to preserve local zip file")
+                    return {"success": False, "error": f""}
+            
+            # 5. 移动文件到 LOCAL_EQUIVALENT
             file_moves = []
             failed_moves = []
             
@@ -410,10 +411,10 @@ class FileOperations:
             self._verify_files_available(file_moves)
             
             # 8. 静默生成远端命令
-            debug_print(f"🔧 DEBUG: Before generate_remote_commands - file_moves={file_moves}")
-            debug_print(f"🔧 DEBUG: Before generate_remote_commands - target_path='{target_path}'")
+            debug_print(f"Before generate_remote_commands - file_moves={file_moves}")
+            debug_print(f"Before generate_remote_commands - target_path='{target_path}'")
             remote_command = self.generate_remote_commands(file_moves, target_path, folder_upload_info)
-            debug_print(f"🔧 DEBUG: After generate_remote_commands - remote_command preview: {remote_command[:200]}...")
+            debug_print(f"After generate_remote_commands - remote_command preview: {remote_command[:200]}...")
             
             # 7.5. 远端目录创建已经集成到generate_remote_commands中，无需额外处理
             
@@ -439,23 +440,45 @@ class FileOperations:
                     "file_moves": file_moves
                 }
             
-            execution_result = self.main_instance.execute_remote_command_interface(
-                remote_command=remote_command,
-                command_type="upload",
-                context_info=context_info
-            )
+            execution_result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
             
             # 如果执行失败，直接返回错误
             if not execution_result["success"]:
                 return {
                     "success": False,
-                    "error": execution_result["message"],
+                    "error": execution_result.get("error", execution_result.get("data", {}).get("error", "Unknown error")),
                     "remote_command": remote_command,
                     "execution_result": execution_result
                 }
             
-            # 执行完成，使用返回的验证结果
-            verify_result = execution_result
+            # 远程命令执行成功后，进行文件验证
+            debug_print("Remote command executed successfully, now verifying files")
+            
+            if folder_upload_info and folder_upload_info.get("is_folder_upload", False):
+                # 文件夹上传：跳过文件验证，信任远程命令执行结果
+                debug_print(f"Folder upload detected, skipping file verification")
+                verify_result = {
+                    "success": True,
+                    "found_files": [],
+                    "missing_files": [],
+                    "total_expected": len(expected_filenames),
+                    "total_found": 0,
+                    "skip_verification": True
+                }
+            else:
+                # 普通文件上传：使用ls-based验证
+                expected_for_verification = [fm.get("original_filename", fm["filename"]) for fm in file_moves]
+                debug_print(f"Starting file verification for: {expected_for_verification}")
+
+                # 使用带进度的验证机制
+                verify_result = self.main_instance.remote_commands._verify_upload_with_progress(
+                    expected_for_verification, 
+                    target_path, 
+                    current_shell
+                )
+
+                debug_capture.start_capture()
+                debug_print(f"Verification completed: {verify_result}")
             
             # 9. 上传和远端命令执行完成后，清理LOCAL_EQUIVALENT中的文件
             if verify_result["success"]:
@@ -479,36 +502,41 @@ class FileOperations:
                 "failed_files": verify_result.get("missing_files", []) + [fm["file"] for fm in failed_moves],
                 "target_path": target_display_path,
                 "target_folder_id": target_folder_id,
-                "total_attempted": len(source_files),
+                "total_attempted": len(file_moves) + len(failed_moves),
                 "total_succeeded": len(verify_result.get("found_files", [])),
                 "remote_command": remote_command,
                 "file_moves": file_moves,
                 "failed_moves": failed_moves,
                 "sync_time": sync_result.get("sync_time", 0),
-                "message": f"\nUpload completed: {len(verify_result.get('found_files', []))}/{len(source_files)} files" if verify_result["success"] else f" ✗\n⚠️ Partially uploaded: {len(verify_result.get('found_files', []))}/{len(source_files)} files",
+                "message": f"Upload completed: {len(verify_result.get('found_files', []))}/{len(file_moves)} files" if verify_result["success"] else f" ✗\n⚠️ Partially uploaded: {len(verify_result.get('found_files', []))}/{len(file_moves)} files",
                 "api_available": self.drive_service is not None
             }
             
-            # Add debug information when upload fails or user used direct feedback
+            # Add debug information for all uploads to diagnose verification issues
             used_direct_feedback = verify_result.get("source") == "direct_feedback"
             upload_failed = not verify_result["success"]
             
-            if upload_failed or used_direct_feedback:
-                if used_direct_feedback:
-                    debug_print("🔧 DEBUG: User used direct feedback, showing debug information:")
-                else:
-                    debug_print("🔧 DEBUG: Upload failed, showing debug information:")
-                
-                debug_print(f"🔧 DEBUG: verify_result={verify_result}")
-                debug_print(f"🔧 DEBUG: sync_result={sync_result}")
-                debug_print(f"🔧 DEBUG: target_folder_id='{target_folder_id}'")
-                debug_print(f"🔧 DEBUG: target_display_path='{target_display_path}'")
-                
-                # Also print debug capture buffer
-                captured_debug = debug_capture.get_debug_info()
-                if captured_debug:
-                    print("🔧 DEBUG: Captured debug output:")
-                    print(captured_debug)
+            # Always show debug information to diagnose verification problems
+            if used_direct_feedback:
+                debug_print("User used direct feedback, showing debug information:")
+            elif upload_failed:
+                debug_print("Upload failed, showing debug information:")
+            else:
+                debug_print("Upload completed, showing verification debug information:")
+            
+            debug_print(f"verify_result={verify_result}")
+            debug_print(f"sync_result={sync_result}")
+            debug_print(f"target_folder_id='{target_folder_id}'")
+            debug_print(f"target_display_path='{target_display_path}'")
+            
+            # 停止debug信息捕获
+            debug_capture.stop_capture()
+            
+            # Always print debug capture buffer
+            captured_debug = debug_capture.get_debug_info()
+            if captured_debug:
+                debug_print("Captured debug output:")
+                debug_print(captured_debug)
             
             # 添加本地文件删除信息
             if remove_local and verify_result["success"]:
@@ -550,7 +578,7 @@ class FileOperations:
             return {"success": False, "error": f"获取当前路径时出错: {e}"}
 
     def cmd_ls(self, path=None, detailed=False, recursive=False, show_hidden=False):
-        """列出目录内容，支持递归、详细模式和扩展信息模式"""
+        """列出目录内容，支持递归、详细模式和扩展信息模式，支持文件路径"""
         try:
             if not self.drive_service:
                 return {"success": False, "error": "Google Drive API服务未初始化"}
@@ -563,9 +591,19 @@ class FileOperations:
                 target_folder_id = current_shell.get("current_folder_id", self.main_instance.REMOTE_ROOT_FOLDER_ID)
                 display_path = current_shell.get("current_path", "~")
             else:
+                # 首先尝试作为目录解析
                 target_folder_id, display_path = self.main_instance.resolve_path(path, current_shell)
+                
                 if not target_folder_id:
-                    return {"success": False, "error": f"Directory does not exist: {path}"}
+                    # 如果作为目录解析失败，尝试作为文件路径解析
+                    file_result = self._resolve_file_path(path, current_shell)
+                    if file_result:
+                        # 这是一个文件路径，返回单个文件信息
+                        return self._ls_single_file(file_result, path)
+                    else:
+                        print(f"❌ [DEBUG] Path resolution failed for: {path}")
+                        print(f"❌ [DEBUG] Current shell: {current_shell.get('current_path', '~')}")
+                        return {"success": False, "error": f"Path not found: {path}"}
             
             if recursive:
                 return self._ls_recursive(target_folder_id, display_path, detailed, show_hidden)
@@ -573,6 +611,7 @@ class FileOperations:
                 return self._ls_single(target_folder_id, display_path, detailed, show_hidden)
                 
         except Exception as e:
+            print(f"❌ [DEBUG] Exception in cmd_ls: {e}")
             return {"success": False, "error": f"执行ls命令时出错: {e}"}
 
     def _ls_recursive(self, root_folder_id, root_path, detailed, show_hidden=False):
@@ -835,11 +874,7 @@ class FileOperations:
             }
             
             # 使用统一接口执行远端命令
-            execution_result = self.main_instance.execute_remote_command_interface(
-                remote_command=remote_command,
-                command_type="touch",
-                context_info=context_info
-            )
+            execution_result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
             
             if execution_result["success"]:
                 # 简洁返回，像bash shell一样成功时不显示任何信息
@@ -925,6 +960,73 @@ class FileOperations:
         except Exception as e:
             return {"success": False, "error": f"列出单个目录时出错: {e}"}
 
+    def _resolve_file_path(self, file_path, current_shell):
+        """解析文件路径，返回文件信息（如果存在）"""
+        try:
+            # 分离目录和文件名
+            if "/" in file_path:
+                dir_path = "/".join(file_path.split("/")[:-1])
+                filename = file_path.split("/")[-1]
+            else:
+                # 相对于当前目录
+                dir_path = "."
+                filename = file_path
+            
+            print(f"❌ [DEBUG] Resolving file path: {file_path}")
+            print(f"❌ [DEBUG] Dir path: {dir_path}, Filename: {filename}")
+            
+            # 解析目录路径
+            if dir_path == ".":
+                parent_folder_id = current_shell.get("current_folder_id", self.main_instance.REMOTE_ROOT_FOLDER_ID)
+            else:
+                parent_folder_id, _ = self.main_instance.resolve_path(dir_path, current_shell)
+                if not parent_folder_id:
+                    print(f"❌ [DEBUG] Parent directory not found: {dir_path}")
+                    return None
+            
+            print(f"❌ [DEBUG] Parent folder ID: {parent_folder_id}")
+            
+            # 在父目录中查找文件
+            result = self.drive_service.list_files(folder_id=parent_folder_id, max_results=100)
+            if not result['success']:
+                print(f"❌ [DEBUG] Failed to list files in parent directory")
+                return None
+            
+            for file in result['files']:
+                if file['name'] == filename:
+                    print(f"❌ [DEBUG] Found file: {file['name']} (type: {file['mimeType']})")
+                    file['url'] = self._generate_web_url(file)
+                    return file
+            
+            print(f"❌ [DEBUG] File not found: {filename}")
+            return None
+            
+        except Exception as e:
+            print(f"❌ [DEBUG] Exception in _resolve_file_path: {e}")
+            return None
+
+    def _ls_single_file(self, file_info, original_path):
+        """返回单个文件的ls信息"""
+        try:
+            # 判断是文件夹还是文件
+            if file_info['mimeType'] == 'application/vnd.google-apps.folder':
+                print(f"{file_info['name']}/")
+            else:
+                print(f"{file_info['name']}")
+            
+            return {
+                "success": True,
+                "path": original_path,
+                "files": [file_info] if file_info['mimeType'] != 'application/vnd.google-apps.folder' else [],
+                "folders": [file_info] if file_info['mimeType'] == 'application/vnd.google-apps.folder' else [],
+                "count": 1,
+                "mode": "single_file"
+            }
+            
+        except Exception as e:
+            print(f"❌ [DEBUG] Exception in _ls_single_file: {e}")
+            return {"success": False, "error": f"显示单个文件时出错: {e}"}
+
     def _find_folder(self, folder_name, parent_id):
         """在指定父目录中查找文件夹"""
         try:
@@ -973,16 +1075,7 @@ class FileOperations:
                 remote_command = f'rm "{absolute_path}" && clear && echo "✅ 执行完成" || echo "❌ 执行失败"'
             
             # 执行远程命令
-            result = self.main_instance.execute_remote_command_interface(
-                remote_command=remote_command,
-                command_type="rm",
-                context_info={
-                    "target_path": path,
-                    "absolute_path": absolute_path,
-                    "recursive": recursive,
-                    "force": force
-                }
-            )
+            result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
             
             if result["success"]:
                 # 简化验证逻辑：如果远程命令执行完成，就认为删除成功
@@ -1021,11 +1114,7 @@ class FileOperations:
             remote_command = f'echo "{content_base64}" | base64 -d > "{remote_absolute_path}" && clear && echo "✅ 执行完成" || echo "❌ 执行失败"'
             
             # 使用远程命令执行接口
-            result = self.main_instance.execute_remote_command_interface(remote_command, "echo", {
-                "filename": filename,
-                "content": content,
-                "absolute_path": remote_absolute_path
-            })
+            result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
             
             if result.get("success"):
                 return {
@@ -1383,16 +1472,12 @@ class FileOperations:
                 "multi_file": True
             }
             
-            execution_result = self.main_instance.execute_remote_command_interface(
-                remote_command=remote_command,
-                command_type="upload",
-                context_info=context_info
-            )
+            execution_result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
             
             if not execution_result["success"]:
                 return {
                     "success": False,
-                    "error": execution_result["message"],
+                    "error": execution_result.get("error", execution_result.get("data", {}).get("error", "Unknown error")),
                     "remote_command": remote_command,
                     "execution_result": execution_result
                 }
@@ -1702,11 +1787,7 @@ class FileOperations:
                 "multi_file": True
             }
             
-            result = self.main_instance.execute_remote_command_interface(
-                remote_command=remote_command, 
-                command_type="move", 
-                context_info=context_info
-            )
+            result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
             
             if result.get("success"):
                 return {
@@ -1748,10 +1829,7 @@ class FileOperations:
             remote_command = f"({base_command}) && clear && echo \"✅ 执行完成\" || echo \"❌ 执行失败\""
             
             # 使用远端指令执行接口
-            result = self.main_instance.execute_remote_command_interface(remote_command, "move", {
-                "source": source,
-                "destination": destination
-            })
+            result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
             
             if result.get("success"):
                 return {
@@ -1833,8 +1911,8 @@ class FileOperations:
             # 获取环境文件路径
             current_shell = self.main_instance.get_current_shell()
             shell_id = current_shell.get("id", "default") if current_shell else "default"
-            tmp_dir = f"{self.main_instance.REMOTE_ENV}/.tmp"
-            env_file = f"{tmp_dir}/venv_env_{shell_id}.sh"
+            # Direct storage in REMOTE_ENV, no .tmp subdirectory needed
+            env_file = f"{self.main_instance.REMOTE_ENV}/venv_env_{shell_id}.sh"
             
             # 构建Python命令，包含文件名和参数
             python_cmd_parts = ['python3', filename]
@@ -1899,8 +1977,8 @@ class FileOperations:
             # 获取环境文件路径
             current_shell = self.main_instance.get_current_shell()
             shell_id = current_shell.get("id", "default") if current_shell else "default"
-            tmp_dir = f"{self.main_instance.REMOTE_ENV}/.tmp"
-            env_file = f"{tmp_dir}/venv_env_{shell_id}.sh"
+            # Direct storage in REMOTE_ENV, no .tmp subdirectory needed
+            env_file = f"{self.main_instance.REMOTE_ENV}/venv_env_{shell_id}.sh"
             temp_file_path = f"{self.main_instance.REMOTE_ROOT}/tmp/{temp_filename}"
             
             # 构建统一的远程命令：
@@ -2088,8 +2166,8 @@ class FileOperations:
                 return None
             
             shell_id = current_shell.get("id", "default")
-            tmp_dir = f"{self.main_instance.REMOTE_ENV}/.tmp"
-            current_venv_file = f"{tmp_dir}/current_venv_{shell_id}.txt"
+            # Direct storage in REMOTE_ENV, no .tmp subdirectory needed
+            current_venv_file = f"{self.main_instance.REMOTE_ENV}/current_venv_{shell_id}.txt"
             debug_print(f"Checking venv file: {current_venv_file}")
             
             # 通过远程命令检查虚拟环境状态文件
@@ -2117,8 +2195,8 @@ class FileOperations:
             # 获取环境文件路径
             current_shell = self.main_instance.get_current_shell()
             shell_id = current_shell.get("id", "default") if current_shell else "default"
-            tmp_dir = f"{self.main_instance.REMOTE_ENV}/.tmp"
-            env_file = f"{tmp_dir}/venv_env_{shell_id}.sh"
+            # Direct storage in REMOTE_ENV, no .tmp subdirectory needed
+            env_file = f"{self.main_instance.REMOTE_ENV}/venv_env_{shell_id}.sh"
             
             # 构建远程命令：source环境文件并执行Python代码
             commands = [
@@ -2248,11 +2326,7 @@ class FileOperations:
             }
             
             # 使用统一接口执行远端命令
-            execution_result = self.main_instance.execute_remote_command_interface(
-                remote_command=remote_command,
-                command_type="mkdir",
-                context_info=context_info
-            )
+            execution_result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
             
             if execution_result["success"]:
                 # 简洁返回，像bash shell一样成功时不显示任何信息
@@ -3664,7 +3738,7 @@ class FileOperations:
             return {"success": False, "error": f"Error deleting virtual environment: {str(e)}"}
     
     def _venv_activate(self, env_name):
-        """激活虚拟环境（设置PYTHONPATH）"""
+        """激活虚拟环境（设置PYTHONPATH）- 简化版本"""
         if not env_name:
             return {"success": False, "error": "Please specify the environment name"}
         
@@ -3696,88 +3770,85 @@ class FileOperations:
                     # Silently handle environment existence check errors
                     pass
             
-            # 生成激活环境的远程命令（持久化设置PYTHONPATH环境变量并记录当前环境）
+            # 修改激活逻辑：直接在REMOTE_ENV目录下存储状态文件
             current_shell = self.main_instance.get_current_shell()
             shell_id = current_shell.get("id", "default") if current_shell else "default"
             
-            tmp_dir = f"{self.main_instance.REMOTE_ENV}/.tmp"
-            current_venv_file = f"{tmp_dir}/current_venv_{shell_id}.txt"
-            env_file = f"{tmp_dir}/venv_env_{shell_id}.sh"
+            # 直接在REMOTE_ENV目录下存储状态文件，不使用.tmp子目录
+            current_venv_file = f"{self.main_instance.REMOTE_ENV}/current_venv_{shell_id}.txt"
+            env_file = f"{self.main_instance.REMOTE_ENV}/venv_env_{shell_id}.sh"
             
-            # 构建命令：创建环境文件并设置PYTHONPATH
-            commands = [
-                f"mkdir -p {tmp_dir}",
-                # 创建环境变量文件，包含PYTHONPATH设置
-                f"echo 'export PYTHONPATH=/env/python:{env_path}' > {env_file}",
-                # 记录当前激活的虚拟环境名称
-                f"echo '{env_name}' > {current_venv_file}",
-                # 在当前会话中应用环境变量（用于验证）
-                f"source {env_file}",
-                # 简单的成功消息
-                f"echo 'Virtual environment \"{env_name}\" activated'"
-            ]
-            # 为了让环境变量在主shell中生效，我们需要让用户在主shell中执行命令
-            # 而不是在一个bash -c子shell中执行
-            expected_pythonpath = f"/env/python:{env_path}"
-            result = self._execute_non_bash_safe_commands(commands, "activate virtual environment", env_name, expected_pythonpath)
+            # 构建详细的远程命令来更新状态文件，包含大量调试信息
+            remote_command = f"""
+echo "=== Virtual Environment Activation Debug ===" &&
+echo "Environment name: {env_name}" &&
+echo "Environment path: {env_path}" &&
+echo "Current venv file: {current_venv_file}" &&
+echo "Env file: {env_file}" &&
+echo "" &&
+echo "Step 1: Ensuring REMOTE_ENV directory exists..." &&
+mkdir -p {self.main_instance.REMOTE_ENV} &&
+echo "REMOTE_ENV directory ready" &&
+echo "" &&
+echo "Step 2: Writing environment file..." &&
+echo 'export PYTHONPATH=/env/python:{env_path}' > {env_file} &&
+echo "Environment file written successfully" &&
+echo "Environment file content:" &&
+cat {env_file} &&
+echo "" &&
+echo "Step 3: Writing current venv file..." &&
+echo '{env_name}' > {current_venv_file} &&
+echo "Current venv file written successfully" &&
+echo "Current venv file content:" &&
+cat {current_venv_file} &&
+echo "" &&
+echo "Step 4: Verification..." &&
+echo "Checking if files exist:" &&
+ls -la {self.main_instance.REMOTE_ENV}/ | grep -E "(current_venv_|venv_env_)" &&
+echo "" &&
+echo 'Virtual environment "{env_name}" activation completed'
+"""
+            
+# Debug prints removed as requested by user
+            
+            # 使用execute_generic_remote_command执行（自动执行，不需要用户手动操作）
+            # 将远程命令包装为bash -c格式
+            result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command.strip()])
+            
+            # 简化验证：直接检查状态文件来判断是否成功
             
             if result.get("success", False):
-                # 检查远程命令的实际执行结果
-                result_data = result.get("data", {})
-                exit_code = result_data.get("exit_code", -1)
-                stdout = result_data.get("stdout", "")
-                
-                # 如果有完整的终端输出且包含成功标记，根据输出判断
-                if "✅ 执行完成" in stdout:
-                    if (exit_code == 0 and f"CURRENT_VENV={env_name}" in stdout and f"/env/python:{env_path}" in stdout):
+                # 验证状态文件是否正确更新
+                try:
+                    current_shell = self.main_instance.get_current_shell()
+                    shell_id = current_shell.get("id", "default") if current_shell else "default"
+                    current_venv_file = f"{self.main_instance.REMOTE_ENV}/current_venv_{shell_id}.txt"
+                    current_env_result = self.main_instance.cmd_cat(current_venv_file)
+                    
+                    if (current_env_result.get("success") and 
+                        current_env_result.get("output", "").strip() == env_name):
                         return {
                             "success": True,
                             "message": f"Virtual environment '{env_name}' activated successfully",
                             "env_path": env_path,
                             "pythonpath": env_path,
                             "action": "activate",
-                            "note": "PYTHONPATH has been set in the remote environment",
-                            "remote_output": stdout.strip()
+                            "note": "PYTHONPATH has been set in the remote environment"
                         }
                     else:
                         return {
                             "success": False,
-                            "error": f"Failed to activate virtual environment: environment variables not set correctly",
-                            "remote_output": stdout.strip()
+                            "error": f"Failed to activate virtual environment: status file verification failed",
+                            "expected": env_name,
+                            "actual": current_env_result.get("output", "").strip()
                         }
-                else:
-                    # 用户直接提供反馈，检查状态文件来判断是否成功
-                    try:
-                        current_shell = self.main_instance.get_current_shell()
-                        shell_id = current_shell.get("id", "default") if current_shell else "default"
-                        tmp_dir = f"{self.main_instance.REMOTE_ENV}/.tmp"
-                        current_venv_file = f"{tmp_dir}/current_venv_{shell_id}.txt"
-                        current_env_result = self.main_instance.cmd_cat(current_venv_file)
-                        
-                        if (current_env_result.get("success") and 
-                            current_env_result.get("output", "").strip() == env_name):
-                            return {
-                                "success": True,
-                                "message": f"Virtual environment '{env_name}' activated successfully",
-                                "env_path": env_path,
-                                "pythonpath": env_path,
-                                "action": "activate",
-                                "note": "PYTHONPATH has been set in the remote environment (verified via status file)",
-                                "remote_output": stdout.strip()
-                            }
-                        else:
-                            return {
-                                "success": False,
-                                "error": f"Failed to activate virtual environment: status file does not contain expected environment name",
-                                "remote_output": stdout.strip()
-                            }
-                    except Exception as e:
-                        return {
-                            "success": False,
-                            "error": f"Failed to verify activation status: {str(e)}",
-                            "remote_output": stdout.strip()
-                        }
+                except Exception as e:
+                    return {
+                        "success": False,
+                        "error": f"Failed to verify virtual environment activation: {str(e)}"
+                    }
             else:
+                # Return error without debug details
                 return {
                     "success": False,
                     "error": f"Failed to activate virtual environment: {result.get('error', 'Unknown error')}"
@@ -3793,12 +3864,12 @@ class FileOperations:
             current_shell = self.main_instance.get_current_shell()
             shell_id = current_shell.get("id", "default") if current_shell else "default"
             
-            tmp_dir = f"{self.main_instance.REMOTE_ENV}/.tmp"
-            current_venv_file = f"{tmp_dir}/current_venv_{shell_id}.txt"
-            env_file = f"{tmp_dir}/venv_env_{shell_id}.sh"
+            # 直接在REMOTE_ENV目录下存储状态文件，不使用.tmp子目录
+            current_venv_file = f"{self.main_instance.REMOTE_ENV}/current_venv_{shell_id}.txt"
+            env_file = f"{self.main_instance.REMOTE_ENV}/venv_env_{shell_id}.sh"
             
             commands = [
-                f"mkdir -p {tmp_dir}",
+                f"mkdir -p {self.main_instance.REMOTE_ENV}",
                 # 创建重置环境文件，将PYTHONPATH重置为默认值
                 f"echo 'export PYTHONPATH=/env/python' > {env_file}",
                 # 删除虚拟环境状态文件
@@ -3840,8 +3911,8 @@ class FileOperations:
                     try:
                         current_shell = self.main_instance.get_current_shell()
                         shell_id = current_shell.get("id", "default") if current_shell else "default"
-                        tmp_dir = f"{self.main_instance.REMOTE_ENV}/.tmp"
-                        current_venv_file = f"{tmp_dir}/current_venv_{shell_id}.txt"
+                        # Direct storage in REMOTE_ENV, no .tmp subdirectory needed
+                        current_venv_file = f"{self.main_instance.REMOTE_ENV}/current_venv_{shell_id}.txt"
                         current_env_result = self.main_instance.cmd_cat(current_venv_file)
                         
                         # deactivate成功的标志是状态文件不存在或为空
@@ -3902,8 +3973,8 @@ class FileOperations:
                 current_shell = self.main_instance.get_current_shell()
                 shell_id = current_shell.get("id", "default") if current_shell else "default"
                 # 确保.tmp目录存在
-                tmp_dir = f"{self.main_instance.REMOTE_ENV}/.tmp"
-                current_venv_file = f"{tmp_dir}/current_venv_{shell_id}.txt"
+                # Direct storage in REMOTE_ENV, no .tmp subdirectory needed
+                current_venv_file = f"{self.main_instance.REMOTE_ENV}/current_venv_{shell_id}.txt"
                 
                 # 尝试读取当前环境状态文件
                 current_env_result = self.main_instance.cmd_cat(current_venv_file)
@@ -4117,8 +4188,8 @@ class FileOperations:
         # 生成智能删除命令：在远程端进行所有检查
         current_shell = self.main_instance.get_current_shell()
         shell_id = current_shell.get("id", "default") if current_shell else "default"
-        tmp_dir = f"{self.main_instance.REMOTE_ENV}/.tmp"
-        current_venv_file = f"{tmp_dir}/current_venv_{shell_id}.txt"
+        # Direct storage in REMOTE_ENV, no .tmp subdirectory needed
+        current_venv_file = f"{self.main_instance.REMOTE_ENV}/current_venv_{shell_id}.txt"
         
         # 构建智能删除脚本
         delete_script_parts = [
@@ -4233,8 +4304,8 @@ fi
             try:
                 current_shell = self.main_instance.get_current_shell()
                 shell_id = current_shell.get("id", "default") if current_shell else "default"
-                tmp_dir = f"{self.main_instance.REMOTE_ENV}/.tmp"
-                current_venv_file = f"{tmp_dir}/current_venv_{shell_id}.txt"
+                # Direct storage in REMOTE_ENV, no .tmp subdirectory needed
+                current_venv_file = f"{self.main_instance.REMOTE_ENV}/current_venv_{shell_id}.txt"
                 current_env_result = self.main_instance.cmd_cat(current_venv_file)
                 if current_env_result.get("success") and current_env_result.get("output"):
                     current_env = current_env_result["output"].strip()
@@ -4243,6 +4314,26 @@ fi
             
             # 构建pip命令
             pip_args = list(args)
+            
+            # 检查是否是需要交互确认的命令，如果是则添加自动确认参数
+            if len(pip_args) > 0:
+                subcommand = pip_args[0]
+                if subcommand == 'uninstall':
+                    # pip uninstall需要-y参数自动确认
+                    if '-y' not in pip_args and '--yes' not in pip_args:
+                        pip_args.insert(1, '-y')
+                elif subcommand in ['install', 'upgrade'] and '--upgrade' in pip_args:
+                    # pip install --upgrade可能需要确认，添加--no-input
+                    if '--no-input' not in pip_args:
+                        pip_args.append('--no-input')
+                elif subcommand == 'install' and len(pip_args) > 2:
+                    # 对于pip install多个包，拆分为并行安装以提高成功率
+                    # 计算target_info
+                    if current_env:
+                        target_info_calculated = f"in environment '{current_env}'"
+                    else:
+                        target_info_calculated = "in system environment"
+                    return self._execute_parallel_pip_install(pip_args, current_env, target_info_calculated)
             
             if current_env:
                 # 有激活的虚拟环境，添加--target参数
@@ -4281,6 +4372,150 @@ fi
                 
         except Exception as e:
             return {"success": False, "error": f"pip command execution failed: {str(e)}"}
+
+    def _execute_parallel_pip_install(self, pip_args, current_env, target_info):
+        """
+        并行执行多个包的pip install，提高成功率
+        将 pip install A B C 拆分为独立的 pip install A, pip install B, pip install C
+        并且检查包是否已存在，避免重复安装
+        """
+        try:
+            # 提取包名列表（跳过install和选项参数）
+            packages = []
+            options = []
+            force_upgrade = False
+            i = 1  # 跳过'install'
+            while i < len(pip_args):
+                arg = pip_args[i]
+                if arg.startswith('-'):
+                    # 这是一个选项参数
+                    if arg in ['--upgrade', '-U']:
+                        force_upgrade = True
+                    options.append(arg)
+                    # 检查是否有值（如--target /path）
+                    if i + 1 < len(pip_args) and not pip_args[i + 1].startswith('-'):
+                        i += 1
+                        options.append(pip_args[i])
+                else:
+                    # 这是一个包名
+                    packages.append(arg)
+                i += 1
+            
+            if not packages:
+                return {"success": False, "error": "No packages specified for installation"}
+            
+            print(f"Processing {len(packages)} packages: {', '.join(packages)}")
+            if force_upgrade:
+                print("🔄 Upgrade mode enabled - will reinstall existing packages")
+            
+            # 检查包是否已存在，构建真正需要安装的包列表
+            packages_to_install = []
+            packages_skipped = []
+            
+            if current_env and not force_upgrade:
+                env_path = f"{self.main_instance.REMOTE_ENV}/{current_env}"
+                for package in packages:
+                    if self._check_package_exists(package, env_path):
+                        packages_skipped.append(package)
+                        print(f"📦 {package}: Already installed (use --upgrade to reinstall)")
+                    else:
+                        packages_to_install.append(package)
+            else:
+                packages_to_install = packages
+            
+            if not packages_to_install:
+                return {
+                    "success": True,
+                    "message": f"All {len(packages)} packages already installed",
+                    "environment": current_env or "system",
+                    "skipped_packages": packages_skipped
+                }
+            
+            # 构建单个远程命令，包含所有需要安装的包
+            # 这样可以真正并行下载和安装
+            if current_env:
+                env_path = f"{self.main_instance.REMOTE_ENV}/{current_env}"
+                has_target = any(arg.startswith('--target') for arg in options)
+                if not has_target:
+                    options = [f'--target={env_path}'] + options
+            
+            # 构建最终的pip命令
+            final_pip_args = ['install'] + options + packages_to_install
+            pip_command = ' '.join(f'"{arg}"' if ' ' in arg else arg for arg in final_pip_args)
+            
+            print(f"\n📦 Installing {len(packages_to_install)} packages in batch: {', '.join(packages_to_install)}")
+            result = self._execute_pip_command_enhanced(pip_command, current_env, target_info)
+            
+            if result.get("success", False) and not result.get("direct_feedback", False):
+                return {
+                    "success": True,
+                    "message": f"Successfully installed {len(packages_to_install)} packages" + 
+                              (f", skipped {len(packages_skipped)} existing" if packages_skipped else ""),
+                    "environment": current_env or "system",
+                    "installed_packages": packages_to_install,
+                    "skipped_packages": packages_skipped
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": f"Failed to install packages: {result.get('error', 'Unknown error')}",
+                    "environment": current_env or "system",
+                    "failed_packages": packages_to_install,
+                    "skipped_packages": packages_skipped
+                }
+                
+        except Exception as e:
+            return {"success": False, "error": f"Parallel pip install failed: {str(e)}"}
+
+    def _check_package_exists(self, package_name, env_path):
+        """
+        检查包是否已经在虚拟环境中安装
+        """
+        try:
+            # 检查常见的包安装位置
+            possible_paths = [
+                f"{env_path}/{package_name}",
+                f"{env_path}/{package_name.replace('-', '_')}",  # 处理包名中的连字符
+                f"{env_path}/lib/python*/site-packages/{package_name}",
+                f"{env_path}/lib/python*/site-packages/{package_name.replace('-', '_')}"
+            ]
+            
+            # 使用ls命令检查是否存在
+            for path in possible_paths:
+                try:
+                    ls_result = self.main_instance.cmd_ls(path)
+                    if ls_result.get("success", False):
+                        return True
+                except:
+                    continue
+            
+            # 额外检查：查看环境目录下的所有包
+            try:
+                ls_result = self.main_instance.cmd_ls(env_path)
+                if ls_result.get("success", False):
+                    files = ls_result.get("files", [])
+                    # 检查是否有匹配的包名（处理各种命名变体）
+                    package_variants = [
+                        package_name,
+                        package_name.replace('-', '_'),
+                        package_name.replace('_', '-'),
+                        package_name.lower(),
+                        package_name.upper()
+                    ]
+                    
+                    for file_info in files:
+                        file_name = file_info.get("name", "")
+                        for variant in package_variants:
+                            if file_name.startswith(variant):
+                                return True
+            except:
+                pass
+                
+            return False
+            
+        except Exception as e:
+            # 如果检查失败，假设包不存在，允许安装
+            return False
 
     def _execute_pip_command_enhanced(self, pip_command, current_env, target_info):
         """
@@ -4502,3 +4737,119 @@ except Exception as e:
             
         except Exception as e:
             return {"success": False, "error": f"Error executing pip command: {str(e)}"}
+    
+    def cmd_linter(self, *args):
+        """
+        Linter command - Check syntax and style of files
+        Usage: linter [--language LANG] <file>
+        """
+        try:
+            if not args:
+                return {"success": False, "error": "Usage: linter [--language LANG] <file>"}
+            
+            # Parse arguments
+            language = None
+            filename = None
+            
+            i = 0
+            while i < len(args):
+                if args[i] in ['--language', '-l'] and i + 1 < len(args):
+                    language = args[i + 1]
+                    i += 2
+                elif not args[i].startswith('--'):
+                    filename = args[i]
+                    break
+                else:
+                    return {"success": False, "error": f"Unknown option: {args[i]}"}
+            
+            if not filename:
+                return {"success": False, "error": "Please specify a file to lint"}
+            
+            # Get file content
+            current_shell = self.main_instance.get_current_shell()
+            if not current_shell:
+                return {"success": False, "error": "No active shell session"}
+            
+            # Read file content
+            file_result = self.cmd_cat(filename)
+            if not file_result.get("success"):
+                return {"success": False, "error": f"Cannot read file {filename}: {file_result.get('error')}"}
+            
+            content = file_result.get("output", "")
+            
+            # Initialize linter and check
+            linter = GDSLinter()
+            result = linter.lint_content(content, filename, language)
+            
+            # Format output
+            output_lines = []
+            output_lines.append(f"🔍 Linter Results for {filename}")
+            output_lines.append(f"Language: {result['language']}")
+            output_lines.append(f"Status: {'✅ PASS' if result['success'] else '❌ FAIL'}")
+            
+            if result['errors']:
+                output_lines.append("\n🚫 Errors:")
+                for error in result['errors']:
+                    output_lines.append(f"  • {error}")
+            
+            if result['warnings']:
+                output_lines.append("\n⚠️  Warnings:")
+                for warning in result['warnings']:
+                    output_lines.append(f"  • {warning}")
+            
+            if result['info']:
+                output_lines.append("\nℹ️  Info:")
+                for info in result['info']:
+                    output_lines.append(f"  • {info}")
+            
+            return {
+                "success": True,
+                "output": "\n".join(output_lines),
+                "lint_result": result,
+                "has_errors": len(result['errors']) > 0,
+                "has_warnings": len(result['warnings']) > 0
+            }
+            
+        except Exception as e:
+            return {"success": False, "error": f"Linter command failed: {str(e)}"}
+    
+    def _run_linter_on_content(self, content: str, filename: str, language: str = None) -> Dict:
+        """
+        Internal method to run linter on content and return formatted result
+        Used by edit command for auto-linting
+        """
+        try:
+            linter = GDSLinter()
+            result = linter.lint_content(content, filename, language)
+            
+            if not result['errors'] and not result['warnings']:
+                return {"success": True, "has_issues": False, "message": "No linting issues found"}
+            
+            # Format linter output for edit command
+            lines = []
+            if result['errors']:
+                lines.append("🚫 Linter Errors:")
+                for error in result['errors']:
+                    lines.append(f"  • {error}")
+            
+            if result['warnings']:
+                if lines:
+                    lines.append("")
+                lines.append("⚠️  Linter Warnings:")
+                for warning in result['warnings']:
+                    lines.append(f"  • {warning}")
+            
+            return {
+                "success": True,
+                "has_issues": True,
+                "formatted_output": "\n".join(lines),
+                "error_count": len(result['errors']),
+                "warning_count": len(result['warnings'])
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "has_issues": False,
+                "message": f"Linter failed: {str(e)}"
+            }

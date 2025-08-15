@@ -1711,10 +1711,10 @@ def select_pdf_file():
         
         return file_path if file_path else None
     except ImportError:
-        print("❌ tkinter not available, GUI file selection not supported")
+        print("tkinter not available, GUI file selection not supported")
         return None
     except Exception as e:
-        print(f"❌ Error in file selection: {e}")
+        print(f"Error in file selection: {e}")
         return None
 
 def main(args=None, command_identifier=None):
@@ -1733,9 +1733,9 @@ def main(args=None, command_identifier=None):
         # 如果没有参数，尝试使用GUI选择文件
         pdf_file = select_pdf_file()
         if pdf_file:
-            print(f"📄 Selected file: {Path(pdf_file).name}")
-            print(f"🔄 Starting MinerU engine processing...")
-            print("⏳ Please wait ...")
+            print(f"Selected file: {Path(pdf_file).name}")
+            print(f"Starting MinerU engine processing...")
+            print("Please wait ...")
             
             extractor = PDFExtractor()
             success, message = extractor.extract_pdf(pdf_file)
@@ -1748,7 +1748,7 @@ def main(args=None, command_identifier=None):
                 if is_run_environment(command_identifier):
                     write_to_json_output(success_data, command_identifier)
                 else:
-                    print(f"✅ {message}")
+                    print(f"{message}")
                 return 0
             else:
                 error_data = {
@@ -1758,14 +1758,14 @@ def main(args=None, command_identifier=None):
                 if is_run_environment(command_identifier):
                     write_to_json_output(error_data, command_identifier)
                 else:
-                    print(f"❌ {message}")
+                    print(f"{message}")
                 return 1
         else:
             if is_run_environment(command_identifier):
                 error_data = {"success": False, "error": "No PDF file specified"}
                 write_to_json_output(error_data, command_identifier)
             else:
-                print("❌ Error: No PDF file specified")
+                print("Error: No PDF file specified")
                 print("Use --help for usage information")
             return 1
     
@@ -1804,7 +1804,7 @@ def main(args=None, command_identifier=None):
                 page_spec = args[i + 1]
                 i += 2
             else:
-                error_msg = "❌ Error: --page requires a value"
+                error_msg = "Error: --page requires a value"
                 if is_run_environment(command_identifier):
                     error_data = {"success": False, "error": error_msg}
                     write_to_json_output(error_data, command_identifier)
@@ -1816,7 +1816,7 @@ def main(args=None, command_identifier=None):
                 output_dir = args[i + 1]
                 i += 2
             else:
-                error_msg = f"❌ Error: {arg} requires a value"
+                error_msg = f"Error: {arg} requires a value"
                 if is_run_environment(command_identifier):
                     error_data = {"success": False, "error": error_msg}
                     write_to_json_output(error_data, command_identifier)
@@ -1827,7 +1827,7 @@ def main(args=None, command_identifier=None):
             if i + 1 < len(args):
                 engine_mode = args[i + 1]
                 if engine_mode not in ['basic', 'basic-asyn', 'mineru', 'mineru-asyn', 'full']:
-                    error_msg = f"❌ Error: Invalid engine mode: {engine_mode}"
+                    error_msg = f"Error: Invalid engine mode: {engine_mode}"
                     if is_run_environment(command_identifier):
                         error_data = {"success": False, "error": error_msg}
                         write_to_json_output(error_data, command_identifier)
@@ -1836,7 +1836,7 @@ def main(args=None, command_identifier=None):
                     return 1
                 i += 2
             else:
-                error_msg = "❌ Error: --engine requires a value"
+                error_msg = "Error: --engine requires a value"
                 if is_run_environment(command_identifier):
                     error_data = {"success": False, "error": error_msg}
                     write_to_json_output(error_data, command_identifier)
@@ -1857,7 +1857,7 @@ def main(args=None, command_identifier=None):
                 full_pipeline = True
                 i += 2
             else:
-                error_msg = "❌ Error: --full requires a PDF file"
+                error_msg = "Error: --full requires a PDF file"
                 if is_run_environment(command_identifier):
                     error_data = {"success": False, "error": error_msg}
                     write_to_json_output(error_data, command_identifier)
@@ -1872,7 +1872,7 @@ def main(args=None, command_identifier=None):
                 post_ids = args[i + 1]
                 i += 2
             else:
-                error_msg = "❌ Error: --ids requires a value"
+                error_msg = "Error: --ids requires a value"
                 if is_run_environment(command_identifier):
                     error_data = {"success": False, "error": error_msg}
                     write_to_json_output(error_data, command_identifier)
@@ -1884,7 +1884,7 @@ def main(args=None, command_identifier=None):
                 post_prompt = args[i + 1]
                 i += 2
             else:
-                error_msg = "❌ Error: --prompt requires a value"
+                error_msg = "Error: --prompt requires a value"
                 if is_run_environment(command_identifier):
                     error_data = {"success": False, "error": error_msg}
                     write_to_json_output(error_data, command_identifier)
@@ -1895,7 +1895,7 @@ def main(args=None, command_identifier=None):
             if i + 1 < len(args):
                 post_type = args[i + 1]
                 if post_type not in ['image', 'formula', 'table', 'all', 'all_images', 'all_formulas', 'all_tables']:
-                    error_msg = f"❌ Error: Invalid post-type: {post_type}"
+                    error_msg = f"Error: Invalid post-type: {post_type}"
                     if is_run_environment(command_identifier):
                         error_data = {"success": False, "error": error_msg}
                         write_to_json_output(error_data, command_identifier)
@@ -1904,7 +1904,7 @@ def main(args=None, command_identifier=None):
                     return 1
                 i += 2
             else:
-                error_msg = "❌ Error: --post-type requires a value"
+                error_msg = "Error: --post-type requires a value"
                 if is_run_environment(command_identifier):
                     error_data = {"success": False, "error": error_msg}
                     write_to_json_output(error_data, command_identifier)
@@ -1916,7 +1916,7 @@ def main(args=None, command_identifier=None):
                 original_pdf_dir = args[i + 1]
                 i += 2
             else:
-                error_msg = "❌ Error: --original-pdf-dir requires a value"
+                error_msg = "Error: --original-pdf-dir requires a value"
                 if is_run_environment(command_identifier):
                     error_data = {"success": False, "error": error_msg}
                     write_to_json_output(error_data, command_identifier)
@@ -1931,7 +1931,7 @@ def main(args=None, command_identifier=None):
                 try:
                     post_timeout_multi = float(args[i + 1])
                     if post_timeout_multi <= 0:
-                        error_msg = "❌ Error: --unimernet-timeout-multi must be positive"
+                        error_msg = "Error: --unimernet-timeout-multi must be positive"
                         if is_run_environment(command_identifier):
                             error_data = {"success": False, "error": error_msg}
                             write_to_json_output(error_data, command_identifier)
@@ -1940,7 +1940,7 @@ def main(args=None, command_identifier=None):
                         return 1
                     i += 2
                 except ValueError:
-                    error_msg = "❌ Error: --unimernet-timeout-multi must be a number"
+                    error_msg = "Error: --unimernet-timeout-multi must be a number"
                     if is_run_environment(command_identifier):
                         error_data = {"success": False, "error": error_msg}
                         write_to_json_output(error_data, command_identifier)
@@ -1948,7 +1948,7 @@ def main(args=None, command_identifier=None):
                         print(error_msg)
                     return 1
             else:
-                error_msg = "❌ Error: --unimernet-timeout-multi requires a value"
+                error_msg = "Error: --unimernet-timeout-multi requires a value"
                 if is_run_environment(command_identifier):
                     error_data = {"success": False, "error": error_msg}
                     write_to_json_output(error_data, command_identifier)
@@ -1956,7 +1956,7 @@ def main(args=None, command_identifier=None):
                     print(error_msg)
                 return 1
         elif arg.startswith('-'):
-            error_msg = f"❌ Unknown option: {arg}"
+            error_msg = f"Unknown option: {arg}"
             if is_run_environment(command_identifier):
                 error_data = {"success": False, "error": error_msg}
                 write_to_json_output(error_data, command_identifier)
@@ -1968,7 +1968,7 @@ def main(args=None, command_identifier=None):
             if pdf_file is None:
                 pdf_file = arg
             else:
-                error_msg = "❌ Multiple PDF files specified. Only one file is supported."
+                error_msg = "Multiple PDF files specified. Only one file is supported."
                 if is_run_environment(command_identifier):
                     error_data = {"success": False, "error": error_msg}
                     write_to_json_output(error_data, command_identifier)
@@ -1991,7 +1991,7 @@ def main(args=None, command_identifier=None):
             if is_run_environment(command_identifier):
                 write_to_json_output(success_data, command_identifier)
             else:
-                print(f"✅ {message}")
+            print(f"{message}")
             return 0
         else:
             error_data = {
@@ -2002,7 +2002,7 @@ def main(args=None, command_identifier=None):
             if is_run_environment(command_identifier):
                 write_to_json_output(error_data, command_identifier)
             else:
-                print(f"❌ {message}")
+                print(f"{message}")
             return 1
     
     # 处理完整流程模式
@@ -2020,8 +2020,8 @@ def main(args=None, command_identifier=None):
         if clean_data:
             step1_cmd.append("--clean-data")
         
-        print("📄 Step 1: PDF extraction...")
-        print(f"   🔧 Executing command: {' '.join(step1_cmd)}")
+        print("Step 1: PDF extraction...")
+        print(f"   Executing command: {' '.join(step1_cmd)}")
         
         try:
             result1 = subprocess.run(step1_cmd, capture_output=True, text=True, check=False)
@@ -2036,7 +2036,7 @@ def main(args=None, command_identifier=None):
                 if is_run_environment(command_identifier):
                     write_to_json_output(error_data, command_identifier)
                 else:
-                    print(f"❌ PDF extraction failed: {result1.stderr}")
+                    print(f"PDF extraction failed: {result1.stderr}")
                 return 1
             
             print(f"✅ PDF extraction completed")
@@ -2070,8 +2070,8 @@ def main(args=None, command_identifier=None):
                 if post_force:
                     step2_cmd.append("--force")
                 
-                print("🔄 Step 2: Automatic post-processing...")
-                print(f"   🔧 Executing command: {' '.join(step2_cmd)}")
+                print("Step 2: Post-processing...")
+                print(f"   Executing command: {' '.join(step2_cmd)}")
                 
                 result2 = subprocess.run(step2_cmd, capture_output=True, text=True, check=False)
                 
@@ -2089,7 +2089,7 @@ def main(args=None, command_identifier=None):
                     if is_run_environment(command_identifier):
                         write_to_json_output(success_data, command_identifier)
                     else:
-                        print(f"✅ Full pipeline completed: {pdf_file} -> {md_file}")
+                        print(f"Full pipeline completed: {pdf_file} -> {md_file}")
                     return 0
                 else:
                     # 即使后处理失败，PDF提取已成功
@@ -2106,9 +2106,9 @@ def main(args=None, command_identifier=None):
                     if is_run_environment(command_identifier):
                         write_to_json_output(warning_data, command_identifier)
                     else:
-                        print(f"✅ PDF extraction completed, but post-processing failed: {md_file}")
-                        print("💡 You can later use EXTRACT_PDF --post to manually perform post-processing")
-                        print(f"⚠️ Post-processing error: {result2.stderr}")
+                        print(f"PDF extraction completed, but post-processing failed: {md_file}")
+                        print("You can later use EXTRACT_PDF --post to manually perform post-processing")
+                        print(f"Post-processing error: {result2.stderr}")
                     return 0
             else:
                 # markdown文件不存在
@@ -2122,7 +2122,7 @@ def main(args=None, command_identifier=None):
                 if is_run_environment(command_identifier):
                     write_to_json_output(warning_data, command_identifier)
                 else:
-                    print(f"✅ PDF extraction completed, but markdown file not found: {md_file}")
+                    print(f"PDF extraction completed, but markdown file not found: {md_file}")
                 return 0
                 
         except Exception as e:
@@ -2134,7 +2134,7 @@ def main(args=None, command_identifier=None):
             if is_run_environment(command_identifier):
                 write_to_json_output(error_data, command_identifier)
             else:
-                print(f"❌ Full pipeline execution failed: {str(e)}")
+                print(f"Full pipeline execution failed: {str(e)}")
             return 1
     
     # 处理后处理模式
@@ -2151,7 +2151,7 @@ def main(args=None, command_identifier=None):
             if is_run_environment(command_identifier):
                 write_to_json_output(success_data, command_identifier)
             else:
-                print(f"✅ Post-processing completed: {post_file}")
+                print(f"Post-processing completed: {post_file}")
             return 0
         else:
             error_data = {
@@ -2162,12 +2162,12 @@ def main(args=None, command_identifier=None):
             if is_run_environment(command_identifier):
                 write_to_json_output(error_data, command_identifier)
             else:
-                print(f"❌ Post-processing failed: {post_file}")
+                print(f"Post-processing failed: {post_file}")
             return 1
     
     # 检查是否提供了PDF文件
     if pdf_file is None:
-        error_msg = "❌ Error: No PDF file specified"
+        error_msg = "Error: No PDF file specified"
         if is_run_environment(command_identifier):
             error_data = {"success": False, "error": error_msg}
             write_to_json_output(error_data, command_identifier)
@@ -2189,7 +2189,7 @@ def main(args=None, command_identifier=None):
         if is_run_environment(command_identifier):
             write_to_json_output(success_data, command_identifier)
         else:
-            print(f"✅ {message}")
+            print(f"{message}")
         return 0
     else:
         error_data = {
@@ -2200,7 +2200,7 @@ def main(args=None, command_identifier=None):
         if is_run_environment(command_identifier):
             write_to_json_output(error_data, command_identifier)
         else:
-            print(f"❌ {message}")
+            print(f"{message}")
         return 1
 
 def cleanup_images_folder():
@@ -2236,9 +2236,9 @@ if __name__ == "__main__":
         sys.exit(exit_code)
     except KeyboardInterrupt:
         cleanup_images_folder()
-        print("\n❌ Cancelled")
+        print("\nCancelled")
         sys.exit(1)
     except Exception as e:
         cleanup_images_folder()
-        print(f"❌ Program exception: {e}")
+        print(f"Program exception: {e}")
         sys.exit(1) 

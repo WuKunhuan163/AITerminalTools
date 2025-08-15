@@ -8,6 +8,7 @@ import os
 import sys
 import json
 import time
+from .remote_commands import debug_print
 import hashlib
 import warnings
 import subprocess
@@ -74,7 +75,7 @@ class CacheManager:
                         original_filename = file_info.get("original_filename", filename)
                         self.add_deletion_record(original_filename)
                     else:
-                        print(f"File already deleted: {filename} (skipped)")
+                        debug_print(f"File already deleted: {filename} (skipped)")
                 except Exception as e:
                     failed_cleanups.append({"file": filename, "error": str(e)})
                     print(f"Failed to clean file: {filename} - {e}")

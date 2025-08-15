@@ -164,8 +164,8 @@ class ShellManagement:
             
             if self.save_shells(shells_data):
                 # 生成远程命令来初始化shell环境变量
-                tmp_dir = f"{self.main_instance.REMOTE_ENV}/.tmp"
-                current_venv_file = f"{tmp_dir}/current_venv_{shell_id}.txt"
+                # Direct storage in REMOTE_ENV, no .tmp subdirectory needed
+                current_venv_file = f"{self.main_instance.REMOTE_ENV}/current_venv_{shell_id}.txt"
                 commands = [
                     f"mkdir -p {tmp_dir}",
                     f"rm -f {current_venv_file}",  # 清除虚拟环境状态
@@ -232,8 +232,8 @@ class ShellManagement:
                 shell_name = shells_data["shells"][shell_id]["name"]
                 
                 # 生成远程命令来恢复shell的虚拟环境状态
-                tmp_dir = f"{self.main_instance.REMOTE_ENV}/.tmp"
-                current_venv_file = f"{tmp_dir}/current_venv_{shell_id}.txt"
+                # Direct storage in REMOTE_ENV, no .tmp subdirectory needed
+                current_venv_file = f"{self.main_instance.REMOTE_ENV}/current_venv_{shell_id}.txt"
                 
                 # 检查该shell是否有激活的虚拟环境
                 try:
@@ -290,8 +290,8 @@ class ShellManagement:
             shell_name = shells_data["shells"][shell_id]["name"]
             
             # 生成远程命令来清理shell相关的环境变量文件
-            tmp_dir = f"{self.main_instance.REMOTE_ENV}/.tmp"
-            current_venv_file = f"{tmp_dir}/current_venv_{shell_id}.txt"
+            # Direct storage in REMOTE_ENV, no .tmp subdirectory needed
+            current_venv_file = f"{self.main_instance.REMOTE_ENV}/current_venv_{shell_id}.txt"
             commands = [
                 f"rm -f {current_venv_file}",  # 删除该shell的虚拟环境状态文件
                 "export PYTHONPATH=/env/python",  # 重置为默认PYTHONPATH

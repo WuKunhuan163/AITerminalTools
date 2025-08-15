@@ -29,7 +29,9 @@ class FileUtils:
     def __init__(self, drive_service, main_instance=None):
         """初始化管理器"""
         self.drive_service = drive_service
-        self.main_instance = main_instance  # 引用主实例以访问其他属性
+        self.main_instance = main_instance
+    
+  # 引用主实例以访问其他属性
 
     def _zip_folder(self, folder_path, zip_path=None):
         """
@@ -122,14 +124,20 @@ class FileUtils:
             source_path = f'"/content/drive/Othercomputers/我的 MacBook Air/Google Drive/{zip_filename}"'
             target_zip_path = f'{remote_target_path}/{zip_filename}'
             
+            # 生成解压命令部分 - 使用统一函数
+            from .core_utils import generate_unzip_command
+            unzip_part = generate_unzip_command(
+                remote_target_path, 
+                zip_filename, 
+                delete_zip=delete_zip,
+                handle_empty_zip=True
+            )
+            
             # 生成包含两个同步检测的远程命令
-            if delete_zip:
-                # 第一个⏳：等待上传完成并移动zip文件
-                # 第二个⏳：等待移动完成后直接解压
-                remote_command = f"""(mkdir -p {remote_target_path} && echo -n "⏳"; for i in {{1..60}}; do     if mv {source_path} {target_zip_path} 2>/dev/null; then         echo "";         break;     else         if [ $i -eq 60 ]; then             echo " ❌ (已重试60次失败)";             exit 1;         else             echo -n ".";             sleep 1;         fi;     fi; done) && (cd {remote_target_path} && echo -n "⏳"; for i in {{1..30}}; do     if [ -f "{zip_filename}" ]; then         echo "";         break;     else         if [ $i -eq 30 ]; then             echo " ❌ (zip文件检测失败)";             exit 1;         else             echo -n ".";             sleep 1;         fi;     fi; done) && (cd {remote_target_path} && echo "=== 开始解压 ===" && unzip -o {zip_filename} && echo "=== 删除zip ===" && rm {zip_filename} && echo "=== 验证结果 ===" && ls -la) && clear && echo "✅ 执行完成" || echo "❌ 执行失败\""""
-            else:
-                # 保留zip文件的版本
-                remote_command = f"""(mkdir -p {remote_target_path} && echo -n "⏳"; for i in {{1..60}}; do     if mv {source_path} {target_zip_path} 2>/dev/null; then         echo "";         break;     else         if [ $i -eq 60 ]; then             echo " ❌ (已重试60次失败)";             exit 1;         else             echo -n ".";             sleep 1;         fi;     fi; done) && (cd {remote_target_path} && echo -n "⏳"; for i in {{1..30}}; do     if [ -f "{zip_filename}" ]; then         echo "";         break;     else         if [ $i -eq 30 ]; then             echo " ❌ (zip文件检测失败)";             exit 1;         else             echo -n ".";             sleep 1;         fi;     fi; done) && (cd {remote_target_path} && echo "=== 开始解压 ===" && unzip -o {zip_filename} && echo "=== 验证结果 ===" && ls -la) && clear && echo "✅ 执行完成" || echo "❌ 执行失败\""""
+            sync_and_move_part = f"""(mkdir -p {remote_target_path} && echo -n "⏳"; for i in $(seq 1 60); do     if mv {source_path} {target_zip_path} 2>/dev/null; then         echo "";         break;     else         if [ "$i" -eq 60 ]; then             echo " ❌ (已重试60次失败)";             exit 1;         else             echo -n ".";             sleep 1;         fi;     fi; done) && (cd {remote_target_path} && echo -n "⏳"; for i in $(seq 1 30); do     if [ -f "{zip_filename}" ]; then         echo "";         break;     else         if [ "$i" -eq 30 ]; then             echo " ❌ (zip文件检测失败)";             exit 1;         else             echo -n ".";             sleep 1;         fi;     fi; done)"""
+            
+            # 组合完整命令
+            remote_command = f"""{sync_and_move_part} && ({unzip_part}) && clear && echo "✅ 执行完成" || echo "❌ 执行失败\""""
             
             print(f"🔧 生成的远程命令（包含双重同步检测）: {remote_command}")
             

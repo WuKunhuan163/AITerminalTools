@@ -46,11 +46,11 @@ class DebugCapture:
     
     def start_capture(self):
         """开始捕获debug信息"""
-        self.debug_buffer = []
         self.capturing = True
     
     def stop_capture(self):
         """停止捕获debug信息"""
+        self.debug_buffer = []
         self.capturing = False
     
     def add_debug(self, message):
@@ -74,7 +74,7 @@ def debug_print(*args, **kwargs):
     # 构建消息字符串
     message = ' '.join(str(arg) for arg in args)
     
-    # 如果正在捕获，只添加到缓存，不输出到控制台
+    # 如果正在捕获，添加到缓存
     if debug_capture.capturing:
         debug_capture.add_debug(message)
     else:
@@ -90,10 +90,13 @@ class RemoteCommands:
         self.main_instance = main_instance
         
         # 特殊命令列表 - 这些命令在本地处理，不需要远端执行
+        # 注意：echo已被移除，现在通过通用远程命令执行
         self.SPECIAL_COMMANDS = {
-            'ls', 'cd', 'pwd', 'mkdir', 'rm', 'mv', 'cat', 'echo', 'grep', 
+            'ls', 'cd', 'pwd', 'mkdir', 'rm', 'mv', 'cat', 'grep', 
             'upload', 'download', 'edit', 'read', 'find', 'help', 'exit', 'quit', 'venv'
         }
+    
+
     
     def generate_remote_commands(self, file_moves, target_path, folder_upload_info=None):
         """
@@ -144,11 +147,14 @@ class RemoteCommands:
                     else:
                         remote_target_path = f"{self.main_instance.REMOTE_ROOT}/{target_path}"
                     
-                    # 生成解压命令
-                    if keep_zip:
-                        unzip_command = f'''cd "{remote_target_path}" && echo "=== 开始解压 ===" && unzip -o "{zip_filename}" && echo "=== 验证结果 ===" && ls -la'''
-                    else:
-                        unzip_command = f'''cd "{remote_target_path}" && echo "=== 开始解压 ===" && unzip -o "{zip_filename}" && echo "=== 删除zip ===" && rm "{zip_filename}" && echo "=== 验证结果 ===" && ls -la'''
+                    # 生成解压命令 - 使用统一函数
+                    from .core_utils import generate_unzip_command
+                    unzip_command = generate_unzip_command(
+                        remote_target_path, 
+                        zip_filename, 
+                        delete_zip=not keep_zip,
+                        handle_empty_zip=True
+                    )
                     
                     # 将解压命令添加到基础命令之后
                     combined_command = f"{base_command}\n\n# 解压和清理zip文件\n({unzip_command}) && clear && echo \"✅ 执行完成\" || echo \"❌ 执行失败\""
@@ -260,17 +266,17 @@ class RemoteCommands:
             remote_file_path = f"~/tmp/{result_filename}"
             
             # 输出等待指示器
-            print("⏳", end="", flush=True)
+            print("⏳ Waiting for result ...", end="", flush=True)
             
             # 等待文件出现，最多60秒
             max_wait_time = 60
-            for wait_count in range(max_wait_time):
+            for _ in range(max_wait_time):
                 # 检查文件是否存在
                 check_result = self._check_remote_file_exists_absolute(remote_file_path)
                 
                 if check_result.get("exists"):
                     # 文件存在，读取内容
-                    print()  # 换行
+                    print("√")
                     return self._read_result_file_via_gds(result_filename)
                 
                 # 文件不存在，等待1秒并输出进度点
@@ -279,16 +285,16 @@ class RemoteCommands:
             
             # 超时，提供用户输入fallback
             print()  # 换行
-            print(f"⚠️  等待远端结果文件超时（60秒）: {remote_file_path}")
-            print("这可能是因为:")
-            print("  1. 命令正在后台运行（如http-server等服务）")
-            print("  2. 命令执行时间超过60秒")
-            print("  3. 远端出现意外错误")
+            print(f"Waiting for result file: {remote_file_path} timed out")
+            print("This may be because:")
+            print("  1. The command is running in the background (e.g. http-server service)")
+            print("  2. The command execution time exceeds 60 seconds")
+            print("  3. The remote encountered an unexpected error")
             print()
-            print("请手动提供执行结果:")
-            print("- 输入多行内容描述命令执行情况")
-            print("- 按 Ctrl+D 结束输入")
-            print("- 或直接按 Enter 跳过")
+            print("Please provide the execution result:")
+            print("- Enter multiple lines to describe the command execution")
+            print("- Press Ctrl+D to end input")
+            print("- Or press Enter directly to skip")
             print()
             
             # 获取用户手动输入
@@ -327,40 +333,70 @@ class RemoteCommands:
     def _get_multiline_user_input(self):
         """
         获取用户的多行输入，支持Ctrl+D结束
-        类似USERINPUT的机制
+        使用与USERINPUT完全相同的信号超时输入逻辑
         
         Returns:
             str: 用户输入的多行内容
         """
+        lines = []
+        timeout_seconds = 180  # 3分钟超时，和USERINPUT一致
+        
+        # 定义超时异常
+        class TimeoutException(Exception):
+            pass
+        
+        def timeout_handler(signum, frame):
+            raise TimeoutException("Input timeout")
+        
+        # 使用信号方式进行超时控制，完全复制USERINPUT逻辑
+        import signal
+        import readline
+        
+        original_handler = signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(timeout_seconds)
+        
         try:
-            import sys
-            
-            lines = []
-            print("请输入内容 (按 Ctrl+D 结束):")
-            
-            try:
-                while True:
+            while True:
+                try:
+                    line = input()
+                    lines.append(line)
+                    # 重置超时计时器，因为用户正在输入
+                    signal.alarm(timeout_seconds)
+                except EOFError:
+                    # Ctrl+D，正常结束输入
+                    print()  # 输出一个空行
+                    break
+                except TimeoutException:
+                    # 超时发生 - 尝试捕获当前正在输入的行
                     try:
-                        line = input()
-                        lines.append(line)
-                    except KeyboardInterrupt:
-                        # Ctrl+C，询问是否取消
-                        print("\n是否取消输入？(y/N): ", end="", flush=True)
-                        response = input().strip().lower()
-                        if response in ['y', 'yes']:
-                            return ""
-                        else:
-                            print("继续输入 (按 Ctrl+D 结束):")
-                            continue
-            except EOFError:
-                # Ctrl+D，正常结束输入
-                pass
-            
-            return "\n".join(lines)
-            
-        except Exception as e:
-            print(f"获取用户输入时出错: {e}")
-            return ""
+                        # 获取当前输入缓冲区的内容
+                        current_line = readline.get_line_buffer()
+                        if current_line.strip():
+                            lines.append(current_line.strip())
+                    except:
+                        pass  # 如果无法获取缓冲区内容，忽略错误
+                    print(f"\n[TIMEOUT] 输入超时 ({timeout_seconds}秒)")
+                    break
+        except KeyboardInterrupt:
+            # Ctrl+C，询问是否取消
+            print("\n是否取消输入？(y/N): ", end="", flush=True)
+            try:
+                response = input().strip().lower()
+                if response in ['y', 'yes']:
+                    return ""
+                else:
+                    print("继续输入 (按 Ctrl+D 结束):")
+                    # 重新开始输入循环
+                    return self._get_multiline_user_input()
+            except (EOFError, KeyboardInterrupt):
+                return ""
+        finally:
+            # 清理超时设置
+            signal.alarm(0)
+            signal.signal(signal.SIGALRM, original_handler)
+        
+        # 组合所有行为最终输入
+        return '\n'.join(lines).strip()
 
     def _read_result_file_via_gds(self, result_filename):
         """
@@ -493,67 +529,6 @@ class RemoteCommands:
             # 如果预处理失败，返回包装的原始内容
             return f'{{"exit_code": -1, "stdout": "{content}", "stderr": "preprocess failed: {str(e)}"}}'
 
-    def _generate_unzip_and_delete_command(self, zip_filename, remote_target_path, keep_zip=False):
-        """
-        生成远程解压和删除zip文件的命令，并通过tkinter窗口提供给用户执行
-        
-        Args:
-            zip_filename (str): zip文件名
-            remote_target_path (str): 远程目标路径
-            keep_zip (bool): 是否保留zip文件
-            
-        Returns:
-            dict: 命令生成结果
-        """
-        try:
-            print(f"📂 生成远程解压和删除命令: {zip_filename}")
-            
-            # 构建远程命令
-            if keep_zip:
-                # 保留zip文件的版本：只解压，不删除
-                remote_command = f'''cd "{remote_target_path}" && echo "=== 开始解压 ===" && unzip -o "{zip_filename}" && echo "=== 验证结果 ===" && ls -la && clear && echo "✅ 执行完成" || echo "❌ 执行失败"'''
-            else:
-                # 默认版本：解压后删除zip文件
-                remote_command = f'''cd "{remote_target_path}" && echo "=== 开始解压 ===" && unzip -o "{zip_filename}" && echo "=== 删除zip ===" && rm "{zip_filename}" && echo "=== 验证结果 ===" && ls -la && clear && echo "✅ 执行完成" || echo "❌ 执行失败"'''
-            
-            print(f"🔧 生成的远程解压命令: {remote_command}")
-            
-            # 使用subprocess方法显示命令窗口
-            try:
-                from .core_utils import show_command_window_subprocess
-                
-                title = f"远程文件夹解压: {zip_filename}"
-                instruction = f"""请在远程环境中执行以下命令来解压文件夹：
-
-1. 解压zip文件到指定目录
-2. 自动删除zip文件（如果设置了删除选项）
-3. 验证解压结果
-
-目标路径: {remote_target_path}
-"""
-                
-                # 使用subprocess方法显示窗口
-                result = show_command_window_subprocess(
-                    title=title,
-                    command_text=remote_command,
-                    instruction_text=instruction,
-                    timeout_seconds=300
-                )
-                
-                # 转换结果格式
-                if result["action"] == "success":
-                    return {"success": True, "message": f"文件夹 {zip_filename} 解压完成"}
-                elif result["action"] == "copy":
-                    return {"success": True, "message": "命令已复制到剪切板，请手动执行"}
-                else:
-                    return {"success": False, "message": f"操作取消或失败: {result.get('error', 'Unknown error')}"}
-                    
-            except Exception as e:
-                return {"success": False, "message": f"显示命令窗口失败: {str(e)}"}
-                
-        except Exception as e:
-            return {"success": False, "error": f"生成远程解压命令失败: {e}"}
-    
     def show_remote_command_window(self, remote_command, command_type="upload", debug_info=None):
         """
         显示远端命令的 tkinter 窗口（统一版本，使用_show_generic_command_window）
@@ -630,18 +605,17 @@ class RemoteCommands:
             return {"success": False, "action": "error", "error_info": f"窗口显示错误: {e}"}
 
     def _generate_multi_file_remote_commands(self, all_file_moves):
-        """生成多文件分布式远端移动命令，每个文件独立重试60次，直到所有文件完成"""
+        """生成简化的多文件上传远端命令，只显示关键状态信息"""
         try:
-            # 生成文件信息数组
+            # 生成文件信息数组 - 保留原有的路径解析逻辑
             file_info_list = []
             for i, file_info in enumerate(all_file_moves):
                 filename = file_info["filename"]  # 重命名后的文件名（在DRIVE_EQUIVALENT中）
                 original_filename = file_info.get("original_filename", filename)  # 原始文件名（目标文件名）
-                renamed = file_info.get("renamed", False)
                 target_path = file_info["target_path"]
                 
                 # 计算目标绝对路径 - 使用original_filename作为最终文件名
-                target_filename = original_filename  # 最终目标文件名应该是原始文件名
+                target_filename = original_filename
                 
                 if target_path == "." or target_path == "":
                     # 当前目录
@@ -656,152 +630,89 @@ class RemoteCommands:
                     else:
                         target_absolute = self.main_instance.REMOTE_ROOT
                     dest_absolute = f"{target_absolute.rstrip('/')}/{target_filename}"
-                elif target_path.startswith("/"):
-                    # 绝对路径
-                    target_absolute = f"{self.main_instance.REMOTE_ROOT}{target_path}"
-                    dest_absolute = f"{target_absolute.rstrip('/')}/{target_filename}"
                 else:
-                    # 相对路径，需要判断是文件名还是目录名
-                    last_part = target_path.split('/')[-1]
-                    is_file = '.' in last_part and last_part != '.' and last_part != '..'
-                    
-                    # 获取当前路径信息
+                    # 简化路径处理 - 其他情况都当作目录处理
                     current_shell = self.main_instance.get_current_shell()
                     current_path = current_shell.get("current_path", "~") if current_shell else "~"
                     
-                    if is_file:
-                        # target_path 是文件名，直接使用
-                        if target_path.startswith("~/"):
-                            # target_path是绝对路径（从~开始），直接使用
-                            dest_absolute = f"{self.main_instance.REMOTE_ROOT}/{target_path[2:]}"
-                            debug_print(f"🔧 DEBUG: target_path starts with '~/', dest_absolute='{dest_absolute}'")
-                        elif current_path == "~":
-                            dest_absolute = f"{self.main_instance.REMOTE_ROOT}/{target_path}"
-                            debug_print(f"🔧 DEBUG: current_path is '~', dest_absolute='{dest_absolute}'")
-                        else:
-                            # current_path不是~，需要包含当前路径
-                            if current_path.startswith("~/"):
-                                # 去掉~/前缀，添加当前路径
-                                current_subpath = current_path[2:]  # 去掉~/
-                                dest_absolute = f"{self.main_instance.REMOTE_ROOT}/{current_subpath}/{target_path}"
-                            else:
-                                # 不应该发生，但作为fallback
-                                dest_absolute = f"{self.main_instance.REMOTE_ROOT}/{target_path}"
-                            debug_print(f"🔧 DEBUG: current_path is '{current_path}', dest_absolute='{dest_absolute}'")
+                    if current_path == "~":
+                        target_absolute = f"{self.main_instance.REMOTE_ROOT}/{target_path.lstrip('/')}"
                     else:
-                        # target_path 是目录名，需要包含当前路径，在后面添加原始文件名
-                        if current_path == "~":
-                            target_absolute = f"{self.main_instance.REMOTE_ROOT}/{target_path.lstrip('/')}"
-                        else:
-                            # 包含当前路径
-                            current_subpath = current_path[2:] if current_path.startswith("~/") else current_path
-                            target_absolute = f"{self.main_instance.REMOTE_ROOT}/{current_subpath}/{target_path.lstrip('/')}"
-                        
-                        dest_absolute = f"{target_absolute.rstrip('/')}/{target_filename}"
+                        current_subpath = current_path[2:] if current_path.startswith("~/") else current_path
+                        target_absolute = f"{self.main_instance.REMOTE_ROOT}/{current_subpath}/{target_path.lstrip('/')}"
+                    
+                    dest_absolute = f"{target_absolute.rstrip('/')}/{target_filename}"
                 
                 # 源文件路径使用重命名后的文件名
                 source_absolute = f"{self.main_instance.DRIVE_EQUIVALENT}/{filename}"
                 
-                debug_print(f"🔧 DEBUG: File {i}: filename='{filename}', original_filename='{original_filename}', renamed={renamed}")
-                debug_print(f"🔧 DEBUG: File {i}: source_absolute='{source_absolute}', dest_absolute='{dest_absolute}'")
-                
                 file_info_list.append({
-                    'filename': filename,  # 源文件名（重命名后）
-                    'original_filename': original_filename,  # 目标文件名（原始）
-                    'renamed': renamed,
                     'source': source_absolute,
                     'dest': dest_absolute,
-                    'index': i
+                    'original_filename': original_filename
                 })
             
             # 收集所有需要创建的目录
             target_dirs = set()
             for file_info in file_info_list:
-                dest_dir = '/'.join(file_info['dest'].split('/')[:-1])  # 获取目标目录路径
+                dest_dir = '/'.join(file_info['dest'].split('/')[:-1])
                 target_dirs.add(dest_dir)
             
-            # 生成分布式移动脚本
-            full_command = f'''
-# 初始化完成状态数组
-declare -a completed
-total_files={len(file_info_list)}
-completed_count=0
-
-# 确保所有目标目录存在
-'''
-            
-            for target_dir in sorted(target_dirs):
-                full_command += f'mkdir -p "{target_dir}"\n'
-            
-            # 生成文件名列表用于显示
-            if len(file_info_list) <= 3:
-                file_display = ", ".join([f['original_filename'] for f in file_info_list])
-            else:
-                first_three = ", ".join([f['original_filename'] for f in file_info_list[:3]])
-                file_display = f"{first_three}, ... ({len(file_info_list)} files)"
-            
-            full_command += f'''
-# 显示统一的上传进度
-echo -n "⏳ Uploading {file_display}: "
-
-# 按顺序处理每个文件（序列化）
-'''
-            
+            # 生成简化的命令 - 按照用户要求的格式
+            mv_commands = []
             for file_info in file_info_list:
-                full_command += f'''
-# 处理文件 {file_info['index'] + 1}/{len(file_info_list)}: {file_info['original_filename']}
-for attempt in {{1..60}}; do
-    if mv "{file_info['source']}" "{file_info['dest']}" 2>/dev/null; then
-        echo -n "√"
-        completed[{file_info['index']}]=1
+                mv_commands.append(f'mv "{file_info["source"]}" "{file_info["dest"]}"')
+            
+            # 创建目录命令
+            mkdir_commands = [f'mkdir -p "{target_dir}"' for target_dir in sorted(target_dirs)]
+            
+            # 组合所有命令
+            all_commands = mkdir_commands + mv_commands
+            command_summary = f"mkdir + mv {len(file_info_list)} files"
+            
+            # 创建实际命令的显示列表 - 保持引号显示
+            actual_commands_display = []
+            if mkdir_commands:
+                actual_commands_display.extend(mkdir_commands)
+            actual_commands_display.extend(mv_commands)
+            
+            # 生成重试命令
+            retry_commands = []
+            for cmd in mv_commands:
+                # 提取文件名用于显示
+                try:
+                    filename = cmd.split('"')[3].split('/')[-1] if len(cmd.split('"')) > 3 else 'file'
+                except:
+                    filename = 'file'
+                
+                retry_cmd = f'''
+for attempt in $(seq 1 60); do
+    if {cmd} 2>/dev/null; then
+        break
+    elif [ "$attempt" -eq 60 ]; then
         break
     else
-        if [ $attempt -eq 60 ]; then
-            echo -n "✗"
-            completed[{file_info['index']}]=0
-            break
-        else
-            echo -n "."
-            sleep 1
-        fi
+        sleep 1
     fi
-done
-'''
+done'''
+                retry_commands.append(retry_cmd)
             
-            # 检查结果（序列化执行，无需等待）
-            full_command += f'''
+            # 生成简化的脚本，包含视觉分隔和实际命令显示
+            script = f'''
 
-# 简化结果统计 - 检查目标文件是否存在
-success_count=0
-fail_count=0
-'''
+# 创建目录
+{chr(10).join(mkdir_commands)}
+
+# 移动文件（带重试机制）
+{chr(10).join(retry_commands)}
+
+clear
+echo "✅ 执行完成"'''
             
-            # 为每个文件生成检查命令
-            for file_info in file_info_list:
-                full_command += f'''
-if [ -f "{file_info['dest']}" ]; then
-    ((success_count++))
-else
-    ((fail_count++))
-fi
-'''
-            
-            full_command += f'''
-# 输出最终结果
-total_files={len(file_info_list)}
-if [ $fail_count -eq 0 ]; then
-    echo " ✅"
-    clear && echo "✅ 执行完成"
-else
-    echo " ❌"
-    echo "Partially completed: $success_count/$total_files success, $fail_count failed"
-fi
-'''
-            
-            return full_command
+            return script
             
         except Exception as e:
-            return f"echo '❌ 生成多文件命令失败: {e}'"
+            return f'echo "❌ 生成命令失败: {e}"'
     
     def _verify_upload_with_progress(self, expected_files, target_path, current_shell):
         """
@@ -825,7 +736,7 @@ fi
             
             # 序列化验证每个文件
             for i, expected_file in enumerate(expected_files):
-                debug_print(f"🔧 DEBUG: Validating file {i+1}/{len(expected_files)}: {expected_file}")
+                debug_print(f"Validating file {i+1}/{len(expected_files)}: {expected_file}")
                 file_found = False
                 
                 # 对每个文件最多重试60次
@@ -840,12 +751,10 @@ fi
                     if validation_result["success"] and len(validation_result.get("found_files", [])) > 0:
                         print("√", end="", flush=True)
                         found_files.append(expected_file)
-                        debug_print(f"🔧 DEBUG: File {expected_file} found on attempt {attempt}")
                         break
                     elif attempt == 60:
                         print("✗", end="", flush=True)
                         missing_files.append(expected_file)
-                        debug_print(f"🔧 DEBUG: File {expected_file} not found after 60 attempts")
                         break
                     else:
                         print(".", end="", flush=True)
@@ -865,7 +774,7 @@ fi
             
         except Exception as e:
             print(" ❌")
-            debug_print(f"🔧 DEBUG: Validation error: {e}")
+            debug_print(f"Validation error: {e}")
             return {
                 "success": False,
                 "error": str(e),
@@ -905,13 +814,13 @@ total_files={len(file_info_list)}
                 full_command += f'''
 (
     echo -n "⏳ Moving {file_info['source_name']} -> {file_info['dest_name']}: "
-    for attempt in {{1..60}}; do
+    for attempt in $(seq 1 60); do
         if mv {file_info['source_path']} {file_info['dest_path']} 2>/dev/null; then
             echo "✅"
             completed[{file_info['index']}]=1
             break
         else
-            if [ $attempt -eq 60 ]; then
+            if [ "$attempt" -eq 60 ]; then
                 echo "❌ (已重试60次失败)"
                 completed[{file_info['index']}]=0
             else
@@ -946,10 +855,10 @@ fi
             full_command += f'''
 # 输出最终结果
 total_files={len(file_info_list)}
-if [ $fail_count -eq 0 ]; then
+if [ "${{fail_count:-0}}" -eq 0 ]; then
     clear && echo "✅ 执行完成"
 else
-    echo "⚠️  部分文件移动完成: $success_count/$total_files 成功, $fail_count 失败"
+    echo "⚠️  部分文件移动完成: ${{success_count:-0}}/${{total_files:-0}} 成功, ${{fail_count:-0}} 失败"
 fi
 '''
             
@@ -990,72 +899,7 @@ fi
             print(f"❌ 生成mkdir命令时出错: {e}")
             return ""
 
-    def execute_remote_command_interface(self, remote_command, command_type="upload", context_info=None):
-        """
-        统一的远端命令执行接口
-        
-        Args:
-            remote_command (str): 要执行的远端命令
-            command_type (str): 命令类型 ("upload", "mkdir", "move", etc.)
-            context_info (dict): 上下文信息，包含文件名、路径等
-            
-        Returns:
-            dict: 执行结果
-        """
-        try:
-            # 显示远端命令（用于调试和协作） - 根据用户要求移除自动显示
-            # print(f"   {remote_command}")
-            
-            # 显示tkinter窗口获取用户确认
-            debug_info = debug_capture.get_debug_info()
-            window_result = self.show_remote_command_window(remote_command, command_type, debug_info)
-            # os.system("clear") if os.name == "posix" else os.system("cls")  # 注释掉清屏，保留调试信息
-            
-            # 统一处理用户确认结果
-            if window_result["action"] == "cancel":
-                return {
-                    "success": False,
-                    "cancelled": True,
-                    "message": "Operation cancelled. "
-                }
-            elif window_result["action"] == "error":
-                return {
-                    "success": False,
-                    "window_error": True,
-                    "error_info": window_result.get('error_info'),
-                    "message": f"Window error: {window_result.get('error_info', 'Unknown error')}"
-                }
-            elif window_result["action"] == "success":
-                # 根据命令类型进行相应的后处理
-                return self._handle_successful_remote_execution(command_type, context_info)
-            elif window_result["action"] == "direct_feedback":
-                # 调用相应的后处理逻辑（包括validation）
-                result = self._handle_successful_remote_execution(command_type, context_info)
-                
-                # 添加direct feedback的额外信息
-                result.update({
-                    "user_confirmed": True,
-                    "exit_code": window_result.get("exit_code", 0),
-                    "stdout": window_result.get("stdout", ""),
-                    "stderr": window_result.get("stderr", ""),
-                    "source": "direct_feedback"
-                })
-                
-                return result
-            else:
-                return {
-                    "success": False,
-                    "unknown_action": True,
-                    "message": f"Unknown user action: {window_result.get('action')}"
-                }
-                
-        except Exception as e:
-            return {
-                "success": False,
-                "interface_error": True,
-                "error": str(e),
-                "message": f"Remote command interface error: {e}"
-            }
+
 
     def get_multiline_input_safe(self, prompt, single_line=False):
         """
@@ -1069,6 +913,26 @@ fi
             str: 用户输入的内容，如果用户取消则返回None
         """
         try:
+            # 配置readline以支持中文字符
+            import readline
+            try:
+                readline.set_startup_hook(None)
+                readline.clear_history()
+                
+                # 设置编辑模式为emacs（支持更好的中文编辑）
+                readline.parse_and_bind("set editing-mode emacs")
+                # 启用UTF-8支持
+                readline.parse_and_bind("set input-meta on")
+                readline.parse_and_bind("set output-meta on")
+                readline.parse_and_bind("set convert-meta off")
+                # 启用中文字符显示
+                readline.parse_and_bind("set print-completions-horizontally off")
+                readline.parse_and_bind("set skip-completed-text on")
+                # 确保正确处理宽字符
+                readline.parse_and_bind("set enable-bracketed-paste on")
+            except Exception:
+                pass  # 如果配置失败，继续使用默认设置
+            
             print(prompt, end="", flush=True)
             
             if single_line:
@@ -1153,7 +1017,7 @@ fi
                 }
             
             # 添加延迟检测机制，参考mkdir的检测逻辑
-            print("⏳ Validating file creation", end="", flush=True)
+            print("⏳ Validating touch file creation", end="", flush=True)
             
             max_attempts = 60
             for attempt in range(max_attempts):
@@ -1224,24 +1088,24 @@ fi
             
             # 如果target_folder_id为None（目标目录不存在），需要重新解析路径
             if expected_filenames and target_folder_id is None and target_path:
-                debug_print(f"🔧 DEBUG: target_folder_id is None, re-resolving target_path='{target_path}' after remote execution")
+                debug_print(f"target_folder_id is None, re-resolving target_path='{target_path}' after remote execution")
                 current_shell = self.main_instance.get_current_shell()
                 if current_shell:
                     # 尝试重新解析目标路径（目录现在应该存在了）
                     resolved_folder_id, resolved_display_path = self.main_instance.resolve_path(target_path, current_shell)
                     if resolved_folder_id:
                         target_folder_id = resolved_folder_id
-                        debug_print(f"🔧 DEBUG: re-resolved target_folder_id='{target_folder_id}', display_path='{resolved_display_path}'")
+                        debug_print(f"re-resolved target_folder_id='{target_folder_id}', display_path='{resolved_display_path}'")
                     else:
-                        debug_print(f"🔧 DEBUG: failed to re-resolve target_path='{target_path}', will use parent folder for validation")
+                        debug_print(f"failed to re-resolve target_path='{target_path}', will use parent folder for validation")
                         # 如果重新解析失败，使用父目录作为fallback
                         target_folder_id = current_shell.get("current_folder_id", self.main_instance.REMOTE_ROOT_FOLDER_ID)
-                        debug_print(f"🔧 DEBUG: using parent folder_id='{target_folder_id}' as fallback")
+                        debug_print(f"using parent folder_id='{target_folder_id}' as fallback")
             
             # 如果有验证信息，进行文件验证
-            debug_print(f"🔧 DEBUG: Validation check - expected_filenames={expected_filenames}, target_path='{target_path}'")
+            debug_print(f"Validation check - expected_filenames={expected_filenames}, target_path='{target_path}'")
             if expected_filenames and target_path is not None:
-                debug_print(f"🔧 DEBUG: Starting ls-based validation with {len(expected_filenames)} files")
+                debug_print(f"Starting ls-based validation with {len(expected_filenames)} files")
                 current_shell = self.main_instance.get_current_shell()
                 
                 # 使用带进度显示的验证逻辑，类似上传过程
@@ -1251,7 +1115,7 @@ fi
                     current_shell=current_shell
                 )
                 
-                debug_print(f"🔧 DEBUG: Validation completed - validation_result={validation_result}")
+                debug_print(f"Validation completed - validation_result={validation_result}")
                 return {
                     "success": validation_result["success"],
                     "user_confirmed": True,
@@ -1266,7 +1130,7 @@ fi
                 # 没有验证信息或文件夹上传，返回基本成功状态
                 is_folder_upload = context_info.get("is_folder_upload", False)
                 if is_folder_upload:
-                    debug_print(f"🔧 DEBUG: Skipping validation for folder upload - trusting remote command execution")
+                    debug_print(f"Skipping validation for folder upload - trusting remote command execution")
                     return {
                         "success": True,
                         "user_confirmed": True,
@@ -1274,7 +1138,7 @@ fi
                         "message": "Folder upload and extraction completed successfully"
                     }
                 else:
-                    debug_print(f"🔧 DEBUG: Skipping validation - expected_filenames={expected_filenames}, target_path='{target_path}'")
+                    debug_print(f"Skipping validation - expected_filenames={expected_filenames}, target_path='{target_path}'")
                     return {
                         "success": True,
                         "user_confirmed": True,
@@ -1452,8 +1316,25 @@ fi
                     script_content = args[1]
                     full_command = f'sh -c "{script_content}"'
                 else:
-                    # 其他命令直接拼接
-                    full_command = f"{cmd} {' '.join(args)}"
+                    # 检查是否包含重定向符号
+                    if '>' in args:
+                        # 处理重定向：将参数分为命令部分和重定向部分
+                        redirect_index = args.index('>')
+                        cmd_args = args[:redirect_index]
+                        target_file = args[redirect_index + 1] if redirect_index + 1 < len(args) else None
+                        
+                        if target_file:
+                            # 构建重定向命令
+                            if cmd_args:
+                                full_command = f"{cmd} {' '.join(cmd_args)} > {target_file}"
+                            else:
+                                full_command = f"{cmd} > {target_file}"
+                        else:
+                            # 没有目标文件，回退到普通拼接
+                            full_command = f"{cmd} {' '.join(args)}"
+                    else:
+                        # 其他命令直接拼接
+                        full_command = f"{cmd} {' '.join(args)}"
             else:
                 full_command = cmd
             
@@ -1480,15 +1361,48 @@ fi
                     # 对于python -c命令，也需要更新显示命令
                     full_command = bash_safe_command
                 elif cmd in ("bash", "sh") and len(args) >= 2 and args[0] == "-c":
-                    # 对于bash/sh -c命令，正确处理脚本内容
+                    # 对于bash/sh -c命令，分离进度显示和工作脚本
                     script_content = args[1]
-                    # 转义脚本内容中的双引号和反斜杠
-                    escaped_script = script_content.replace('\\', '\\\\').replace('"', '\\"')
-                    bash_safe_command = f'{cmd} -c "{escaped_script}"'
+                    
+                    import base64
+                    # 对于包含进度显示的脚本，使用base64编码但先显示进度信息
+                    if "🚀 " in script_content and "printf" in script_content:
+                        # 分离初始进度显示和主要工作脚本
+                        lines = script_content.split('\n')
+                        initial_progress = []
+                        main_script_lines = []
+                        
+                        # 提取开头的进度显示行
+                        for i, line in enumerate(lines):
+                            if 'echo "🚀 ' in line or (i < 10 and ('echo' in line or line.strip().startswith('#'))):
+                                initial_progress.append(line)
+                            else:
+                                main_script_lines.extend(lines[i:])
+                                break
+                        
+                        if initial_progress:
+                            initial_script = '\n'.join(initial_progress)
+                            main_script = '\n'.join(main_script_lines)
+                            encoded_main_script = base64.b64encode(main_script.encode('utf-8')).decode('ascii')
+                            bash_safe_command = f'{initial_script} && echo "{encoded_main_script}" | base64 -d | {cmd}'
+                        else:
+                            # 没有找到进度显示，直接编码整个脚本
+                            encoded_script = base64.b64encode(script_content.encode('utf-8')).decode('ascii')
+                            bash_safe_command = f'echo "{encoded_script}" | base64 -d | {cmd}'
+                    else:
+                        # 没有进度显示，直接编码整个脚本
+                        encoded_script = base64.b64encode(script_content.encode('utf-8')).decode('ascii')
+                        bash_safe_command = f'echo "{encoded_script}" | base64 -d | {cmd}'
                 else:
-                    # 分别转义命令和每个参数
+                    # 分别转义命令和每个参数，但特殊处理重定向符号
                     escaped_cmd = shlex.quote(cmd)
-                    escaped_args = [shlex.quote(arg) for arg in args]
+                    escaped_args = []
+                    for arg in args:
+                        # 重定向符号不需要引号转义
+                        if arg in ['>', '>>', '<', '|', '&&', '||']:
+                            escaped_args.append(arg)
+                        else:
+                            escaped_args.append(shlex.quote(arg))
                     bash_safe_command = f"{escaped_cmd} {' '.join(escaped_args)}"
             else:
                 bash_safe_command = shlex.quote(cmd)
@@ -1496,39 +1410,68 @@ fi
             # 为echo显示创建安全版本，避免特殊字符破坏bash语法
             display_command = self._escape_for_display(full_command)
             
-            remote_command = (
-                f'cd "{remote_path}" && {{\n'
-                f'    # 确保tmp目录存在\n'
-                f'    mkdir -p "{self.main_instance.REMOTE_ROOT}/tmp"\n'
-                f'    \n'
-                f'    echo "🚀 开始执行命令: {display_command}"\n'
-                f'    \n'
-                f'    # 执行命令并捕获输出\n'
-                f'    OUTPUT_FILE="{self.main_instance.REMOTE_ROOT}/tmp/cmd_stdout_{timestamp}_{cmd_hash}"\n'
-                f'    ERROR_FILE="{self.main_instance.REMOTE_ROOT}/tmp/cmd_stderr_{timestamp}_{cmd_hash}"\n'
-                f'    EXITCODE_FILE="{self.main_instance.REMOTE_ROOT}/tmp/cmd_exitcode_{timestamp}_{cmd_hash}"\n'
-                f'    \n'
-                f'    # 直接执行命令，捕获输出和错误\n'
-                f'    set +e  # 允许命令失败\n'
-                f'    {bash_safe_command} > "$OUTPUT_FILE" 2> "$ERROR_FILE"\n'
-                f'    EXIT_CODE=$?\n'
-                f'    echo "$EXIT_CODE" > "$EXITCODE_FILE"\n'
-                f'    set -e\n'
-                f'    \n'
-                f'    # 显示stdout内容\n'
-                f'    if [ -s "$OUTPUT_FILE" ]; then\n'
-                f'        cat "$OUTPUT_FILE"\n'
-                f'    fi\n'
-                f'    \n'
-                f'    # 显示stderr内容（如果有）\n'
-                f'    if [ -s "$ERROR_FILE" ]; then\n'
-                f'        cat "$ERROR_FILE" >&2\n'
-                f'    fi\n'
-                f'    \n'
-
+            # 检查命令是否包含重定向符号
+            has_redirect = any(op in args for op in ['>', '>>', '<', '|'])
+            
+            if has_redirect:
+                # 命令本身包含重定向，不要添加额外的输出捕获
+                remote_command = (
+                    f'cd "{remote_path}" && {{\n'
+                    f'    # 确保tmp目录存在\n'
+                    f'    mkdir -p "{self.main_instance.REMOTE_ROOT}/tmp"\n'
+                    f'    \n'
+                    f'    echo "🚀 : {display_command}"\n'
+                    f'    \n'
+                    f'    # 执行命令（包含重定向）\n'
+                    f'    EXITCODE_FILE="{self.main_instance.REMOTE_ROOT}/tmp/cmd_exitcode_{timestamp}_{cmd_hash}"\n'
+                    f'    \n'
+                    f'    # 直接执行命令，不捕获输出（因为命令本身有重定向）\n'
+                    f'    set +e  # 允许命令失败\n'
+                    f'    {bash_safe_command}\n'
+                    f'    EXIT_CODE=$?\n'
+                    f'    echo "$EXIT_CODE" > "$EXITCODE_FILE"\n'
+                    f'    set -e\n'
+                    f'    \n'
+                )
+            else:
+                # 普通命令，使用标准的输出捕获
+                remote_command = (
+                    f'cd "{remote_path}" && {{\n'
+                    f'    # 确保tmp目录存在\n'
+                    f'    mkdir -p "{self.main_instance.REMOTE_ROOT}/tmp"\n'
+                    f'    \n'
+                    f'    echo "🚀 : {display_command}"\n'
+                    f'    \n'
+                    f'    # 执行命令并捕获输出\n'
+                    f'    OUTPUT_FILE="{self.main_instance.REMOTE_ROOT}/tmp/cmd_stdout_{timestamp}_{cmd_hash}"\n'
+                    f'    ERROR_FILE="{self.main_instance.REMOTE_ROOT}/tmp/cmd_stderr_{timestamp}_{cmd_hash}"\n'
+                    f'    EXITCODE_FILE="{self.main_instance.REMOTE_ROOT}/tmp/cmd_exitcode_{timestamp}_{cmd_hash}"\n'
+                    f'    \n'
+                    f'    # 直接执行命令，捕获输出和错误\n'
+                    f'    set +e  # 允许命令失败\n'
+                    f'    {bash_safe_command} > "$OUTPUT_FILE" 2> "$ERROR_FILE"\n'
+                    f'    EXIT_CODE=$?\n'
+                    f'    echo "$EXIT_CODE" > "$EXITCODE_FILE"\n'
+                    f'    set -e\n'
+                    f'    \n'
+                    f'    # 显示stdout内容\n'
+                    f'    if [ -s "$OUTPUT_FILE" ]; then\n'
+                    f'        cat "$OUTPUT_FILE"\n'
+                    f'    fi\n'
+                    f'    \n'
+                    f'    # 显示stderr内容（如果有）\n'
+                    f'    if [ -s "$ERROR_FILE" ]; then\n'
+                    f'        cat "$ERROR_FILE" >&2\n'
+                    f'    fi\n'
+                    f'    \n'
+                )
+            
+            # 添加JSON结果文件生成部分（对于所有命令）
+            remote_command += (
                 f'    # 设置环境变量并生成JSON结果文件\n'
                 f'    export EXIT_CODE=$EXIT_CODE\n'
-                f'    python3 << \'EOF\' > "{result_path}"\n'
+                f'    PYTHON_SCRIPT="{self.main_instance.REMOTE_ROOT}/tmp/json_generator_{timestamp}_{cmd_hash}.py"\n'
+                f'    cat > "$PYTHON_SCRIPT" << \'SCRIPT_END\'\n'
                 f'import json\n'
                 f'import os\n'
                 f'import sys\n'
@@ -1625,7 +1568,9 @@ fi
                 f'}}\n'
                 f'\n'
                 f'print(json.dumps(result, indent=2, ensure_ascii=False))\n'
-                f'EOF\n'
+                f'SCRIPT_END\n'
+                f'    python3 "$PYTHON_SCRIPT" > "{result_path}"\n'
+                f'    rm -f "$PYTHON_SCRIPT"\n'
                 f'    \n'
                 f'    # 清理临时文件（在JSON生成之后）\n'
                 f'    rm -f "$OUTPUT_FILE" "$ERROR_FILE" "$EXITCODE_FILE"\n'
@@ -1676,27 +1621,30 @@ fi
             
             # 通过tkinter显示命令并获取用户反馈
             debug_info = debug_capture.get_debug_info()
+            debug_capture.start_capture()  # 启动debug捕获，避免窗口期间的debug输出
+            debug_print("_execute_with_result_capture: 即将调用_show_generic_command_window")
+            debug_print(f"cmd: {cmd}, args: {args}")
             window_result = self._show_generic_command_window(cmd, args, remote_command, debug_info)
+            debug_print(f"_show_generic_command_window返回结果: {window_result}")
             
             if window_result.get("action") == "direct_feedback":
-                # 处理直接反馈，保持direct_feedback action类型，跳过验证
-                data = window_result.get("data", {})
-                exit_code = data.get("exit_code", 0)
-                print () # an empty line
-                return {
-                    "success": exit_code == 0, 
-                    "action": "direct_feedback", 
-                    "exit_code": exit_code,
-                    "stdout": data.get("stdout", ""),
-                    "stderr": data.get("stderr", ""),
-                    "source": "direct_feedback"
-                }
+                # 直接反馈已经在_show_generic_command_window中处理完毕，直接返回结果
+                debug_print("_execute_with_result_capture: 检测到direct_feedback，直接返回window_result")
+                debug_print(f"window_result: {window_result}")
+                debug_capture.stop_capture()  # 在返回前停止debug捕获
+                return window_result
             elif window_result.get("action") != "success":
+                debug_print("_execute_with_result_capture: window_result.action != 'success'")
+                debug_print(f"实际的window_result.action: {window_result.get('action')}")
+                debug_print(f"完整window_result: {window_result}")
+                debug_capture.stop_capture()  # 在返回前停止debug捕获
                 return {
                     "success": False,
-                    "error": f"User operation: {'Cancelled' if window_result.get('action', 'unknown') == 'error' else window_result.get('action', 'unknown')}",
+                    "error": f"User operation: Timeout or cancelled",
                     "user_feedback": window_result
                 }
+            
+            debug_capture.stop_capture()  # 成功路径的debug捕获停止
             
             # 等待远端文件出现，最多等待60秒
             result_data = self._wait_and_read_result_file(result_filename)
@@ -1771,8 +1719,13 @@ fi
             elif result["action"] == "direct_feedback":
                 # 处理直接反馈 - 调用原来的直接反馈逻辑
                 print () # shift a newline since ctrl+D
+                debug_print("检测到direct_feedback action，即将调用direct_feedback方法")
+                debug_print(f"remote_command存在: {remote_command is not None}")
+                debug_print(f"debug_info存在: {debug_info is not None}")
                 try:
+                    debug_print("开始调用self.direct_feedback...")
                     feedback_result = self.direct_feedback(remote_command, debug_info)
+                    debug_print(f"direct_feedback调用完成，返回结果: {feedback_result}")
                     return {
                         "success": feedback_result.get("success", False),
                         "action": "direct_feedback",
@@ -1780,6 +1733,9 @@ fi
                         "source": "direct_feedback"
                     }
                 except Exception as e:
+                    debug_print(f"direct_feedback调用异常: {e}")
+                    import traceback
+                    debug_print(f"异常traceback: {traceback.format_exc()}")
                     return {
                         "success": False,
                         "action": "direct_feedback_error",
@@ -1854,8 +1810,10 @@ fi
     def direct_feedback(self, remote_command, debug_info=None):
         """
         直接反馈功能 - 粘贴远端命令和用户反馈，用=分割
-        基于用户提供的原始逻辑
+        使用统一的_get_multiline_user_input方法
         """
+        debug_print("进入direct_feedback方法")
+        
         # 先输出debug信息（如果有的话）
         if debug_info:
             print("Debug information:")
@@ -1867,95 +1825,13 @@ fi
         print(remote_command)
         print("=" * 20)  # 20个等号分割线
         
-        # 使用命令行输入获取用户反馈
         print("Please provide command execution result (multi-line input, press Ctrl+D to finish):")
         print()
         
-        # 采用和USERINPUT相同的输入流捕获机制
-        import signal
-        import readline
-        
-        # 确保readline正确配置以支持中文全角字符
-        try:
-            # 设置readline配置以支持中文字符
-            readline.set_startup_hook(None)
-            # 启用历史记录
-            readline.clear_history()
-            
-            # 设置编辑模式为emacs（支持更好的中文编辑）
-            readline.parse_and_bind("set editing-mode emacs")
-            
-            # 启用UTF-8和中文字符支持
-            readline.parse_and_bind("set input-meta on")
-            readline.parse_and_bind("set output-meta on")
-            readline.parse_and_bind("set convert-meta off")
-            
-            # 支持中文字符的字符宽度计算
-            readline.parse_and_bind("set enable-meta-key on")
-            readline.parse_and_bind("set meta-flag on")
-            
-            # 设置字符编码
-            readline.parse_and_bind("set completion-display-width -1")
-            
-            # 处理中文字符的删除行为 - 按字符而不是字节删除
-            readline.parse_and_bind("set bind-tty-special-chars off")
-            
-            # 设置中文字符的显示宽度处理
-            import locale
-            try:
-                locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
-            except:
-                try:
-                    locale.setlocale(locale.LC_ALL, 'C.UTF-8')
-                except:
-                    pass  # 如果设置locale失败，继续使用默认
-                    
-        except Exception:
-            pass  # 如果配置失败，继续使用默认设置
-        
-        lines = []
-        timeout_seconds = 180  # 3分钟超时，和USERINPUT一致
-        
-        class TimeoutException(Exception):
-            pass
-        
-        def timeout_handler(signum, frame):
-            raise TimeoutException("Input timeout")
-        
-        original_handler = signal.signal(signal.SIGALRM, timeout_handler)
-        signal.alarm(timeout_seconds)
-        
-        try:
-            while True:
-                try:
-                    line = input()
-                    lines.append(line)
-                    # 重置超时计时器，因为用户正在输入
-                    signal.alarm(timeout_seconds)
-                except EOFError:
-                    # Ctrl+D 被按下，结束输入
-                    break
-                except TimeoutException:
-                    # 超时发生 - 尝试捕获当前正在输入的行
-                    try:
-                        # 获取当前输入缓冲区的内容
-                        current_line = readline.get_line_buffer()
-                        if current_line.strip():
-                            lines.append(current_line.strip())
-                    except:
-                        pass  # 如果无法获取缓冲区内容，忽略错误
-                    print(f"\n[TIMEOUT] 输入超时 ({timeout_seconds}秒)")
-                    break
-        except KeyboardInterrupt:
-            print("\nUser cancelled input")
-            lines = []
-        finally:
-            # 清理超时设置
-            signal.alarm(0)
-            signal.signal(signal.SIGALRM, original_handler)
-        
-        # 组合所有行为最终输入
-        full_output = '\n'.join(lines).strip()
+        # 使用统一的多行输入方法
+        debug_print("调用_get_multiline_user_input")
+        full_output = self._get_multiline_user_input()
+        debug_print(f"_get_multiline_user_input返回内容长度: {len(full_output)}")
         
         # 简单解析输出：如果包含错误关键词，放到stderr，否则放到stdout
         error_keywords = ['error', 'Error', 'ERROR', 'exception', 'Exception', 'EXCEPTION', 
@@ -1963,6 +1839,7 @@ fi
         
         # 检查是否包含错误信息
         has_error = any(keyword in full_output for keyword in error_keywords)
+        debug_print(f"检测到错误关键词: {has_error}")
         
         if has_error:
             stdout_content = ""
@@ -1987,4 +1864,5 @@ fi
             }
         }
         
+        debug_print(f"direct_feedback完成，success: {feedback_result['success']}")
         return feedback_result

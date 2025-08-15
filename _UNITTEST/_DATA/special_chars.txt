@@ -1,0 +1,6 @@
+包含中文的文件
+Special characters: !@#$%^&*()
+Quotes: "Hello" and 'World'
+Backslashes: \path\to\file
+JSON: {"key": "value", "number": 123}
+Shell commands: ls -la && echo "done"
