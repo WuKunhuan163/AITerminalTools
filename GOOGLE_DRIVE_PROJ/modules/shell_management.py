@@ -173,7 +173,7 @@ class ShellManagement:
                     f"echo 'Shell {shell_name} created with default environment'"
                 ]
                 
-                command = " && ".join(commands) + ' && clear && echo "✅ 执行完成" || echo "❌ 执行失败"'
+                command = " && ".join(commands) + ''
                 
                 # 执行远程命令来初始化环境
                 result = self.main_instance.execute_generic_remote_command("bash", ["-c", command])
@@ -259,7 +259,7 @@ class ShellManagement:
                     f"echo '{env_message}'"
                 ]
                 
-                command = " && ".join(commands) + ' && clear && echo "✅ 执行完成" || echo "❌ 执行失败"'
+                command = " && ".join(commands) + ''
                 
                 # 执行远程命令来设置环境
                 result = self.main_instance.execute_generic_remote_command("bash", ["-c", command])
@@ -298,7 +298,7 @@ class ShellManagement:
                 f"echo 'Shell {shell_name} terminated and environment cleaned'"
             ]
             
-            command = " && ".join(commands) + ' && clear && echo "✅ 执行完成" || echo "❌ 执行失败"'
+            command = " && ".join(commands) + ''
             
             # 执行远程命令来清理环境
             result = self.main_instance.execute_generic_remote_command("bash", ["-c", command])

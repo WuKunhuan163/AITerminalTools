@@ -601,8 +601,7 @@ class FileOperations:
                         # 这是一个文件路径，返回单个文件信息
                         return self._ls_single_file(file_result, path)
                     else:
-                        print(f"❌ [DEBUG] Path resolution failed for: {path}")
-                        print(f"❌ [DEBUG] Current shell: {current_shell.get('current_path', '~')}")
+
                         return {"success": False, "error": f"Path not found: {path}"}
             
             if recursive:
@@ -611,17 +610,28 @@ class FileOperations:
                 return self._ls_single(target_folder_id, display_path, detailed, show_hidden)
                 
         except Exception as e:
-            print(f"❌ [DEBUG] Exception in cmd_ls: {e}")
+
             return {"success": False, "error": f"执行ls命令时出错: {e}"}
 
-    def _ls_recursive(self, root_folder_id, root_path, detailed, show_hidden=False):
+    def _ls_recursive(self, root_folder_id, root_path, detailed, show_hidden=False, max_depth=5):
         """递归列出目录内容"""
         try:
             all_items = []
+            visited_folders = set()  # 防止循环引用
             
             def scan_folder(folder_id, folder_path, depth=0):
+                # 深度限制
+                if depth > max_depth:
+                    return
+                
+                # 循环检测
+                if folder_id in visited_folders:
+                    return
+                visited_folders.add(folder_id)
+                
                 result = self.drive_service.list_files(folder_id=folder_id, max_results=100)
                 if not result['success']:
+                    visited_folders.discard(folder_id)  # 失败时移除，允许重试
                     return
                 
                 files = result['files']
@@ -637,6 +647,8 @@ class FileOperations:
                     if file['mimeType'] == 'application/vnd.google-apps.folder':
                         sub_path = f"{folder_path}/{file['name']}" if folder_path != "~" else f"~/{file['name']}"
                         scan_folder(file['id'], sub_path, depth + 1)
+                
+                visited_folders.discard(folder_id)  # 扫描完成后移除，允许在其他路径中再次访问
             
             # 开始递归扫描
             scan_folder(root_folder_id, root_path)
@@ -865,7 +877,7 @@ class FileOperations:
                 absolute_path = f"{current_path}/{filename}"
             
             # 生成远端touch命令（创建空文件）
-            remote_command = f'touch "{absolute_path}" && clear && echo "✅ 执行完成" || echo "❌ 执行失败"'
+            remote_command = f'touch "{absolute_path}"'
             
             # 准备上下文信息
             context_info = {
@@ -972,8 +984,7 @@ class FileOperations:
                 dir_path = "."
                 filename = file_path
             
-            print(f"❌ [DEBUG] Resolving file path: {file_path}")
-            print(f"❌ [DEBUG] Dir path: {dir_path}, Filename: {filename}")
+
             
             # 解析目录路径
             if dir_path == ".":
@@ -981,28 +992,28 @@ class FileOperations:
             else:
                 parent_folder_id, _ = self.main_instance.resolve_path(dir_path, current_shell)
                 if not parent_folder_id:
-                    print(f"❌ [DEBUG] Parent directory not found: {dir_path}")
+
                     return None
             
-            print(f"❌ [DEBUG] Parent folder ID: {parent_folder_id}")
+
             
             # 在父目录中查找文件
             result = self.drive_service.list_files(folder_id=parent_folder_id, max_results=100)
             if not result['success']:
-                print(f"❌ [DEBUG] Failed to list files in parent directory")
+
                 return None
             
             for file in result['files']:
                 if file['name'] == filename:
-                    print(f"❌ [DEBUG] Found file: {file['name']} (type: {file['mimeType']})")
+
                     file['url'] = self._generate_web_url(file)
                     return file
             
-            print(f"❌ [DEBUG] File not found: {filename}")
+
             return None
             
         except Exception as e:
-            print(f"❌ [DEBUG] Exception in _resolve_file_path: {e}")
+
             return None
 
     def _ls_single_file(self, file_info, original_path):
@@ -1024,7 +1035,7 @@ class FileOperations:
             }
             
         except Exception as e:
-            print(f"❌ [DEBUG] Exception in _ls_single_file: {e}")
+
             return {"success": False, "error": f"显示单个文件时出错: {e}"}
 
     def _find_folder(self, folder_name, parent_id):
@@ -1070,9 +1081,9 @@ class FileOperations:
                 rm_flags += "f"
             
             if rm_flags:
-                remote_command = f'rm -{rm_flags} "{absolute_path}" && clear && echo "✅ 执行完成" || echo "❌ 执行失败"'
+                remote_command = f'rm -{rm_flags} "{absolute_path}"'
             else:
-                remote_command = f'rm "{absolute_path}" && clear && echo "✅ 执行完成" || echo "❌ 执行失败"'
+                remote_command = f'rm "{absolute_path}"'
             
             # 执行远程命令
             result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
@@ -1111,7 +1122,7 @@ class FileOperations:
             content_base64 = base64.b64encode(content_bytes).decode('ascii')
             
             # 构建远程命令 - 使用base64解码避免所有引号问题
-            remote_command = f'echo "{content_base64}" | base64 -d > "{remote_absolute_path}" && clear && echo "✅ 执行完成" || echo "❌ 执行失败"'
+            remote_command = f'echo "{content_base64}" | base64 -d > "{remote_absolute_path}"'
             
             # 使用远程命令执行接口
             result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
@@ -1826,7 +1837,7 @@ class FileOperations:
             
             # 构建增强的远端命令，包含成功/失败提示
             base_command = f"mv {source_absolute_path} {destination_absolute_path}"
-            remote_command = f"({base_command}) && clear && echo \"✅ 执行完成\" || echo \"❌ 执行失败\""
+            remote_command = f"({base_command})"
             
             # 使用远端指令执行接口
             result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
@@ -2316,7 +2327,7 @@ class FileOperations:
                 return {"success": False, "error": f"无法解析路径: {target_path}"}
             
             # 生成远端mkdir命令，添加清屏和成功/失败提示（总是使用-p确保父目录存在）
-            remote_command = f'mkdir -p "{absolute_path}" && clear && echo "✅ 执行完成" || echo "❌ 执行失败"'
+            remote_command = f'mkdir -p "{absolute_path}"'
             
             # 准备上下文信息
             context_info = {
@@ -2329,15 +2340,27 @@ class FileOperations:
             execution_result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
             
             if execution_result["success"]:
-                # 简洁返回，像bash shell一样成功时不显示任何信息
-                return {
-                    "success": True,
-                    "path": target_path,
-                    "absolute_path": absolute_path,
-                    "remote_command": remote_command,
-                    "message": "",  # 空消息，不显示任何内容
-                    "verification": {"success": True}
-                }
+                # 执行成功后，进行验证以确保目录真正创建（最多60次重试）
+                verification_result = self.main_instance._verify_mkdir_with_ls(target_path, current_shell, max_attempts=60)
+                
+                if verification_result["success"]:
+                    # 验证成功，简洁返回，像bash shell一样成功时不显示任何信息
+                    return {
+                        "success": True,
+                        "path": target_path,
+                        "absolute_path": absolute_path,
+                        "remote_command": remote_command,
+                        "message": "",  # 空消息，不显示任何内容
+                        "verification": verification_result
+                    }
+                else:
+                    # 验证失败，返回错误
+                    return {
+                        "success": False,
+                        "error": f"Directory creation verification failed: {verification_result.get('error', 'Unknown error')}",
+                        "path": target_path,
+                        "verification": verification_result
+                    }
             else:
                 return execution_result
             
@@ -3719,7 +3742,7 @@ class FileOperations:
                     pass
             
             # 生成删除环境的远程命令，添加执行状态提示
-            command = f"rm -rf {env_path}" + ' && clear && echo "✅ 执行完成" || echo "❌ 执行失败"'
+            command = f"rm -rf {env_path}"
             result = self.main_instance.execute_generic_remote_command("bash", ["-c", command])
             
             if result.get("success", False):

@@ -22,7 +22,7 @@ load_dotenv()
 
 # 导入需要的函数
 try:
-    from .core_utils import HOME_URL
+    from .remote_commands import HOME_URL
 except ImportError:
     HOME_URL = "https://drive.google.com/drive/u/0/my-drive"
 

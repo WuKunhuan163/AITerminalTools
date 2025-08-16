@@ -18,6 +18,66 @@ from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()
 
+# 音频播放相关
+import subprocess
+import platform
+
+# 全局focus计数器和音频播放功能 - 每3次focus播放一次音效
+_focus_count = 0
+_audio_file_path = Path(__file__).parent / "USERINPUT_PROJ" / "tkinter_bell.mp3"
+
+# 已移除should_play_audio()函数，因为音效播放逻辑已完全移至Tkinter subprocess中
+# 这样可以避免主进程和subprocess的双重音效播放问题
+# def should_play_audio():
+#     """检查是否应该播放音效（第1、4、7...次focus）"""
+#     global _focus_count
+#     _focus_count += 1
+#     # 第1次、第4次、第7次... (即 count % 3 == 1)
+#     return _focus_count % 3 == 1
+
+# 已移除主进程中的音效播放函数，因为音效播放逻辑已完全移至Tkinter subprocess中
+# 这样可以避免主进程和subprocess的双重音效播放问题
+
+# def play_bell_sound():
+#     """播放提示音"""
+#     try:
+#         if not _audio_file_path.exists():
+#             return False
+#             
+#         system = platform.system()
+#         if system == "Darwin":  # macOS
+#             subprocess.run(["afplay", str(_audio_file_path)], 
+#                          capture_output=True, timeout=2)
+#         elif system == "Linux":
+#             # 尝试多个Linux音频播放器
+#             players = ["paplay", "aplay", "mpg123", "mpv", "vlc"]
+#             for player in players:
+#                 try:
+#                     subprocess.run([player, str(_audio_file_path)], 
+#                                  capture_output=True, timeout=2, check=True)
+#                     break
+#                 except (subprocess.CalledProcessError, FileNotFoundError):
+#                     continue
+#         elif system == "Windows":
+#             # Windows可以使用winsound模块或powershell
+#             try:
+#                 subprocess.run(["powershell", "-c", 
+#                               f"(New-Object Media.SoundPlayer '{_audio_file_path}').PlaySync()"], 
+#                              capture_output=True, timeout=2)
+#             except:
+#                 pass
+#         return True
+#     except Exception:
+#         return False
+
+# def increment_focus_and_play():
+#     """增加focus计数，每3次播放一次音频"""
+#     global _focus_count
+#     _focus_count += 1
+#     if _focus_count % 3 == 1:
+#         # 在后台线程中播放音频，避免阻塞
+#         threading.Thread(target=play_bell_sound, daemon=True).start()
+
 def is_run_environment(command_identifier=None):
     """Check if running in RUN environment by checking environment variables"""
     if command_identifier:
@@ -55,11 +115,16 @@ def show_project_info(current_dir, project_dir):
 
 def show_prompt_header(project_name):
     """显示提示头部信息"""
+    # 移除主进程中的音效播放逻辑，只在Tkinter subprocess中播放音效
+    # 这样可以避免双重音效播放和按钮点击时的音效问题
+    
+    if project_name: 
+        project_name = project_name + " - "
     if is_run_environment():
         run_identifier = os.environ.get('RUN_IDENTIFIER', '')
-        title = f"{project_name} - Agent Mode (RUN: {run_identifier[:8]}...)"
+        title = f"{project_name}Agent Mode (RUN: {run_identifier[:8]}...)"
     else:
-        title = f"{project_name} - Agent Mode"
+        title = f"{project_name}Agent Mode"
     
     separator = "=" * len(title)
     
@@ -73,6 +138,11 @@ def show_tkinter_window_in_subprocess(project_name, timeout_seconds):
     """在子进程中显示tkinter窗口，抑制所有stdout/stderr输出"""
     import subprocess
     import sys
+    import os
+    
+    # 获取音频文件路径并传递给子进程
+    current_dir = os.path.dirname(__file__)
+    audio_file_path = os.path.join(current_dir, "USERINPUT_PROJ", "tkinter_bell.mp3")
     
     # 创建子进程脚本
     subprocess_script = f'''
@@ -93,11 +163,106 @@ try:
     root.geometry("200x40")
     root.attributes('-topmost', True)
     
+    # 定义统一的聚焦函数
+    def force_focus():
+        try:
+            root.focus_force()
+            root.lift()
+            root.attributes('-topmost', True)
+            
+            # macOS特定的焦点获取方法
+            import platform
+            if platform.system() == 'Darwin':
+                import subprocess
+                try:
+                    # 尝试多个可能的应用程序名称
+                    app_names = ['Python', 'python3', 'tkinter', 'Tk']
+                    for app_name in app_names:
+                        try:
+                            subprocess.run(['osascript', '-e', 'tell application "' + app_name + '" to activate'], 
+                                          timeout=0.5, capture_output=True)
+                            break
+                        except:
+                            continue
+                    
+                    # 尝试使用系统事件来强制获取焦点
+                    applescript_code = "tell application \\"System Events\\"\\n    set frontmost of first process whose name contains \\"Python\\" to true\\nend tell"
+                    subprocess.run(['osascript', '-e', applescript_code], timeout=0.5, capture_output=True)
+                except:
+                    pass  # 如果失败就忽略
+        except:
+            pass
+    
+    # 定义音频播放函数
+    def play_bell_in_subprocess():
+        try:
+            audio_path = "{audio_file_path}"
+            if os.path.exists(audio_path):
+                import platform
+                import subprocess
+                system = platform.system()
+                if system == "Darwin":  # macOS
+                    subprocess.run(["afplay", audio_path], 
+                                 capture_output=True, timeout=2)
+                elif system == "Linux":
+                    # 尝试多个Linux音频播放器
+                    players = ["paplay", "aplay", "mpg123", "mpv", "vlc"]
+                    for player in players:
+                        try:
+                            subprocess.run([player, audio_path], 
+                                         capture_output=True, timeout=2, check=True)
+                            break
+                        except (subprocess.CalledProcessError, FileNotFoundError):
+                            continue
+                elif system == "Windows":
+                    # Windows可以使用winsound模块或powershell
+                    try:
+                        subprocess.run(["powershell", "-c", 
+                                      "(New-Object Media.SoundPlayer '" + audio_path + "').PlaySync()"], 
+                                     capture_output=True, timeout=2)
+                    except:
+                        pass
+        except Exception:
+            pass  # 如果播放失败，忽略错误
+    
+    # 全局focus计数器和状态标志
+    focus_count = 0
+    button_clicked = False
+    
+    # 带focus计数的聚焦函数
+    def force_focus_with_count():
+        global focus_count, button_clicked
+        # 如果按钮已被点击，不再播放音效
+        if button_clicked:
+            return
+            
+        focus_count += 1
+        force_focus()
+        
+        # 只在第1、4、7...次focus时播放音效
+        if focus_count % 3 == 1:
+            try:
+                import threading
+                threading.Thread(target=play_bell_in_subprocess, daemon=True).start()
+            except Exception as e:
+                pass
+        else:
+            pass
+    
+    # 按钮点击处理函数
+    def on_button_click():
+        global button_clicked
+        button_clicked = True  # 标记按钮已被点击
+        root.destroy()
+    
+    # 初始聚焦（第1次，会播放音效）
+    force_focus_with_count()
+    
     # 创建按钮
     btn = tk.Button(
         root, 
         text="Click to Enter Prompt", 
-        command=root.destroy,
+        command=on_button_click,  # 使用自定义的点击处理函数
         padx=20,
         pady=10,
         bg="#4CAF50",
@@ -105,6 +270,30 @@ try:
         font=("Arial", 10, "bold")
     )
     btn.pack(expand=True)
+    
+    # 添加键盘快捷键：回车键等同于点击按钮
+    def on_key_press(event):
+        if event.keysym == 'Return':
+            on_button_click()  # 使用相同的点击处理函数
+            return "break"
+    
+    # 绑定键盘事件
+    root.bind('<Key>', on_key_press)
+    btn.focus_set()  # 确保按钮能接收键盘事件
+    
+    # 定期重新获取焦点的函数
+    def refocus_window():
+        try:
+            # 使用带focus计数的聚焦函数
+            force_focus_with_count()
+            
+            # 每5秒重新获取焦点
+            root.after(5000, refocus_window)
+        except Exception as e:
+            pass  # 如果窗口已关闭，忽略错误
+    
+    # 开始定期重新获取焦点
+    root.after(5000, refocus_window)
     
     # 设置自动关闭定时器
     root.after({timeout_seconds * 1000}, root.destroy)
@@ -120,16 +309,17 @@ except Exception as e:
 '''
     
     try:
-        # 在子进程中运行tkinter窗口，抑制所有输出
+        # 在子进程中运行tkinter窗口，允许debug输出
         result = subprocess.run(
             [sys.executable, '-c', subprocess_script],
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,  # 将stderr重定向到stdout以便看到debug输出
             text=True,
             timeout=timeout_seconds + 5  # 给子进程额外5秒时间
         )
         
         # 检查结果
-        if result.returncode == 0 and result.stdout.strip() == "clicked":
+        if result.returncode == 0 and "clicked" in result.stdout:
             return True  # 用户点击了按钮
         else:
             return False  # 超时或其他情况
@@ -225,6 +415,21 @@ def _read_input_with_signal(lines, timeout_seconds):
             except EOFError:
                 # Ctrl+D 被按下，结束输入
                 return False
+            except KeyboardInterrupt:
+                # Ctrl+C 被按下 - 改进的处理逻辑
+                try:
+                    # 获取当前输入缓冲区的内容
+                    current_line = readline.get_line_buffer()
+                    if current_line.strip():
+                        lines.append(current_line.strip())
+                except:
+                    pass  # 如果无法获取缓冲区内容，忽略错误
+                
+                # 如果有任何内容（包括之前输入的行或当前行），返回内容而不是"stop"
+                if lines:
+                    return "partial_input"  # 特殊标记表示部分输入
+                else:
+                    return "stop"  # 没有任何输入，返回stop
             except TimeoutException:
                 # 超时发生 - 尝试捕获当前正在输入的行
                 try:
@@ -269,14 +474,27 @@ def get_user_input_via_terminal(project_name):
     timeout_occurred = False
     
     # 使用信号方式进行超时控制，简单可靠
+    ctrl_c_partial_input = False  # 标记是否是Ctrl+C导致的部分输入
     try:
-        timeout_occurred = _read_input_with_signal(lines, TIMEOUT_SECONDS)
+        result = _read_input_with_signal(lines, TIMEOUT_SECONDS)
+        if result == "stop":
+            return "stop"
+        elif result == "partial_input":
+            # 有部分输入，这是Ctrl+C导致的，不是超时
+            timeout_occurred = False
+            ctrl_c_partial_input = True
+        else:
+            timeout_occurred = result  # True or False
     except KeyboardInterrupt:
-        # Ctrl+C 被按下
+        # 这个异常处理现在应该不会被触发，因为KeyboardInterrupt在_read_input_with_signal中处理
         return "stop"
     
     # 组合所有行为最终输入
     full_input = '\n'.join(lines).strip()
+    
+    # 如果是Ctrl+C导致的部分输入，直接返回用户输入，不添加任何前缀或后缀
+    if ctrl_c_partial_input:
+        return full_input or "stop"
     
     # 如果发生超时，添加超时提示
     if timeout_occurred or (_global_timeout_manager and _global_timeout_manager.is_timeout_expired()):

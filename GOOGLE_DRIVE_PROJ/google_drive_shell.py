@@ -292,6 +292,59 @@ class GoogleDriveShell:
         """委托到remote_commands管理器"""
         return self.remote_commands.execute_generic_remote_command(*args, **kwargs)
     
+    def _verify_mkdir_with_ls(self, *args, **kwargs):
+        """委托到verification管理器"""
+        return self.verification._verify_mkdir_with_ls(*args, **kwargs)
+    
+    def _display_recursive_ls_result(self, result):
+        """显示递归ls命令的结果"""
+        try:
+            if result.get("mode") == "recursive_bash":
+                # 简单模式：类似bash ls -R的输出
+                all_items = result.get("all_items", [])
+                if not all_items:
+                    return
+                
+                # 按路径分组
+                path_groups = {}
+                for item in all_items:
+                    path = item['path']
+                    if path not in path_groups:
+                        path_groups[path] = []
+                    path_groups[path].append(item)
+                
+                # 按路径顺序显示
+                sorted_paths = sorted(path_groups.keys())
+                for i, path in enumerate(sorted_paths):
+                    if i > 0:
+                        print()  # 空行分隔不同目录
+                    
+                    print(f"{path}:")
+                    items = path_groups[path]
+                    
+                    # 按名称排序，文件夹优先
+                    folders = sorted([f for f in items if f['mimeType'] == 'application/vnd.google-apps.folder'], 
+                                   key=lambda x: x['name'].lower())
+                    other_files = sorted([f for f in items if f['mimeType'] != 'application/vnd.google-apps.folder'], 
+                                       key=lambda x: x['name'].lower())
+                    
+                    all_dir_items = folders + other_files
+                    
+                    for item in all_dir_items:
+                        name = item['name']
+                        if item['mimeType'] == 'application/vnd.google-apps.folder':
+                            print(f"{name}/")
+                        else:
+                            print(name)
+            else:
+                # 其他模式的显示逻辑可以在这里添加
+                print("递归列表结果（详细模式）:")
+                print(f"路径: {result.get('path', 'unknown')}")
+                print(f"总计: {result.get('count', 0)} 项")
+                
+        except Exception as e:
+            print(f"❌ 显示递归ls结果时出错: {e}")
+    
 
     
     def _handle_unified_echo_command(self, args):
@@ -493,6 +546,11 @@ class GoogleDriveShell:
             print("=" * 13)
             # 在banner中将换行符替换为空格，以便单行显示
             display_cmd = shell_cmd.replace('\n', ' ')
+            # 修复shell展开的家目录路径显示问题
+            import os
+            local_home = os.path.expanduser("~")
+            if local_home in display_cmd:
+                display_cmd = display_cmd.replace(local_home, "~")
             print(f"GDS {display_cmd}")
             print("=" * 13)
             
@@ -605,8 +663,90 @@ class GoogleDriveShell:
                     sys.path.append(modules_dir)
                 
                 from shell_commands import shell_ls
-                path = args[0] if args else None
-                return shell_ls(path, command_identifier)
+                
+                # 解析ls命令的参数
+                recursive = False
+                detailed = False
+                path = None
+                
+                for arg in args:
+                    if arg == '-R':
+                        recursive = True
+                    elif arg == '--detailed':
+                        detailed = True
+                    elif not arg.startswith('-'):
+                        path = arg
+                
+                if recursive:
+                    # 使用远端ls -R命令，提高效率
+                    if path:
+                        cmd_args = ["-R", path]
+                    else:
+                        cmd_args = ["-R"]
+                    
+                    # 直接调用远程命令处理，绕过特殊命令检查
+                    try:
+                        current_shell = self.get_current_shell()
+                        if not current_shell:
+                            print("❌ 没有活跃的shell会话")
+                            return 1
+                        
+                        # 生成远程命令
+                        remote_command_info = self.remote_commands._generate_remote_command("ls", cmd_args, current_shell)
+                        remote_command, result_filename = remote_command_info
+                        
+                        # 显示远程命令窗口
+                        title = f"GDS Remote Command: ls -R"
+                        instruction = f"Command: ls -R {path if path else ''}\n\nPlease execute the following command in your remote environment:"
+                        
+                        result = self.remote_commands.show_command_window_subprocess(
+                            title=title,
+                            command_text=remote_command,
+                            instruction_text=instruction,
+                            timeout_seconds=300
+                        )
+                        
+                        # 处理结果，模拟execute_generic_remote_command的逻辑
+                        if result["action"] == "success":
+                            # 等待并读取结果文件
+                            result_data = self.remote_commands._wait_and_read_result_file(result_filename)
+                            if result_data.get("success"):
+                                # 显示stdout内容（ls -R的输出）
+                                stdout_content = result_data.get("data", {}).get("stdout", "")
+                                if stdout_content:
+                                    print(stdout_content)
+                                return 0
+                            else:
+                                print(result_data.get("error", "❌ 读取结果失败"))
+                                return 1
+                        elif result["action"] == "direct_feedback":
+                            # 处理直接反馈
+                            print()  # shift a newline since ctrl+D
+                            debug_info = {
+                                "cmd": "ls",
+                                "args": cmd_args,
+                                "result_filename": result_filename
+                            }
+                            try:
+                                feedback_result = self.remote_commands.direct_feedback(remote_command, debug_info)
+                                if feedback_result.get("success", False):
+                                    return 0
+                                else:
+                                    print(feedback_result.get("error", "❌ 处理直接反馈失败"))
+                                    return 1
+                            except Exception as e:
+                                print(f"❌ 处理直接反馈时出错: {e}")
+                                return 1
+                        else:
+                            print(result.get("error", "❌ ls -R命令执行失败"))
+                            return 1
+                    except Exception as e:
+                        print(f"❌ ls -R命令执行失败: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        return 1
+                else:
+                    return shell_ls(path, command_identifier)
             elif cmd == 'cd':
                 if not args:
                     print("❌ cd command needs a path")
@@ -658,23 +798,7 @@ class GoogleDriveShell:
                 else:
                     print(result.get("error", "❌ touch命令执行失败"))
                     return 1
-            elif cmd == 'rm':
-                if not args:
-                    print("❌ rm command needs a file or directory")
-                    return 1
-                # 导入shell_commands模块中的具体函数
-                current_dir = os.path.dirname(__file__)
-                modules_dir = os.path.join(current_dir, 'modules')
-                if modules_dir not in sys.path:
-                    sys.path.append(modules_dir)
-                
-                from modules.shell_commands import shell_rm
-                recursive = '-rf' in ' '.join(args) or '-r' in args
-                target = [arg for arg in args if not arg.startswith('-')][-1] if args else None
-                if not target:
-                    print("❌ rm command needs a file or directory")
-                    return 1
-                return shell_rm(target, recursive, command_identifier)
+
             elif cmd == 'echo':
                 # 简化的echo处理：直接使用统一的echo命令处理
                 return self._handle_unified_echo_command(args)
@@ -1074,8 +1198,20 @@ class GoogleDriveShell:
                     print(result.get("error", "Grep failed"))
                     return 1
             else:
-                print(f"Unknown command: {cmd}")
-                return 1
+                # 尝试通过通用远程命令执行
+                result = self.execute_generic_remote_command(cmd, args)
+                if result.get("success", False):
+                    stdout = result.get("stdout", "").strip()
+                    stderr = result.get("stderr", "").strip()
+                    if stdout:
+                        print(stdout)
+                    if stderr:
+                        print(stderr, file=sys.stderr)
+                    return 0
+                else:
+                    error_msg = result.get("error", f"Command '{cmd}' failed")
+                    print(error_msg)
+                    return 1
                 
         except Exception as e:
             error_msg = f"❌ Error executing shell command: {e}"

@@ -268,4 +268,5 @@ def handle_shell_command(*args, **kwargs):
 
 # 保持原有的main函数调用结构
 if __name__ == "__main__":
-    main() 
+    import sys
+    sys.exit(main()) 

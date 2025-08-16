@@ -22,6 +22,34 @@ def is_run_environment(command_identifier=None):
         return os.environ.get(f'RUN_IDENTIFIER_{command_identifier}') == 'True'
     return False
 
+def copy_to_clipboard(text):
+    """Copy text to clipboard using pbcopy on macOS"""
+    try:
+        process = subprocess.Popen(['pbcopy'], stdin=subprocess.PIPE, text=True)
+        process.communicate(input=text)
+        return process.returncode == 0
+    except Exception:
+        return False
+
+def extract_latex_errors(log_content):
+    """Extract meaningful error messages from LaTeX log"""
+    lines = log_content.split('\n')
+    errors = []
+    
+    for i, line in enumerate(lines):
+        # Look for error indicators
+        if line.startswith('!') or 'Error:' in line:
+            error_context = []
+            # Get some context around the error
+            start = max(0, i-2)
+            end = min(len(lines), i+3)
+            for j in range(start, end):
+                if lines[j].strip():
+                    error_context.append(lines[j])
+            errors.append('\n'.join(error_context))
+    
+    return errors
+
 def select_tex_file():
     """使用GUI选择LaTeX文件"""
     try:
@@ -203,7 +231,7 @@ def copy_template(template_name, target_dir, command_identifier=None):
             print(f"Error: {error_msg}")
         return 1
 
-def compile_latex(tex_file, command_identifier=None, output_dir=None):
+def compile_latex(tex_file, command_identifier=None, output_dir=None, latex_options=None, no_shell_escape=False):
     """编译LaTeX文件"""
     # 简化路径处理：使用绝对路径
     tex_path = Path(tex_file).resolve()
@@ -222,6 +250,11 @@ def compile_latex(tex_file, command_identifier=None, output_dir=None):
         return 1
     
     filename = tex_path.stem
+    
+    # 显示编译开始信息
+    if not is_run_environment(command_identifier):
+        print(f"Starting LaTeX compilation for: {tex_path.name}")
+        print("Compiling...")
     
     # 在RUN环境下，使用/tmp目录作为工作目录
     if is_run_environment(command_identifier):
@@ -244,10 +277,23 @@ def compile_latex(tex_file, command_identifier=None, output_dir=None):
         original_cwd = os.getcwd()
         os.chdir(directory)
         
+        # 构建编译命令，默认添加-shell-escape选项
+        default_options = ['-interaction=nonstopmode']
+        if not no_shell_escape:
+            default_options.append('-shell-escape')
+        
+        if latex_options:
+            # 合并用户提供的选项和默认选项
+            all_options = default_options + latex_options
+        else:
+            all_options = default_options
+        
+        pdflatex_cmd = 'pdflatex ' + ' '.join(all_options)
+        
         # 执行编译
         cmd = [
             'latexmk', '-pdf', 
-            f'-pdflatex=pdflatex -interaction=nonstopmode',
+            f'-pdflatex={pdflatex_cmd}',
             f'{filename}.tex'
         ]
         
@@ -321,13 +367,8 @@ def compile_latex(tex_file, command_identifier=None, output_dir=None):
                 if is_run_environment(command_identifier):
                     write_to_json_output(success_data, command_identifier)
                 else:
-                    print("LaTeX compilation successful!")
-                    print(f"Input file: {tex_path}")
-                    print(f"Output PDF: {final_pdf_path}")
-                    if output_dir:
-                        print(f"PDF moved to: {output_dir}")
-                    print("\n=== Compilation Log ===")
-                    print(log_content)
+                    print(f"✓ LaTeX compilation successful!")
+                    print(f"✓ Generated PDF: {final_pdf_path}")
                 return 0
             else:
                 error_data = {
@@ -346,24 +387,39 @@ def compile_latex(tex_file, command_identifier=None, output_dir=None):
                 return 1
         else:
             # 编译失败
-            # 获取最后20行的错误信息
-            log_lines = log_content.split('\n')
-            error_summary = '\n'.join(log_lines[-20:])
-            
-            error_data = {
-                "success": False, 
-                "error": f"Compilation failed: {error_summary}", 
-                "file": str(tex_path)
-            }
+            # 提取关键错误信息
+            errors = extract_latex_errors(log_content)
             
             if is_run_environment(command_identifier):
+                error_summary = '\n'.join(errors) if errors else log_content[-2000:]
+                error_data = {
+                    "success": False, 
+                    "error": f"Compilation failed: {error_summary}", 
+                    "file": str(tex_path),
+                    "exit_code": result.returncode
+                }
                 write_to_json_output(error_data, command_identifier)
             else:
-                print("LaTeX compilation failed!")
-                print(f"Input file: {tex_path}")
-                print(f"Exit code: {result.returncode}")
-                print("\n=== Compilation Log ===")
-                print(log_content)
+                print(f"✗ LaTeX compilation failed! (Exit code: {result.returncode})")
+                print(f"✗ Input file: {tex_path.name}")
+                
+                if errors:
+                    print("\n=== Key Error Messages ===")
+                    for i, error in enumerate(errors[:5], 1):  # Show up to 5 errors
+                        print(f"Error {i}:")
+                        print(error)
+                        print("-" * 50)
+                else:
+                    print("\n=== No specific errors found, showing last part of log ===")
+                    log_lines = log_content.split('\n')
+                    print('\n'.join(log_lines[-20:]))
+                
+                # 复制完整日志到剪切板
+                if copy_to_clipboard(log_content):
+                    print("\n✓ Full compilation log copied to clipboard")
+                else:
+                    print("\n✗ Failed to copy log to clipboard")
+                    
             return result.returncode
     
     except Exception as e:
@@ -428,6 +484,10 @@ def main():
                        help='复制模板到指定目录：--template TEMPLATE_NAME TARGET_DIR')
     parser.add_argument('--list-templates', action='store_true', 
                        help='列出所有可用的模板')
+    parser.add_argument('--latex-options', action='append', default=[], 
+                       help='传递给pdflatex的额外选项 (默认已包含-shell-escape)，可多次使用：--latex-options=-synctex=1 --latex-options=-file-line-error')
+    parser.add_argument('--no-shell-escape', action='store_true',
+                       help='禁用默认的-shell-escape选项')
     
     try:
         parsed_args = parser.parse_args(args)
@@ -473,7 +533,8 @@ def main():
         # 没有文件参数时，打开文件选择器
         selected_file = select_tex_file()
         if selected_file:
-            return compile_latex(selected_file, command_identifier, parsed_args.output_dir)
+            return compile_latex(selected_file, command_identifier, parsed_args.output_dir, 
+                               parsed_args.latex_options, parsed_args.no_shell_escape)
         else:
             error_data = {
                 "success": False, 
@@ -488,7 +549,8 @@ def main():
             return 1
     else:
         # 有参数时，直接编译指定文件
-        return compile_latex(parsed_args.tex_file, command_identifier, parsed_args.output_dir)
+        return compile_latex(parsed_args.tex_file, command_identifier, parsed_args.output_dir,
+                           parsed_args.latex_options, parsed_args.no_shell_escape)
 
 if __name__ == "__main__":
     sys.exit(main()) 

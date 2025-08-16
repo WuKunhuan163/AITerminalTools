@@ -92,7 +92,7 @@ class RemoteCommands:
         # 特殊命令列表 - 这些命令在本地处理，不需要远端执行
         # 注意：echo已被移除，现在通过通用远程命令执行
         self.SPECIAL_COMMANDS = {
-            'ls', 'cd', 'pwd', 'mkdir', 'rm', 'mv', 'cat', 'grep', 
+            'ls', 'cd', 'pwd', 'mkdir', 'mv', 'cat', 'grep', 
             'upload', 'download', 'edit', 'read', 'find', 'help', 'exit', 'quit', 'venv'
         }
     
@@ -148,8 +148,8 @@ class RemoteCommands:
                         remote_target_path = f"{self.main_instance.REMOTE_ROOT}/{target_path}"
                     
                     # 生成解压命令 - 使用统一函数
-                    from .core_utils import generate_unzip_command
-                    unzip_command = generate_unzip_command(
+                    # generate_unzip_command现在是类方法
+                    unzip_command = self.generate_unzip_command(
                         remote_target_path, 
                         zip_filename, 
                         delete_zip=not keep_zip,
@@ -157,7 +157,7 @@ class RemoteCommands:
                     )
                     
                     # 将解压命令添加到基础命令之后
-                    combined_command = f"{base_command}\n\n# 解压和清理zip文件\n({unzip_command}) && clear && echo \"✅ 执行完成\" || echo \"❌ 执行失败\""
+                    combined_command = f"{base_command}\n\n# 解压和清理zip文件\n({unzip_command})"
                     return combined_command
             
             return base_command
@@ -186,6 +186,15 @@ class RemoteCommands:
         
         # 处理反引号 - 转义为\`（在双引号中仍有特殊含义）
         display_command = display_command.replace('`', '\\`')
+        
+        # 处理shell展开的家目录路径：将本地家目录路径转换回~显示
+        # 这解决了"GDS cd ~"中~被shell展开为本地路径的显示问题
+        import os
+        local_home = os.path.expanduser("~")
+        if local_home in display_command:
+            # 只替换作为独立路径组件的家目录，避免误替换包含家目录路径的其他路径
+            # 例如："/Users/username" -> "~", 但 "/Users/username/Documents" -> "~/Documents"
+            display_command = display_command.replace(local_home, "~")
         
         # 注意：在双引号内，圆括号()、方括号[]、花括号{}等不需要转义
         # 因为它们在双引号内失去了特殊含义
@@ -856,7 +865,7 @@ fi
 # 输出最终结果
 total_files={len(file_info_list)}
 if [ "${{fail_count:-0}}" -eq 0 ]; then
-    clear && echo "✅ 执行完成"
+    echo "✅ 所有文件移动完成"
 else
     echo "⚠️  部分文件移动完成: ${{success_count:-0}}/${{total_files:-0}} 成功, ${{fail_count:-0}} 失败"
 fi
@@ -891,7 +900,7 @@ fi
                 full_target_path = f"{self.main_instance.REMOTE_ROOT}/{target_path.lstrip('/')}"
             
             # 生成 mkdir -p 命令来创建整个目录结构，添加清屏和成功/失败提示
-            mkdir_command = f'mkdir -p "{full_target_path}" && clear && echo "✅ 执行完成" || echo "❌ 执行失败"'
+            mkdir_command = f'mkdir -p "{full_target_path}"'
             
             return mkdir_command
             
@@ -1427,7 +1436,7 @@ fi
                     f'    \n'
                     f'    # 直接执行命令，不捕获输出（因为命令本身有重定向）\n'
                     f'    set +e  # 允许命令失败\n'
-                    f'    {bash_safe_command}\n'
+                    f'    {bash_safe_command} && clear && echo "✅ 执行完成" || echo "❌ 执行失败"\n'
                     f'    EXIT_CODE=$?\n'
                     f'    echo "$EXIT_CODE" > "$EXITCODE_FILE"\n'
                     f'    set -e\n'
@@ -1462,6 +1471,13 @@ fi
                     f'    # 显示stderr内容（如果有）\n'
                     f'    if [ -s "$ERROR_FILE" ]; then\n'
                     f'        cat "$ERROR_FILE" >&2\n'
+                    f'    fi\n'
+                    f'    \n'
+                    f'    # 统一的执行完成提示\n'
+                    f'    if [ "$EXIT_CODE" -eq 0 ]; then\n'
+                    f'        clear && echo "✅ 执行完成"\n'
+                    f'    else\n'
+                    f'        echo "❌ 执行失败 (退出码: $EXIT_CODE)"\n'
                     f'    fi\n'
                     f'    \n'
                 )
@@ -1689,13 +1705,13 @@ fi
             dict: 用户操作结果
         """
         try:
-            from .core_utils import show_command_window_subprocess
+            # show_command_window_subprocess现在是类方法
             
             title = f"GDS Remote Command: {cmd}"
             instruction = f"Command: {cmd} {' '.join(args)}\n\nPlease execute the following command in your remote environment:"
             
             # 使用subprocess方法显示窗口
-            result = show_command_window_subprocess(
+            result = self.show_command_window_subprocess(
                 title=title,
                 command_text=remote_command,
                 instruction_text=instruction,
@@ -1823,7 +1839,7 @@ fi
         # 然后粘贴生成的远端指令
         print("Generated remote command:")
         print(remote_command)
-        print("=" * 20)  # 20个等号分割线
+        print("=" * 20)  # 50个等号分割线
         
         print("Please provide command execution result (multi-line input, press Ctrl+D to finish):")
         print()
@@ -1866,3 +1882,775 @@ fi
         
         debug_print(f"direct_feedback完成，success: {feedback_result['success']}")
         return feedback_result
+    
+    # ==================== 从core_utils.py迁移的方法 ====================
+    
+    def generate_unzip_command(self, remote_target_path, zip_filename, delete_zip=True, handle_empty_zip=True):
+        """
+        统一生成解压命令的工具函数，消除重复代码
+        
+        Args:
+            remote_target_path: 远程目标路径
+            zip_filename: zip文件名
+            delete_zip: 是否删除zip文件
+            handle_empty_zip: 是否处理空zip文件的警告
+        
+        Returns:
+            str: 生成的解压命令
+        """
+        if handle_empty_zip:
+            # 处理空zip文件警告的版本：过滤掉"zipfile is empty"警告，但不影响实际执行结果
+            if delete_zip:
+                unzip_command = f'''cd "{remote_target_path}" && echo "Start decompressing {zip_filename}" && (unzip -o "{zip_filename}" 2>&1 | grep -v "zipfile is empty" || true) && echo "=== 删除zip ===" && rm "{zip_filename}" && echo "Verifying decompression result ..." && ls -la'''
+            else:
+                unzip_command = f'''cd "{remote_target_path}" && echo "Start decompressing {zip_filename}" && (unzip -o "{zip_filename}" 2>&1 | grep -v "zipfile is empty" || true) && echo "Verifying decompression result ..." && ls -la'''
+        else:
+            # 原始版本（保持向后兼容）
+            if delete_zip:
+                unzip_command = f'''cd "{remote_target_path}" && echo "Start decompressing {zip_filename}" && unzip -o "{zip_filename}" && echo "=== 删除zip ===" && rm "{zip_filename}" && echo "Verifying decompression result ..." && ls -la'''
+            else:
+                unzip_command = f'''cd "{remote_target_path}" && echo "Start decompressing {zip_filename}" && unzip -o "{zip_filename}" && echo "Verifying decompression result ..." && ls -la'''
+        
+        return unzip_command
+    
+    def show_command_window_subprocess(self, title, command_text, instruction_text="", timeout_seconds=300):
+        """
+        在subprocess中显示命令窗口，完全抑制所有系统输出
+        恢复原来GDS的窗口设计：500x50，三按钮，自动复制
+        
+        Args:
+            title (str): 窗口标题
+            command_text (str): 要显示的命令文本
+            instruction_text (str): 指令说明文本（可选）
+            timeout_seconds (int): 超时时间（秒）
+        
+        Returns:
+            dict: 用户操作结果 {"action": "copy/direct_feedback/success/timeout", "data": ...}
+        """
+        import subprocess
+        import sys
+        import json
+        
+        # 转义字符串以防止注入 - 使用base64编码避免复杂转义问题
+        import base64
+        title_escaped = title.replace('"', '\\"').replace("'", "\\'")
+        # 使用base64编码来避免复杂的字符串转义问题
+        command_b64 = base64.b64encode(command_text.encode('utf-8')).decode('ascii')
+        
+        # 获取音频文件路径
+        import os
+        current_dir = os.path.dirname(__file__)
+        audio_file_path = os.path.join(os.path.dirname(current_dir), "tkinter_bell.mp3")
+        
+        # 创建子进程脚本 - 恢复原来的500x60窄窗口设计
+        subprocess_script = f'''
+import sys
+import os
+import json
+import warnings
+import base64
+
+# 抑制所有警告
+warnings.filterwarnings('ignore')
+os.environ['TK_SILENCE_DEPRECATION'] = '1'
+
+try:
+    import tkinter as tk
+    import queue
+    
+    result = {{"action": "timeout"}}
+    result_queue = queue.Queue()
+    
+    # 解码base64命令
+    command_text = base64.b64decode("{command_b64}").decode('utf-8')
+    
+    root = tk.Tk()
+    root.title("Google Drive Shell")
+    root.geometry("500x60")
+    root.resizable(False, False)
+    
+    # 居中窗口
+    root.eval('tk::PlaceWindow . center')
+    
+    # 定义统一的聚焦函数
+    def force_focus():
+        try:
+            root.focus_force()
+            root.lift()
+            root.attributes('-topmost', True)
+            
+            # macOS特定的焦点获取方法
+            import platform
+            if platform.system() == 'Darwin':
+                import subprocess
+                try:
+                    # 尝试多个可能的应用程序名称
+                    app_names = ['Python', 'python3', 'tkinter', 'Tk']
+                    for app_name in app_names:
+                        try:
+                            subprocess.run(['osascript', '-e', 'tell application "' + app_name + '" to activate'], 
+                                          timeout=0.5, capture_output=True)
+                            break
+                        except:
+                            continue
+                    
+                    # 尝试使用系统事件来强制获取焦点
+                    applescript_code = "tell application \\"System Events\\"\\n    set frontmost of first process whose name contains \\"Python\\" to true\\nend tell"
+                    subprocess.run(['osascript', '-e', applescript_code], timeout=0.5, capture_output=True)
+                except:
+                    pass  # 如果失败就忽略
+        except:
+            pass
+    
+    # 全局focus计数器和按钮点击标志
+    focus_count = 0
+    button_clicked = False
+    
+    # 定义音频播放函数
+    def play_bell_in_subprocess():
+        try:
+            audio_path = "{audio_file_path}"
+            if os.path.exists(audio_path):
+                import platform
+                import subprocess
+                system = platform.system()
+                if system == "Darwin":  # macOS
+                    subprocess.run(["afplay", audio_path], 
+                                 capture_output=True, timeout=2)
+                elif system == "Linux":
+                    # 尝试多个Linux音频播放器
+                    players = ["paplay", "aplay", "mpg123", "mpv", "vlc"]
+                    for player in players:
+                        try:
+                            subprocess.run([player, audio_path], 
+                                         capture_output=True, timeout=2, check=True)
+                            break
+                        except (subprocess.CalledProcessError, FileNotFoundError):
+                            continue
+                elif system == "Windows":
+                    # Windows可以使用winsound模块或powershell
+                    try:
+                        subprocess.run(["powershell", "-c", 
+                                      "(New-Object Media.SoundPlayer '" + audio_path + "').PlaySync()"], 
+                                     capture_output=True, timeout=2)
+                    except:
+                        pass
+        except Exception:
+            pass  # 如果播放失败，忽略错误
+    
+    # 带focus计数的聚焦函数
+    def force_focus_with_count():
+        global focus_count, button_clicked
+        
+        focus_count += 1
+        force_focus()
+        
+        # 只在第1、4、7...次focus时播放音效并重新复制
+        if focus_count % 3 == 1:
+            try:
+                import threading
+                threading.Thread(target=play_bell_in_subprocess, daemon=True).start()
+                # 重新复制命令到剪切板（虚拟点击复制按钮）
+                copy_command()
+            except Exception:
+                pass
+    
+    # 设置窗口置顶并初始聚焦（第1次，会播放音效）
+    root.attributes('-topmost', True)
+    force_focus_with_count()
+    
+    # 自动复制命令到剪切板
+    root.clipboard_clear()
+    root.clipboard_append(command_text)
+    
+    # 主框架
+    main_frame = tk.Frame(root, padx=10, pady=10)
+    main_frame.pack(fill=tk.BOTH, expand=True)
+    
+    # 按钮框架
+    button_frame = tk.Frame(main_frame)
+    button_frame.pack(fill=tk.X, expand=True)
+    
+    def copy_command():
+        global button_clicked
+        button_clicked = True
+        try:
+            # 使用更可靠的复制方法 - 一次性复制完整命令
+            root.clipboard_clear()
+            root.clipboard_append(command_text)
+            
+            # 验证复制是否成功
+            try:
+                clipboard_content = root.clipboard_get()
+                if clipboard_content == command_text:
+                    copy_btn.config(text="✅ 复制成功", bg="#4CAF50")
+                else:
+                    # 复制不完整，重试一次
+                    root.clipboard_clear()
+                    root.clipboard_append(command_text)
+                    copy_btn.config(text="⚠️ 已重试", bg="#FF9800")
+            except Exception as verify_error:
+                # 验证失败但复制可能成功，显示已复制
+                copy_btn.config(text="✅ 已复制", bg="#4CAF50")
+            
+            root.after(1500, lambda: copy_btn.config(text="📋 复制指令", bg="#2196F3"))
+        except Exception as e:
+            copy_btn.config(text="❌ 复制失败", bg="#f44336")
+    
+    def execution_completed():
+        global button_clicked
+        button_clicked = True
+        result_queue.put({{"action": "success", "message": "用户确认执行完成"}})
+        result["action"] = "success"
+        root.destroy()
+    
+    def direct_feedback():
+        """直接反馈功能"""
+        global button_clicked
+        button_clicked = True
+        result_queue.put({{"action": "direct_feedback", "message": "启动直接反馈模式"}})
+        result["action"] = "direct_feedback"
+        root.destroy()
+    
+    # 复制指令按钮
+    copy_btn = tk.Button(
+        button_frame, 
+        text="📋 复制指令", 
+        command=copy_command,
+        font=("Arial", 9),
+        bg="#2196F3",
+        fg="white",
+        padx=10,
+        pady=5,
+        relief=tk.RAISED,
+        bd=2
+    )
+    copy_btn.pack(side=tk.LEFT, padx=(0, 5), fill=tk.X, expand=True)
+    
+    # 直接反馈按钮（第二个位置）
+    feedback_btn = tk.Button(
+        button_frame, 
+        text="💬 直接反馈", 
+        command=direct_feedback,
+        font=("Arial", 9),
+        bg="#FF9800",
+        fg="white",
+        padx=10,
+        pady=5,
+        relief=tk.RAISED,
+        bd=2
+    )
+    feedback_btn.pack(side=tk.LEFT, padx=(0, 5), fill=tk.X, expand=True)
+    
+    # 执行完成按钮（最右边）
+    complete_btn = tk.Button(
+        button_frame, 
+        text="✅ 执行完成", 
+        command=execution_completed,
+        font=("Arial", 9, "bold"),
+        bg="#4CAF50",
+        fg="white",
+        padx=10,
+        pady=5,
+        relief=tk.RAISED,
+        bd=2
+    )
+    complete_btn.pack(side=tk.LEFT, fill=tk.X, expand=True)
+    
+    # 设置焦点到完成按钮
+    complete_btn.focus_set()
+    
+    # 添加键盘快捷键
+    def on_key_press(event):
+        global button_clicked
+        # Command+C (Mac) 或 Ctrl+C (Windows/Linux) - 复制指令
+        if ((event.state & 0x8) and event.keysym == 'c') or ((event.state & 0x4) and event.keysym == 'c'):
+            button_clicked = True
+            copy_command()
+            return "break"  # 阻止默认行为
+        # Ctrl+D - 直接反馈
+        elif (event.state & 0x4) and event.keysym == 'd':
+            button_clicked = True
+            direct_feedback()
+            return "break"
+        # Command+Enter (Mac) - 执行完成
+        elif (event.state & 0x8) and event.keysym == 'Return':
+            button_clicked = True
+            execution_completed()
+            return "break"
+    
+    # 绑定键盘事件到窗口
+    root.bind('<Key>', on_key_press)
+    root.focus_set()  # 确保窗口能接收键盘事件
+    
+    # 自动复制命令到剪贴板
+    copy_command()
+    
+    # 定期重新获取焦点的函数
+    def refocus_window():
+        try:
+            # 使用带focus计数的聚焦函数
+            force_focus_with_count()
+            # 每5秒重新获取焦点
+            root.after(5000, refocus_window)
+        except:
+            pass  # 如果窗口已关闭，忽略错误
+    
+    # 开始定期重新获取焦点
+    root.after(5000, refocus_window)
+    
+    # 设置自动关闭定时器
+    root.after({timeout_seconds * 1000}, lambda: (result.update({{"action": "timeout"}}), root.destroy()))
+    
+    # 运行窗口
+    root.mainloop()
+    
+    # 输出结果
+    print(json.dumps(result))
+    
+except Exception as e:
+    print(json.dumps({{"action": "error", "error": str(e)}}))
+'''
+        
+        try:
+            # 在子进程中运行tkinter窗口，抑制所有输出
+            result = subprocess.run(
+                [sys.executable, '-c', subprocess_script],
+                capture_output=True,
+                text=True,
+                timeout=timeout_seconds + 10  # 给子进程额外时间
+            )
+            
+            if result.returncode == 0 and result.stdout.strip():
+                try:
+                    # 尝试解析整个输出
+                    parsed_result = json.loads(result.stdout.strip())
+                    return parsed_result
+                except json.JSONDecodeError as e:
+                    # 尝试解析最后一行（可能包含debug信息）
+                    lines = result.stdout.strip().split('\n')
+                    for line in reversed(lines):
+                        line = line.strip()
+                        if line.startswith('{') and line.endswith('}'):
+                            try:
+                                parsed_result = json.loads(line)
+                                return parsed_result
+                            except json.JSONDecodeError:
+                                continue
+                    
+                    return {"action": "error", "error": "Failed to parse result"}
+            else:
+                return {"action": "error", "error": "Subprocess failed"}
+                
+        except subprocess.TimeoutExpired:
+            return {"action": "timeout", "error": "Window timeout"}
+        except Exception as e:
+            return {"action": "error", "error": str(e)}
+    
+    def copy_to_clipboard(self, text):
+        """将文本复制到剪贴板"""
+        try:
+            # macOS
+            if sys.platform == "darwin":
+                subprocess.run(["pbcopy"], input=text.encode(), check=True)
+            # Linux
+            elif sys.platform == "linux":
+                subprocess.run(["xclip", "-selection", "clipboard"], input=text.encode(), check=True)
+            # Windows
+            elif sys.platform == "win32":
+                subprocess.run(["clip"], input=text.encode(), check=True, shell=True)
+            return True
+        except:
+            return False
+
+# 全局常量（从core_utils迁移）
+HOME_URL = "https://drive.google.com/drive/u/0/my-drive"
+HOME_FOLDER_ID = "root"  # Google Drive中My Drive的文件夹ID
+REMOTE_ROOT_FOLDER_ID = "1LSndouoVj8pkoyi-yTYnC4Uv03I77T8f"  # REMOTE_ROOT文件夹ID
+
+# 从core_utils迁移的工具函数
+def is_run_environment(command_identifier=None):
+    """Check if running in RUN environment by checking environment variables"""
+    if command_identifier:
+        return os.environ.get(f'RUN_IDENTIFIER_{command_identifier}') == 'True'
+    return False
+
+def write_to_json_output(data, command_identifier=None):
+    """将结果写入到指定的 JSON 输出文件中"""
+    if not is_run_environment(command_identifier):
+        return False
+    
+    # Get the specific output file for this command identifier
+    if command_identifier:
+        output_file = os.environ.get(f'RUN_DATA_FILE_{command_identifier}')
+    else:
+        output_file = os.environ.get('RUN_DATA_FILE')
+    
+    if not output_file:
+        return False
+    
+    try:
+        # 确保输出目录存在
+        output_path = Path(output_file)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        return True
+    except Exception as e:
+        print(f"Error writing to JSON output file: {e}")
+        return False
+
+def show_help():
+    """显示帮助信息"""
+    help_text = """GOOGLE_DRIVE - Google Drive access tool with GDS (Google Drive Shell)
+
+Usage: GOOGLE_DRIVE [url] [options]
+
+Arguments:
+  url                  Custom Google Drive URL (default: https://drive.google.com/)
+
+Options:
+  -my                  Open My Drive (https://drive.google.com/drive/u/0/my-drive)
+  --console-setup      Start Google Drive API setup wizard with GUI assistance
+  --shell [COMMAND]    Enter interactive shell mode or execute shell command (alias: GDS)
+  --upload FILE [PATH] Upload a file to Google Drive via local sync (PATH defaults to REMOTE_ROOT)
+  --create-remote-shell        Create a new remote shell session
+  --list-remote-shell          List all remote shell sessions
+  --checkout-remote-shell ID   Switch to a specific remote shell
+  --terminate-remote-shell ID  Terminate a remote shell session
+  --desktop --status           Check Google Drive Desktop application status
+  --desktop --shutdown         Shutdown Google Drive Desktop application
+  --desktop --launch           Launch Google Drive Desktop application
+  --desktop --restart          Restart Google Drive Desktop application
+  --desktop --set-local-sync-dir    Set local sync directory path
+  --desktop --set-global-sync-dir   Set global sync directory (Drive folder)
+  --help, -h           Show this help message
+
+GDS (Google Drive Shell) Commands:
+  When using --shell or in interactive mode, the following commands are available:
+
+  Navigation:
+    pwd                         - show current directory path
+    ls [path] [--detailed] [-R] - list directory contents (recursive with -R)
+    cd <path>                   - change directory (supports ~, .., relative paths)
+
+  File Operations:
+    mkdir [-p] <dir>            - create directory (recursive with -p)
+    rm <file>                   - remove file
+    rm -rf <dir>                - remove directory recursively
+    mv <source> <dest>          - move/rename file or folder
+    cat <file>                  - display file contents
+    read <file> [start end]     - read file content with line numbers
+
+  Upload/Download:
+    upload [--target-dir TARGET] <files...> - upload files to Google Drive (default: current directory)
+    upload-folder [--keep-zip] <folder> [target] - upload folder (zip->upload->unzip->cleanup)
+    download [--force] <file> [path] - download file with caching
+
+  Text Operations:
+    echo <text>                 - display text
+    echo <text> > <file>        - create file with text
+    grep <pattern> <file>       - search for pattern in file
+    edit [--preview] [--backup] <file> '<spec>' - edit file with multi-segment replacement
+
+  Remote Execution:
+    python <file>               - execute python file remotely
+    python -c '<code>'          - execute python code remotely
+
+  Search:
+    find [path] -name [pattern] - search for files matching pattern
+
+  Help:
+    help                        - show available commands
+    exit                        - exit shell mode
+
+Advanced Features:
+  - Multi-file operations: upload [[src1, dst1], [src2, dst2], ...]
+  - Command chaining: cmd1 && cmd2 && cmd3
+  - Path resolution: supports ~, .., relative and absolute paths
+  - File caching: automatic download caching with cache management
+  - Remote execution: run Python code on remote Google Drive environment
+
+Examples:
+  GOOGLE_DRIVE                                    # Open main Google Drive
+  GOOGLE_DRIVE -my                                # Open My Drive folder
+  GOOGLE_DRIVE https://drive.google.com/drive/my-drive  # Open specific folder
+  GOOGLE_DRIVE --console-setup                    # Start API setup wizard
+  GOOGLE_DRIVE --shell                            # Enter interactive shell mode
+  GOOGLE_DRIVE --shell pwd                        # Show current path
+  GOOGLE_DRIVE --shell ls                         # List directory contents
+  GOOGLE_DRIVE --shell mkdir test                 # Create directory
+  GOOGLE_DRIVE --shell cd hello                   # Change directory
+  GOOGLE_DRIVE --shell rm file.txt               # Remove file
+  GOOGLE_DRIVE --shell rm -rf folder              # Remove directory
+  GOOGLE_DRIVE --shell upload file1.txt file2.txt    # Upload multiple files to current directory
+  GOOGLE_DRIVE --shell upload --target-dir docs file.txt  # Upload file to docs directory
+  GOOGLE_DRIVE --shell "ls && cd test && pwd"     # Chain commands
+  GOOGLE_DRIVE --upload file.txt                 # Upload file to REMOTE_ROOT
+  GOOGLE_DRIVE --upload file.txt subfolder       # Upload file to REMOTE_ROOT/subfolder
+  GDS pwd                                         # Using alias (same as above)
+  GOOGLE_DRIVE --create-remote-shell              # Create remote shell
+  GOOGLE_DRIVE --list-remote-shell                # List remote shells
+  GOOGLE_DRIVE --checkout-remote-shell abc123     # Switch to shell
+  GOOGLE_DRIVE --terminate-remote-shell abc123    # Terminate shell
+  GOOGLE_DRIVE --desktop --status                 # Check Desktop app status
+  GOOGLE_DRIVE --desktop --shutdown               # Shutdown Desktop app
+  GOOGLE_DRIVE --desktop --launch                 # Launch Desktop app
+  GOOGLE_DRIVE --desktop --restart                # Restart Desktop app
+  GOOGLE_DRIVE --desktop --set-local-sync-dir     # Set local sync directory
+  GOOGLE_DRIVE --desktop --set-global-sync-dir    # Set global sync directory
+  GOOGLE_DRIVE --setup-hf                         # Setup HuggingFace credentials on remote
+  GOOGLE_DRIVE --test-hf                          # Test HuggingFace configuration on remote
+  GOOGLE_DRIVE --help                             # Show help"""
+    
+    print(help_text)
+
+def main():
+    """主函数"""
+    import sys
+    
+    # 从其他模块直接导入需要的函数
+    try:
+        from .remote_shell_manager import list_remote_shells, create_remote_shell, checkout_remote_shell, terminate_remote_shell, enter_shell_mode
+        from .drive_api_service import open_google_drive
+        from .sync_config_manager import set_local_sync_dir, set_global_sync_dir
+    except ImportError:
+        try:
+            from modules.remote_shell_manager import list_remote_shells, create_remote_shell, checkout_remote_shell, terminate_remote_shell, enter_shell_mode
+            from modules.drive_api_service import open_google_drive
+            from modules.sync_config_manager import set_local_sync_dir, set_global_sync_dir
+        except ImportError:
+            # 如果导入失败，尝试从全局命名空间获取
+            list_remote_shells = globals().get('list_remote_shells')
+            create_remote_shell = globals().get('create_remote_shell')
+            checkout_remote_shell = globals().get('checkout_remote_shell')
+            terminate_remote_shell = globals().get('terminate_remote_shell')
+            enter_shell_mode = globals().get('enter_shell_mode')
+            console_setup_interactive = globals().get('console_setup_interactive')
+            open_google_drive = globals().get('open_google_drive')
+            set_local_sync_dir = globals().get('set_local_sync_dir')
+            set_global_sync_dir = globals().get('set_global_sync_dir')
+    
+    # 检查是否在RUN环境中
+    command_identifier = None
+    if len(sys.argv) > 1 and (sys.argv[1].startswith('test_') or sys.argv[1].startswith('cmd_')):
+        command_identifier = sys.argv[1]
+        args = sys.argv[2:]
+    else:
+        args = sys.argv[1:]
+    
+    if not args:
+        # 没有参数，打开默认Google Drive
+        return open_google_drive(None, command_identifier) if open_google_drive else 1
+    
+    # 处理各种命令行参数
+    if args[0] in ['--help', '-h']:
+        show_help()
+        return 0
+    elif args[0] == '--console-setup':
+        return console_setup_interactive() if console_setup_interactive else 1
+    elif args[0] == '--create-remote-shell':
+        return create_remote_shell(None, None, command_identifier) if create_remote_shell else 1
+    elif args[0] == '--list-remote-shell':
+        return list_remote_shells(command_identifier) if list_remote_shells else 1
+    elif args[0] == '--checkout-remote-shell':
+        if len(args) < 2:
+            print("❌ 错误: 需要指定shell ID")
+            return 1
+        shell_id = args[1]
+        return checkout_remote_shell(shell_id, command_identifier) if checkout_remote_shell else 1
+    elif args[0] == '--terminate-remote-shell':
+        if len(args) < 2:
+            print("❌ 错误: 需要指定shell ID")
+            return 1
+        shell_id = args[1]
+        return terminate_remote_shell(shell_id, command_identifier) if terminate_remote_shell else 1
+    elif args[0] == '--shell':
+        if len(args) == 1:
+            # 进入交互模式
+            return enter_shell_mode(command_identifier) if enter_shell_mode else 1
+        else:
+            # 执行指定的shell命令 - 使用GoogleDriveShell
+            # 检测引号包围的完整命令（用于远端重定向等）
+            shell_cmd_parts = args[1:]
+            
+            # 如果只有一个参数且包含空格，可能是引号包围的完整命令
+            if len(shell_cmd_parts) == 1 and (' > ' in shell_cmd_parts[0] or ' && ' in shell_cmd_parts[0] or ' || ' in shell_cmd_parts[0]):
+                # 这是一个引号包围的完整命令，直接使用
+                shell_cmd = shell_cmd_parts[0]
+                quoted_parts = shell_cmd_parts  # 为调试信息设置
+                # 添加标记，表示这是引号包围的命令
+                shell_cmd = f"__QUOTED_COMMAND__{shell_cmd}"
+
+            else:
+                # 正常的多参数命令，直接组合，不进行额外的引号转义
+                # 因为参数已经由shell正确解析过了
+                shell_cmd = ' '.join(shell_cmd_parts)
+                quoted_parts = shell_cmd_parts  # 为调试信息设置
+            debug_capture.start_capture()
+            debug_print(f"DEBUG: args[1:] = {args[1:]}")
+            debug_print(f"DEBUG: shell_cmd_parts = {shell_cmd_parts}")
+            debug_print(f"DEBUG: quoted_parts = {quoted_parts}")
+            debug_print(f"DEBUG: final shell_cmd = {repr(shell_cmd)}")
+            debug_capture.stop_capture()
+            
+            try:
+                # 动态导入GoogleDriveShell避免循环导入
+                import sys
+                import os
+                sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+                from google_drive_shell import GoogleDriveShell
+                
+                shell = GoogleDriveShell()
+                # 这里需要GoogleDriveShell提供一个处理shell命令的方法
+                if hasattr(shell, 'execute_shell_command'):
+                    return shell.execute_shell_command(shell_cmd, command_identifier)
+                else:
+                    print("❌ GoogleDriveShell缺少execute_shell_command方法")
+                    return 1
+            except Exception as e:
+                error_msg = f"❌ 执行shell命令时出错: {e}"
+                print(error_msg)
+                return 1
+    elif args[0] == '--desktop':
+        if len(args) < 2:
+            print("❌ 错误: --desktop需要指定操作类型")
+            return 1
+        
+        desktop_action = args[1]
+        if desktop_action == '--status':
+            try:
+                from .sync_config_manager import get_google_drive_status
+                return get_google_drive_status(command_identifier)
+            except ImportError:
+                try:
+                    from modules.sync_config_manager import get_google_drive_status
+                    return get_google_drive_status(command_identifier)
+                except ImportError:
+                    global_get_status = globals().get('get_google_drive_status')
+                    if global_get_status:
+                        return global_get_status(command_identifier)
+                    else:
+                        print("❌ 无法找到 get_google_drive_status 函数")
+                        return 1
+        elif desktop_action == '--shutdown':
+            try:
+                from .drive_process_manager import shutdown_google_drive
+                return shutdown_google_drive(command_identifier)
+            except ImportError:
+                try:
+                    from modules.drive_process_manager import shutdown_google_drive
+                    return shutdown_google_drive(command_identifier)
+                except ImportError:
+                    global_shutdown = globals().get('shutdown_google_drive')
+                    if global_shutdown:
+                        return global_shutdown(command_identifier)
+                    else:
+                        print("❌ 无法找到 shutdown_google_drive 函数")
+                        return 1
+        elif desktop_action == '--launch':
+            try:
+                from .drive_process_manager import launch_google_drive
+                return launch_google_drive(command_identifier)
+            except ImportError:
+                try:
+                    from modules.drive_process_manager import launch_google_drive
+                    return launch_google_drive(command_identifier)
+                except ImportError:
+                    global_launch = globals().get('launch_google_drive')
+                    if global_launch:
+                        return global_launch(command_identifier)
+                    else:
+                        print("❌ 无法找到 launch_google_drive 函数")
+                        return 1
+        elif desktop_action == '--restart':
+            try:
+                from .drive_process_manager import restart_google_drive
+                return restart_google_drive(command_identifier)
+            except ImportError:
+                try:
+                    from modules.drive_process_manager import restart_google_drive
+                    return restart_google_drive(command_identifier)
+                except ImportError:
+                    global_restart = globals().get('restart_google_drive')
+                    if global_restart:
+                        return global_restart(command_identifier)
+                    else:
+                        print("❌ 无法找到 restart_google_drive 函数")
+                        return 1
+        elif desktop_action == '--set-local-sync-dir':
+            return set_local_sync_dir(command_identifier) if set_local_sync_dir else 1
+        elif desktop_action == '--set-global-sync-dir':
+            return set_global_sync_dir(command_identifier) if set_global_sync_dir else 1
+        else:
+            print(f"❌ 错误: 未知的desktop操作: {desktop_action}")
+            return 1
+    elif args[0] == '--upload':
+        # 上传文件：GOOGLE_DRIVE --upload file_path [remote_path] 或 GOOGLE_DRIVE --upload "[[src1, dst1], [src2, dst2], ...]"
+        if len(args) < 2:
+            print("❌ 错误: 需要指定要上传的文件")
+            return 1
+            
+        try:
+            # 动态导入GoogleDriveShell避免循环导入
+            import sys
+            import os
+            sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+            from google_drive_shell import GoogleDriveShell
+            
+            shell = GoogleDriveShell()
+            
+            # 检查是否为多文件语法
+            if len(args) == 2 and args[1].startswith('[[') and args[1].endswith(']]'):
+                try:
+                    import ast
+                    file_pairs = ast.literal_eval(args[1])
+                    result = shell.cmd_upload_multi(file_pairs)
+                except:
+                    result = {"success": False, "error": "多文件语法格式错误，应为: [[src1, dst1], [src2, dst2], ...]"}
+            else:
+                # 原有的单文件或多文件到单目标语法
+                target_path = "." if len(args) == 2 else args[2]
+                
+                # 修复路径展开问题：如果target_path是本地完整路径，转换为相对路径
+                if target_path.startswith(os.path.expanduser("~")):
+                    # 将本地完整路径转换回~/相对路径
+                    home_path = os.path.expanduser("~")
+                    target_path = "~" + target_path[len(home_path):]
+                
+                result = shell.cmd_upload([args[1]], target_path)
+            
+            if is_run_environment(command_identifier):
+                write_to_json_output(result, command_identifier)
+            else:
+                if result["success"]:
+                    print(result["message"])
+                    if result.get("uploaded_files"):
+                        print(f"Successfully uploaded:")
+                        for file in result["uploaded_files"]:
+                            if file.get('url') and file['url'] != 'unavailable':
+                                print(f"  - {file['name']} (ID: {file.get('id', 'unknown')}, URL: {file['url']})")
+                            else:
+                                print(f"  - {file['name']} (ID: {file.get('id', 'unknown')})")
+                    if result.get("failed_files"):
+                        print(f"Failed to upload:")
+                        for file in result["failed_files"]:
+                            print(f"  - {file}")
+                else:
+                    print(f"❌ {result.get('error', 'Upload failed')}")
+            
+            return 0 if result["success"] else 1
+            
+        except Exception as e:
+            error_msg = f"❌ 执行upload命令时出错: {e}"
+            print(error_msg)
+            return 1
+    elif args[0] == '-my':
+        # My Drive URL
+        my_drive_url = "https://drive.google.com/drive/u/0/my-drive"
+        return open_google_drive(my_drive_url, command_identifier) if open_google_drive else 1
+    else:
+        # 默认作为URL处理
+        url = args[0]
+        return open_google_drive(url, command_identifier) if open_google_drive else 1

@@ -5,7 +5,7 @@ Google Drive Modules
 """
 
 # 导入所有模块的函数（保持向后兼容）
-from .core_utils import *
+# core_utils已合并到remote_commands中
 from .drive_process_manager import *
 from .sync_config_manager import *
 from .remote_shell_manager import *
@@ -38,19 +38,30 @@ class CoreUtils:
         return get_multiline_input_safe(*args, **kwargs)
     
     def is_run_environment(self, *args, **kwargs):
+        from .remote_commands import is_run_environment
         return is_run_environment(*args, **kwargs)
     
     def write_to_json_output(self, *args, **kwargs):
+        from .remote_commands import write_to_json_output
         return write_to_json_output(*args, **kwargs)
     
     def copy_to_clipboard(self, *args, **kwargs):
-        return copy_to_clipboard(*args, **kwargs)
+        # copy_to_clipboard现在是RemoteCommands类的方法，需要创建实例
+        from .remote_commands import RemoteCommands
+        remote_cmd_instance = RemoteCommands(None, None)
+        return remote_cmd_instance.copy_to_clipboard(*args, **kwargs)
     
     def show_help(self, *args, **kwargs):
+        from .remote_commands import show_help
         return show_help(*args, **kwargs)
     
     def main(self, *args, **kwargs):
+        from .remote_commands import main
         return main(*args, **kwargs)
+    
+    def _verify_mkdir_with_ls(self, *args, **kwargs):
+        from .verification import VerificationMixin
+        return VerificationMixin._verify_mkdir_with_ls(self, *args, **kwargs)
 
 class DriveProcessManager:
     """驱动进程管理器"""
@@ -195,12 +206,12 @@ import sys
 current_module = sys.modules[__name__]
 
 # 从各个子模块导入函数并添加到当前模块
-from . import core_utils, drive_process_manager, sync_config_manager
+from . import drive_process_manager, sync_config_manager  # core_utils已合并到remote_commands中
 from . import remote_shell_manager, drive_api_service, shell_commands, hf_credentials_manager
 
 # 收集所有子模块的函数
 all_modules = [
-    core_utils, drive_process_manager, sync_config_manager,
+    drive_process_manager, sync_config_manager,  # core_utils已移除
     remote_shell_manager, drive_api_service, shell_commands, hf_credentials_manager
 ]
 

@@ -1341,9 +1341,6 @@ class TestExtractPDFPostProcessingQuality(unittest.TestCase):
         old_format_count = content.count('**图片分析:**')
         new_format_count = content.count('--- 图像分析结果 ---')
         
-        print(f"🔍 Debug: old_format={old_format_count}, new_format={new_format_count}")
-        print(f"🔍 Content preview: {content[:500]}...")
-        
         self.assertEqual(old_format_count, 0, "Found old image analysis format (**图片分析:**)")
 
         # 检查表格内容格式：应该在$$包围内

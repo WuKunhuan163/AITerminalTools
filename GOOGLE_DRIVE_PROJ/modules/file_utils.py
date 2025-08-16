@@ -125,8 +125,8 @@ class FileUtils:
             target_zip_path = f'{remote_target_path}/{zip_filename}'
             
             # 生成解压命令部分 - 使用统一函数
-            from .core_utils import generate_unzip_command
-            unzip_part = generate_unzip_command(
+            # generate_unzip_command现在在remote_commands中，需要通过main_instance访问
+            unzip_part = self.main_instance.remote_commands.generate_unzip_command(
                 remote_target_path, 
                 zip_filename, 
                 delete_zip=delete_zip,
@@ -137,13 +137,13 @@ class FileUtils:
             sync_and_move_part = f"""(mkdir -p {remote_target_path} && echo -n "⏳"; for i in $(seq 1 60); do     if mv {source_path} {target_zip_path} 2>/dev/null; then         echo "";         break;     else         if [ "$i" -eq 60 ]; then             echo " ❌ (已重试60次失败)";             exit 1;         else             echo -n ".";             sleep 1;         fi;     fi; done) && (cd {remote_target_path} && echo -n "⏳"; for i in $(seq 1 30); do     if [ -f "{zip_filename}" ]; then         echo "";         break;     else         if [ "$i" -eq 30 ]; then             echo " ❌ (zip文件检测失败)";             exit 1;         else             echo -n ".";             sleep 1;         fi;     fi; done)"""
             
             # 组合完整命令
-            remote_command = f"""{sync_and_move_part} && ({unzip_part}) && clear && echo "✅ 执行完成" || echo "❌ 执行失败\""""
+            remote_command = f"""{sync_and_move_part} && ({unzip_part})"""
             
             print(f"🔧 生成的远程命令（包含双重同步检测）: {remote_command}")
             
             # 使用subprocess方法显示命令窗口
             try:
-                from .core_utils import show_command_window_subprocess
+                # show_command_window_subprocess现在在remote_commands中，需要通过main_instance访问
                 
                 title = f"远程文件夹上传: {zip_filename}"
                 instruction = f"""请在远程环境中执行以下命令来完成文件夹上传和解压：
@@ -156,7 +156,7 @@ class FileUtils:
 """
                 
                 # 使用subprocess方法显示窗口
-                result = show_command_window_subprocess(
+                result = self.main_instance.remote_commands.show_command_window_subprocess(
                     title=title,
                     command_text=remote_command,
                     instruction_text=instruction,

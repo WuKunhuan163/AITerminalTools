@@ -28,7 +28,12 @@ except ImportError as e:
 
 # 导入is_run_environment函数
 try:
-    from .core_utils import is_run_environment
+    # is_run_environment现在在remote_commands中，但这里我们直接实现一个简单版本
+    def is_run_environment(command_identifier=None):
+        """Check if running in RUN environment by checking environment variables"""
+        if command_identifier:
+            return os.environ.get(f'RUN_IDENTIFIER_{command_identifier}') == 'True'
+        return False
 except ImportError:
     try:
         from core_utils import is_run_environment

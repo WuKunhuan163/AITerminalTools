@@ -183,13 +183,16 @@ fi
             }
         else:
             # 非RUN环境，使用subprocess方法显示窗口
-            from .core_utils import show_command_window_subprocess
+            # show_command_window_subprocess现在在remote_commands中，需要通过main_instance访问
             
             title = "🤗 HuggingFace 远程设置"
             instruction = "请在远程环境中执行以下命令来设置HuggingFace凭据："
             
             # 使用subprocess方法显示窗口
-            result = show_command_window_subprocess(
+            # 创建一个临时的remote_commands实例来调用方法
+            from .remote_commands import RemoteCommands
+            remote_cmd_instance = RemoteCommands(None, None)
+            result = remote_cmd_instance.show_command_window_subprocess(
                 title=title,
                 command_text=remote_setup_commands.strip(),
                 instruction_text=instruction,
