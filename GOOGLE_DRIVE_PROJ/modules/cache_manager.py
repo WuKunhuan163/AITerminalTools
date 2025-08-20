@@ -138,12 +138,23 @@ class CacheManager:
             deletion_records = self.load_deletion_cache()
             current_time = time.time()
             
+            # 添加调试信息
+            from .remote_commands import debug_print
+            debug_print(f"🕐 Checking rename for {filename}: found {len(deletion_records)} deletion records")
+            
             # 检查5分钟内是否删除过同名文件
             for record in deletion_records:
-                if (record.get("filename") == filename and 
-                    current_time - record.get("timestamp", 0) < 300):  # 5分钟 = 300秒
+                record_filename = record.get("filename", "")
+                record_timestamp = record.get("timestamp", 0)
+                time_diff = current_time - record_timestamp
+                
+                debug_print(f"🕐 Record: {record_filename}, age: {time_diff:.1f}s")
+                
+                if (record_filename == filename and time_diff < 300):  # 5分钟 = 300秒
+                    debug_print(f"🏷️  Should rename {filename} (found in deletion cache, age: {time_diff:.1f}s)")
                     return True
             
+            debug_print(f"🏷️  No need to rename {filename} (not in recent deletion cache)")
             return False
         except Exception as e:
             print(f"⚠️ 检查文件重命名建议时出错: {e}")

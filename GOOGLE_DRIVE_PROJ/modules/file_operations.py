@@ -5,18 +5,10 @@ Google Drive Shell - File Operations Module
 """
 
 import os
-import sys
-import json
 import time
-import hashlib
-import warnings
 import subprocess
-import shutil
-import zipfile
-import tempfile
 from pathlib import Path
 import platform
-import psutil
 from typing import Dict
 from .linter import GDSLinter
 
@@ -155,6 +147,54 @@ class FileOperations:
         
         return {"success": True, "conflicts": []}
     
+    def _check_remote_file_conflicts(self, source_files, target_path):
+        """检查远程文件是否已存在（用于非force模式）"""
+        try:
+            current_shell = self.main_instance.get_current_shell()
+            if not current_shell:
+                return {"success": False, "error": "No active remote shell"}
+            
+            conflicts = []
+            
+            # 获取目标目录中的文件列表
+            ls_result = self.main_instance.cmd_ls(target_path, detailed=False, recursive=False)
+            if not ls_result.get("success"):
+                # 如果无法列出文件（可能是目录不存在），则认为没有冲突
+                return {"success": True, "conflicts": []}
+            
+            # 获取远程文件名列表
+            remote_files = set()
+            if ls_result.get("files"):
+                for file_info in ls_result["files"]:
+                    remote_files.add(file_info["name"])
+            
+            # 检查每个源文件是否在远程已存在
+            for source_file in source_files:
+                if not os.path.exists(source_file):
+                    continue
+                
+                filename = os.path.basename(source_file)
+                if filename in remote_files:
+                    conflicts.append({
+                        "local_file": source_file,
+                        "remote_file": filename,
+                        "reason": "File already exists in remote directory"
+                    })
+            
+            if conflicts:
+                conflict_files = [c["remote_file"] for c in conflicts]
+                return {
+                    "success": False,
+                    "conflicts": conflicts,
+                    "error": f"\nFile exists: {', '.join(conflict_files)}. Use --force to override."
+                }
+            
+            return {"success": True, "conflicts": []}
+            
+        except Exception as e:
+            # 如果检查过程出错，允许继续上传（保守处理）
+            debug_print(f"Remote file conflict check failed: {e}")
+            return {"success": True, "conflicts": []}
 
     def cmd_upload_folder(self, folder_path, target_path=".", keep_zip=False, force=False):
         """
@@ -250,9 +290,9 @@ class FileOperations:
         try:
             # 立即显示进度消息
             print("⏳ Waiting for upload ...", end="", flush=True)
-            
-            # 启动debug信息捕获
             debug_capture.start_capture()
+            
+            # 延迟启动debug信息捕获，让重命名信息能够显示
             debug_print(f"cmd_upload called with source_files={source_files}, target_path='{target_path}', force={force}")
             
             # 0. 检查Google Drive Desktop是否运行
@@ -326,7 +366,8 @@ class FileOperations:
             # 3.5. 检查目标文件是否已存在，避免冲突（除非使用--force）
             overridden_files = []
             if not force:
-                conflict_check_result = self._check_target_file_conflicts_before_move(source_files, target_path)
+                # 检查远程文件是否已存在
+                conflict_check_result = self._check_remote_file_conflicts(source_files, target_path)
                 if not conflict_check_result["success"]:
                     return conflict_check_result
             else:
@@ -350,7 +391,10 @@ class FileOperations:
             failed_moves = []
             
             for source_file in source_files:
+                debug_print(f"📁 Processing file: {source_file}")
                 move_result = self.main_instance.sync_manager.move_to_local_equivalent(source_file)
+                debug_print(f"📁 Move result: {move_result}")
+                
                 if move_result["success"]:
                     file_moves.append({
                         "original_path": move_result["original_path"],
@@ -359,6 +403,12 @@ class FileOperations:
                         "new_path": move_result["new_path"],
                         "renamed": move_result["renamed"]
                     })
+                    
+                    # 记录重命名信息到debug（不显示给用户）
+                    if move_result["renamed"]:
+                        debug_print(f"🏷️  File renamed: {move_result['original_filename']} -> {move_result['filename']}")
+                    else:
+                        debug_print(f"📁 File processed without renaming: {move_result['filename']}")
                 else:
                     failed_moves.append({
                         "file": source_file,
@@ -404,7 +454,6 @@ class FileOperations:
                 }
             else:
                 base_time = sync_result.get("base_sync_time", sync_result.get("sync_time", 0))
-                # 静默处理文件同步完成
                 sync_result["sync_time"] = base_time
             
             # 7. 静默验证文件同步状态
@@ -451,9 +500,6 @@ class FileOperations:
                     "execution_result": execution_result
                 }
             
-            # 远程命令执行成功后，进行文件验证
-            debug_print("Remote command executed successfully, now verifying files")
-            
             if folder_upload_info and folder_upload_info.get("is_folder_upload", False):
                 # 文件夹上传：跳过文件验证，信任远程命令执行结果
                 debug_print(f"Folder upload detected, skipping file verification")
@@ -468,7 +514,6 @@ class FileOperations:
             else:
                 # 普通文件上传：使用ls-based验证
                 expected_for_verification = [fm.get("original_filename", fm["filename"]) for fm in file_moves]
-                debug_print(f"Starting file verification for: {expected_for_verification}")
 
                 # 使用带进度的验证机制
                 verify_result = self.main_instance.remote_commands._verify_upload_with_progress(
@@ -483,6 +528,20 @@ class FileOperations:
             # 9. 上传和远端命令执行完成后，清理LOCAL_EQUIVALENT中的文件
             if verify_result["success"]:
                 self._cleanup_local_equivalent_files(file_moves)
+                
+                # 添加删除记录到缓存（记录原始文件名和临时文件名的使用）
+                for file_info in file_moves:
+                    original_filename = file_info["original_filename"]
+                    temp_filename = file_info["filename"]
+                    
+                    # 记录原始文件名的使用
+                    self.main_instance.cache_manager.add_deletion_record(original_filename)
+                    debug_print(f"📝 Added deletion record for original: {original_filename}")
+                    
+                    # 如果文件被重命名，也记录临时文件名的使用
+                    if file_info["renamed"] and temp_filename != original_filename:
+                        self.main_instance.cache_manager.add_deletion_record(temp_filename)
+                        debug_print(f"📝 Added deletion record for temp: {temp_filename}")
                 
                 # 如果指定了 --remove-local 选项，删除本地源文件
                 if remove_local:
@@ -587,9 +646,14 @@ class FileOperations:
             if not current_shell:
                 return {"success": False, "error": "没有活跃的远程shell，请先创建或切换到一个shell"}
             
-            if path is None or path == "." or path == "~":
+            if path is None or path == ".":
+                # 当前目录
                 target_folder_id = current_shell.get("current_folder_id", self.main_instance.REMOTE_ROOT_FOLDER_ID)
                 display_path = current_shell.get("current_path", "~")
+            elif path == "~":
+                # 根目录
+                target_folder_id = self.main_instance.REMOTE_ROOT_FOLDER_ID
+                display_path = "~"
             else:
                 # 首先尝试作为目录解析
                 target_folder_id, display_path = self.main_instance.resolve_path(path, current_shell)
@@ -1128,11 +1192,22 @@ class FileOperations:
             result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
             
             if result.get("success"):
-                return {
-                    "success": True,
-                    "filename": filename,
-                    "message": f"✅ 文件已创建: {filename}"
-                }
+                # 验证文件是否真的被创建了
+                verification_result = self.main_instance.verify_creation_with_ls(
+                    filename, current_shell, creation_type="file", max_attempts=30
+                )
+                
+                if verification_result.get("success", False):
+                    return {
+                        "success": True,
+                        "filename": filename,
+                        "message": f"✅ 文件已创建: {filename}"
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "error": f"文件创建命令成功但验证失败: {verification_result.get('error', 'Unknown verification error')}"
+                    }
             else:
                 # 优先使用用户提供的错误信息
                 error_msg = result.get('error_info') or result.get('error') or 'Unknown error'
@@ -1160,7 +1235,7 @@ class FileOperations:
             # 查找文件
             file_info = self._find_file(filename, current_shell)
             if not file_info:
-                return {"success": False, "error": f"File or directory does not exist: {filename}"}
+                return {"success": False, "error": f"File or directory does not exist"}
             
             # 检查是否为文件
             if file_info['mimeType'] == 'application/vnd.google-apps.folder':
@@ -1214,7 +1289,7 @@ class FileOperations:
                     result[filename] = {
                         "local_file": None,
                         "occurrences": [],
-                        "error": cat_result["error_info"]
+                        "error": cat_result["error"]
                     }
                     continue
                 
@@ -1244,7 +1319,7 @@ class FileOperations:
             return {"success": True, "result": result}
                 
         except Exception as e:
-            return {"success": False, "error": f"Grep command error: {e}"}
+            return {"success": False, "error": f"Grep command failed: {str(e)}"}
 
     def cmd_upload_multi(self, file_pairs, force=False, remove_local=False):
         """
@@ -1843,12 +1918,23 @@ class FileOperations:
             result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
             
             if result.get("success"):
-                return {
-                    "success": True,
-                    "source": source,
-                    "destination": destination,
-                    "message": f"✅ 已移动 {source} -> {destination}"
-                }
+                # 验证文件是否真的被移动了
+                verification_result = self.main_instance.verify_creation_with_ls(
+                    destination, current_shell, creation_type="file", max_attempts=30
+                )
+                
+                if verification_result.get("success", False):
+                    return {
+                        "success": True,
+                        "source": source,
+                        "destination": destination,
+                        "message": f""
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "error": f"mv命令执行成功但验证失败: {verification_result.get('error', 'Unknown verification error')}"
+                    }
             else:
                 # 优先使用用户提供的错误信息
                 error_msg = result.get('error_info') or result.get('error') or 'Unknown error'
@@ -1998,19 +2084,22 @@ class FileOperations:
             # 3. source环境文件
             # 4. 从临时文件读取base64并解码执行
             # 5. 清理临时文件
-            commands = [
-                # 确保tmp目录存在
-                f"mkdir -p {self.main_instance.REMOTE_ROOT}/tmp",
-                # 将base64编码的Python代码写入临时文件
-                f'echo "{code_base64}" > "{temp_file_path}"',
-                # source环境文件，如果失败则忽略（会使用默认的PYTHONPATH）
-                f"source {env_file} 2>/dev/null || true",
-                # 从临时文件读取base64，解码并执行Python代码
-                f'python3 -c "import base64; exec(base64.b64decode(open(\\"{temp_file_path}\\").read().strip()).decode(\\"utf-8\\"))"',
-                # 清理临时文件
-                f'rm -f "{temp_file_path}"'
-            ]
-            command = " && ".join(commands)
+            # 构建命令，确保Python脚本的退出码被正确捕获
+            command = f'''
+            mkdir -p {self.main_instance.REMOTE_ROOT}/tmp && \\
+            echo "{code_base64}" > "{temp_file_path}" && \\
+            source {env_file} 2>/dev/null || true
+            
+            # 执行Python代码并捕获退出码
+            python3 -c "import base64; exec(base64.b64decode(open(\\"{temp_file_path}\\").read().strip()).decode(\\"utf-8\\"))"
+            PYTHON_EXIT_CODE=$?
+            
+            # 清理临时文件
+            rm -f "{temp_file_path}"
+            
+            # 返回Python脚本的退出码
+            exit $PYTHON_EXIT_CODE
+            '''.strip()
             
             # 执行远程命令
             result = self.main_instance.execute_generic_remote_command("bash", ["-c", command])
@@ -2341,7 +2430,7 @@ class FileOperations:
             
             if execution_result["success"]:
                 # 执行成功后，进行验证以确保目录真正创建（最多60次重试）
-                verification_result = self.main_instance._verify_mkdir_with_ls(target_path, current_shell, max_attempts=60)
+                verification_result = self.main_instance.verify_creation_with_ls(target_path, current_shell, creation_type="dir", max_attempts=60)
                 
                 if verification_result["success"]:
                     # 验证成功，简洁返回，像bash shell一样成功时不显示任何信息
@@ -3829,7 +3918,8 @@ echo "Step 4: Verification..." &&
 echo "Checking if files exist:" &&
 ls -la {self.main_instance.REMOTE_ENV}/ | grep -E "(current_venv_|venv_env_)" &&
 echo "" &&
-echo 'Virtual environment "{env_name}" activation completed'
+echo 'Virtual environment "{env_name}" activation completed' &&
+clear && echo "✅ 执行完成"
 """
             
 # Debug prints removed as requested by user
@@ -3900,7 +3990,9 @@ echo 'Virtual environment "{env_name}" activation completed'
                 # 在当前会话中应用重置的环境变量
                 f"source {env_file}",
                 # 简单的成功消息
-                "echo 'Virtual environment deactivated'"
+                "echo 'Virtual environment deactivated'",
+                # 添加清屏和完成提示
+                "clear && echo '✅ 执行完成'"
             ]
             
             # 使用非bash-safe执行方法，让环境变量在主shell中生效
@@ -4638,7 +4730,8 @@ except Exception as e:
             
             commands = [
                 "mkdir -p /content/drive/MyDrive/REMOTE_ROOT/tmp",  # 确保远程tmp目录存在
-                f"python3 -c '{python_script}'"
+                f"python3 -c '{python_script}'",
+                "clear && echo '✅ 执行完成'"  # 清屏并显示完成提示
             ]
             
             full_command = " && ".join(commands)

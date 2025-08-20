@@ -186,17 +186,52 @@ class PathResolver:
                 return self._resolve_parent_directory(current_folder_id, current_path)
             
             elif path.startswith("../"):
-                parent_id, parent_path = self._resolve_parent_directory(current_folder_id, current_path)
-                if parent_id:
-                    relative_path = path[3:]
-                    return self._resolve_relative_path(relative_path, parent_id, parent_path)
-                return None, None
+                # 递归处理多级 ../../../ 路径
+                return self._resolve_multi_level_parent_path(path, current_folder_id, current_path)
             
             else:
                 return self._resolve_relative_path(path, current_folder_id, current_path)
                 
         except Exception as e:
             print(f"❌ 解析路径时出错: {e}")
+            return None, None
+
+    def _resolve_multi_level_parent_path(self, path, current_folder_id, current_path):
+        """递归处理多级父目录路径，如 ../../../folder"""
+        try:
+            # 分解路径组件
+            parts = path.split('/')
+            
+            # 计算需要向上的级数
+            up_levels = 0
+            remaining_path = []
+            
+            for part in parts:
+                if part == "..":
+                    up_levels += 1
+                elif part:  # 跳过空字符串
+                    remaining_path.append(part)
+            
+            # 向上导航指定级数
+            current_id = current_folder_id
+            current_logical_path = current_path
+            
+            for _ in range(up_levels):
+                parent_id, parent_path = self._resolve_parent_directory(current_id, current_logical_path)
+                if not parent_id:
+                    return None, None
+                current_id = parent_id
+                current_logical_path = parent_path
+            
+            # 如果还有剩余路径，继续解析
+            if remaining_path:
+                remaining_relative_path = '/'.join(remaining_path)
+                return self._resolve_relative_path(remaining_relative_path, current_id, current_logical_path)
+            else:
+                return current_id, current_logical_path
+                
+        except Exception as e:
+            print(f"❌ 解析多级父目录路径时出错: {e}")
             return None, None
 
     def _resolve_relative_path(self, relative_path, base_folder_id, base_path):

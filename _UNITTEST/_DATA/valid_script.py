@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 语法正确的Python脚本
 """

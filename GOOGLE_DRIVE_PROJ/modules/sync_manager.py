@@ -64,45 +64,64 @@ class SyncManager:
             final_filename = filename
             renamed = False
             
-            if target_path.exists():
-                # 如果远端也有同名文件，使用重命名策略
-                debug_print(f"🔄 LOCAL_EQUIVALENT found a file with the same name, checking if it exists on the remote: {filename}")
+            # 首先检查远端是否有同名文件和缓存建议
+            debug_print(f"🔄 Checking conflicts for: {filename}")
+            remote_check_result = self._check_remote_file_exists(filename)
+            remote_has_same_file = remote_check_result.get("exists", False)
+            
+            # 检查是否在删除时间缓存中（5分钟内删除过）
+            cache_suggests_rename = self.should_rename_file(filename)
+            
+            debug_print(f"🔍 Conflict check: {filename} -> remote_exists={remote_has_same_file}, cache_suggests_rename={cache_suggests_rename}, local_exists={target_path.exists()}")
+            
+            # 如果远端有同名文件或缓存建议重命名，使用重命名策略
+            if remote_has_same_file or cache_suggests_rename:
+                debug_print(f"🏷️  Need to rename {filename} to avoid conflict")
                 
-                # 检查远端是否有同名文件
-                remote_has_same_file = self._check_remote_file_exists(filename)
-                
-                # 检查是否在删除时间缓存中（5分钟内删除过）
-                cache_suggests_rename = self.should_rename_file(filename)
-                
-                if remote_has_same_file or cache_suggests_rename:
-                    # 远端有同名文件或缓存建议重命名，使用重命名策略
-                    counter = 1
-                    while target_path.exists():
-                        # 生成新的文件名：name_1.ext, name_2.ext, ...
-                        new_filename = f"{name_part}_{counter}{ext_part}"
-                        target_path = local_equiv_path / new_filename
-                        counter += 1
+                # 生成新的文件名：name_1.ext, name_2.ext, ...
+                counter = 1
+                while True:
+                    new_filename = f"{name_part}_{counter}{ext_part}"
+                    new_target_path = local_equiv_path / new_filename
                     
-                    final_filename = target_path.name
-                    renamed = True
+                    # 检查新文件名是否在本地不冲突，并且不在缓存记录中
+                    if not new_target_path.exists():
+                        # 检查缓存是否建议这个临时文件名也需要重命名
+                        temp_cache_suggests_rename = self.should_rename_file(new_filename)
+                        if not temp_cache_suggests_rename:
+                            # 找到了不冲突的文件名（本地不存在，缓存中也没有使用记录）
+                            target_path = new_target_path
+                            final_filename = new_filename
+                            renamed = True
+                            debug_print(f"🏷️  Found available temp filename: {new_filename}")
+                            break
+                        else:
+                            debug_print(f"🏷️  Temp filename {new_filename} also in cache, trying next")
                     
-                    if cache_suggests_rename:
-                        debug_print(f"🏷️  Rename file based on deletion cache: {filename} -> {final_filename}")
-                    else:
-                        debug_print(f"🏷️  Rename file to avoid conflict: {filename} -> {final_filename} (renamed)")
-                else:
-                    # 远端没有同名文件且缓存无风险，删除本地旧文件并记录删除
-                    try:
-                        target_path.unlink()
-                        debug_print(f"🗑️  Delete old file in LOCAL_EQUIVALENT: {filename} (deleted)")
-                        
-                        # 记录删除到缓存
-                        self.add_deletion_record(filename)
-                    except Exception as e:
+                    counter += 1
+                    if counter > 100:  # 防止无限循环
                         return {
                             "success": False,
-                            "error": f"Failed to delete old file: {e}"
+                            "error": f"Cannot generate unique filename for {filename} after 100 attempts"
                         }
+                
+                if cache_suggests_rename:
+                    debug_print(f"🏷️  Renamed based on deletion cache: {filename} -> {final_filename}")
+                else:
+                    debug_print(f"🏷️  Renamed to avoid remote conflict: {filename} -> {final_filename}")
+            
+            elif target_path.exists():
+                # 本地存在同名文件，但远端没有且缓存无风险，删除本地旧文件
+                try:
+                    target_path.unlink()
+                    debug_print(f"🗑️  Deleted old local file: {filename} (no remote conflict)")
+                    
+                    # 注意：不在这里添加删除记录，删除记录应该在文件成功上传后添加
+                except Exception as e:
+                    return {
+                        "success": False,
+                        "error": f"Failed to delete old file: {e}"
+                    }
             
             # 复制文件而不是移动（保留原文件）
             shutil.copy2(str(source_path), str(target_path))
@@ -257,7 +276,7 @@ class SyncManager:
                         # 如果所有文件都已同步，返回成功
                         if len(current_synced) == len(expected_files):
                             debug_print(f" ({elapsed_time:.1f}s)")
-                            print()  # Add empty line after detection ends
+                            print("√")  # Add empty line after detection ends
                             return {
                                 "success": True,
                                 "synced_files": current_synced,

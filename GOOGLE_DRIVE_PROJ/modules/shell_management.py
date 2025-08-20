@@ -36,9 +36,21 @@ class ShellManagement:
         try:
             if self.main_instance.shells_file.exists():
                 with open(self.main_instance.shells_file, 'r', encoding='utf-8') as f:
-                    return json.load(f)
+                    content = f.read().strip()
+                    if not content:
+                        # 文件为空，返回默认配置
+                        return {"shells": {}, "active_shell": None}
+                    return json.loads(content)
             else:
                 return {"shells": {}, "active_shell": None}
+        except json.JSONDecodeError as e:
+            print(f"⚠️ Shell配置文件损坏，重新创建: {e}")
+            # 备份损坏的文件并创建新的
+            backup_file = self.main_instance.shells_file.with_suffix('.bak')
+            if self.main_instance.shells_file.exists():
+                self.main_instance.shells_file.rename(backup_file)
+            # 返回默认配置，下次保存时会创建新文件
+            return {"shells": {}, "active_shell": None}
         except Exception as e:
             print(f"❌ 加载shell配置失败: {e}")
             return {"shells": {}, "active_shell": None}

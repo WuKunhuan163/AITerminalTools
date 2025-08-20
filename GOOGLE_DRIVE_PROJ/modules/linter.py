@@ -51,10 +51,16 @@ class GDSLinter:
         linters = {}
         
         # Python linters
+        python_linter_found = False
         for linter in ['flake8', 'pylint', 'pycodestyle']:
             if self._command_exists(linter):
                 linters['python'] = linter
+                python_linter_found = True
                 break
+        
+        # Fallback to built-in Python syntax checking if no external linter found
+        if not python_linter_found and self._command_exists('python3'):
+            linters['python'] = 'python3'
         
         # JavaScript/TypeScript linters
         for linter in ['eslint', 'jshint']:
@@ -210,8 +216,12 @@ class GDSLinter:
             elif linter == 'pycodestyle':
                 result = subprocess.run(['pycodestyle', file_path], 
                                       capture_output=True, text=True)
+            elif linter == 'python3':
+                # Built-in Python syntax check
+                result = subprocess.run(['python3', '-m', 'py_compile', file_path], 
+                                      capture_output=True, text=True)
             else:
-                # Fallback: basic Python syntax check
+                # Unknown linter fallback: basic Python syntax check
                 result = subprocess.run(['python3', '-m', 'py_compile', file_path], 
                                       capture_output=True, text=True)
             

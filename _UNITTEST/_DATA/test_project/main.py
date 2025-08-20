@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 测试项目主文件
 """

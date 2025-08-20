@@ -296,6 +296,10 @@ class GoogleDriveShell:
         """委托到verification管理器"""
         return self.verification._verify_mkdir_with_ls(*args, **kwargs)
     
+    def verify_creation_with_ls(self, *args, **kwargs):
+        """委托到verification管理器"""
+        return self.verification.verify_creation_with_ls(*args, **kwargs)
+    
     def _display_recursive_ls_result(self, result):
         """显示递归ls命令的结果"""
         try:
@@ -348,11 +352,38 @@ class GoogleDriveShell:
 
     
     def _handle_unified_echo_command(self, args):
-        """统一的echo命令处理逻辑 - 简化版本，使用通用的远程命令执行"""
+        """统一的echo命令处理逻辑 - 支持长内容的base64编码"""
         # 空echo命令
         if not args:
             print("")
             return 0
+        
+        # 检测是否为重定向命令，如果是则统一使用base64编码
+        if '>' in args:
+            # 计算内容总长度
+            content_parts = []
+            redirect_found = False
+            target_file = None
+            
+            for i, arg in enumerate(args):
+                if arg == '>':
+                    redirect_found = True
+                    if i + 1 < len(args):
+                        target_file = args[i + 1]
+                    break
+                content_parts.append(arg)
+            
+            if redirect_found and content_parts and target_file:
+                # 重组内容
+                content = ' '.join(content_parts)
+                # 统一使用base64编码的文件创建方法
+                result = self.file_operations._create_text_file(target_file, content)
+                if result.get("success", False):
+                    return 0
+                else:
+                    error_msg = result.get("error", "文件创建失败")
+                    print(error_msg)
+                    return 1
         
         # 使用通用的远程命令执行机制
         result = self.execute_generic_remote_command('echo', args)
@@ -369,6 +400,37 @@ class GoogleDriveShell:
         else:
             error_msg = result.get("error", "Echo command failed")
             print(error_msg)
+            return 1
+    
+    def _handle_quoted_echo_redirect(self, shell_cmd_clean):
+        """处理引号包围的echo重定向命令，使用base64编码"""
+        try:
+            # 解析echo命令：echo "content" > filename
+            import re
+            
+            # 使用正则表达式提取内容和文件名
+            # 匹配格式：echo "content" > filename 或 echo 'content' > filename
+            match = re.match(r'^echo\s+(["\'])(.*?)\1\s*>\s*(.+)$', shell_cmd_clean.strip(), re.DOTALL)
+            
+            if not match:
+                print("❌ 无法解析echo重定向命令格式")
+                return 1
+            
+            quote_char = match.group(1)
+            content = match.group(2)
+            target_file = match.group(3).strip()
+        
+            # 使用base64编码的文件创建方法
+            result = self.file_operations._create_text_file(target_file, content)
+            if result.get("success", False):
+                return 0
+            else:
+                error_msg = result.get("error", "文件创建失败")
+                print(error_msg)
+                return 1
+                
+        except Exception as e:
+            print(f"❌ 处理引号echo命令时出错: {e}")
             return 1
     
     def _normalize_quotes_and_escapes(self, args):
@@ -562,6 +624,10 @@ class GoogleDriveShell:
                 shell_cmd_clean = shell_cmd_clean[1:-1]
                 shell_cmd = shell_cmd_clean  # 更新shell_cmd以便后续使用
                 is_quoted_command = True  # 设置引号命令标记
+                
+                # 特殊处理：引号包围的echo重定向命令
+                if shell_cmd_clean.strip().startswith('echo ') and '>' in shell_cmd_clean:
+                    return self._handle_quoted_echo_redirect(shell_cmd_clean)
 
             # 解析命令 - 对edit命令特殊处理
             if shell_cmd_clean.strip().startswith('edit '):
@@ -612,23 +678,39 @@ class GoogleDriveShell:
                     cmd = cmd_parts[0] if cmd_parts else ''
                     args = cmd_parts[1:] if len(cmd_parts) > 1 else []
             else:
-                # 使用shlex进行智能分割，保留引号内的换行符
-                import shlex
-                try:
-                    cmd_parts = shlex.split(shell_cmd_clean)
-                    if not cmd_parts:
-                        return 1
-                    cmd = cmd_parts[0]
-                    args = cmd_parts[1:] if len(cmd_parts) > 1 else []
-                except ValueError as e:
-                    # 如果shlex解析失败，回退到简单分割
-                    print(f"⚠️ Shell command parsing failed with shlex: {e}")
-                    print("⚠️ Falling back to simple space splitting")
-                    cmd_parts = shell_cmd_clean.split()
-                    if not cmd_parts:
-                        return 1
-                    cmd = cmd_parts[0]
-                    args = cmd_parts[1:] if len(cmd_parts) > 1 else []
+                # 特殊处理python -c命令，避免shlex破坏Python代码中的引号
+                if shell_cmd_clean.strip().startswith('python -c '):
+                    # 对于python -c命令，手动分割以保护Python代码中的引号
+                    cmd = 'python'
+                    # 提取-c后面的所有内容作为Python代码
+                    python_code = shell_cmd_clean.strip()[len('python -c '):].strip()
+                    args = ['-c', python_code]
+
+                else:
+                    # 使用shlex进行智能分割，保留引号内的换行符
+                    import shlex
+                    try:
+                        # 在shlex.split之前保护~路径，防止本地路径展开
+                        protected_cmd = shell_cmd_clean.replace('~/', '__TILDE_SLASH__').replace(' ~', ' __TILDE__')
+                        
+                        cmd_parts = shlex.split(protected_cmd)
+                        
+                        # 恢复~路径
+                        cmd_parts = [part.replace('__TILDE_SLASH__', '~/').replace('__TILDE__', '~') for part in cmd_parts]
+                        
+                        if not cmd_parts:
+                            return 1
+                        cmd = cmd_parts[0]
+                        args = cmd_parts[1:] if len(cmd_parts) > 1 else []
+                    except ValueError as e:
+                        # 如果shlex解析失败，回退到简单分割
+                        print(f"⚠️ Shell command parsing failed with shlex: {e}")
+                        print("⚠️ Falling back to simple space splitting")
+                        cmd_parts = shell_cmd_clean.split()
+                        if not cmd_parts:
+                            return 1
+                        cmd = cmd_parts[0]
+                        args = cmd_parts[1:] if len(cmd_parts) > 1 else []
             
             # 对所有命令应用通用引号和转义处理
             if args:
@@ -676,6 +758,18 @@ class GoogleDriveShell:
                         detailed = True
                     elif not arg.startswith('-'):
                         path = arg
+                
+                # 修复shell展开的家目录路径问题
+                if path and path.startswith('/Users/'):
+                    import os
+                    local_home = os.path.expanduser("~")
+                    if path.startswith(local_home):
+                        # 将本地家目录路径转换为远程路径格式
+                        relative_path = path[len(local_home):].lstrip('/')
+                        if relative_path:
+                            path = f"~/{relative_path}"
+                        else:
+                            path = "~"
                 
                 if recursive:
                     # 使用远端ls -R命令，提高效率
@@ -772,18 +866,56 @@ class GoogleDriveShell:
                 
                 # 使用file_operations中的cmd_mkdir方法（通过远程命令执行）
                 recursive = '-p' in args
-                dir_name = [arg for arg in args if arg != '-p'][-1] if args else None
-                if not dir_name:
-                    print("❌ mkdir command needs a directory name")
+                dir_names = [arg for arg in args if arg != '-p']
+                if not dir_names:
+                    print("❌ mkdir command needs directory name(s)")
                     return 1
                 
-                # 调用cmd_mkdir方法
-                result = self.cmd_mkdir(dir_name, recursive)
-                if result.get("success"):
-                    return 0
+                # 支持多个目录创建 - 使用单个远端命令提高效率
+                if len(dir_names) == 1:
+                    # 单个目录，直接调用
+                    result = self.cmd_mkdir(dir_names[0], recursive)
+                    if result.get("success"):
+                        return 0
+                    else:
+                        print(result.get("error", "❌ mkdir命令执行失败"))
+                        return 1
                 else:
-                    print(result.get("error", "❌ mkdir命令执行失败"))
-                    return 1
+                    # 多个目录，合并为单个远端命令
+                    current_shell = self.get_current_shell()
+                    if not current_shell:
+                        print("❌ 没有活跃的远程shell")
+                        return 1
+                    
+                    # 构建合并的mkdir命令
+                    mkdir_prefix = "mkdir -p" if recursive else "mkdir"
+                    absolute_paths = []
+                    for dir_name in dir_names:
+                        abs_path = self.resolve_remote_absolute_path(dir_name, current_shell)
+                        absolute_paths.append(abs_path)
+                    
+                    # 使用&&连接多个mkdir命令
+                    combined_command = " && ".join([f'{mkdir_prefix} "{path}"' for path in absolute_paths])
+                    
+                    # 执行合并的命令
+                    result = self.execute_generic_remote_command("bash", ["-c", combined_command])
+                    
+                    if result.get("success"):
+                        # 验证所有目录都被创建了
+                        all_verified = True
+                        for dir_name in dir_names:
+                            verification_result = self.verify_creation_with_ls(
+                                dir_name, current_shell, creation_type="dir", max_attempts=30
+                            )
+                            if not verification_result.get("success", False):
+                                print(f"❌ 目录 {dir_name} 验证失败")
+                                all_verified = False
+                        
+                        return 0 if all_verified else 1
+                    else:
+                        error_msg = result.get("error", "多目录创建失败")
+                        print(f"❌ {error_msg}")
+                        return 1
             elif cmd == 'touch':
                 if not args:
                     print("❌ touch command needs a filename")
@@ -1006,11 +1138,8 @@ class GoogleDriveShell:
                     # 统一处理已经在execute_shell_command中完成
                     code = ' '.join(code_args)
                     
-                    # 移除外层引号
-                    if code.startswith('"') and code.endswith('"'):
-                        code = code[1:-1]
-                    elif code.startswith("'") and code.endswith("'"):
-                        code = code[1:-1]
+                    # 不要移除Python代码的引号，因为shlex.split已经正确处理了shell引号
+                    # Python代码中的引号是语法的一部分，不应该被移除
                     result = self.cmd_python_code(code)
                 else:
                     # 执行Python文件
@@ -1032,9 +1161,10 @@ class GoogleDriveShell:
                         if stderr:
                             print(stderr, end="", file=sys.stderr)
                     
-                    # 返回Python脚本的退出码
-                    return result.get("returncode", 0)
+                    # 返回Python脚本的实际退出码（可能是非零）
+                    return result.get("return_code", result.get("returncode", 0))
                 else:
+                    # 远程执行本身失败（不是Python脚本失败）
                     print(result.get("error", "Python execution failed"))
                     return 1
             elif cmd == 'upload':
@@ -1157,45 +1287,79 @@ class GoogleDriveShell:
                     return 1
             elif cmd == 'grep':
                 # 使用委托方法处理grep命令
-                if len(args) < 2:
-                    print("❌ grep command needs a pattern and file name")
+                if len(args) < 1:
+                    print("❌ grep command needs at least a file name")
                     return 1
-                # 统一转义处理已经在execute_shell_command中完成
-                pattern = args[0]
-                # 移除pattern的外层引号
+                
+                # 处理参数解析
+                if len(args) == 1:
+                    # 只有一个参数，视为文件名，模式为空（等效于read）
+                    pattern = ""
+                    filenames = args
+                elif '.' in args[-1] and not args[-1].startswith('.'):
+                    # 最后一个参数很可能是文件名，前面的是模式
+                    filenames = [args[-1]]
+                    pattern_parts = args[:-1]
+                    pattern = ' '.join(pattern_parts)
+                else:
+                    # 传统处理：第一个参数是模式，其余是文件名
+                    pattern = args[0]
+                    filenames = args[1:]
+                
+                # 移除pattern的外层引号（如果存在）
                 if pattern.startswith('"') and pattern.endswith('"'):
                     pattern = pattern[1:-1]
                 elif pattern.startswith("'") and pattern.endswith("'"):
                     pattern = pattern[1:-1]
-                filenames = args[1:]
+                    
+                # 检查是否为无模式的grep（等效于read）
+                if not pattern or pattern.strip() == "":
+                    # 无模式grep，等效于read命令
+                    for filename in filenames:
+                        cat_result = self.cmd_cat(filename)
+                        if cat_result.get("success"):
+                            content = cat_result["output"]
+                            # 修复换行显示问题，并添加行号
+                            lines = content.split('\n')
+                            for i, line in enumerate(lines, 1):
+                                print(f"{i:3}: {line}")
+                        else:
+                            print(f"❌ 无法读取文件: {filename}")
+                    return 0
+                
+                # 有模式的grep，只显示匹配行
                 result = self.cmd_grep(pattern, *filenames)
                 if result.get("success", False):
-                    # 格式化输出grep结果
                     result_data = result.get("result", {})
+                    has_matches = False
+                    
                     for filename, file_result in result_data.items():
                         if "error" in file_result:
-                            print(f"{filename}: {file_result['error']}")
+                            print(f"❌ {filename}: {file_result['error']}")
                         else:
                             occurrences = file_result.get("occurrences", {})
                             if occurrences:
+                                has_matches = True
                                 # 获取文件内容用于显示匹配行
                                 cat_result = self.cmd_cat(filename)
                                 if cat_result.get("success"):
                                     lines = cat_result["output"].split('\n')
-                                    for line_num, positions in occurrences.items():
-                                        # 确保line_num是整数类型
-                                        line_index = int(line_num) - 1
+                                    # 按行号排序显示匹配行
+                                    sorted_line_nums = sorted([int(line_num) for line_num in occurrences.keys()])
+                                    for line_num in sorted_line_nums:
+                                        line_index = line_num - 1
                                         if 0 <= line_index < len(lines):
                                             line_content = lines[line_index]
-                                            print(f"{filename}:{line_num}:{line_content}")
+                                            print(f"{line_num:3}: {line_content}")
                                 else:
-                                    # 如果无法读取文件内容，只显示匹配位置
-                                    for line_num, positions in occurrences.items():
-                                        print(f"{filename}:{line_num}: (unable to read content)")
-                            # 没有匹配时不输出（符合grep行为）
+                                    print(f"❌ 无法读取文件内容: {filename}")
+                    
+                    if not has_matches:
+                        # 没有匹配项，模仿bash grep的行为（静默退出）
+                        pass
                     return 0
                 else:
-                    print(result.get("error", "Grep failed"))
+                    print(result.get("error", "❌ Grep命令执行失败"))
                     return 1
             else:
                 # 尝试通过通用远程命令执行

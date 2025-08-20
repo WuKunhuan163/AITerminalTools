@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 包含语法错误的Python脚本
 """
@@ -13,4 +12,4 @@ def calculate_sum(a, b:
 if __name__ == "__main__":
 hello_world()
     result = calculate_sum(5, 3)
-print(f"Sum: {result}")
+    print(f"Sum: {result}")

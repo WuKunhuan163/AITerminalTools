@@ -268,7 +268,6 @@ class RemoteCommands:
             dict: 读取结果
         """
         try:
-            import sys
             import time
             
             # 远端文件路径（在REMOTE_ROOT/tmp目录中）
@@ -699,7 +698,8 @@ for attempt in $(seq 1 60); do
     if {cmd} 2>/dev/null; then
         break
     elif [ "$attempt" -eq 60 ]; then
-        break
+        echo "❌ 错误：{filename} 移动失败，重试60次后仍然失败" >&2
+        exit 1
     else
         sleep 1
     fi
@@ -745,9 +745,7 @@ echo "✅ 执行完成"'''
             
             # 序列化验证每个文件
             for i, expected_file in enumerate(expected_files):
-                debug_print(f"Validating file {i+1}/{len(expected_files)}: {expected_file}")
-                file_found = False
-                
+
                 # 对每个文件最多重试60次
                 for attempt in range(1, 61):
                     # 使用ls命令检查文件是否存在
@@ -1275,6 +1273,18 @@ fi
             
             # 正常执行流程：显示远端命令并通过tkinter获取用户执行结果
             result = self._execute_with_result_capture(remote_command_info, cmd, args)
+            
+            # 如果命令执行成功且包含重定向，则验证文件创建
+            if result.get("success", False) and self._is_redirect_command(cmd, args):
+                redirect_file = self._extract_redirect_target(args)
+                if redirect_file:
+                    verification_result = self.main_instance.verify_creation_with_ls(
+                        redirect_file, current_shell, creation_type="file", max_attempts=30
+                    )
+                    if not verification_result.get("success", False):
+                        # 验证失败，但不影响原始命令的成功状态（因为远程命令已经成功了）
+                        result["verification_warning"] = f"文件创建验证失败: {verification_result.get('error', 'Unknown error')}"
+            
             return result
             
         except Exception as e:
@@ -1282,6 +1292,22 @@ fi
                 "success": False,
                 "error": f"执行远端命令时出错: {str(e)}"
             }
+    
+    def _is_redirect_command(self, cmd, args):
+        """检测命令是否包含重定向操作"""
+        # 检查参数中是否包含重定向符号
+        return '>' in args
+    
+    def _extract_redirect_target(self, args):
+        """从参数中提取重定向目标文件"""
+        try:
+            if '>' in args:
+                redirect_index = args.index('>')
+                if redirect_index + 1 < len(args):
+                    return args[redirect_index + 1]
+            return None
+        except (ValueError, IndexError):
+            return None
 
     def _generate_remote_command(self, cmd, args, current_shell):
         """
@@ -1342,8 +1368,18 @@ fi
                             # 没有目标文件，回退到普通拼接
                             full_command = f"{cmd} {' '.join(args)}"
                     else:
-                        # 其他命令直接拼接
-                        full_command = f"{cmd} {' '.join(args)}"
+                        # 其他命令直接拼接，但需要处理~路径展开
+                        processed_args = []
+                        for arg in args:
+                            if arg == "~":
+                                # 将~替换为远程根目录路径
+                                processed_args.append(f'"{self.main_instance.REMOTE_ROOT}"')
+                            elif arg.startswith("~/"):
+                                # 将~/path替换为远程路径
+                                processed_args.append(f'"{self.main_instance.REMOTE_ROOT}/{arg[2:]}"')
+                            else:
+                                processed_args.append(arg)
+                        full_command = f"{cmd} {' '.join(processed_args)}"
             else:
                 full_command = cmd
             
@@ -1403,13 +1439,19 @@ fi
                         encoded_script = base64.b64encode(script_content.encode('utf-8')).decode('ascii')
                         bash_safe_command = f'echo "{encoded_script}" | base64 -d | {cmd}'
                 else:
-                    # 分别转义命令和每个参数，但特殊处理重定向符号
+                    # 分别转义命令和每个参数，但特殊处理重定向符号和~路径
                     escaped_cmd = shlex.quote(cmd)
                     escaped_args = []
                     for arg in args:
                         # 重定向符号不需要引号转义
                         if arg in ['>', '>>', '<', '|', '&&', '||']:
                             escaped_args.append(arg)
+                        elif arg == "~":
+                            # 将~替换为远程根目录路径（已带引号）
+                            escaped_args.append(f'"{self.main_instance.REMOTE_ROOT}"')
+                        elif arg.startswith("~/"):
+                            # 将~/path替换为远程路径（已带引号）
+                            escaped_args.append(f'"{self.main_instance.REMOTE_ROOT}/{arg[2:]}"')
                         else:
                             escaped_args.append(shlex.quote(arg))
                     bash_safe_command = f"{escaped_cmd} {' '.join(escaped_args)}"
@@ -1845,9 +1887,7 @@ fi
         print()
         
         # 使用统一的多行输入方法
-        debug_print("调用_get_multiline_user_input")
         full_output = self._get_multiline_user_input()
-        debug_print(f"_get_multiline_user_input返回内容长度: {len(full_output)}")
         
         # 简单解析输出：如果包含错误关键词，放到stderr，否则放到stdout
         error_keywords = ['error', 'Error', 'ERROR', 'exception', 'Exception', 'EXCEPTION', 

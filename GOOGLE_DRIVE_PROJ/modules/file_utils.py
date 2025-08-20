@@ -63,12 +63,29 @@ class FileUtils:
             
             # 创建zip文件
             with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                # 遍历文件夹中的所有文件
+                # 遍历文件夹中的所有文件和目录
+                files_added = 0
+                dirs_added = 0
+                
                 for file_path in folder_path.rglob('*'):
                     if file_path.is_file():
                         # 计算相对路径，使用文件夹名作为根目录
                         arcname = file_path.relative_to(folder_path.parent)
                         zipf.write(file_path, arcname)
+                        files_added += 1
+                    elif file_path.is_dir():
+                        # 添加空目录到zip文件
+                        arcname = file_path.relative_to(folder_path.parent)
+                        # 确保目录名以/结尾
+                        dir_arcname = str(arcname) + '/'
+                        zipf.writestr(dir_arcname, '')
+                        dirs_added += 1
+                
+                # 如果文件夹完全为空，至少添加根目录本身
+                if files_added == 0 and dirs_added == 0:
+                    root_dir_name = folder_path.name + '/'
+                    zipf.writestr(root_dir_name, '')
+                    dirs_added = 1
                         
             # 检查zip文件是否创建成功
             if zip_path.exists():

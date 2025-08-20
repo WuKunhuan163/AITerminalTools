@@ -97,10 +97,14 @@ def shell_ls(path=None, command_identifier=None):
             return 1
         
         # 确定要列出的文件夹ID
-        if path is None or path == "." or path == "~":
-            # 列出当前目录或根目录
+        if path is None or path == ".":
+            # 列出当前目录
             target_folder_id = current_shell.get("current_folder_id", REMOTE_ROOT_FOLDER_ID)
             display_path = current_shell.get("current_path", "~")
+        elif path == "~":
+            # 列出根目录
+            target_folder_id = REMOTE_ROOT_FOLDER_ID
+            display_path = "~"
         else:
             # 实现基本路径解析，支持文件路径
             try:
@@ -547,7 +551,7 @@ def shell_rm(path, recursive=False, command_identifier=None):
                 break
         
         if not target_item:
-            error_msg = f"File or directory does not exist: {item_name}"
+            error_msg = f"File or directory does not exist"
             if is_run_environment(command_identifier):
                 write_to_json_output({"success": False, "error": error_msg}, command_identifier)
             else:

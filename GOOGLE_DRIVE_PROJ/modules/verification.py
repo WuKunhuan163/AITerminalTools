@@ -12,78 +12,107 @@ class Verification:
         self.drive_service = drive_service
         self.main_instance = main_instance  # 引用主实例以访问其他属性
 
-    def _verify_mkdir_result(self, path, current_shell):
-        """验证mkdir创建结果"""
-        try:
 
-            # 使用GDS ls命令验证
-            if "/" in path:
-                # 如果是多级路径，检查父目录
-                parent_path = "/".join(path.split("/")[:-1])
-                dir_name = path.split("/")[-1]
-                
-                # 先切换到父目录
-                parent_id, _ = self.main_instance.resolve_path(parent_path, current_shell)
-                if parent_id:
-                    # 列出父目录内容
-                    ls_result = self._ls_single(parent_id, parent_path, detailed=False)
-                    if ls_result["success"]:
-                        # 检查目标目录是否存在
-                        all_folders = ls_result.get("folders", [])
-                        for folder in all_folders:
-                            if folder["name"] == dir_name:
-                                return {
-                                    "success": True,
-                                    "message": f"✅ Validation successful, directory created: {dir_name}",
-                                    "folder_id": folder["id"]
-                                }
-                        return {
-                            "success": False,
-                            "error": f"Validation failed, directory not found: {dir_name}"
-                        }
-                    else:
-                        return {
-                            "success": False,
-                            "error": f"Validation failed, cannot list parent directory: {ls_result.get('error', 'Unknown error')}"
-                        }
-                else:
-                    return {
-                        "success": False,
-                        "error": f"Validation failed, parent directory does not exist: {parent_path}"
-                    }
-            else:
-                # 单级目录，在当前目录下检查
-                current_folder_id = current_shell.get("current_folder_id", self.main_instance.REMOTE_ROOT_FOLDER_ID)
-                current_path = current_shell.get("current_path", "~")
-                
-                ls_result = self._ls_single(current_folder_id, current_path, detailed=False)
-                if ls_result["success"]:
-                    all_folders = ls_result.get("folders", [])
-                    for folder in all_folders:
-                        if folder["name"] == path:
-                            return {
-                                "success": True,
-                                "message": f"✅ Validation successful, directory created: {path}",
-                                "folder_id": folder["id"]
-                            }
-                    return {
-                        "success": False,
-                        "error": f"Validation failed, directory not found: {path}"
-                    }
-                else:
-                    return {
-                        "success": False,
-                        "error": f"Validation failed, cannot list current directory: {ls_result.get('error', 'Unknown error')}"
-                    }
-                    
-        except Exception as e:
+
+    def verify_creation_with_ls(self, path, current_shell, creation_type="dir", max_attempts=60):
+        """
+        通用的创建验证接口，支持目录和文件验证
+        
+        Args:
+            path (str): 要验证的路径
+            current_shell (dict): 当前shell信息
+            creation_type (str): 创建类型，"dir"或"file"
+            max_attempts (int): 最大重试次数
+            
+        Returns:
+            dict: 验证结果
+        """
+        if creation_type == "dir":
+            return self._verify_mkdir_with_ls(path, current_shell, max_attempts)
+        elif creation_type == "file":
+            return self._verify_file_creation_with_ls(path, current_shell, max_attempts)
+        else:
             return {
                 "success": False,
-                "error": f"Error verifying mkdir result: {e}"
+                "error": f"Unsupported creation type: {creation_type}"
+            }
+    
+    def _verify_file_creation_with_ls(self, path, current_shell, max_attempts=60):
+        """使用GDS ls验证文件创建"""
+        import time
+        
+        try:
+            # 输出验证进度提示
+            print("⏳ Validating file creation ...", end="", flush=True)
+            
+            # 解析文件路径
+            if path.startswith("~/"):
+                # ~/dir/file.txt -> 验证文件在指定目录中存在
+                remaining_path = path[2:]  # 去掉~/
+                path_components = [comp for comp in remaining_path.split('/') if comp]
+                
+                if len(path_components) == 1:
+                    # 根目录下的文件
+                    target_dir = "~"
+                    target_filename = path_components[0]
+                else:
+                    # 嵌套目录中的文件
+                    target_dir = "~/" + "/".join(path_components[:-1])
+                    target_filename = path_components[-1]
+            else:
+                # 相对路径或其他格式
+                if '/' in path:
+                    path_components = path.split('/')
+                    target_dir = "/".join(path_components[:-1]) or "."
+                    target_filename = path_components[-1]
+                else:
+                    target_dir = "."
+                    target_filename = path
+            
+            # 验证文件存在
+            for attempt in range(max_attempts):
+                if attempt > 0:
+                    time.sleep(1)
+                    print(".", end="", flush=True)
+                
+                # 使用ls命令检查文件是否存在
+                ls_result = self.main_instance.cmd_ls(target_dir, detailed=False, recursive=False)
+                
+                if ls_result["success"]:
+                    files = ls_result.get("files", [])
+                    
+                    # 检查目标文件是否存在
+                    for file in files:
+                        if file["name"] == target_filename:
+                            print("√")  # 成功标记
+                            return {
+                                "success": True,
+                                "message": f"File creation verified: {path}",
+                                "attempts": attempt + 1
+                            }
+                else:
+                    return {
+                        "success": False,
+                        "error": f"Validation failed, cannot execute ls command: {ls_result.get('error', 'Unknown error')}"
+                    }
+            
+            # 所有重试都失败了
+            print("✗")  # 失败标记
+            return {
+                "success": False,
+                "error": f"File '{path}' not found after {max_attempts} verification attempts",
+                "attempts": max_attempts
+            }
+            
+        except Exception as e:
+            print("✗")  # 失败标记
+            return {
+                "success": False,
+                "error": f"File verification process error: {e}"
             }
 
     def _verify_mkdir_with_ls(self, path, current_shell, max_attempts=60):
-        """使用GDS ls验证目录创建，支持嵌套路径验证"""
+        """使用GDS ls验证目录创建，支持嵌套路径验证和递归验证"""
         import time
         import sys
         
@@ -95,12 +124,31 @@ class Verification:
             # 对于路径如~/tmp/gds_test_xxx，实际创建的是gds_test_xxx目录在tmp文件夹中
             # 但由于mkdir -p的特性，我们只需要验证顶级目录的存在即可
             
+            # 检查当前路径是否已经在目标目录或其子目录中
+            current_path = current_shell.get("current_path", "~")
+            
+            # 检查是否为复杂嵌套路径，如果是则使用递归验证
+            path_depth = len([comp for comp in path.replace("~/", "").split('/') if comp])
+            if path_depth > 2:  # 超过2层深度的路径使用递归验证
+                return self._verify_mkdir_recursive_logic(path, current_shell)
+            
+            # 对于简单路径，继续使用原有逻辑
+            
             if path.startswith("~/"):
                 # ~/tmp/gds_test_xxx -> 验证tmp目录在根目录中存在
                 remaining_path = path[2:]  # 去掉~/
                 path_components = [comp for comp in remaining_path.split('/') if comp]
                 target_dir_name = path_components[0]  # 要验证的顶级目录名 (tmp)
                 is_nested = len(path_components) > 1
+                
+                # 如果当前路径已经在目标目录或其子目录中，直接返回成功
+                if current_path.startswith(f"~/{target_dir_name}/") or current_path == f"~/{target_dir_name}":
+                    print("√")  # 成功标记
+                    return {
+                        "success": True,
+                        "message": f"Directory already exists (current path is in target directory): {path}",
+                        "attempts": 1
+                    }
             elif path == "~":
                 # 根目录本身，无需验证
                 print("√")
@@ -144,6 +192,7 @@ class Verification:
                 
                 if ls_result["success"]:
                     folders = ls_result.get("folders", [])
+                    
                     # 检查目标目录是否存在
                     for folder in folders:
                         if folder["name"] == target_dir_name:
@@ -181,6 +230,54 @@ class Verification:
             return {
                 "success": False,
                 "error": f"Verification process error: {e}"
+            }
+    
+    def _verify_mkdir_recursive_logic(self, path, current_shell):
+        """递归验证复杂嵌套路径的目录创建"""
+        try:
+            # 使用递归ls命令验证
+            ls_result = self.main_instance.cmd_ls(None, detailed=False, recursive=True)
+            if ls_result["success"]:
+                # 检查目标路径是否存在
+                target_parts = path.split("/")
+                target_name = target_parts[-1]
+                
+                # 在递归结果中查找目标目录
+                all_items = ls_result.get("all_items", [])
+                for item in all_items:
+                    if (item["name"] == target_name and 
+                        item["mimeType"] == "application/vnd.google-apps.folder"):
+                        # 检查路径是否匹配
+                        item_path = item.get("path", "")
+                        expected_parent_path = "/".join(target_parts[:-1])
+                        
+                        # 简化路径匹配逻辑
+                        if expected_parent_path in item_path or item_path.endswith(expected_parent_path):
+                            print("√")
+                            return {
+                                "success": True,
+                                "message": f"Validation successful, multi-level directory created: {path}",
+                                "folder_id": item["id"],
+                                "full_path": item_path,
+                                "attempts": 1
+                            }
+                
+                print("✗")
+                return {
+                    "success": False,
+                    "error": f"Validation failed, multi-level directory not found: {path}"
+                }
+            else:
+                print("✗")
+                return {
+                    "success": False,
+                    "error": f"Validation failed, cannot execute ls -R command: {ls_result.get('error', 'Unknown error')}"
+                }
+        except Exception as e:
+            print("✗")
+            return {
+                "success": False,
+                "error": f"Recursive verification error: {e}"
             }
     
     def _verify_nested_path_in_ls_result(self, target_path, ls_result):
@@ -230,91 +327,9 @@ class Verification:
             # 如果解析失败，回退到简单验证
             return False
 
-    def _verify_mkdir_with_ls_recursive(self, path, current_shell):
-        """使用GDS ls -R验证多层目录创建"""
-        try:
-            # 使用递归ls命令验证
-            ls_result = self.main_instance.cmd_ls(None, detailed=False, recursive=True)
-            if ls_result["success"]:
-                # 检查目标路径是否存在
-                target_parts = path.split("/")
-                target_name = target_parts[-1]
-                
-                # 在递归结果中查找目标目录
-                all_items = ls_result.get("all_items", [])
-                for item in all_items:
-                    if (item["name"] == target_name and 
-                        item["mimeType"] == "application/vnd.google-apps.folder"):
-                        # 检查路径是否匹配
-                        item_path = item.get("path", "")
-                        expected_parent_path = "/".join(target_parts[:-1])
-                        
-                        # 简化路径匹配逻辑
-                        if expected_parent_path in item_path or item_path.endswith(expected_parent_path):
-                            return {
-                                "success": True,
-                                "message": f"Validation successful, multi-level directory created: {path}",
-                                "folder_id": item["id"],
-                                "full_path": item_path
-                            }
-                
-                return {
-                    "success": False,
-                    "error": f"Validation failed, multi-level directory not found: {path}"
-                }
-            else:
-                return {
-                    "success": False,
-                    "error": f"Validation failed, cannot execute ls -R command: {ls_result.get('error', 'Unknown error')}"
-                }
-        except Exception as e:
-            return {
-                "success": False,
-                "error": f"Recursive verification process error: {e}"
-            }
 
-    def _verify_mv_with_ls(self, source, destination, current_shell, max_retries=3, delay_seconds=2):
-        """验证mv操作是否成功，通过ls检查文件是否在新位置"""
-        import time
-        
-        for attempt in range(max_retries):
-            try:
-                # 检查源文件是否还存在（应该不存在）
-                source_still_exists = self._find_file(source, current_shell) is not None
-                
-                # 检查目标位置是否有文件
-                if '/' in destination:
-                    # 目标包含路径
-                    dest_parent = '/'.join(destination.split('/')[:-1])
-                    dest_name = destination.split('/')[-1]
-                    
-                    # 切换到目标目录检查
-                    dest_folder_id, _ = self.main_instance.resolve_path(dest_parent, current_shell)
-                    if dest_folder_id:
-                        temp_shell = current_shell.copy()
-                        temp_shell["current_folder_id"] = dest_folder_id
-                        destination_exists = self._find_file(dest_name, temp_shell) is not None
-                    else:
-                        destination_exists = False
-                else:
-                    # 在当前目录重命名
-                    destination_exists = self._find_file(destination, current_shell) is not None
-                
-                # 如果源文件不存在且目标文件存在，则移动成功
-                if not source_still_exists and destination_exists:
-                    return {"success": True, "message": "mv validation successful"}
-                
-                # 如果还没成功，等待一下再试（Google Drive API延迟）
-                if attempt < max_retries - 1:
-                    time.sleep(delay_seconds)
-                    
-            except Exception as e:
-                if attempt < max_retries - 1:
-                    time.sleep(delay_seconds)
-                else:
-                    return {"success": False, "error": f"Error verifying mv operation: {e}"}
-        
-        return {"success": False, "error": f"mv validation failed: after {max_retries} attempts, file move status unclear"}
+
+
 
     def _update_cache_after_mv(self, source, destination, current_shell):
         """在mv命令成功后更新缓存路径映射"""
@@ -362,34 +377,4 @@ class Verification:
         except Exception as e:
             return {"success": False, "error": f"Error updating cache mapping: {e}"}
 
-    def _verify_rm_with_find(self, path, current_shell, max_retries=60):
-        """
-        使用find命令验证文件是否被成功删除
-        
-        Args:
-            path (str): 原始路径
-            current_shell (dict): 当前shell信息
-            max_retries (int): 最大重试次数
-            
-        Returns:
-            dict: 验证结果
-        """
-        try:
-            import time
-            
-            for attempt in range(max_retries):
-                # 使用find命令查找文件
-                find_result = self.cmd_find(path, name_pattern=None, recursive=False)
-                
-                if find_result["success"] and not find_result.get("files"):
-                    # 没有找到文件，删除成功
-                    return {"success": True, "message": "Files successfully deleted"}
-                
-                if attempt < max_retries - 1:
-                    time.sleep(1)  # 等待1秒后重试
-            
-            # 所有重试都失败
-            return {"success": False, "error": "Files still exist after deletion"}
-            
-        except Exception as e:
-            return {"success": False, "error": f"Verification error: {e}"}
+
