@@ -239,14 +239,10 @@ try:
         focus_count += 1
         force_focus()
         
-        # 只在第1、4、7...次focus时播放音效
-        if focus_count % 3 == 1:
-            try:
-                import threading
-                threading.Thread(target=play_bell_in_subprocess, daemon=True).start()
-            except Exception as e:
-                pass
-        else:
+        try:
+            import threading
+            threading.Thread(target=play_bell_in_subprocess, daemon=True).start()
+        except Exception as e:
             pass
     
     # 按钮点击处理函数
@@ -281,19 +277,19 @@ try:
     root.bind('<Key>', on_key_press)
     btn.focus_set()  # 确保按钮能接收键盘事件
     
-    # 定期重新获取焦点的函数
+    # 定期重新获取焦点的函数 - 暂时注释掉5秒refocus机制
     def refocus_window():
         try:
             # 使用带focus计数的聚焦函数
             force_focus_with_count()
             
-            # 每5秒重新获取焦点
-            root.after(5000, refocus_window)
+            # 每30秒重新获取焦点并播放音效
+            root.after(30000, refocus_window)
         except Exception as e:
             pass  # 如果窗口已关闭，忽略错误
     
     # 开始定期重新获取焦点
-    root.after(5000, refocus_window)
+    root.after(30000, refocus_window)
     
     # 设置自动关闭定时器
     root.after({timeout_seconds * 1000}, root.destroy)
@@ -347,7 +343,7 @@ def show_dummy_ui(project_name):
         remaining_time = int(_global_timeout_manager.get_remaining_time())
     else:
         # 如果没有全局超时管理器，使用默认值
-        default_timeout = int(os.environ.get('USERINPUT_TIMEOUT', '180'))
+        default_timeout = int(os.environ.get('USERINPUT_TIMEOUT', '300'))
         remaining_time = getattr(get_user_input_via_terminal, '_timeout_override', default_timeout)
     
     # 如果剩余时间<=0，直接返回
@@ -410,8 +406,9 @@ def _read_input_with_signal(lines, timeout_seconds):
             try:
                 line = input()
                 lines.append(line)
-                # 重置超时计时器，因为用户正在输入
-                signal.alarm(timeout_seconds)
+                # 不要重置超时计时器 - 让全局超时继续计时
+                # 这样可以确保整个USERINPUT调用不超过总时间限制
+                # signal.alarm(timeout_seconds)  # 移除这行，让计时器继续倒计时
             except EOFError:
                 # Ctrl+D 被按下，结束输入
                 return False
@@ -448,13 +445,7 @@ def _read_input_with_signal(lines, timeout_seconds):
 def get_user_input_via_terminal(project_name):
     """直接在终端中获取用户输入，带有超时功能"""
     global _global_timeout_manager
-    
-    # 如果已经超时，直接返回超时结果
-    if _global_timeout_manager and _global_timeout_manager.is_timeout_expired():
-        timeout_seconds = _global_timeout_manager.timeout_seconds
-        timeout_message = f"\n[TIMEOUT] 输入超时 ({timeout_seconds}秒)。如果上述信息没有有效反馈（有可能用户几分钟内没有打字），请再次调用 USERINPUT 重复进行直到有有效反馈。"
-        return f"[无用户输入]{timeout_message}"
-    
+
     # 获取剩余超时时间
     if _global_timeout_manager:
         remaining_time = _global_timeout_manager.get_remaining_time()
@@ -466,7 +457,7 @@ def get_user_input_via_terminal(project_name):
     else:
         # 设置超时时间 (默认3分钟，可通过命令行参数或环境变量配置)
         # 优先级：命令行参数 > 环境变量 > 默认值(180秒)
-        default_timeout = int(os.environ.get('USERINPUT_TIMEOUT', '180'))
+        default_timeout = int(os.environ.get('USERINPUT_TIMEOUT', '300'))
         TIMEOUT_SECONDS = int(getattr(get_user_input_via_terminal, '_timeout_override', default_timeout))
     
     # 读取多行输入直到EOF (Ctrl+D) 或超时
@@ -475,6 +466,7 @@ def get_user_input_via_terminal(project_name):
     
     # 使用信号方式进行超时控制，简单可靠
     ctrl_c_partial_input = False  # 标记是否是Ctrl+C导致的部分输入
+    normal_eof = False  # 标记是否是正常的EOF（Ctrl+D）结束
     try:
         result = _read_input_with_signal(lines, TIMEOUT_SECONDS)
         if result == "stop":
@@ -483,8 +475,12 @@ def get_user_input_via_terminal(project_name):
             # 有部分输入，这是Ctrl+C导致的，不是超时
             timeout_occurred = False
             ctrl_c_partial_input = True
+        elif result == False:
+            # 正常的EOF（Ctrl+D）结束，不是超时
+            timeout_occurred = False
+            normal_eof = True
         else:
-            timeout_occurred = result  # True or False
+            timeout_occurred = result  # True for timeout
     except KeyboardInterrupt:
         # 这个异常处理现在应该不会被触发，因为KeyboardInterrupt在_read_input_with_signal中处理
         return "stop"
@@ -496,16 +492,17 @@ def get_user_input_via_terminal(project_name):
     if ctrl_c_partial_input:
         return full_input or "stop"
     
+    # 如果是正常的EOF（Ctrl+D）结束，直接返回用户输入，不添加超时消息
+    if normal_eof:
+        return full_input or "stop"
+    
     # 如果发生超时，添加超时提示
     if timeout_occurred or (_global_timeout_manager and _global_timeout_manager.is_timeout_expired()):
-        # 使用全局超时管理器的原始超时时间
         display_timeout = _global_timeout_manager.timeout_seconds if _global_timeout_manager else TIMEOUT_SECONDS
         timeout_message = f"\n[TIMEOUT] 输入超时 ({display_timeout}秒)。如果上述信息没有有效反馈（有可能用户几分钟内没有打字），请再次调用 USERINPUT 重复进行直到有有效反馈。"
         if full_input:
-            # 用户有部分输入 - 添加分隔符以便清楚区分
             full_input = f"[用户部分输入]\n{full_input}{timeout_message}"
         else:
-            # 用户没有任何输入
             full_input = f"[无用户输入]{timeout_message}"
     
     # 清理屏幕
@@ -638,7 +635,7 @@ def main():
     
     # 初始化全局超时管理器
     global _global_timeout_manager
-    default_timeout = int(os.environ.get('USERINPUT_TIMEOUT', '180'))
+    default_timeout = int(os.environ.get('USERINPUT_TIMEOUT', '300'))
     final_timeout = timeout_override if timeout_override is not None else default_timeout
     _global_timeout_manager = GlobalTimeoutManager(final_timeout)
     

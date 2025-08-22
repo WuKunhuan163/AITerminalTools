@@ -716,8 +716,8 @@ class GoogleDriveShell:
             if args:
                 args = self._normalize_quotes_and_escapes(args)
             
-            # 检查是否包含多命令组合（&& 或 ||）
-            if ' && ' in shell_cmd or ' || ' in shell_cmd:
+            # 检查是否包含多命令组合（&&、||或|）
+            if ' && ' in shell_cmd or ' || ' in shell_cmd or ' | ' in shell_cmd:
                 # 导入shell_commands模块中的具体函数
                 current_dir = os.path.dirname(__file__)
                 modules_dir = os.path.join(current_dir, 'modules')
@@ -1084,6 +1084,23 @@ class GoogleDriveShell:
                     # 对于正常模式，显示成功信息
                     if result.get("mode") != "preview":
                         print(result.get("message", "\nFile edited successfully"))
+                    
+                    # 显示linter结果（如果有）
+                    if result.get("has_linter_issues"):
+                        print("=" * 50)
+                        linter_output = result.get("linter_output", "")
+                        total_issues = linter_output.count("ERROR:") + linter_output.count("WARNING:")
+                        print(f"{total_issues} linter warnings or errors found:")
+                        print(linter_output)
+                        print("=" * 50)
+                    elif result.get("linter_error"):
+                        print("=" * 50)
+                        print(f"Linter check failed: {result.get('linter_error')}")
+                        print("=" * 50)
+                    elif result.get("has_linter_issues") == False:
+                        # Only show "no issues" message if linter actually ran
+                        pass  # No need to show anything for clean files
+                    
                     return 0
                 else:
                     print(result.get("error", "Failed to edit file"))

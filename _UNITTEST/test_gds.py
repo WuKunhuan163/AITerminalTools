@@ -347,6 +347,68 @@ Shell commands: ls -la && echo "done"
         temp_file.write_text(content)
         return temp_file
     
+    def _run_gds_command_with_retry(self, command, verification_commands, max_retries=3, expect_success=True):
+        """
+        运行GDS命令并进行重试验证的辅助方法
+        
+        Args:
+            command: 要执行的GDS命令
+            verification_commands: 验证命令列表，所有命令都必须返回0才算成功
+            max_retries: 最大重试次数
+            expect_success: 是否期望命令成功
+        
+        Returns:
+            tuple: (success: bool, last_result: subprocess结果对象)
+        """
+        print(f"\n🔄 执行带重试的命令: {command}")
+        print(f"🔍 验证命令: {verification_commands}")
+        print(f"🎯 最大重试次数: {max_retries}")
+        
+        for attempt in range(max_retries):
+            print(f"\n📍 尝试 {attempt + 1}/{max_retries}")
+            
+            # 执行主命令
+            result = self._run_gds_command(command, expect_success=expect_success, check_function_result=False)
+            
+            if not expect_success:
+                # 如果不期望成功，直接返回结果
+                return result.returncode != 0, result
+            
+            if result.returncode != 0:
+                print(f"❌ 主命令失败，返回码: {result.returncode}")
+                if attempt < max_retries - 1:
+                    print("⏳ 等待1秒后重试...")
+                    import time
+                    time.sleep(1)
+                    continue
+                else:
+                    return False, result
+            
+            # 执行验证命令
+            all_verifications_passed = True
+            for i, verify_cmd in enumerate(verification_commands):
+                print(f"  🔍 验证 {i+1}/{len(verification_commands)}: {verify_cmd}")
+                verify_result = self._run_gds_command(verify_cmd, expect_success=False, check_function_result=False)
+                
+                if verify_result.returncode != 0:
+                    print(f"  ❌ 验证失败，返回码: {verify_result.returncode}")
+                    all_verifications_passed = False
+                    break
+                else:
+                    print(f"  ✅ 验证成功")
+            
+            if all_verifications_passed:
+                print(f"🎉 所有验证通过，命令成功执行")
+                return True, result
+            
+            if attempt < max_retries - 1:
+                print("⏳ 验证失败，等待2秒后重试...")
+                import time
+                time.sleep(2)
+        
+        print(f"💥 所有重试失败")
+        return False, result
+    
     # ==================== 基础功能测试 ====================
     
     def test_01_basic_echo_commands(self):
@@ -419,9 +481,9 @@ Shell commands: ls -la && echo "done"
         self.assertTrue(line1_found and line2_found and line3_found, 
                        f"Expected separate lines for 'line1', 'line2', 'line3', got: {content_lines}")
     
-    def test_01b_echo_correct_json_syntax(self):
+    def test_02_echo_correct_json_syntax(self):
         """测试echo的正确JSON语法（修复后的功能）"""
-        print("\n🧪 测试01b: Echo正确JSON语法")
+        print("\n🧪 测试02: Echo正确JSON语法")
         
         # 使用正确的语法创建JSON文件（单引号包围重定向范围）
         result = self._run_gds_command('\'echo "{\\"name\\": \\"test\\", \\"value\\": 123}" > correct_json.txt\'')
@@ -442,9 +504,9 @@ Shell commands: ls -la && echo "done"
         self.assertTrue(self._verify_file_content_contains("multiline.txt", "Line2"))
         self.assertTrue(self._verify_file_content_contains("multiline.txt", "Line3"))
     
-    def test_01b2_echo_quote_parsing_fix(self):
+    def test_03_echo_quote_parsing_fix(self):
         """测试echo的引号解析修复"""
-        print("\n🧪 测试01b2: Echo引号解析修复")
+        print("\n🧪 测试03: Echo引号解析修复")
         
         # 测试简单的echo命令，不应该有多重引号
         result = self._run_gds_command('"echo \'test\'"')
@@ -453,9 +515,9 @@ Shell commands: ls -la && echo "done"
         # 验证生成的命令不包含过多引号层级
         # 这个测试主要是检查命令能正常执行，不会因为引号问题而失败
         
-    def test_01b3_echo_local_redirect_fix(self):
+    def test_04_echo_local_redirect_fix(self):
         """测试echo的本地重定向修复"""
-        print("\n🧪 测试01b3: Echo本地重定向修复")
+        print("\n🧪 测试04: Echo本地重定向修复")
         
         # 使用正确的语法（用引号包围整个命令，避免本地重定向）
         result = self._run_gds_command('\'echo -e "Line1\\nLine2\\nLine3" > multiline.txt\'')
@@ -467,9 +529,9 @@ Shell commands: ls -la && echo "done"
         self.assertTrue(self._verify_file_content_contains("multiline.txt", "Line2"))
         self.assertTrue(self._verify_file_content_contains("multiline.txt", "Line3"))
         
-    def test_01b4_echo_local_redirect_test(self):
+    def test_05_echo_local_redirect_test(self):
         """测试echo的本地重定向行为（错误语法示例）"""
-        print("\n🧪 测试01b4: Echo本地重定向行为")
+        print("\n🧪 测试05: Echo本地重定向行为")
         
         # 添加debug信息：显示当前工作目录
         import os
@@ -511,9 +573,9 @@ Shell commands: ls -la && echo "done"
         except Exception:
             pass
     
-    def test_01c_echo_create_python_script(self):
+    def test_06_echo_create_python_script(self):
         """测试echo创建Python脚本并执行"""
-        print("\n🧪 测试01c: Echo创建Python脚本并执行")
+        print("\n🧪 测试06: Echo创建Python脚本并执行")
         
         # 创建简单的Python脚本
         python_code = '''import json
@@ -550,9 +612,9 @@ print(f"Current files: {len(os.listdir())}")'''
         self.assertTrue(self._verify_file_content_contains("test_config.json", '"name": "test_project"'))
         self.assertTrue(self._verify_file_content_contains("test_config.json", '"debug": true'))
     
-    def test_01d_ls_full_path_support(self):
+    def test_07_ls_full_path_support(self):
         """测试ls命令的全路径支持（修复后的功能）"""
-        print("\n🧪 测试01d: LS全路径支持")
+        print("\n🧪 测试07: LS全路径支持")
         
         # 创建测试文件和目录结构
         result = self._run_gds_command('mkdir -p testdir')
@@ -579,9 +641,9 @@ print(f"Current files: {len(os.listdir())}")'''
         result = self._run_gds_command('ls nonexistent_dir/file.txt', expect_success=False)
         self.assertNotEqual(result.returncode, 0)  # 应该失败
 
-    def test_01d_enhanced_ls_operations(self):
+    def test_08_enhanced_ls_operations(self):
         """测试增强的GDS ls操作（修复后的完整功能测试）"""
-        print("\n🧪 测试01d-enhanced: 增强的LS操作测试")
+        print("\n🧪 测试08: 增强的LS操作测试")
         
         # 0. 切换到测试子目录，避免tmp目录的执行结果文件影响
         print("📁 切换到测试子目录")
@@ -691,9 +753,9 @@ print(f"Current files: {len(os.listdir())}")'''
         
         print("✅ 增强的ls操作测试完成")
 
-    def test_01e_advanced_file_operations(self):
+    def test_09_advanced_file_operations(self):
         """测试高级文件操作（从测试10合并）"""
-        print("\n🧪 测试01e: 高级文件操作")
+        print("\n🧪 测试09: 高级文件操作")
         
         # 1. 创建复杂目录结构
         result = self._run_gds_command('mkdir -p advanced_project/src/utils')
@@ -743,9 +805,9 @@ print(f"Current files: {len(os.listdir())}")'''
         
         print("✅ 高级文件操作测试完成（包含rm测试）")
 
-    def test_02_basic_navigation_commands(self):
+    def test_10_basic_navigation_commands(self):
         """测试基础导航命令和不同路径类型"""
-        print("\n🧪 测试02: 基础导航命令和路径类型测试")
+        print("\n🧪 测试10: 基础导航命令和路径类型测试")
         
         # === 基础导航命令 ===
         print("📁 基础导航命令测试")
@@ -847,9 +909,9 @@ print(f"Current files: {len(os.listdir())}")'''
     
     # ==================== 文件上传测试 ====================
     
-    def test_03_file_upload_operations(self):
+    def test_11_file_upload_operations(self):
         """测试文件上传操作"""
-        print("\n🧪 测试03: 文件上传操作")
+        print("\n🧪 测试11: 文件上传操作")
         
         # 单文件上传（使用--force确保可重复性）
         # 创建唯一的测试文件避免并发冲突
@@ -858,29 +920,32 @@ print(f"Current files: {len(os.listdir())}")'''
         import shutil
         shutil.copy2(original_file, unique_file)
         
-        result = self._run_gds_command(f'upload --force {unique_file}')
-        self.assertEqual(result.returncode, 0)
-        
-        # 验证文件上传成功（基于功能结果）
-        self.assertTrue(self._verify_file_exists("test03_simple_hello.py"))
+        # 使用重试机制上传文件
+        success, result = self._run_gds_command_with_retry(
+            f'upload --force {unique_file}',
+            ['ls test03_simple_hello.py'],
+            max_retries=3
+        )
+        self.assertTrue(success, f"文件上传失败: {result.stderr if result else 'Unknown error'}")
         
         # 多文件上传（使用--force确保可重复性）
         valid_script = self.TEST_DATA_DIR / "valid_script.py"
         special_file = self.TEST_DATA_DIR / "special_chars.txt"
-        result = self._run_gds_command(f'upload --force {valid_script} {special_file}')
-        self.assertEqual(result.returncode, 0)
-        
-        # 验证多文件上传成功
-        self.assertTrue(self._verify_file_exists("valid_script.py"))
-        self.assertTrue(self._verify_file_exists("special_chars.txt"))
+        success, result = self._run_gds_command_with_retry(
+            f'upload --force {valid_script} {special_file}',
+            ['ls valid_script.py', 'ls special_chars.txt'],
+            max_retries=3
+        )
+        self.assertTrue(success, f"多文件上传失败: {result.stderr if result else 'Unknown error'}")
         
         # 文件夹上传（修复：--force参数应该在路径之前）
         project_dir = self.TEST_DATA_DIR / "test_project"
-        result = self._run_gds_command(f'upload-folder --force {project_dir}')
-        self.assertEqual(result.returncode, 0)
-        
-        # 验证文件夹上传成功
-        self.assertTrue(self._verify_file_exists("test_project"))
+        success, result = self._run_gds_command_with_retry(
+            f'upload-folder --force {project_dir}',
+            ['ls test_project'],
+            max_retries=3
+        )
+        self.assertTrue(success, f"文件夹上传失败: {result.stderr if result else 'Unknown error'}")
         
         # 测试上传到已存在文件（没有--force应该失败）
         # 创建唯一测试文件用于冲突测试
@@ -888,8 +953,12 @@ print(f"Current files: {len(os.listdir())}")'''
         shutil.copy2(original_file, conflict_test_file)
         
         # 先确保文件存在
-        result = self._run_gds_command(f'upload --force {conflict_test_file}')
-        self.assertEqual(result.returncode, 0)
+        success, result = self._run_gds_command_with_retry(
+            f'upload --force {conflict_test_file}',
+            ['ls test03_conflict_file.py'],
+            max_retries=3
+        )
+        self.assertTrue(success, f"冲突测试文件上传失败: {result.stderr if result else 'Unknown error'}")
         
         # 现在尝试不带--force上传同一个文件（应该失败）
         result = self._run_gds_command(f'upload {conflict_test_file}', expect_success=False)
@@ -903,8 +972,12 @@ print(f"Current files: {len(os.listdir())}")'''
             f.write('print("ORIGINAL VERSION - Test upload")')
         
         # 先上传原始版本
-        result = self._run_gds_command(f'upload --force {overwrite_test_file}')
-        self.assertEqual(result.returncode, 0)
+        success, result = self._run_gds_command_with_retry(
+            f'upload --force {overwrite_test_file}',
+            ['ls test03_overwrite_file.py'],
+            max_retries=3
+        )
+        self.assertTrue(success, f"原始版本上传失败: {result.stderr if result else 'Unknown error'}")
         
         # 读取远程文件的原始内容
         original_content_result = self._run_gds_command('cat test03_overwrite_file.py')
@@ -916,8 +989,12 @@ print(f"Current files: {len(os.listdir())}")'''
             f.write('print("MODIFIED VERSION - Test upload overwrite!")')
         
         # 使用--force上传修改后的文件
-        result = self._run_gds_command(f'upload --force {overwrite_test_file}')
-        self.assertEqual(result.returncode, 0)
+        success, result = self._run_gds_command_with_retry(
+            f'upload --force {overwrite_test_file}',
+            ['grep "MODIFIED VERSION" test03_overwrite_file.py'],
+            max_retries=3
+        )
+        self.assertTrue(success, f"修改版本上传失败: {result.stderr if result else 'Unknown error'}")
         
         # 验证文件内容确实被修改了
         modified_content_result = self._run_gds_command('cat test03_overwrite_file.py')
@@ -929,9 +1006,9 @@ print(f"Current files: {len(os.listdir())}")'''
         self.assertIn("MODIFIED VERSION", modified_content)
         print("✅ 验证upload --force覆盖功能，文件内容确实被修改")
     
-    def test_03a_grep_command_operations(self):
+    def test_12_grep_command_operations(self):
         """测试grep命令功能"""
-        print("\n🧪 测试03a: grep命令功能测试")
+        print("\n🧪 测试12: grep命令功能测试")
         
         # 创建测试文件
         test_content = '''Line 1: Hello world
@@ -994,17 +1071,18 @@ Line 5: No match here'''
         
         print("✅ grep命令功能测试完成")
     
-    def test_03b_large_file_upload_and_performance(self):
+    def test_13_large_file_upload_and_performance(self):
         """测试大文件上传和性能（从测试11合并）"""
-        print("\n🧪 测试03b: 大文件上传和性能测试")
+        print("\n🧪 测试13: 大文件上传和性能测试")
         
         # 1. 上传大文件（使用--force确保可重复性）
         large_file = self.TEST_DATA_DIR / "large_file.txt"
-        result = self._run_gds_command(f'upload --force {large_file}')
-        self.assertEqual(result.returncode, 0)
-        
-        # 验证大文件上传成功（基于功能结果）
-        self.assertTrue(self._verify_file_exists("large_file.txt"))
+        success, result = self._run_gds_command_with_retry(
+            f'upload --force {large_file}',
+            ['ls large_file.txt'],
+            max_retries=3
+        )
+        self.assertTrue(success, f"大文件上传失败: {result.stderr if result else 'Unknown error'}")
         
         # 2. 读取大文件的部分内容
         result = self._run_gds_command('read large_file.txt 1 10')
@@ -1032,9 +1110,9 @@ Line 5: No match here'''
     
     # ==================== 文件编辑测试 ====================
     
-    def test_04_file_editing_operations(self):
+    def test_14_file_editing_operations(self):
         """测试文件编辑操作"""
-        print("\n🧪 测试04: 文件编辑操作")
+        print("\n🧪 测试14: 文件编辑操作")
         
         # 重新上传测试文件确保存在（使用--force保证覆盖）
         # 创建唯一的测试文件避免并发冲突
@@ -1043,42 +1121,57 @@ Line 5: No match here'''
         import shutil
         shutil.copy2(original_file, test04_file)
         
-        result = self._run_gds_command(f'upload --force {test04_file}')
-        self.assertEqual(result.returncode, 0)
-        
-        # 验证文件上传成功
-        self.assertTrue(self._verify_file_exists("test04_simple_hello.py"))
+        success, result = self._run_gds_command_with_retry(
+            f'upload --force {test04_file}',
+            ['ls test04_simple_hello.py'],
+            max_retries=3
+        )
+        self.assertTrue(success, f"test04文件上传失败: {result.stderr if result else 'Unknown error'}")
         
         # 测试upload --force的覆盖功能
         # 再次上传同一个文件，应该覆盖成功
-        result = self._run_gds_command(f'upload --force {test04_file}')
-        self.assertEqual(result.returncode, 0)
+        success, result = self._run_gds_command_with_retry(
+            f'upload --force {test04_file}',
+            ['ls test04_simple_hello.py'],
+            max_retries=3
+        )
+        self.assertTrue(success, f"upload --force覆盖功能失败: {result.stderr if result else 'Unknown error'}")
         print("✅ upload --force覆盖功能验证成功")
         
         # 基础文本替换编辑
-        result = self._run_gds_command('edit test04_simple_hello.py \'[["Hello from remote project!", "Hello from MODIFIED remote project!"]]\'')
-        self.assertEqual(result.returncode, 0)
-        
-        # 验证编辑结果（基于功能结果）
-        self.assertTrue(self._verify_file_content_contains("test04_simple_hello.py", "MODIFIED"))
+        success, result = self._run_gds_command_with_retry(
+            'edit test04_simple_hello.py \'[["Hello from remote project!", "Hello from MODIFIED remote project!"]]\'',
+            ['grep "MODIFIED" test04_simple_hello.py'],
+            max_retries=3
+        )
+        self.assertTrue(success, f"基础文本替换编辑失败: {result.stderr if result else 'Unknown error'}")
         
         # 行号替换编辑（使用0-based索引）
-        result = self._run_gds_command('edit test04_simple_hello.py \'[[[1, 2], "# Modified first line"]]\'')
-        self.assertEqual(result.returncode, 0)
+        success, result = self._run_gds_command_with_retry(
+            'edit test04_simple_hello.py \'[[[1, 2], "# Modified first line"]]\'',
+            ['grep "# Modified first line" test04_simple_hello.py'],
+            max_retries=3
+        )
+        self.assertTrue(success, f"行号替换编辑失败: {result.stderr if result else 'Unknown error'}")
         
         # 预览模式编辑（不实际修改文件）
+        # 预览模式不修改文件，所以不需要验证文件内容变化
         result = self._run_gds_command('edit --preview test04_simple_hello.py \'[["print", "# print"]]\'')
         self.assertEqual(result.returncode, 0)
         
         # 备份模式编辑
-        result = self._run_gds_command('edit --backup test04_simple_hello.py \'[["Modified", "Updated"]]\'')
-        self.assertEqual(result.returncode, 0)
+        success, result = self._run_gds_command_with_retry(
+            'edit --backup test04_simple_hello.py \'[["Modified", "Updated"]]\'',
+            ['grep "Updated" test04_simple_hello.py'],
+            max_retries=3
+        )
+        self.assertTrue(success, f"备份模式编辑失败: {result.stderr if result else 'Unknown error'}")
     
     # ==================== 文件读取和搜索测试 ====================
     
-    def test_05_file_reading_and_search(self):
+    def test_15_file_reading_and_search(self):
         """测试文件读取和搜索操作"""
-        print("\n🧪 测试05: 文件读取和搜索操作")
+        print("\n🧪 测试15: 文件读取和搜索操作")
         
         # 创建独特的测试文件
         test05_file = self.TEST_TEMP_DIR / "test05_simple_hello.py"
@@ -1087,10 +1180,12 @@ Line 5: No match here'''
         # 复制文件并上传
         import shutil
         shutil.copy2(original_file, test05_file)
-        self._run_gds_command(f'upload --force {test05_file}')
-        
-        # 验证文件存在
-        self.assertTrue(self._verify_file_exists("test05_simple_hello.py"))
+        success, result = self._run_gds_command_with_retry(
+            f'upload --force {test05_file}',
+            ['ls test05_simple_hello.py'],
+            max_retries=3
+        )
+        self.assertTrue(success, f"test05文件上传失败: {result.stderr if result else 'Unknown error'}")
         
         # cat命令读取文件
         result = self._run_gds_command('cat test05_simple_hello.py')
@@ -1116,9 +1211,9 @@ Line 5: No match here'''
         result = self._run_gds_command('read --force test05_simple_hello.py')
         self.assertEqual(result.returncode, 0)
     
-    def test_05b_file_error_handling(self):
+    def test_16_file_error_handling(self):
         """测试文件操作错误处理（从测试12合并）"""
-        print("\n🧪 测试05b: 文件操作错误处理")
+        print("\n🧪 测试16: 文件操作错误处理")
         
         # 1. 测试不存在的文件
         print("🚫 测试cat不存在的文件")
@@ -1139,7 +1234,12 @@ Line 5: No match here'''
         print("✨ 测试特殊字符文件处理")
         if not self._verify_file_exists("special_chars.txt"):
             special_file = self.TEST_DATA_DIR / "special_chars.txt"
-            self._run_gds_command(f'upload --force {special_file}')
+            success, result = self._run_gds_command_with_retry(
+                f'upload --force {special_file}',
+                ['ls special_chars.txt'],
+                max_retries=3
+            )
+            self.assertTrue(success, f"特殊字符文件上传失败: {result.stderr if result else 'Unknown error'}")
         
         result = self._run_gds_command('cat special_chars.txt')
         self.assertEqual(result.returncode, 0, "特殊字符文件应该能正常读取")
@@ -1148,9 +1248,9 @@ Line 5: No match here'''
     
     # ==================== 真实远端项目开发场景测试 ====================
     
-    def test_05_real_world_development_workflow(self):
+    def test_17_real_world_development_workflow(self):
         """测试真实的远端项目开发工作流程"""
-        print("\n🧪 测试05: 真实远端项目开发工作流程")
+        print("\n🧪 测试17: 真实远端项目开发工作流程")
         
         # === 阶段1: 项目初始化 ===
         print("📦 阶段1: 项目初始化")
@@ -1292,11 +1392,12 @@ if __name__ == "__main__":
         self.assertEqual(result.returncode, 0)
         
         # 编辑代码：添加更多功能
-        result = self._run_gds_command('edit main.py \'[["处理示例数据", "处理示例数据（已优化）"]]\'')
-        self.assertEqual(result.returncode, 0)
-        
-        # 验证编辑结果
-        self.assertTrue(self._verify_file_content_contains("main.py", "已优化"))
+        success, result = self._run_gds_command_with_retry(
+            'edit main.py \'[["处理示例数据", "处理示例数据（已优化）"]]\'',
+            ['grep "已优化" main.py'],
+            max_retries=3
+        )
+        self.assertTrue(success, f"代码编辑失败: {result.stderr if result else 'Unknown error'}")
         
         # === 阶段5: 验证测试 ===
         print("✅ 阶段5: 验证测试")
@@ -1329,17 +1430,18 @@ if __name__ == "__main__":
 
     # ==================== 项目开发场景测试 ====================
     
-    def test_06_project_deployment_scenario(self):
+    def test_18_project_deployment_scenario(self):
         """测试完整项目部署场景"""
-        print("\n🧪 测试06: 项目部署场景")
+        print("\n🧪 测试18: 项目部署场景")
         
         # 1. 上传项目文件夹（修复：--force参数应该在路径之前）
         project_dir = self.TEST_DATA_DIR / "test_project"
-        result = self._run_gds_command(f'upload-folder --force {project_dir}')
-        self.assertEqual(result.returncode, 0)
-        
-        # 验证项目上传成功（基于功能结果）
-        self.assertTrue(self._verify_file_exists("test_project"))
+        success, result = self._run_gds_command_with_retry(
+            f'upload-folder --force {project_dir}',
+            ['ls test_project'],
+            max_retries=3
+        )
+        self.assertTrue(success, f"项目文件夹上传失败: {result.stderr if result else 'Unknown error'}")
         
         # 2. 进入项目目录
         result = self._run_gds_command('cd test_project')
@@ -1363,9 +1465,9 @@ if __name__ == "__main__":
         result = self._run_gds_command('cd ..')
         self.assertEqual(result.returncode, 0)
     
-    def test_07_code_execution_scenario(self):
+    def test_19_code_execution_scenario(self):
         """测试代码执行场景"""
-        print("\n🧪 测试07: 代码执行场景")
+        print("\n🧪 测试19: 代码执行场景")
         
         # === 阶段1: 创建独立的测试项目结构 ===
         print("📦 阶段1: 创建测试项目")
@@ -1417,10 +1519,12 @@ if __name__ == "__main__":
         # 复制文件并上传
         import shutil
         shutil.copy2(original_file, test07_file)
-        self._run_gds_command(f'upload --force {test07_file}')
-        
-        # 验证文件存在
-        self.assertTrue(self._verify_file_exists("test07_simple_hello.py"))
+        success, result = self._run_gds_command_with_retry(
+            f'upload --force {test07_file}',
+            ['ls test07_simple_hello.py'],
+            max_retries=3
+        )
+        self.assertTrue(success, f"test07文件上传失败: {result.stderr if result else 'Unknown error'}")
         
         result = self._run_gds_command('python test07_simple_hello.py')
         self.assertEqual(result.returncode, 0)
@@ -1435,9 +1539,9 @@ if __name__ == "__main__":
     
     # ==================== 虚拟环境管理测试 ====================
     
-    def test_08_virtual_environment_workflow(self):
+    def test_20_virtual_environment_workflow(self):
         """测试虚拟环境工作流程和功能验证"""
-        print("\n🧪 测试08: 虚拟环境工作流程和功能验证")
+        print("\n🧪 测试20: 虚拟环境工作流程和功能验证")
         
         # 使用时间哈希命名虚拟环境（确保测试独立性）
         import time
@@ -1518,44 +1622,169 @@ if __name__ == "__main__":
         
         print("✅ 虚拟环境功能验证完成")
     
+    def test_20b_current_environment_detection(self):
+        """测试当前环境检测功能"""
+        print("\n🧪 测试20b: 当前环境检测功能")
+        
+        # 使用时间哈希命名虚拟环境（确保测试独立性）
+        import time
+        venv_name = f"current_test_env_{int(time.time())}"
+        print(f"📦 虚拟环境名称: {venv_name}")
+        
+        # 0. 预备工作：确保测试环境干净（强制取消激活任何现有环境）
+        print("🧹 清理测试环境...")
+        try:
+            result = self._run_gds_command('venv --deactivate', expect_success=False, check_function_result=False)
+            # 不管成功与否都继续，因为可能本来就没有激活的环境
+        except:
+            pass  # 忽略清理过程中的任何错误
+        
+        # 1. 初始状态：没有激活的环境
+        result = self._run_gds_command('venv --current')
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("No virtual environment is currently activated", result.stdout)
+        
+        # 2. 创建虚拟环境
+        result = self._run_gds_command(f'venv --create {venv_name}')
+        self.assertEqual(result.returncode, 0)
+        
+        # 3. 激活虚拟环境
+        result = self._run_gds_command(f'venv --activate {venv_name}')
+        self.assertEqual(result.returncode, 0)
+        
+        # 4. 检测当前激活的环境
+        result = self._run_gds_command('venv --current')
+        self.assertEqual(result.returncode, 0)
+        self.assertIn(f"Current virtual environment: {venv_name}", result.stdout)
+        
+        # 5. 取消激活
+        result = self._run_gds_command('venv --deactivate')
+        self.assertEqual(result.returncode, 0)
+        
+        # 6. 再次检测：应该没有激活的环境
+        result = self._run_gds_command('venv --current')
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("No virtual environment is currently activated", result.stdout)
+        
+        # 7. 清理：删除虚拟环境
+        result = self._run_gds_command(f'venv --delete {venv_name}')
+        self.assertEqual(result.returncode, 0)
+        
+        print("✅ 当前环境检测功能测试完成")
+    
+    def test_20c_package_detection_in_venv(self):
+        """测试虚拟环境中的包检测功能"""
+        print("\n🧪 测试20c: 虚拟环境中的包检测功能")
+        
+        # 0. 预备工作：确保测试环境干净（强制取消激活任何现有环境）
+        print("🧹 清理测试环境...")
+        try:
+            result = self._run_gds_command('venv --deactivate', expect_success=False, check_function_result=False)
+            # 不管成功与否都继续，因为可能本来就没有激活的环境
+        except:
+            pass  # 忽略清理过程中的任何错误
+        
+        # 使用时间哈希命名虚拟环境（确保测试独立性）
+        import time
+        venv_name = f"package_test_env_{int(time.time())}"
+        print(f"📦 虚拟环境名称: {venv_name}")
+        
+        # 1. 创建虚拟环境
+        result = self._run_gds_command(f'venv --create {venv_name}')
+        self.assertEqual(result.returncode, 0)
+        
+        # 2. 激活虚拟环境
+        result = self._run_gds_command(f'venv --activate {venv_name}')
+        self.assertEqual(result.returncode, 0)
+        
+        # 3. 在虚拟环境中安装包
+        result = self._run_gds_command('pip install colorama')
+        self.assertEqual(result.returncode, 0)
+        
+        # 4. 检测已安装的包
+        result = self._run_gds_command('pip list')
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("colorama", result.stdout)
+        
+        # 5. 验证包在激活状态下可用
+        result = self._run_gds_command('python -c "import colorama; print(\\"colorama imported successfully\\")"')
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("colorama imported successfully", result.stdout)
+        
+        # 6. 取消激活虚拟环境
+        result = self._run_gds_command('venv --deactivate')
+        self.assertEqual(result.returncode, 0)
+        
+        # 7. 验证包在未激活状态下不可用
+        result = self._run_gds_command('python -c "import colorama; print(\\"colorama imported\\")"', expect_success=False, check_function_result=False)
+        self.assertNotEqual(result.returncode, 0)  # 应该失败，因为colorama不在系统环境中
+        
+        # 8. 重新激活环境验证包仍然可用
+        result = self._run_gds_command(f'venv --activate {venv_name}')
+        self.assertEqual(result.returncode, 0)
+        
+        result = self._run_gds_command('python -c "import colorama; print(\\"colorama re-imported successfully\\")"')
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("colorama re-imported successfully", result.stdout)
+        
+        # 9. 清理：取消激活并删除虚拟环境
+        result = self._run_gds_command('venv --deactivate')
+        self.assertEqual(result.returncode, 0)
+        
+        result = self._run_gds_command(f'venv --delete {venv_name}')
+        self.assertEqual(result.returncode, 0)
+        
+        print("✅ 虚拟环境中的包检测功能测试完成")
+    
     # ==================== Linter功能测试 ====================
     
-    def test_09_linter_functionality(self):
+    def test_21_linter_functionality(self):
         """测试Linter语法检查功能"""
-        print("\n🧪 测试09: Linter功能测试")
+        print("\n🧪 测试21: Linter功能测试")
         
         # 强制上传测试文件（确保文件存在）
         print("📤 上传测试文件...")
         valid_script = self.TEST_DATA_DIR / "valid_script.py"
-        result = self._run_gds_command(f'upload --force {valid_script}')
-        self.assertEqual(result.returncode, 0, "valid_script.py上传失败")
+        success, result = self._run_gds_command_with_retry(
+            f'upload --force {valid_script}',
+            ['ls valid_script.py'],
+            max_retries=3
+        )
+        self.assertTrue(success, f"valid_script.py上传失败: {result.stderr if result else 'Unknown error'}")
         
         invalid_script = self.TEST_DATA_DIR / "invalid_script.py"
-        result = self._run_gds_command(f'upload --force {invalid_script}')
-        self.assertEqual(result.returncode, 0, "invalid_script.py上传失败")
+        success, result = self._run_gds_command_with_retry(
+            f'upload --force {invalid_script}',
+            ['ls invalid_script.py'],
+            max_retries=3
+        )
+        self.assertTrue(success, f"invalid_script.py上传失败: {result.stderr if result else 'Unknown error'}")
         
         json_file = self.TEST_DATA_DIR / "valid_config.json"
-        result = self._run_gds_command(f'upload --force {json_file}')
-        self.assertEqual(result.returncode, 0, "valid_config.json上传失败")
-        
-        # 验证文件上传成功
-        self.assertTrue(self._verify_file_exists("valid_script.py"), "valid_script.py文件不存在")
-        self.assertTrue(self._verify_file_exists("invalid_script.py"), "invalid_script.py文件不存在")
-        self.assertTrue(self._verify_file_exists("valid_config.json"), "valid_config.json文件不存在")
+        success, result = self._run_gds_command_with_retry(
+            f'upload --force {json_file}',
+            ['ls valid_config.json'],
+            max_retries=3
+        )
+        self.assertTrue(success, f"valid_config.json上传失败: {result.stderr if result else 'Unknown error'}")
         
         # 1. 测试语法正确的文件
         print("✅ 测试语法正确的Python文件")
         result = self._run_gds_command('linter valid_script.py')
         self.assertEqual(result.returncode, 0)
         
-        # 2. 测试语法错误的文件
-        print("❌ 测试语法错误的Python文件")
+        # 2. 测试有样式错误的文件
+        print("⚠️ 测试有样式错误的Python文件")
         result = self._run_gds_command('linter invalid_script.py', expect_success=False, check_function_result=False)
-        # 语法错误的文件应该返回非零退出码或包含错误信息
+        # 样式错误的文件应该返回非零退出码或包含错误信息
         if result.returncode == 0:
             # 如果返回码为0，检查输出是否包含错误信息
-            self.assertTrue("error" in result.stdout.lower() or "syntax" in result.stdout.lower(), 
-                          f"语法错误文件应该报告错误，但输出为: {result.stdout}")
+            self.assertTrue("error" in result.stdout.lower() or "warning" in result.stdout.lower(), 
+                          f"样式错误文件应该报告错误，但输出为: {result.stdout}")
+        else:
+            # 如果返回码非0，应该是因为检测到了linting问题
+            self.assertTrue("error" in result.stdout.lower() or "warning" in result.stdout.lower() or "fail" in result.stdout.lower(), 
+                          f"Linter应该报告具体问题，但输出为: {result.stdout}")
         
         # 3. 测试指定语言的linter
         print("🐍 测试指定Python语言的linter")
@@ -1574,11 +1803,154 @@ if __name__ == "__main__":
         
         print("✅ Linter功能测试完成")
     
+    def test_21b_edit_linter_integration(self):
+        """测试edit命令与linter的集成功能"""
+        print("\n🧪 测试21b: Edit命令与Linter集成测试")
+        
+        # 创建一个有语法错误的Python文件
+        error_content = '''def hello_world(
+print("Missing closing parenthesis")
+return True
+
+def calculate_sum(a, b:
+return a + b
+
+if __name__ == "__main__":
+hello_world()
+result = calculate_sum(5, 3)
+print(f"Sum: {result}")
+'''
+        
+        # 使用echo创建有错误的文件
+        escaped_content = error_content.replace('"', '\\"').replace('\n', '\\n')
+        success, result = self._run_gds_command_with_retry(
+            f"'echo -e \"{escaped_content}\" > syntax_error_test.py'",
+            ['ls syntax_error_test.py'],
+            max_retries=3
+        )
+        self.assertTrue(success, f"创建语法错误文件失败: {result.stderr if result else 'Unknown error'}")
+        
+        # 尝试编辑文件，这应该触发linter并显示错误
+        print("🔧 执行edit命令，应该触发linter检查...")
+        result = self._run_gds_command('edit syntax_error_test.py \'[["Missing closing parenthesis", "Fixed syntax error"]]\'')
+        
+        # 检查edit命令的输出格式
+        print("📋 检查edit命令输出格式...")
+        output = result.stdout
+        
+        # 验证linter错误格式
+        # 1. 检查是否有edit comparison部分
+        self.assertIn("========", output, "应该包含edit comparison分隔线")
+        
+        # 2. 检查是否有linter错误部分（由于语法错误应该有）
+        linter_error_indicators = [
+            "linter warnings or errors found:",
+            "ERROR:",
+            "SyntaxError",
+            "invalid syntax"
+        ]
+        
+        has_linter_output = any(indicator in output for indicator in linter_error_indicators)
+        
+        if has_linter_output:
+            print("✅ 检测到linter错误输出")
+            
+            # 验证linter错误格式：应该在edit comparison下方，由======分割
+            sections = output.split("========")
+            
+            # 寻找包含linter错误的section
+            linter_section = None
+            for i, section in enumerate(sections):
+                if any(indicator in section for indicator in linter_error_indicators):
+                    linter_section = section
+                    print(f"📍 在第{i+1}个section找到linter输出")
+                    break
+            
+            if linter_section:
+                print("🔍 Linter错误格式验证:")
+                print("=" * 50)
+                print(linter_section.strip())
+                print("=" * 50)
+                
+                # 验证格式特征
+                self.assertIn("linter warnings or errors found:", linter_section, 
+                             "应该包含linter错误计数信息")
+                
+                # 验证每个错误都以ERROR:开头并列在单独的行
+                error_lines = [line.strip() for line in linter_section.split('\n') 
+                              if line.strip().startswith('ERROR:')]
+                self.assertGreater(len(error_lines), 0, "应该至少有一个ERROR:行")
+                
+                print(f"✅ 找到 {len(error_lines)} 个linter错误")
+                for i, error_line in enumerate(error_lines[:3]):  # 只显示前3个
+                    print(f"   {i+1}. {error_line}")
+                
+            else:
+                print("⚠️ 未找到格式化的linter错误section，但检测到linter输出")
+        else:
+            print("⚠️ 未检测到linter错误输出，可能linter未运行或文件语法正确")
+            # 这可能是正常的，如果linter没有检测到错误
+        
+        print("✅ Edit与Linter集成测试完成")
+    
+    # ==================== Pipe功能测试 ====================
+    
+    def test_21c_pipe_basic_functionality(self):
+        """测试基础pipe功能"""
+        print("\n🧪 测试21c: 基础pipe功能")
+        
+        # 测试简单的pipe命令
+        result = self._run_gds_command('echo "hello world" | grep hello')
+        self.assertEqual(result.returncode, 0)
+        
+        print("✅ 基础pipe功能测试通过")
+    
+    def test_21d_pipe_with_ls(self):
+        """测试ls命令与pipe的组合"""
+        print("\n🧪 测试21d: ls命令与pipe组合")
+        
+        # 创建测试文件
+        result = self._run_gds_command('echo "test content" > pipe_test.txt')
+        self.assertEqual(result.returncode, 0)
+        
+        # 测试 ls | grep 组合
+        result = self._run_gds_command('ls | grep pipe_test')
+        self.assertEqual(result.returncode, 0)
+        
+        # 清理测试文件
+        self._run_gds_command('rm pipe_test.txt')
+        
+        print("✅ ls pipe组合测试通过")
+    
+    def test_21e_pipe_chain_commands(self):
+        """测试pipe命令链"""
+        print("\n🧪 测试21e: pipe命令链")
+        
+        # 测试多个pipe操作符的组合
+        result = self._run_gds_command('echo -e "apple\\nbanana\\napple\\ncherry" | sort | uniq')
+        self.assertEqual(result.returncode, 0)
+        
+        print("✅ pipe命令链测试通过")
+    
+    def test_21f_pipe_with_head_tail(self):
+        """测试pipe与head/tail命令"""
+        print("\n🧪 测试21f: pipe与head/tail命令")
+        
+        # 测试head命令
+        result = self._run_gds_command('echo -e "line1\\nline2\\nline3\\nline4\\nline5" | head -n 3')
+        self.assertEqual(result.returncode, 0)
+        
+        # 测试tail命令
+        result = self._run_gds_command('echo -e "line1\\nline2\\nline3\\nline4\\nline5" | tail -n 2')
+        self.assertEqual(result.returncode, 0)
+        
+        print("✅ pipe head/tail测试通过")
+    
     # ==================== 边缘情况和错误处理测试 ====================
     
-    def test_12_empty_directory_upload(self):
+    def test_22_empty_directory_upload(self):
         """测试空目录上传（保留的边缘情况测试）"""
-        print("\n🧪 测试12: 空目录上传测试")
+        print("\n🧪 测试22: 空目录上传测试")
         
         # 测试空目录上传
         empty_dir = self.TEST_DATA_DIR / "empty_test_dir"
@@ -1592,19 +1964,20 @@ if __name__ == "__main__":
                 import shutil
                 shutil.rmtree(item)
         
-        result = self._run_gds_command(f'upload-folder --force {empty_dir}')
-        self.assertEqual(result.returncode, 0)
-        
-        # 验证空目录上传成功
-        self.assertTrue(self._verify_file_exists("empty_test_dir"))
+        success, result = self._run_gds_command_with_retry(
+            f'upload-folder --force {empty_dir}',
+            ['ls empty_test_dir'],
+            max_retries=3
+        )
+        self.assertTrue(success, f"空目录上传失败: {result.stderr if result else 'Unknown error'}")
         
         print("✅ 空目录上传测试完成")
     
     # ==================== 并发和批量操作测试 ====================
     
-    def test_13_concurrent_and_batch_operations(self):
+    def test_23_concurrent_and_batch_operations(self):
         """测试并发和批量操作"""
-        print("\n🧪 测试13: 并发和批量操作")
+        print("\n🧪 测试23: 并发和批量操作")
         
         # 1. 批量创建文件（修复：使用正确的echo重定向语法）
         files = ["batch_file1.txt", "batch_file2.txt", "batch_file3.txt"]

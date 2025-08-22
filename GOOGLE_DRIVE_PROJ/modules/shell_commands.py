@@ -757,9 +757,224 @@ pip <command> [options]      - pip package manager (auto-targets active venv)"""
     
     return 0
 
-def handle_multiple_commands(shell_cmd, command_identifier=None):
-    """处理多个用&&或||连接的shell命令"""
+def handle_pipe_commands(shell_cmd, command_identifier=None):
+    """处理用|连接的pipe命令"""
     try:
+        # 解析pipe命令：支持 | 操作符
+        pipe_parts = shell_cmd.split(' | ')
+        if len(pipe_parts) < 2:
+            # 不是pipe命令，不应该到这里
+            return handle_single_command(shell_cmd, command_identifier)
+        
+        # 获取GoogleDriveShell实例来执行命令
+        try:
+            import sys
+            import os
+            sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+            from google_drive_shell import GoogleDriveShell
+            
+            shell = GoogleDriveShell()
+        except Exception as e:
+            error_msg = f"Failed to get GoogleDriveShell instance: {e}"
+            if is_run_environment(command_identifier):
+                write_to_json_output({"success": False, "error": error_msg}, command_identifier)
+            else:
+                print(error_msg)
+            return 1
+        
+        # 执行pipe命令链
+        if not is_run_environment(command_identifier):
+            print(f"Executing pipe command chain: {shell_cmd}")
+        
+        previous_output = ""
+        final_result = 0
+        
+        for i, cmd_part in enumerate(pipe_parts):
+            cmd_part = cmd_part.strip()
+            
+            if not is_run_environment(command_identifier):
+                print(f"\n- Executing command {i+1}/{len(pipe_parts)}: {cmd_part}")
+            
+            # 如果不是第一个命令，将上一个命令的输出作为输入
+            if i > 0:
+                # 对于pipe命令，我们需要特殊处理
+                # 这里简化实现：将前一个命令的输出作为当前命令的输入参数
+                if cmd_part.startswith('grep ') or cmd_part.startswith('head ') or cmd_part.startswith('tail ') or cmd_part.startswith('sort') or cmd_part.startswith('uniq'):
+                    # 对于这些常见的pipe命令，我们模拟其行为
+                    final_result = _execute_pipe_command(cmd_part, previous_output, shell, command_identifier)
+                    if final_result != 0:
+                        break
+                else:
+                    # 对于其他命令，直接执行
+                    final_result = shell.execute_shell_command(cmd_part, command_identifier)
+                    if final_result != 0:
+                        break
+            else:
+                # 第一个命令，正常执行并捕获输出
+                import io
+                import contextlib
+                from contextlib import redirect_stdout
+                
+                # 捕获第一个命令的输出
+                output_buffer = io.StringIO()
+                try:
+                    with redirect_stdout(output_buffer):
+                        final_result = shell.execute_shell_command(cmd_part, command_identifier)
+                    previous_output = output_buffer.getvalue()
+                except Exception as e:
+                    if not is_run_environment(command_identifier):
+                        print(f"Error capturing output from command '{cmd_part}': {e}")
+                    final_result = 1
+                    break
+        
+        return final_result
+        
+    except Exception as e:
+        error_msg = f"Error executing pipe commands: {e}"
+        if is_run_environment(command_identifier):
+            write_to_json_output({"success": False, "error": error_msg}, command_identifier)
+        else:
+            print(f"{error_msg}")
+        return 1
+
+def _execute_pipe_command(cmd, input_text, shell, command_identifier=None):
+    """执行pipe命令的具体实现"""
+    try:
+        cmd_parts = cmd.split()
+        if not cmd_parts:
+            return 1
+            
+        cmd_name = cmd_parts[0]
+        
+        if cmd_name == 'grep':
+            # 实现简单的grep功能
+            if len(cmd_parts) < 2:
+                if not is_run_environment(command_identifier):
+                    print("grep: missing pattern")
+                return 1
+            
+            pattern = cmd_parts[1]
+            lines = input_text.split('\n')
+            matched_lines = [line for line in lines if pattern in line]
+            
+            if not is_run_environment(command_identifier):
+                for line in matched_lines:
+                    print(line)
+            return 0
+            
+        elif cmd_name == 'head':
+            # 实现简单的head功能
+            n_lines = 10  # 默认显示10行
+            if len(cmd_parts) >= 3 and cmd_parts[1] == '-n':
+                try:
+                    n_lines = int(cmd_parts[2])
+                except ValueError:
+                    n_lines = 10
+            elif len(cmd_parts) >= 2 and cmd_parts[1].startswith('-'):
+                try:
+                    n_lines = int(cmd_parts[1][1:])
+                except ValueError:
+                    n_lines = 10
+            
+            lines = input_text.split('\n')
+            head_lines = lines[:n_lines]
+            
+            if not is_run_environment(command_identifier):
+                for line in head_lines:
+                    print(line)
+            return 0
+            
+        elif cmd_name == 'tail':
+            # 实现简单的tail功能
+            n_lines = 10  # 默认显示10行
+            if len(cmd_parts) >= 3 and cmd_parts[1] == '-n':
+                try:
+                    n_lines = int(cmd_parts[2])
+                except ValueError:
+                    n_lines = 10
+            elif len(cmd_parts) >= 2 and cmd_parts[1].startswith('-'):
+                try:
+                    n_lines = int(cmd_parts[1][1:])
+                except ValueError:
+                    n_lines = 10
+            
+            lines = input_text.split('\n')
+            tail_lines = lines[-n_lines:] if len(lines) >= n_lines else lines
+            
+            if not is_run_environment(command_identifier):
+                for line in tail_lines:
+                    print(line)
+            return 0
+            
+        elif cmd_name == 'sort':
+            # 实现简单的sort功能
+            lines = input_text.split('\n')
+            sorted_lines = sorted(lines)
+            
+            if not is_run_environment(command_identifier):
+                for line in sorted_lines:
+                    print(line)
+            return 0
+            
+        elif cmd_name == 'uniq':
+            # 实现简单的uniq功能
+            lines = input_text.split('\n')
+            unique_lines = []
+            for line in lines:
+                if not unique_lines or unique_lines[-1] != line:
+                    unique_lines.append(line)
+            
+            if not is_run_environment(command_identifier):
+                for line in unique_lines:
+                    print(line)
+            return 0
+        else:
+            # 不支持的pipe命令
+            if not is_run_environment(command_identifier):
+                print(f"Pipe command '{cmd_name}' not supported")
+            return 1
+            
+    except Exception as e:
+        if not is_run_environment(command_identifier):
+            print(f"Error executing pipe command '{cmd}': {e}")
+        return 1
+
+def handle_single_command(shell_cmd, command_identifier=None):
+    """处理单个命令"""
+    try:
+        # 获取GoogleDriveShell实例来执行命令
+        try:
+            import sys
+            import os
+            sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+            from google_drive_shell import GoogleDriveShell
+            
+            shell = GoogleDriveShell()
+        except Exception as e:
+            error_msg = f"Failed to get GoogleDriveShell instance: {e}"
+            if is_run_environment(command_identifier):
+                write_to_json_output({"success": False, "error": error_msg}, command_identifier)
+            else:
+                print(error_msg)
+            return 1
+        
+        return shell.execute_shell_command(shell_cmd, command_identifier)
+        
+    except Exception as e:
+        error_msg = f"Error executing command: {e}"
+        if is_run_environment(command_identifier):
+            write_to_json_output({"success": False, "error": error_msg}, command_identifier)
+        else:
+            print(f"{error_msg}")
+        return 1
+
+def handle_multiple_commands(shell_cmd, command_identifier=None):
+    """处理多个用&&、||或|连接的shell命令"""
+    try:
+        # 首先检查是否包含pipe操作符
+        if ' | ' in shell_cmd:
+            return handle_pipe_commands(shell_cmd, command_identifier)
+        
         # 解析命令：支持 && 和 || 操作符
         commands_with_operators = []
         

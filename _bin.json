@@ -505,6 +505,36 @@
         "--help"
       ]
     },
+    "LINTER": {
+      "name": "LINTER",
+      "description": "Multi-language syntax and style checker",
+      "purpose": "Supports Python, JavaScript, Java, C++, SQL, and more",
+      "usage": "LINTER <file> [--language <language>]",
+      "examples": [
+        "LINTER file.py",
+        "LINTER file.js --language javascript",
+        "LINTER file.cpp",
+        "LINTER file.sql --language sql"
+      ],
+      "files": {
+        "binary": "LINTER",
+        "python": "LINTER.py",
+        "markdown": "LINTER.md"
+      },
+      "run_compatible": true,
+      "testable": true,
+      "test_passed": false,
+      "ai_usable": true,
+      "test_command": [
+        "test_errors.py"
+      ],
+      "tool_use_scenario": "When user needs to check syntax and style errors in code files",
+      "file_hashes": {
+        "binary": "TBD",
+        "python": "TBD",
+        "markdown": "TBD"
+      }
+    },
     "USERINPUT": {
       "name": "USERINPUT",
       "description": "User Input Script for Cursor AI",

@@ -1781,9 +1781,7 @@ fi
                 debug_print(f"remote_command存在: {remote_command is not None}")
                 debug_print(f"debug_info存在: {debug_info is not None}")
                 try:
-                    debug_print("开始调用self.direct_feedback...")
                     feedback_result = self.direct_feedback(remote_command, debug_info)
-                    debug_print(f"direct_feedback调用完成，返回结果: {feedback_result}")
                     return {
                         "success": feedback_result.get("success", False),
                         "action": "direct_feedback",
@@ -1895,8 +1893,6 @@ fi
         
         # 检查是否包含错误信息
         has_error = any(keyword in full_output for keyword in error_keywords)
-        debug_print(f"检测到错误关键词: {has_error}")
-        
         if has_error:
             stdout_content = ""
             stderr_content = full_output
@@ -1919,8 +1915,6 @@ fi
                 "source": "direct_feedback"
             }
         }
-        
-        debug_print(f"direct_feedback完成，success: {feedback_result['success']}")
         return feedback_result
     
     # ==================== 从core_utils.py迁移的方法 ====================
@@ -2085,15 +2079,13 @@ try:
         focus_count += 1
         force_focus()
         
-        # 只在第1、4、7...次focus时播放音效并重新复制
-        if focus_count % 3 == 1:
-            try:
-                import threading
-                threading.Thread(target=play_bell_in_subprocess, daemon=True).start()
-                # 重新复制命令到剪切板（虚拟点击复制按钮）
-                copy_command()
-            except Exception:
-                pass
+
+        try:
+            import threading
+            threading.Thread(target=play_bell_in_subprocess, daemon=True).start()
+            root.after(100, lambda: trigger_copy_button())
+        except Exception:
+            pass
     
     # 设置窗口置顶并初始聚焦（第1次，会播放音效）
     root.attributes('-topmost', True)
@@ -2136,6 +2128,17 @@ try:
             root.after(1500, lambda: copy_btn.config(text="📋 复制指令", bg="#2196F3"))
         except Exception as e:
             copy_btn.config(text="❌ 复制失败", bg="#f44336")
+    
+    def trigger_copy_button():
+        """触发复制按钮的点击效果（用于音效播放时自动触发）"""
+        try:
+            # 模拟按钮点击效果
+            copy_btn.config(relief='sunken')
+            root.after(50, lambda: copy_btn.config(relief='raised'))
+            # 执行复制功能
+            copy_command()
+        except Exception:
+            pass
     
     def execution_completed():
         global button_clicked
@@ -2223,21 +2226,21 @@ try:
     root.bind('<Key>', on_key_press)
     root.focus_set()  # 确保窗口能接收键盘事件
     
-    # 自动复制命令到剪贴板
-    copy_command()
+    # 自动复制命令到剪贴板 - 暂时注释掉自动复制功能
+    # copy_command()
     
-    # 定期重新获取焦点的函数
+    # 定期重新获取焦点的函数 - 暂时注释掉5秒refocus机制
     def refocus_window():
         try:
             # 使用带focus计数的聚焦函数
             force_focus_with_count()
-            # 每5秒重新获取焦点
-            root.after(5000, refocus_window)
+            # 每30秒重新获取焦点并播放音效（从5秒改为30秒）
+            root.after(30000, refocus_window)
         except:
             pass  # 如果窗口已关闭，忽略错误
     
-    # 开始定期重新获取焦点
-    root.after(5000, refocus_window)
+    # 开始定期重新获取焦点 - 每30秒播放音效
+    root.after(30000, refocus_window)
     
     # 设置自动关闭定时器
     root.after({timeout_seconds * 1000}, lambda: (result.update({{"action": "timeout"}}), root.destroy()))
@@ -2516,7 +2519,7 @@ def main():
             shell_cmd_parts = args[1:]
             
             # 如果只有一个参数且包含空格，可能是引号包围的完整命令
-            if len(shell_cmd_parts) == 1 and (' > ' in shell_cmd_parts[0] or ' && ' in shell_cmd_parts[0] or ' || ' in shell_cmd_parts[0]):
+            if len(shell_cmd_parts) == 1 and (' > ' in shell_cmd_parts[0] or ' && ' in shell_cmd_parts[0] or ' || ' in shell_cmd_parts[0] or ' | ' in shell_cmd_parts[0]):
                 # 这是一个引号包围的完整命令，直接使用
                 shell_cmd = shell_cmd_parts[0]
                 quoted_parts = shell_cmd_parts  # 为调试信息设置
