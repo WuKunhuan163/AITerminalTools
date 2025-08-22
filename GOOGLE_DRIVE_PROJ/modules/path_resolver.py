@@ -398,13 +398,22 @@ class PathResolver:
                 if not current_shell:
                     return path  # 如果没有shell，返回原路径
             
-            # 如果已经是绝对路径（以/开头），直接返回
-            if path.startswith("/"):
-                return path
-            
             # 获取当前路径和REMOTE_ROOT路径
             current_path = current_shell.get("current_path", "~")
             remote_root_path = self.main_instance.REMOTE_ROOT
+            
+            # 如果已经是绝对路径（以/开头），检查是否是被错误扩展的本地用户路径
+            if path.startswith("/"):
+                # 检查是否是被shell错误扩展的~/路径
+                import os
+                local_home = os.path.expanduser("~")
+                if path.startswith(local_home + "/"):
+                    # 这是被错误扩展的~/路径，转换为GDS路径
+                    relative_part = path[len(local_home) + 1:]  # 去掉本地home路径和/
+                    return f"{remote_root_path}/{relative_part}"
+                else:
+                    # 真正的绝对路径，直接返回
+                    return path
             
             # 处理特殊路径
             if path == "~":

@@ -17,6 +17,7 @@ GDS (Google Drive Shell) 全面测试套件
 import unittest
 import subprocess
 import sys
+import re
 from pathlib import Path
 from datetime import datetime
 
@@ -53,7 +54,6 @@ class GDSTest(unittest.TestCase):
         hash_suffix = hashlib.md5(timestamp.encode()).hexdigest()[:8]
         cls.test_folder = f"gds_test_{timestamp}_{hash_suffix}"
         
-        print(f"📁 远端测试目录: ~/tmp/{cls.test_folder}")
         print(f"📂 本地测试数据: {cls.TEST_DATA_DIR}")
         print(f"📂 本地临时文件: {cls.TEST_TEMP_DIR}")
         
@@ -69,7 +69,7 @@ class GDSTest(unittest.TestCase):
     @classmethod
     def _setup_remote_test_directory(cls):
         """设置远端测试目录"""
-        print(f"📁 创建远端测试目录: ~/tmp/{cls.test_folder}")
+        print(f"📁 远端测试目录: ~/tmp/{cls.test_folder}")
         
         # 创建测试目录 (先切换到根目录确保正确的路径解析)
         mkdir_command = f"python3 {cls.GOOGLE_DRIVE_PY} --shell 'cd ~ && mkdir -p ~/tmp/{cls.test_folder}'"
@@ -279,8 +279,6 @@ Shell commands: ls -la && echo "done"
         }
     }
 }''')
-        
-        print(f"📁 创建了测试文件在 {cls.TEST_DATA_DIR}")
     
     def _run_gds_command(self, command, expect_success=True, check_function_result=True):
         """
@@ -2003,6 +2001,130 @@ print(f"Sum: {result}")
         for filename in files:
             result = self._run_gds_command(f'rm {filename}')
             self.assertEqual(result.returncode, 0)
+    
+    # ==================== 新功能测试：依赖树分析 ====================
+    
+    def test_24_pip_dependency_analysis(self):
+        """测试pip依赖树分析功能"""
+        print("\n🧪 测试24: pip依赖树分析功能")
+        
+        # 测试简单包的依赖分析（depth=1）
+        print("🔍 测试简单包依赖分析（depth=1）")
+        result = self._run_gds_command('pip --show-deps requests --depth=1')
+        self.assertEqual(result.returncode, 0)
+        
+        # 验证输出包含关键信息
+        output = result.stdout
+        self.assertIn("Analysis completed:", output, "应该包含分析完成信息")
+        self.assertIn("API calls", output, "应该包含API调用次数")
+        self.assertIn("packages analyzed", output, "应该包含分析包数量")
+        self.assertIn("requests", output, "应该包含主包名")
+        
+        # 验证依赖树格式
+        self.assertIn("├─", output, "应该包含依赖树连接符")
+        self.assertIn("Level 1:", output, "应该包含层级汇总")
+        
+        print("✅ 简单包依赖分析测试通过")
+        
+        # 测试复杂包的依赖分析（depth=2）
+        print("🔍 测试复杂包依赖分析（depth=2）")
+        result = self._run_gds_command('pip --show-deps numpy --depth=2')
+        self.assertEqual(result.returncode, 0)
+        
+        # numpy通常没有依赖，但测试应该正常完成
+        output = result.stdout
+        self.assertIn("Analysis completed:", output, "应该包含分析完成信息")
+        self.assertIn("numpy", output, "应该包含包名")
+        
+        print("✅ 复杂包依赖分析测试通过")
+        
+        # 测试不存在包的错误处理
+        print("🚫 测试不存在包的错误处理")
+        result = self._run_gds_command('pip --show-deps nonexistent-package-12345', expect_success=False, check_function_result=False)
+        # 不存在的包应该返回错误或空结果
+        if result.returncode == 0:
+            # 如果返回码为0，输出应该表明没有找到包
+            output = result.stdout.lower()
+            not_found_indicators = ["not found", "error", "failed", "no package"]
+            has_error_indicator = any(indicator in output for indicator in not_found_indicators)
+            self.assertTrue(has_error_indicator, f"不存在的包应该有错误指示，输出: {result.stdout}")
+        
+        print("✅ 错误处理测试通过")
+        
+        print("✅ pip依赖树分析功能测试完成")
+    
+    def test_25_pip_dependency_performance(self):
+        """测试pip依赖分析性能和限制"""
+        print("\n🧪 测试25: pip依赖分析性能测试")
+        
+        # 测试性能统计信息
+        print("⏱️ 测试性能统计")
+        import time
+        start_time = time.time()
+        result = self._run_gds_command('pip --show-deps colorama --depth=1')
+        end_time = time.time()
+        
+        self.assertEqual(result.returncode, 0)
+        
+        # 验证性能统计格式
+        output = result.stdout
+        self.assertRegex(output, r'\d+ API calls', "应该包含API调用次数")
+        self.assertRegex(output, r'\d+ packages analyzed', "应该包含分析包数量")
+        self.assertRegex(output, r'in \d+\.\d+s', "应该包含执行时间")
+        
+        # 验证执行时间合理（应该在合理范围内）
+        actual_time = end_time - start_time
+        print(f"📊 实际执行时间: {actual_time:.2f}s")
+        self.assertLess(actual_time, 60, "简单包分析应该在60秒内完成")
+        
+        print("✅ 性能测试通过")
+        
+        # 测试深度参数
+        print("🔢 测试深度参数")
+        result = self._run_gds_command('pip --show-deps requests --depth=1')
+        self.assertEqual(result.returncode, 0)
+        
+        result = self._run_gds_command('pip --show-deps requests --depth=2')
+        self.assertEqual(result.returncode, 0)
+        
+        print("✅ 深度参数测试通过")
+        
+        print("✅ pip依赖分析性能测试完成")
+    
+    def test_26_pip_dependency_output_format(self):
+        """测试pip依赖分析输出格式"""
+        print("\n🧪 测试26: pip依赖分析输出格式测试")
+        
+        # 测试输出格式的各个组成部分
+        result = self._run_gds_command('pip --show-deps requests --depth=1')
+        self.assertEqual(result.returncode, 0)
+        
+        output = result.stdout
+        
+        # 验证分析统计行
+        print("📊 验证分析统计")
+        self.assertRegex(output, r'Analysis completed: \d+ API calls, \d+ packages analyzed in \d+\.\d+s', 
+                        "应该包含完整的分析统计信息")
+        
+        # 验证依赖树格式
+        print("🌳 验证依赖树格式")
+        tree_indicators = ["├─", "└─", "│"]
+        has_tree_format = any(indicator in output for indicator in tree_indicators)
+        self.assertTrue(has_tree_format, "应该包含依赖树格式字符")
+        
+        # 验证大小显示格式
+        print("💾 验证大小显示格式")
+        size_patterns = [r'\(\d+\.\d+MB\)', r'\(\d+\.\d+KB\)', r'\(\d+B\)']
+        has_size_format = any(re.search(pattern, output) for pattern in size_patterns)
+        self.assertTrue(has_size_format, "应该包含大小信息")
+        
+        # 验证层级汇总
+        print("📋 验证层级汇总")
+        self.assertRegex(output, r'Level \d+:', "应该包含层级汇总")
+        
+        print("✅ 输出格式测试通过")
+        
+        print("✅ pip依赖分析输出格式测试完成")
     
     # ==================== 清理测试 ====================
     

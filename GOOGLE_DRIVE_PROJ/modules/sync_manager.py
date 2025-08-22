@@ -66,7 +66,7 @@ class SyncManager:
             
             # 首先检查远端是否有同名文件和缓存建议
             debug_print(f"🔄 Checking conflicts for: {filename}")
-            remote_check_result = self._check_remote_file_exists(filename)
+            remote_check_result = self.main_instance.remote_commands._check_remote_file_exists(filename)
             remote_has_same_file = remote_check_result.get("exists", False)
             
             # 检查是否在删除时间缓存中（5分钟内删除过）
@@ -586,40 +586,7 @@ class SyncManager:
             error_msg = f"{operation_name}时出错: {str(e)}"
         return self._create_error_result(error_msg)
     
-    def _check_remote_file_exists(self, file_path):
-        """
-        检查远端文件是否存在
-        
-        Args:
-            file_path (str): 相对于当前目录的文件路径
-            
-        Returns:
-            dict: 检查结果
-        """
-        try:
-            # 使用ls命令检查文件是否存在
-            # 解析路径
-            if "/" in file_path:
-                dir_path, filename = file_path.rsplit("/", 1)
-            else:
-                dir_path = "."
-                filename = file_path
-            
-            # 列出目录内容
-            ls_result = self.main_instance.cmd_ls(dir_path)
-            
-            if not ls_result.get("success"):
-                return {"exists": False, "error": f"无法访问目录: {dir_path}"}
-            
-            # 检查文件是否在列表中
-            files = ls_result.get("files", [])
-            file_exists = any(f.get("name") == filename for f in files)
-            
-            return {"exists": file_exists}
-            
-        except Exception as e:
-            return {"exists": False, "error": f"检查文件存在性时出错: {str(e)}"}
-    
+
     def should_rename_file(self, filename):
         """委托到cache_manager的文件重命名检查"""
         return self.main_instance.cache_manager.should_rename_file(filename)

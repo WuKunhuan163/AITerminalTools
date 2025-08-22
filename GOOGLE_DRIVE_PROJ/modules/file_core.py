@@ -1,4 +1,6 @@
 
+import time
+
 class FileCore:
     """
     Core file operations (upload, download, navigation)
@@ -833,6 +835,74 @@ class FileCore:
         except Exception as e:
             return {"success": False, "error": f"执行cd命令时出错: {e}"}
 
+    def cmd_mkdir_remote(self, target_path, recursive=False):
+        """
+        通过远端命令创建目录的接口（使用统一接口）
+        
+        Args:
+            target_path (str): 目标路径
+            recursive (bool): 是否递归创建
+            
+        Returns:
+            dict: 创建结果
+        """
+        try:
+            # 获取当前shell以解析相对路径
+            current_shell = self.main_instance.get_current_shell()
+            if not current_shell:
+                return {"success": False, "error": "没有活跃的远程shell"}
+            
+            # 解析绝对路径
+            absolute_path = self.main_instance.resolve_remote_absolute_path(target_path, current_shell)
+            if not absolute_path:
+                return {"success": False, "error": f"无法解析路径: {target_path}"}
+            
+            # 生成远端mkdir命令，添加清屏和成功/失败提示（总是使用-p确保父目录存在）
+            remote_command = f'mkdir -p "{absolute_path}"'
+            
+            # 准备上下文信息
+            context_info = {
+                "target_path": target_path,
+                "absolute_path": absolute_path,
+                "recursive": recursive
+            }
+            
+            # 使用统一接口执行远端命令
+            execution_result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
+            
+            if execution_result["success"]:
+                # 执行成功后，进行验证以确保目录真正创建（最多60次重试）
+                verification_result = self.main_instance.verify_creation_with_ls(target_path, current_shell, creation_type="dir", max_attempts=60)
+                
+                if verification_result["success"]:
+                    # 验证成功，简洁返回，像bash shell一样成功时不显示任何信息
+                    return {
+                        "success": True,
+                        "path": target_path,
+                        "absolute_path": absolute_path,
+                        "remote_command": remote_command,
+                        "message": "",  # 空消息，不显示任何内容
+                        "verification": verification_result
+                    }
+                else:
+                    # 验证失败
+                    return {
+                        "success": False,
+                        "error": f"目录创建可能失败，验证超时: {target_path}",
+                        "verification": verification_result,
+                        "remote_command": remote_command
+                    }
+            else:
+                # 执行失败
+                return {
+                    "success": False,
+                    "error": f"mkdir命令执行失败: {execution_result.get('error', 'Unknown error')}",
+                    "remote_command": remote_command
+                }
+                
+        except Exception as e:
+            return {"success": False, "error": f"执行mkdir命令时出错: {e}"}
+
     def cmd_mkdir(self, path, recursive=False):
         """创建目录，通过远程命令界面执行以确保由用户账户创建"""
         try:
@@ -851,6 +921,119 @@ class FileCore:
                 
         except Exception as e:
             return {"success": False, "error": f"执行mkdir命令时出错: {e}"}
+
+    def _ls_single(self, target_folder_id, display_path, detailed, show_hidden=False):
+        """列出单个目录内容（统一实现，包含去重处理）"""
+        try:
+            result = self.drive_service.list_files(folder_id=target_folder_id, max_results=50)
+            
+            if result['success']:
+                files = result['files']
+                
+                # 添加网页链接到每个文件
+                for file in files:
+                    file['url'] = self._generate_web_url(file)
+                
+                # 按名称排序，文件夹优先
+                folders = sorted([f for f in files if f['mimeType'] == 'application/vnd.google-apps.folder'], 
+                               key=lambda x: x['name'].lower())
+                other_files = sorted([f for f in files if f['mimeType'] != 'application/vnd.google-apps.folder'], 
+                                   key=lambda x: x['name'].lower())
+                
+                # 去重处理
+                seen_names = set()
+                clean_folders = []
+                clean_files = []
+                
+                # 处理文件夹
+                for folder in folders:
+                    if folder["name"] not in seen_names:
+                        clean_folders.append(folder)
+                        seen_names.add(folder["name"])
+                
+                # 处理文件
+                for file in other_files:
+                    if file["name"] not in seen_names:
+                        clean_files.append(file)
+                        seen_names.add(file["name"])
+                
+                if detailed:
+                    # 详细模式：返回完整JSON
+                    return {
+                        "success": True,
+                        "path": display_path,
+                        "folder_id": target_folder_id,
+                        "folder_url": self._generate_folder_url(target_folder_id),
+                        "files": clean_files,  # 只有非文件夹文件
+                        "folders": clean_folders,  # 只有文件夹
+                        "count": len(clean_folders) + len(clean_files),
+                        "mode": "detailed"
+                    }
+                else:
+                    # bash风格：只返回文件名列表
+                    return {
+                        "success": True,
+                        "path": display_path,
+                        "folder_id": target_folder_id,
+                        "files": clean_files,  # 只有非文件夹文件
+                        "folders": clean_folders,  # 只有文件夹
+                        "count": len(clean_folders) + len(clean_files),
+                        "mode": "bash"
+                    }
+            else:
+                return {"success": False, "error": f"列出文件失败: {result['error']}"}
+                
+        except Exception as e:
+            return {"success": False, "error": f"列出单个目录时出错: {e}"}
+
+    def _ls_single_file(self, file_info, original_path):
+        """返回单个文件的ls信息"""
+        try:
+            # 判断是文件夹还是文件
+            if file_info['mimeType'] == 'application/vnd.google-apps.folder':
+                print(f"{file_info['name']}/")
+            else:
+                print(f"{file_info['name']}")
+            
+            return {
+                "success": True,
+                "path": original_path,
+                "files": [file_info] if file_info['mimeType'] != 'application/vnd.google-apps.folder' else [],
+                "folders": [file_info] if file_info['mimeType'] == 'application/vnd.google-apps.folder' else [],
+                "count": 1,
+                "mode": "single_file"
+            }
+            
+        except Exception as e:
+            return {"success": False, "error": f"显示单个文件时出错: {e}"}
+
+    def _generate_folder_url(self, folder_id):
+        """生成文件夹的网页链接"""
+        return f"https://drive.google.com/drive/folders/{folder_id}"
+
+    def _generate_web_url(self, file):
+        """为文件生成网页链接"""
+        file_id = file['id']
+        mime_type = file['mimeType']
+        
+        if mime_type == 'application/vnd.google.colaboratory':
+            # Colab文件
+            return f"https://colab.research.google.com/drive/{file_id}"
+        elif mime_type == 'application/vnd.google-apps.document':
+            # Google文档
+            return f"https://docs.google.com/document/d/{file_id}/edit"
+        elif mime_type == 'application/vnd.google-apps.spreadsheet':
+            # Google表格
+            return f"https://docs.google.com/spreadsheets/d/{file_id}/edit"
+        elif mime_type == 'application/vnd.google-apps.presentation':
+            # Google幻灯片
+            return f"https://docs.google.com/presentation/d/{file_id}/edit"
+        elif mime_type == 'application/vnd.google-apps.folder':
+            # 文件夹
+            return f"https://drive.google.com/drive/folders/{file_id}"
+        else:
+            # 其他文件（预览或下载）
+            return f"https://drive.google.com/file/d/{file_id}/view"
 
     def cmd_touch(self, filename):
         """创建空文件，通过远程命令界面执行"""

@@ -3180,7 +3180,7 @@ mkdir -p "{self._get_venv_base_path()}" && {{
             for attempt in range(max_attempts):
                 try:
                     # 检查远程文件是否存在
-                    check_result = self.main_instance.remote_commands._check_remote_file_exists_absolute(remote_result_file)
+                    check_result = self.main_instance.remote_commands._check_remote_file_exists(remote_result_file)
                     
                     if check_result.get("exists"):
                         # 文件存在，读取内容
@@ -7197,7 +7197,7 @@ except Exception as e:
             for attempt in range(max_attempts):
                 try:
                     # 检查远程文件是否存在
-                    check_result = self.main_instance.remote_commands._check_remote_file_exists_absolute(result_file_path)
+                    check_result = self.main_instance.remote_commands._check_remote_file_exists(result_file_path)
                     
                     if check_result.get("exists"):
                         # 文件存在，读取内容

@@ -235,44 +235,34 @@ class Verification:
     def _verify_mkdir_recursive_logic(self, path, current_shell):
         """递归验证复杂嵌套路径的目录创建"""
         try:
-            # 使用递归ls命令验证
-            ls_result = self.main_instance.cmd_ls(None, detailed=False, recursive=True)
-            if ls_result["success"]:
-                # 检查目标路径是否存在
-                target_parts = path.split("/")
-                target_name = target_parts[-1]
+            # 优化验证逻辑：直接尝试解析目标路径而不是使用递归ls
+            # 这避免了遍历整个目录树的开销
+            try:
+                target_folder_id, display_path = self.main_instance.resolve_path(path, current_shell)
                 
-                # 在递归结果中查找目标目录
-                all_items = ls_result.get("all_items", [])
-                for item in all_items:
-                    if (item["name"] == target_name and 
-                        item["mimeType"] == "application/vnd.google-apps.folder"):
-                        # 检查路径是否匹配
-                        item_path = item.get("path", "")
-                        expected_parent_path = "/".join(target_parts[:-1])
-                        
-                        # 简化路径匹配逻辑
-                        if expected_parent_path in item_path or item_path.endswith(expected_parent_path):
-                            print("√")
-                            return {
-                                "success": True,
-                                "message": f"Validation successful, multi-level directory created: {path}",
-                                "folder_id": item["id"],
-                                "full_path": item_path,
-                                "attempts": 1
-                            }
-                
+                if target_folder_id:
+                    # 路径解析成功，说明目录存在
+                    print("√")
+                    return {
+                        "success": True,
+                        "message": f"Validation successful, directory created: {path}",
+                        "folder_id": target_folder_id,
+                        "full_path": display_path,
+                        "attempts": 1
+                    }
+                else:
+                    print("✗")
+                    return {
+                        "success": False,
+                        "error": f"Validation failed, directory not found: {path}"
+                    }
+            except Exception as resolve_error:
                 print("✗")
                 return {
                     "success": False,
-                    "error": f"Validation failed, multi-level directory not found: {path}"
+                    "error": f"Validation failed, path resolution error: {resolve_error}"
                 }
-            else:
-                print("✗")
-                return {
-                    "success": False,
-                    "error": f"Validation failed, cannot execute ls -R command: {ls_result.get('error', 'Unknown error')}"
-                }
+                
         except Exception as e:
             print("✗")
             return {

@@ -612,6 +612,47 @@ pip install numpy executed successfully in environment 'testenv'
 Target path: /content/drive/MyDrive/REMOTE_ROOT/.env/testenv
 ```
 
+#### 智能依赖树分析 ⭐ **新功能**
+```bash
+GDS pip --show-deps tensorflow --depth=2
+```
+```
+Analysis completed: 288 API calls, 493 packages analyzed in 29.40s
+
+tensorflow (592.1MB→7487.7GB)
+├─ numpy (20.3MB)
+├─ protobuf (430.3KB)
+├─ setuptools (1.3MB→14.8GB)
+│   ├─ pytest (1.4MB→36.9GB)
+│   ├─ wheel (0.1MB→36.9GB)
+│   ├─ packaging (161.8KB)
+│   └─ pip (1.8MB)
+├─ grpcio (12.2MB→14.8MB)
+│   └─ grpcio-tools (5.6MB→14.8MB)
+└─ keras (1.3MB→569.2GB)
+    ├─ numpy (20.3MB)
+    ├─ h5py (4.7MB→25.0MB)
+    └─ ml-dtypes (5.0MB→37.4GB)
+
+Level 1: setuptools (1.3MB), grpcio (12.2MB), keras (1.3MB), protobuf (430.3KB), numpy (20.3MB)
+Level 2: pytest (1.4MB), wheel (0.1MB), grpcio-tools (5.6MB), h5py (4.7MB), ml-dtypes (5.0MB)
+```
+
+**功能特性**:
+- ✅ **多层依赖分析**: 支持 `--depth=1,2,3...` 参数控制分析深度
+- ✅ **逻辑大小计算**: 显示包的物理大小和包含所有依赖的逻辑大小
+- ✅ **智能API限制**: 自动限制分析1000个包，避免无限递归
+- ✅ **并发分析**: 每秒40个API调用，快速获取依赖信息
+- ✅ **层级汇总**: 按层级显示所有唯一依赖包，便于批量安装规划
+- ✅ **已安装标记**: 显示 `[√]` 标记已安装的包
+- ✅ **性能统计**: 显示API调用次数、分析包数和总时间
+
+**使用场景**:
+- 📦 **依赖规划**: 在安装前了解包的完整依赖树和存储需求
+- 🔍 **冲突分析**: 识别潜在的依赖冲突和版本要求
+- 📊 **容量估算**: 计算项目的总存储空间需求
+- 🚀 **批量安装**: 按层级顺序安装依赖，提高安装成功率
+
 ### 错误处理
 
 #### 常见错误和解决方案
@@ -875,6 +916,7 @@ venv --activate <env_name>  # 激活虚拟环境（设置PYTHONPATH）
 venv --deactivate          # 取消激活虚拟环境（清除PYTHONPATH）
 venv --list                # 列出所有虚拟环境
 pip <command> [options]     # pip包管理器（自动识别激活的虚拟环境）
+pip --show-deps <package> [--depth=N]  # 智能依赖树分析（新功能）
 ```
 
 ### 代码质量检查 ⭐ **新功能**

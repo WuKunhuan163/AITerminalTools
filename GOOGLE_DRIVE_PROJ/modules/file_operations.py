@@ -15,7 +15,7 @@ class FileOperations:
         """Initialize all specialized modules"""
         self.drive_service = drive_service
         self.main_instance = main_instance
-        
+    
         # Initialize specialized modules
         self.venv_operations = VenvOperations(drive_service, main_instance)
         self.pip_operations = PipOperations(drive_service, main_instance)
@@ -99,6 +99,10 @@ class FileOperations:
     def cmd_edit(self, *args, **kwargs):
         """Delegate to text_operations"""
         return self.text_operations.cmd_edit(*args, **kwargs)
+    
+    def _create_text_file(self, *args, **kwargs):
+        """Delegate to text_operations"""
+        return self.text_operations._create_text_file(*args, **kwargs)
     
     def cmd_nano(self, *args, **kwargs):
         """Delegate to text_operations"""

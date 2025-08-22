@@ -374,8 +374,26 @@ class GoogleDriveShell:
                 content_parts.append(arg)
             
             if redirect_found and content_parts and target_file:
+                # 检查是否有-e选项并处理转义序列
+                enable_escapes = False
+                filtered_content_parts = []
+                
+                for part in content_parts:
+                    if part == '-e':
+                        enable_escapes = True
+                    else:
+                        filtered_content_parts.append(part)
+                
                 # 重组内容
-                content = ' '.join(content_parts)
+                content = ' '.join(filtered_content_parts)
+                
+                # 如果启用了转义序列，处理常见的转义字符
+                if enable_escapes:
+                    content = content.replace('\\n', '\n')
+                    content = content.replace('\\t', '\t')
+                    content = content.replace('\\r', '\r')
+                    content = content.replace('\\\\', '\\')
+                
                 # 统一使用base64编码的文件创建方法
                 result = self.file_operations._create_text_file(target_file, content)
                 if result.get("success", False):
@@ -878,7 +896,8 @@ class GoogleDriveShell:
                     if result.get("success"):
                         return 0
                     else:
-                        print(result.get("error", "❌ mkdir命令执行失败"))
+                        error_msg = result.get("error", "❌ mkdir命令执行失败")
+                        print(error_msg)
                         return 1
                 else:
                     # 多个目录，合并为单个远端命令

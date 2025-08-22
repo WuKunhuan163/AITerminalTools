@@ -280,7 +280,7 @@ class RemoteCommands:
             max_wait_time = 60
             for _ in range(max_wait_time):
                 # 检查文件是否存在
-                check_result = self._check_remote_file_exists_absolute(remote_file_path)
+                check_result = self._check_remote_file_exists(remote_file_path)
                 
                 if check_result.get("exists"):
                     # 文件存在，读取内容
@@ -422,7 +422,7 @@ class RemoteCommands:
             remote_file_path = f"~/tmp/{result_filename}"
             
             # 首先使用ls检查文件是否存在
-            check_result = self._check_remote_file_exists_absolute(remote_file_path)
+            check_result = self._check_remote_file_exists(remote_file_path)
             if not check_result.get("exists"):
                 return {
                     "success": False,
@@ -470,7 +470,7 @@ class RemoteCommands:
                 "error": f"读取结果文件时出错: {str(e)}"
             }
 
-    def _check_remote_file_exists_absolute(self, file_path):
+    def _check_remote_file_exists(self, file_path):
         """
         检查远端文件是否存在（绝对路径）
         
@@ -1030,7 +1030,7 @@ fi
             for attempt in range(max_attempts):
                 try:
                     # 检查文件是否存在
-                    check_result = self._check_remote_file_exists_absolute(absolute_path)
+                    check_result = self._check_remote_file_exists(absolute_path)
                     
                     if check_result.get("exists"):
                         print("√")  # 成功标记
@@ -1187,7 +1187,7 @@ fi
             for attempt in range(max_attempts):
                 try:
                     # 检查目录是否存在
-                    check_result = self._check_remote_file_exists_absolute(absolute_path)
+                    check_result = self._check_remote_file_exists(absolute_path)
                     
                     if check_result.get("exists"):
                         print("√")  # 成功标记
