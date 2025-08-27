@@ -120,7 +120,7 @@ def download_file(url: str, destination: str, command_identifier=None):
                         print(f"\r📥 Progress: {progress:.1f}% ({downloaded_size}/{total_size} bytes)", end='', flush=True)
         
         if not is_run_environment(command_identifier):
-            print(f"\n✅ Download completed successfully!")
+            print(f"Download completed successfully!")
             print(f"📄 File saved to: {dest_path}")
             print(f"📊 Size: {downloaded_size} bytes")
         

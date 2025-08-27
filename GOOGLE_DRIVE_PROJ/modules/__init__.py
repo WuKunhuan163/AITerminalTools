@@ -178,7 +178,18 @@ class ShellCommands:
         return shell_ls(*args, **kwargs)
     
     def shell_cd(self, *args, **kwargs):
-        return shell_cd(*args, **kwargs)
+        # 使用main_instance的cmd_cd方法
+        if args:
+            path = args[0]
+            result = self.main_instance.cmd_cd(path)
+            if result.get("success"):
+                return 0
+            else:
+                print(result.get("error", "cd command failed"))
+                return 1
+        else:
+            print("❌ cd command needs a path")
+            return 1
     
     def shell_mkdir(self, *args, **kwargs):
         return shell_mkdir(*args, **kwargs)

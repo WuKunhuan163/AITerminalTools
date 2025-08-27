@@ -1014,40 +1014,6 @@ class FileOperations:
             # 其他文件（预览或下载）
             return f"https://drive.google.com/file/d/{file_id}/view"
 
-    def cmd_cd(self, path):
-        """切换目录"""
-        try:
-            current_shell = self.main_instance.get_current_shell()
-            if not current_shell:
-                return {"success": False, "error": "没有活跃的远程shell，请先创建或切换到一个shell"}
-            
-            if not path:
-                path = "~"
-            
-            target_id, target_path = self.main_instance.resolve_path(path, current_shell)
-            
-            if not target_id:
-                return {"success": False, "error": f"Directory does not exist: {path}"}
-            
-            shells_data = self.main_instance.load_shells()
-            shell_id = current_shell['id']
-            
-            shells_data["shells"][shell_id]["current_path"] = target_path
-            shells_data["shells"][shell_id]["current_folder_id"] = target_id
-            shells_data["shells"][shell_id]["last_accessed"] = time.strftime("%Y-%m-%d %H:%M:%S")
-            
-            if self.main_instance.save_shells(shells_data):
-                return {
-                    "success": True,
-                    "new_path": target_path,
-                    "folder_id": target_id,
-                    "message": f"✅ 已切换到目录: {target_path}"
-                }
-            else:
-                return {"success": False, "error": "保存shell状态失败"}
-                
-        except Exception as e:
-            return {"success": False, "error": f"执行cd命令时出错: {e}"}
 
     def cmd_mkdir(self, path, recursive=False):
         """创建目录，通过远程命令界面执行以确保由用户账户创建"""
@@ -2986,7 +2952,7 @@ mkdir -p "{self._get_venv_base_path()}" && {{
             current_shell = self.main_instance.get_current_shell()
             shell_id = current_shell.get("id", "default") if current_shell else "default"
             # Direct storage in REMOTE_ENV, no .tmp subdirectory needed
-            env_file = f"{self.main_instance.REMOTE_ENV}/venv_env_{shell_id}.sh"
+            env_file = f"{self.main_instance.REMOTE_ENV}/venv/venv_pythonpath.sh"
             
             # 构建Python命令，包含文件名和参数
             python_cmd_parts = ['python3', filename]
@@ -3052,7 +3018,7 @@ mkdir -p "{self._get_venv_base_path()}" && {{
             current_shell = self.main_instance.get_current_shell()
             shell_id = current_shell.get("id", "default") if current_shell else "default"
             # Direct storage in REMOTE_ENV, no .tmp subdirectory needed
-            env_file = f"{self.main_instance.REMOTE_ENV}/venv_env_{shell_id}.sh"
+            env_file = f"{self.main_instance.REMOTE_ENV}/venv/venv_pythonpath.sh"
             temp_file_path = f"{self.main_instance.REMOTE_ROOT}/tmp/{temp_filename}"
             
             # 构建统一的远程命令：
@@ -3124,7 +3090,7 @@ mkdir -p "{self._get_venv_base_path()}" && {{
             # 生成包含验证的完整命令
             original_command = " && ".join(commands)
             full_commands = [
-                "mkdir -p /content/drive/MyDrive/REMOTE_ROOT/tmp",  # 确保远程tmp目录存在
+                f"mkdir -p {self.main_instance.REMOTE_ROOT}/tmp",  # 确保远程tmp目录存在
                 original_command,
                 # 验证PYTHONPATH并输出到远程JSON文件
                 f'echo "{{" > {remote_result_file}',
@@ -3526,7 +3492,7 @@ fi
             current_shell = self.main_instance.get_current_shell()
             shell_id = current_shell.get("id", "default") if current_shell else "default"
             # Direct storage in REMOTE_ENV, no .tmp subdirectory needed
-            env_file = f"{self.main_instance.REMOTE_ENV}/venv_env_{shell_id}.sh"
+            env_file = f"{self.main_instance.REMOTE_ENV}/venv/venv_pythonpath.sh"
             
             # 构建远程命令：source环境文件并执行Python代码
             commands = [
@@ -7149,7 +7115,7 @@ except Exception as e:
 '''
             
             commands = [
-                "mkdir -p /content/drive/MyDrive/REMOTE_ROOT/tmp",  # 确保远程tmp目录存在
+                f"mkdir -p {self.main_instance.REMOTE_ROOT}/tmp",  # 确保远程tmp目录存在
                 f"python3 -c '{python_script}'",
                 "clear && echo '✅ 执行完成'"  # 清屏并显示完成提示
             ]

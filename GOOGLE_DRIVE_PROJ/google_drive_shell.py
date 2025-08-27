@@ -966,11 +966,6 @@ class GoogleDriveShell:
                 # 使用委托方法处理venv命令
                 result = self.cmd_venv(*args)
                 if result.get("success", False):
-                    print(result.get("message", "Virtual environment operation completed"))
-                    # 如果是--list命令，还要打印环境列表
-                    if args and args[0] == '--list' and result.get("environments"):
-                        for env in result.get("environments", []):
-                            print(env)
                     return 0
                 else:
                     error_message = result.get("error", "Virtual environment operation failed")
@@ -1007,6 +1002,17 @@ class GoogleDriveShell:
                     return 0
                 else:
                     print(result.get("error", "Pip operation failed"))
+                    return 1
+            elif cmd == 'deps':
+                # 使用委托方法处理依赖分析命令
+                result = self.cmd_deps(*args)
+                if result.get("success", False):
+                    message = result.get("message", "")
+                    if message.strip():  # 只有当message不为空时才打印
+                        print(message)
+                    return 0
+                else:
+                    print(result.get("error", "Dependency analysis failed"))
                     return 1
             elif cmd == 'cat':
                 # 使用委托方法处理cat命令

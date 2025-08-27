@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-bin.py - Binary Tools Management System
-Manages _bin.json registry and generates user rules for Cursor AI
+AI_TOOL_RULE.py - Binary Tools Management System
+Manages AI_TOOL.json registry and generates user rules for Cursor AI
 """
 
 import json
@@ -16,11 +16,11 @@ class BinManager:
     """Binary tools management system"""
     
     def __init__(self):
-        self.bin_file = Path(__file__).parent / "_bin.json"
+        self.bin_file = Path(__file__).parent / "AI_TOOL.json"
         self.tools = self.load_tools()
     
     def load_tools(self) -> Dict[str, Any]:
-        """Load tools from _bin.json"""
+        """Load tools from AI_TOOL.json"""
         try:
             with open(self.bin_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
@@ -29,7 +29,7 @@ class BinManager:
             return {}
     
     def save_tools(self):
-        """Save tools to _bin.json"""
+        """Save tools to AI_TOOL.json"""
         data = {
             "tools": self.tools,
             "metadata": {
@@ -241,7 +241,7 @@ class BinManager:
             ""
         ])
         
-        # Dynamic tool usage descriptions from _bin.json
+        # Dynamic tool usage descriptions from AI_TOOL.json
         for tool_name, tool_data in passed_tools.items():
             scenario = tool_data.get('tool_use_scenario', f"When user needs to use {tool_name}")
             rule_parts.append(f"- **{tool_name}**: {scenario}")
@@ -582,9 +582,9 @@ class BinManager:
 
 def show_help():
     """显示帮助信息"""
-    print("""_bin.py - Tool management system
+    print("""AI_TOOL.py - Tool management system
 
-Usage: python _bin.py <command> [options]
+Usage: python AI_TOOL.py <command> [options]
 
 Commands:
   list                                 List all tools
@@ -601,18 +601,18 @@ Commands:
   --test [tool_name]                   Run automated tests
 
 Examples:
-  python _bin.py list
-  python _bin.py add MYTOOL "Description" "Purpose" "Usage" "Example1,Example2"
-  python _bin.py update MYTOOL test_passed=true
-  python _bin.py check
-  python _bin.py --init
-  python _bin.py --generate-user-rule
-  python _bin.py --update-hashes
-  python _bin.py --update-hashes LEARN
-  python _bin.py --detect-changes
-  python _bin.py --sync-docs OPENROUTER
-  python _bin.py --test
-  python _bin.py --test LEARN
+  python AI_TOOL.py list
+  python AI_TOOL.py add MYTOOL "Description" "Purpose" "Usage" "Example1,Example2"
+  python AI_TOOL.py update MYTOOL test_passed=true
+  python AI_TOOL.py check
+  python AI_TOOL.py --init
+  python AI_TOOL.py --generate-user-rule
+  python AI_TOOL.py --update-hashes
+  python AI_TOOL.py --update-hashes LEARN
+  python AI_TOOL.py --detect-changes
+  python AI_TOOL.py --sync-docs OPENROUTER
+  python AI_TOOL.py --test
+  python AI_TOOL.py --test LEARN
 """)
 
 
@@ -631,10 +631,10 @@ def main():
     
     elif command == '--generate-user-rule':
         rule_content = manager.generate_user_rule()
-        # Write to _bin_rule.md file
-        with open('_bin_rule.md', 'w', encoding='utf-8') as f:
+        # Write to AI_TOOL_RULE.md file
+        with open('AI_TOOL_RULE.md', 'w', encoding='utf-8') as f:
             f.write(rule_content)
-        print(f"Generated user rule file: _bin_rule.md")
+        print(f"Generated user rule file: AI_TOOL_RULE.md")
         return 0
     
     elif command == '--init':
@@ -685,7 +685,7 @@ def main():
     elif command == 'add':
         if len(sys.argv) < 7:
             print("Error: Insufficient arguments")
-            print("Usage: python _bin.py add <name> <desc> <purpose> <usage> <examples> [scenario]")
+            print("Usage: python AI_TOOL.py add <name> <desc> <purpose> <usage> <examples> [scenario]")
             return 1
         
         name = sys.argv[2]

@@ -1,0 +1,65 @@
+test_06c_path_edge_cases (test_gds.GDSTest.test_06c_path_edge_cases)
+测试路径解析的边界情况 ... FAIL
+
+======================================================================
+FAIL: test_06c_path_edge_cases (test_gds.GDSTest.test_06c_path_edge_cases)
+测试路径解析的边界情况
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 317, in _run_gds_command
+    self.assertEqual(result.returncode, 0, f"命令执行失败: {command}")
+AssertionError: 1 != 0 : 命令执行失败: mkdir -p edge_test/empty_dir
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 817, in test_06c_path_edge_cases
+    result = self._run_gds_command('mkdir -p edge_test/empty_dir')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 323, in _run_gds_command
+    self.fail(f"命令执行异常: {command} - {e}")
+AssertionError: 命令执行异常: mkdir -p edge_test/empty_dir - 1 != 0 : 命令执行失败: mkdir -p edge_test/empty_dir
+
+----------------------------------------------------------------------
+Ran 1 test in 166.381s
+
+FAILED (failures=1)
+🚀 设置GDS全面测试环境...
+📂 本地测试数据: /Users/wukunhuan/.local/bin/_UNITTEST/_DATA
+📂 本地临时文件: /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP
+📁 远端测试目录: ~/tmp/gds_test_20250826_163011_389383_e58ab68f
+✅ 已切换到远端测试目录: ~/tmp/gds_test_20250826_163011_389383_e58ab68f
+✅ 已切换到远端测试目录: ~/tmp/gds_test_20250826_163011_389383_e58ab68f
+📁 本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_pt_s4wbp
+✅ 测试环境设置完成
+
+🧪 测试06c: 路径解析边界情况
+❌ 测试不存在的路径
+
+🔧 执行命令: ls nonexistent_path
+📤 返回码: 1
+📝 输出: =============
+GDS ls nonexistent_path
+=============
+Failed to list files: Path not found: ~/tmp/gds_test_20250826_163011_389383_e58ab68f/nonexistent_path
+...
+❌ 测试cd到不存在的路径
+
+🔧 执行命令: cd nonexistent_path
+📤 返回码: 1
+📝 输出: =============
+GDS cd nonexistent_path
+=============
+Directory does not exist: nonexistent_path
+...
+🏗️ 创建边界测试目录
+
+🔧 执行命令: mkdir -p edge_test/empty_dir
+📤 返回码: 1
+📝 输出: =============
+GDS mkdir -p edge_test/empty_dir
+=============
+⏳ Waiting for result ......√
+⏳ Validating dir creation ..............................................................✗
+目录创建可能失败，验证超时: edge_...
+💥 命令执行异常: 1 != 0 : 命令执行失败: mkdir -p edge_test/empty_dir

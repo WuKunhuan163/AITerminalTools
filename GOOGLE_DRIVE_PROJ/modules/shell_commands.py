@@ -96,6 +96,109 @@ def shell_ls(path=None, command_identifier=None):
                 print(error_msg)
             return 1
         
+        # 导入路径解析器和API服务
+        import sys
+        api_service_path = Path(__file__).parent.parent / "google_drive_api.py"
+        if not api_service_path.exists():
+            error_msg = "API service file not found, please run GOOGLE_DRIVE --console-setup"
+            if is_run_environment(command_identifier):
+                write_to_json_output({"success": False, "error": error_msg}, command_identifier)
+            else:
+                print(error_msg)
+            return 1
+        
+        sys.path.insert(0, str(api_service_path.parent))
+        from google_drive_api import GoogleDriveService #type: ignore
+        
+        # 导入路径解析器
+        try:
+            from path_resolver import PathResolver
+            path_resolver = PathResolver()
+        except ImportError:
+            # 如果导入失败，回退到旧方法
+            return _shell_ls_fallback(path, command_identifier, current_shell)
+        
+        # 创建服务实例
+        drive_service = GoogleDriveService()
+        
+        # 计算要列出的绝对路径
+        current_shell_path = current_shell.get("current_path", "~")
+        
+        if path is None or path == ".":
+            # 列出当前目录
+            absolute_path = current_shell_path
+        elif path == "~":
+            # 列出根目录
+            absolute_path = "~"
+        else:
+            # 计算绝对路径
+            absolute_path = path_resolver.compute_absolute_path(current_shell_path, path)
+        
+        # 使用新的API列出文件
+        result = drive_service.list_files_by_absolute_path(
+            absolute_path=absolute_path,
+            remote_root_folder_id=REMOTE_ROOT_FOLDER_ID,
+            max_results=50
+        )
+        
+        if result['success']:
+            files = result['files']
+            resolved_path = result.get('resolved_path', absolute_path)
+            folder_id = result.get('folder_id')
+            
+            if is_run_environment(command_identifier):
+                # RUN环境下返回JSON
+                write_to_json_output({
+                    "success": True,
+                    "path": resolved_path,
+                    "folder_id": folder_id,
+                    "files": files,
+                    "count": len(files)
+                }, command_identifier)
+            else:
+                # 直接执行时显示bash风格的列表
+                if not files:
+                    # 目录为空时不显示任何内容，就像bash一样
+                    pass
+                else:
+                    # 按名称排序，文件夹优先
+                    folders = sorted([f for f in files if f['mimeType'] == 'application/vnd.google-apps.folder'], 
+                                   key=lambda x: x['name'].lower())
+                    other_files = sorted([f for f in files if f['mimeType'] != 'application/vnd.google-apps.folder'], 
+                                       key=lambda x: x['name'].lower())
+                    
+                    # 合并列表，文件夹在前
+                    all_items = folders + other_files
+                    
+                    # 简单的列表格式，类似bash ls
+                    for item in all_items:
+                        name = item['name']
+                        if item['mimeType'] == 'application/vnd.google-apps.folder':
+                            # 文件夹用不同颜色或标记（这里用简单文本）
+                            print(f"{name}/")
+                        else:
+                            print(name)
+            
+            return 0
+        else:
+            error_msg = f"Failed to list files: {result['error']}"
+            if is_run_environment(command_identifier):
+                write_to_json_output({"success": False, "error": error_msg}, command_identifier)
+            else:
+                print(error_msg)
+            return 1
+            
+    except Exception as e:
+        error_msg = f"Error executing ls command: {e}"
+        if is_run_environment(command_identifier):
+            write_to_json_output({"success": False, "error": error_msg}, command_identifier)
+        else:
+            print(error_msg)
+        return 1
+
+def _shell_ls_fallback(path, command_identifier, current_shell):
+    """Fallback ls implementation using the old method"""
+    try:
         # 确定要列出的文件夹ID
         if path is None or path == ".":
             # 列出当前目录
@@ -148,14 +251,6 @@ def shell_ls(path=None, command_identifier=None):
         # 使用API列出文件
         import sys
         api_service_path = Path(__file__).parent.parent / "google_drive_api.py"
-        if not api_service_path.exists():
-            error_msg = "API service file not found, please run GOOGLE_DRIVE --console-setup"
-            if is_run_environment(command_identifier):
-                write_to_json_output({"success": False, "error": error_msg}, command_identifier)
-            else:
-                print(error_msg)
-            return 1
-        
         sys.path.insert(0, str(api_service_path.parent))
         from google_drive_api import GoogleDriveService #type: ignore
         
@@ -231,12 +326,16 @@ def resolve_path(path, current_shell):
         if path.startswith("~"):
             if path == "~":
                 return REMOTE_ROOT_FOLDER_ID, "~"
-            elif path.startswith("~/"):
-                # 从根目录开始解析
-                relative_path = path[2:]  # 去掉 ~/
-                return resolve_relative_path(relative_path, REMOTE_ROOT_FOLDER_ID, "~")
             else:
-                return None, None
+                # 处理所有其他以~开头的路径，如 ~/dir, ~/.. 等
+                if path.startswith("~/"):
+                    relative_path = path[2:]  # 去掉 ~/
+                else:
+                    # 处理形如 ~/.. 的情况（实际上这里不会到达，因为~/..也以~/开头）
+                    relative_path = path[1:]  # 去掉 ~
+                    if relative_path.startswith("/"):
+                        relative_path = relative_path[1:]  # 去掉前导 /
+                return resolve_relative_path(relative_path, REMOTE_ROOT_FOLDER_ID, "~")
         
         # 处理相对路径
         elif path.startswith("./"):
@@ -292,6 +391,19 @@ def resolve_relative_path(relative_path, base_folder_id, base_path):
         
         for part in path_parts:
             if not part:  # 跳过空部分
+                continue
+            
+            # 处理特殊路径组件
+            if part == "..":
+                # 父目录
+                parent_id, parent_path = resolve_parent_directory(current_id, current_logical_path)
+                if parent_id is None:
+                    return None, None  # 没有父目录
+                current_id = parent_id
+                current_logical_path = parent_path
+                continue
+            elif part == ".":
+                # 当前目录，跳过
                 continue
             
             # 在当前目录中查找这个名称的文件夹
@@ -411,23 +523,11 @@ def resolve_parent_directory(folder_id, current_path):
 
 
 
-def shell_cd(path, command_identifier=None):
-    """切换目录"""
+
+
+def _shell_cd_fallback(path, command_identifier, current_shell):
+    """Fallback cd implementation using the old method"""
     try:
-        current_shell = get_current_shell()
-        
-        if not current_shell:
-            error_msg = "No active remote shell, please create or switch to a shell"
-            if is_run_environment(command_identifier):
-                write_to_json_output({"success": False, "error": error_msg}, command_identifier)
-            else:
-                print(error_msg)
-            return 1
-        
-        if not path:
-            # cd 不带参数，回到根目录
-            path = "~"
-        
         # 解析目标路径
         target_id, target_path = resolve_path(path, current_shell)
         

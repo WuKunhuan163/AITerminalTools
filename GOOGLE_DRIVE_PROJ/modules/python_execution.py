@@ -41,6 +41,118 @@ class PythonExecution:
         except Exception as e:
             return {"success": False, "error": f"执行Python代码时出错: {e}"}
 
+    def _execute_python_code_remote_unified(self, code, save_output=False, filename=None):
+        """统一的远程Python执行方法，在一个命令中检查虚拟环境并执行代码"""
+        try:
+            import base64
+            import time
+            import random
+            
+            # 使用base64编码避免所有bash转义问题
+            code_bytes = code.encode('utf-8')
+            code_base64 = base64.b64encode(code_bytes).decode('ascii')
+            
+            # 生成唯一的临时文件名
+            timestamp = int(time.time())
+            random_id = f"{random.randint(1000, 9999):04x}"
+            temp_filename = f"python_code_{timestamp}_{random_id}.b64"
+            
+            # 获取环境文件路径
+            current_shell = self.main_instance.get_current_shell()
+            shell_id = current_shell.get("id", "default") if current_shell else "default"
+            # Direct storage in REMOTE_ENV, no .tmp subdirectory needed
+            env_file = f"{self.main_instance.REMOTE_ENV}/venv/venv_pythonpath.sh"
+            temp_file_path = f"{self.main_instance.REMOTE_ROOT}/tmp/{temp_filename}"
+            
+            # 构建统一的远程命令：
+            # 1. 确保tmp目录存在
+            # 2. 将base64字符串写入临时文件
+            # 3. source环境文件
+            # 4. 从临时文件读取base64并解码执行
+            # 5. 清理临时文件
+            # 构建命令，确保Python脚本的退出码被正确捕获
+            command = f'''
+            mkdir -p {self.main_instance.REMOTE_ROOT}/tmp && \\
+            echo "{code_base64}" > "{temp_file_path}" && \\
+            source {env_file} 2>/dev/null || true
+            
+            # 执行Python代码并捕获退出码
+            python3 -c "import base64; exec(base64.b64decode(open(\\"{temp_file_path}\\").read().strip()).decode(\\"utf-8\\"))"
+            PYTHON_EXIT_CODE=$?
+            
+            # 清理临时文件
+            rm -f "{temp_file_path}"
+            
+            # 返回Python脚本的退出码
+            exit $PYTHON_EXIT_CODE
+            '''.strip()
+            
+            # 执行远程命令
+            result = self.main_instance.execute_generic_remote_command("bash", ["-c", command])
+            
+            if result.get("success"):
+                return {
+                    "success": True,
+                    "stdout": result.get("stdout", ""),
+                    "stderr": result.get("stderr", ""),
+                    "return_code": result.get("exit_code", 0),
+                    "source": result.get("source", "")
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": f"User direct feedback is as above. ",
+                    "stdout": result.get("stdout", ""),
+                    "stderr": result.get("stderr", "")
+                }
+                
+        except Exception as e:
+            return {"success": False, "error": f"远程Python执行时出错: {e}"}
+
+    def _execute_python_file_remote(self, filename, save_output=False, python_args=None):
+        """远程执行Python文件"""
+        try:
+            # 获取环境文件路径
+            current_shell = self.main_instance.get_current_shell()
+            shell_id = current_shell.get("id", "default") if current_shell else "default"
+            # Direct storage in REMOTE_ENV, no .tmp subdirectory needed
+            env_file = f"{self.main_instance.REMOTE_ENV}/venv/venv_pythonpath.sh"
+            
+            # 构建Python命令，包含文件名和参数
+            python_cmd_parts = ['python3', filename]
+            if python_args:
+                python_cmd_parts.extend(python_args)
+            python_cmd = ' '.join(python_cmd_parts)
+            
+            # 构建远程命令：检查并应用虚拟环境，然后执行Python文件
+            commands = [
+                # source环境文件，如果失败则忽略（会使用默认的PYTHONPATH）
+                f"source {env_file} 2>/dev/null || true",
+                python_cmd
+            ]
+            command = " && ".join(commands)
+            
+            # 执行远程命令
+            result = self.main_instance.execute_generic_remote_command("bash", ["-c", command])
+            
+            if result.get("success"):
+                return {
+                    "success": True,
+                    "stdout": result.get("stdout", ""),
+                    "stderr": result.get("stderr", ""),
+                    "return_code": result.get("exit_code", 0)
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": f"Remote Python file execution failed: {result.get('error', '')}",
+                    "stdout": result.get("stdout", ""),
+                    "stderr": result.get("stderr", "")
+                }
+                
+        except Exception as e:
+            return {"success": False, "error": f"远程Python文件执行时出错: {e}"}
+
     def _execute_non_bash_safe_commands(self, commands, action_description, context_name=None, expected_pythonpath=None):
         """
         生成非bash-safe命令供用户在远端主shell中执行，并自动验证结果
@@ -65,7 +177,7 @@ class PythonExecution:
             # 生成包含验证的完整命令
             original_command = " && ".join(commands)
             full_commands = [
-                "mkdir -p /content/drive/MyDrive/REMOTE_ROOT/tmp",  # 确保远程tmp目录存在
+                f"mkdir -p {self.main_instance.REMOTE_ROOT}/tmp",  # 确保远程tmp目录存在
                 original_command,
                 # 验证PYTHONPATH并输出到远程JSON文件
                 f'echo "{{" > {remote_result_file}',
@@ -184,7 +296,7 @@ class PythonExecution:
             current_shell = self.main_instance.get_current_shell()
             shell_id = current_shell.get("id", "default") if current_shell else "default"
             # Direct storage in REMOTE_ENV, no .tmp subdirectory needed
-            env_file = f"{self.main_instance.REMOTE_ENV}/venv_env_{shell_id}.sh"
+            env_file = f"{self.main_instance.REMOTE_ENV}/venv/venv_pythonpath.sh"
             
             # 构建远程命令：source环境文件并执行Python代码
             commands = [

@@ -7,6 +7,166 @@ class DependencyAnalysis:
     def __init__(self, drive_service, main_instance):
         self.drive_service = drive_service
         self.main_instance = main_instance
+        self._pypi_client = None
+    
+    def cmd_deps(self, *args, **kwargs):
+        """独立的依赖分析命令"""
+        try:
+            if not args:
+                return {"success": False, "error": "Usage: GDS deps <package1> [package2] [...] [--depth=N] [--analysis-type=smart|depth]"}
+            
+            # 解析参数
+            packages = []
+            max_depth = 2  # 默认深度
+            analysis_type = "smart"  # 默认使用智能分析
+            
+            i = 0
+            while i < len(args):
+                arg = args[i]
+                if arg.startswith('--depth='):
+                    max_depth = int(arg.split('=')[1])
+                elif arg == '--depth' and i + 1 < len(args):
+                    max_depth = int(args[i + 1])
+                    i += 1
+                elif arg.startswith('--analysis-type='):
+                    analysis_type = arg.split('=')[1]
+                elif arg == '--analysis-type' and i + 1 < len(args):
+                    analysis_type = args[i + 1]
+                    i += 1
+                elif arg == '-r' or arg == '--requirement':
+                    # 处理requirements.txt文件
+                    if i + 1 < len(args):
+                        requirements_file = args[i + 1]
+                        packages_from_file = self._parse_requirements_file(requirements_file)
+                        packages.extend(packages_from_file)
+                        i += 1
+                elif arg.startswith('-r'):
+                    # 处理 -rrequirements.txt 格式
+                    requirements_file = arg[2:]
+                    packages_from_file = self._parse_requirements_file(requirements_file)
+                    packages.extend(packages_from_file)
+                elif arg.endswith('.txt') and ('requirements' in arg.lower() or 'req' in arg.lower()):
+                    # 直接指定requirements文件
+                    packages_from_file = self._parse_requirements_file(arg)
+                    packages.extend(packages_from_file)
+                elif not arg.startswith('-'):
+                    packages.append(arg)
+                i += 1
+            
+            if not packages:
+                return {"success": False, "error": "No packages specified for dependency analysis"}
+            
+            print(f"Analyzing dependencies for: {', '.join(packages)}")
+            print(f"Analysis type: {analysis_type}, Max depth: {max_depth}")
+            
+            # 获取当前环境的已安装包信息
+            installed_packages = self._detect_current_environment_packages()
+            
+            # 根据分析类型选择不同的分析方法
+            if analysis_type == "smart":
+                analysis_result = self._smart_dependency_analysis(
+                    packages, 
+                    max_calls=10, 
+                    interface_mode=False, 
+                    installed_packages=installed_packages
+                )
+            elif analysis_type == "depth":
+                analysis_result = self._depth_based_dependency_analysis(
+                    packages, 
+                    max_depth=max_depth, 
+                    interface_mode=False, 
+                    installed_packages=installed_packages
+                )
+            else:
+                return {"success": False, "error": f"Unknown analysis type: {analysis_type}. Use 'smart' or 'depth'"}
+            
+            # 显示分析结果
+            total_calls = analysis_result.get('total_calls', 0)
+            analyzed_packages = analysis_result.get('analyzed_packages', 0)
+            total_time = analysis_result.get('total_time', 0)
+            
+            if total_time:
+                print(f"Analysis completed: {total_calls} API calls, {analyzed_packages} packages analyzed in {total_time:.2f}s\n")
+            else:
+                print(f"Analysis completed: {total_calls} API calls, {analyzed_packages} packages analyzed\n")
+            
+            # 显示依赖树
+            self._display_smart_dependency_tree(analysis_result, installed_packages)
+            
+            return {
+                "success": True,
+                "message": f"Dependency analysis completed for {len(packages)} package(s)",
+                "analysis_result": analysis_result
+            }
+            
+        except Exception as e:
+            return {"success": False, "error": f"Dependency analysis failed: {str(e)}"}
+    
+    def _parse_requirements_file(self, requirements_file):
+        """解析requirements.txt文件"""
+        packages = []
+        try:
+            # 这里可以添加远程文件读取逻辑
+            # 目前简化处理，返回空列表
+            print(f"Note: Requirements file parsing not yet implemented for remote files: {requirements_file}")
+            return packages
+        except Exception as e:
+            print(f"Error parsing requirements file: {e}")
+            return packages
+    
+    def _detect_current_environment_packages(self):
+        """检测当前环境的已安装包"""
+        try:
+            # 获取当前shell信息
+            current_shell = self.main_instance.get_current_shell()
+            shell_id = current_shell.get("id", "default_shell") if current_shell else "default_shell"
+            
+            # 检查是否有激活的虚拟环境
+            try:
+                from .venv_operations import VenvOperations
+                venv_ops = VenvOperations(self.drive_service, self.main_instance)
+                all_states = venv_ops._load_all_venv_states()
+                
+                current_venv = None
+                if shell_id in all_states and all_states[shell_id].get("current_venv"):
+                    current_venv = all_states[shell_id]["current_venv"]
+                
+                if current_venv:
+                    # 从JSON获取虚拟环境的包信息
+                    if 'environments' in all_states and current_venv in all_states['environments']:
+                        env_data = all_states['environments'][current_venv]
+                        return env_data.get('packages', {})
+                else:
+                    # 系统环境的基础包
+                    return {
+                        'pip': '23.0.0',
+                        'setuptools': '65.0.0'
+                    }
+            except Exception:
+                # 如果获取失败，返回基础包
+                return {
+                    'pip': '23.0.0',
+                    'setuptools': '65.0.0'
+                }
+            
+            return {}
+        except Exception as e:
+            return {}
+        
+    def _get_pypi_client(self):
+        """Get or create PyPI client instance"""
+        if self._pypi_client is None:
+            try:
+                import sys
+                import os
+                bin_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+                sys.path.insert(0, bin_path)
+                from PYPI import PyPIClient
+                self._pypi_client = PyPIClient()
+            except ImportError:
+                print("Warning: PYPI tool not available, falling back to direct API calls")
+                self._pypi_client = None
+        return self._pypi_client
 
     def _ensure_pipdeptree_available(self):
         """检查pipdeptree命令是否可用"""
@@ -146,53 +306,54 @@ class DependencyAnalysis:
                    如果失败返回(None, 0, {})
         """
         try:
-            import requests
-            import concurrent.futures
-            
-            # 首先获取主包信息
-            api_url = f"https://pypi.org/pypi/{package_name}/json"
-            response = requests.get(api_url, timeout=10)
-            response.raise_for_status()
-            
-            data = response.json()
-            
-            # Get package size from latest release
-            package_size = 0
-            releases = data.get("releases", {})
-            info = data.get("info", {})
-            
-            # Try to get size from the latest version
-            latest_version = info.get("version", "")
-            if latest_version and latest_version in releases:
-                files = releases[latest_version]
-                if files:
-                    package_size = max((f.get("size", 0) for f in files), default=0)
-            
-            # Get dependencies
-            requires_dist = data.get("info", {}).get("requires_dist")
-            
-            if requires_dist is None:
-                return [], package_size, {}
-            
-            # 解析依赖规格，提取包名
-            dependencies = []
-            for dep_spec in requires_dist:
-                dep_spec = dep_spec.split(';')[0].strip()
-                import re
-                match = re.match(r'^([a-zA-Z0-9_-]+)', dep_spec)
-                if match:
-                    dep_name = match.group(1)
-                    dependencies.append(dep_name)
-            
-            # 不获取依赖的大小，只返回依赖列表和主包大小
-            # 依赖的大小将在后续分析时获取
-            return dependencies, package_size, {}
-            
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 404:
-                return None, 0, {}
+            pypi_client = self._get_pypi_client()
+            if pypi_client:
+                # Use PYPI tool
+                dependencies, package_size = pypi_client.get_package_dependencies_with_size(package_name)
+                return dependencies, package_size, {}  # 返回空的dependency_sizes
             else:
-                return None, 0, {}
+                # Fallback to direct API calls
+                import requests
+                
+                # 首先获取主包信息
+                api_url = f"https://pypi.org/pypi/{package_name}/json"
+                response = requests.get(api_url, timeout=10)
+                response.raise_for_status()
+                
+                data = response.json()
+                
+                # Get package size from latest release
+                package_size = 0
+                releases = data.get("releases", {})
+                info = data.get("info", {})
+                
+                # Try to get size from the latest version
+                latest_version = info.get("version", "")
+                if latest_version and latest_version in releases:
+                    files = releases[latest_version]
+                    if files:
+                        package_size = max((f.get("size", 0) for f in files), default=0)
+                
+                # Get dependencies
+                requires_dist = data.get("info", {}).get("requires_dist")
+                
+                if requires_dist is None:
+                    return [], package_size, {}
+                
+                # 解析依赖规格，提取包名
+                dependencies = []
+                for dep_spec in requires_dist:
+                    dep_spec = dep_spec.split(';')[0].strip()
+                    import re
+                    match = re.match(r'^([a-zA-Z0-9_-]+)', dep_spec)
+                    if match:
+                        dep_name = match.group(1)
+                        dependencies.append(dep_name)
+                
+                # 不获取依赖的大小，只返回依赖列表和主包大小
+                # 依赖的大小将在后续分析时获取
+                return dependencies, package_size, {}
+            
         except Exception as e:
             return None, 0, {}
 
@@ -207,60 +368,59 @@ class DependencyAnalysis:
             tuple: (依赖包名列表, 包大小(bytes))，如果失败返回(None, 0)
         """
         try:
-            import requests
-            
-            # Getting PyPI dependencies and size
-            api_url = f"https://pypi.org/pypi/{package_name}/json"
-            
-            response = requests.get(api_url, timeout=10)
-            response.raise_for_status()
-            
-            data = response.json()
-            
-            # Get package size from latest release
-            package_size = 0
-            releases = data.get("releases", {})
-            info = data.get("info", {})
-            
-            # Try to get size from the latest version
-            latest_version = info.get("version", "")
-            if latest_version and latest_version in releases:
-                files = releases[latest_version]
-                if files:
-                    # Get the largest file size (usually the wheel or tar.gz)
-                    package_size = max((f.get("size", 0) for f in files), default=0)
-            
-            # Get dependencies
-            requires_dist = data.get("info", {}).get("requires_dist")
-            
-            if requires_dist is None:
-                # No requires_dist found
-                return [], package_size
-            
-            # 解析依赖规格，提取包名
-            dependencies = []
-            for dep_spec in requires_dist:
-                # 处理依赖规格，如 "numpy>=1.0.0" -> "numpy"
-                # 也处理条件依赖，如 "pytest; extra == 'test'" -> "pytest"
-                dep_spec = dep_spec.split(';')[0].strip()  # 移除条件部分
-                
-                # 提取包名（移除版本约束）
-                import re
-                match = re.match(r'^([a-zA-Z0-9_-]+)', dep_spec)
-                if match:
-                    dep_name = match.group(1)
-                    dependencies.append(dep_name)
-            
-            # PyPI dependencies and size found
-            return dependencies, package_size
-            
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 404:
-                # Package not found on PyPI
-                return None, 0
+            pypi_client = self._get_pypi_client()
+            if pypi_client:
+                # Use PYPI tool
+                return pypi_client.get_package_dependencies_with_size(package_name)
             else:
-                # HTTP error for package
-                return None, 0
+                # Fallback to direct API calls
+                import requests
+                
+                # Getting PyPI dependencies and size
+                api_url = f"https://pypi.org/pypi/{package_name}/json"
+                
+                response = requests.get(api_url, timeout=10)
+                response.raise_for_status()
+                
+                data = response.json()
+                
+                # Get package size from latest release
+                package_size = 0
+                releases = data.get("releases", {})
+                info = data.get("info", {})
+                
+                # Try to get size from the latest version
+                latest_version = info.get("version", "")
+                if latest_version and latest_version in releases:
+                    files = releases[latest_version]
+                    if files:
+                        # Get the largest file size (usually the wheel or tar.gz)
+                        package_size = max((f.get("size", 0) for f in files), default=0)
+                
+                # Get dependencies
+                requires_dist = data.get("info", {}).get("requires_dist")
+                
+                if requires_dist is None:
+                    # No requires_dist found
+                    return [], package_size
+                
+                # 解析依赖规格，提取包名
+                dependencies = []
+                for dep_spec in requires_dist:
+                    # 处理依赖规格，如 "numpy>=1.0.0" -> "numpy"
+                    # 也处理条件依赖，如 "pytest; extra == 'test'" -> "pytest"
+                    dep_spec = dep_spec.split(';')[0].strip()  # 移除条件部分
+                    
+                    # 提取包名（移除版本约束）
+                    import re
+                    match = re.match(r'^([a-zA-Z0-9_-]+)', dep_spec)
+                    if match:
+                        dep_name = match.group(1)
+                        dependencies.append(dep_name)
+                
+                # PyPI dependencies and size found
+                return dependencies, package_size
+            
         except Exception as e:
             # Error getting PyPI data
             return None, 0

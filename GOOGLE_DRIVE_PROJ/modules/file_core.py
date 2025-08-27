@@ -810,11 +810,39 @@ class FileCore:
             if not path:
                 path = "~"
             
-            target_id, target_path = self.main_instance.resolve_path(path, current_shell)
+            # 转换bash扩展的本地路径为远程路径格式
+            path = self.main_instance.path_resolver._convert_local_path_to_remote(path)
             
-            if not target_id:
-                return {"success": False, "error": f"Directory does not exist: {path}"}
+            # 使用新的路径解析器计算绝对路径
+            current_shell_path = current_shell.get("current_path", "~")
+            absolute_path = self.main_instance.path_resolver.compute_absolute_path(current_shell_path, path)
             
+            # 使用ls API验证路径是否存在
+            try:
+                # 使用main_instance中的REMOTE_ROOT_FOLDER_ID
+                remote_root_folder_id = self.main_instance.REMOTE_ROOT_FOLDER_ID
+                
+                result = self.main_instance.drive_service.list_files_by_absolute_path(
+                    absolute_path=absolute_path,
+                    remote_root_folder_id=remote_root_folder_id,
+                    max_results=1  # 只需要验证存在性
+                )
+                
+                if not result['success']:
+                    return {"success": False, "error": f"Directory does not exist: {path}"}
+                
+                # 获取目标文件夹ID和解析后的路径
+                target_id = result.get('folder_id')
+                target_path = result.get('resolved_path', absolute_path)
+                
+            except (ImportError, Exception) as e:
+                # 如果新方法失败，回退到旧方法
+                target_id, target_path = self.main_instance.resolve_path(path, current_shell)
+                
+                if not target_id:
+                    return {"success": False, "error": f"Directory does not exist: {path}"}
+            
+            # 更新shell状态
             shells_data = self.main_instance.load_shells()
             shell_id = current_shell['id']
             
@@ -1383,4 +1411,39 @@ class FileCore:
                 
         except Exception as e:
             return {"success": False, "error": f"执行mv命令时出错: {e}"}
+
+    def _resolve_file_path(self, file_path, current_shell):
+        """解析文件路径，返回文件信息（如果存在）"""
+        try:
+            # 分离目录和文件名
+            if "/" in file_path:
+                dir_path = "/".join(file_path.split("/")[:-1])
+                filename = file_path.split("/")[-1]
+            else:
+                # 相对于当前目录
+                dir_path = "."
+                filename = file_path
+            
+            # 解析目录路径
+            if dir_path == ".":
+                parent_folder_id = current_shell.get("current_folder_id", self.main_instance.REMOTE_ROOT_FOLDER_ID)
+            else:
+                parent_folder_id, _ = self.main_instance.resolve_path(dir_path, current_shell)
+                if not parent_folder_id:
+                    return None
+            
+            # 在父目录中查找文件
+            result = self.drive_service.list_files(folder_id=parent_folder_id, max_results=100)
+            if not result['success']:
+                return None
+            
+            for file in result['files']:
+                if file['name'] == filename:
+                    file['url'] = self._generate_web_url(file)
+                    return file
+            
+            return None
+            
+        except Exception as e:
+            return None
 

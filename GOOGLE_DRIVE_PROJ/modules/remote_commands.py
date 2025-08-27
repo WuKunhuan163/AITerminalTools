@@ -271,14 +271,15 @@ class RemoteCommands:
             import time
             
             # 远端文件路径（在REMOTE_ROOT/tmp目录中）
-            remote_file_path = f"~/tmp/{result_filename}"
+            remote_file_path = f"{self.main_instance.REMOTE_ROOT}/tmp/{result_filename}"
             
+
             # 输出等待指示器
             print("⏳ Waiting for result ...", end="", flush=True)
             
             # 等待文件出现，最多60秒
             max_wait_time = 60
-            for _ in range(max_wait_time):
+            for i in range(max_wait_time):
                 # 检查文件是否存在
                 check_result = self._check_remote_file_exists(remote_file_path)
                 
@@ -1410,34 +1411,12 @@ fi
                     script_content = args[1]
                     
                     import base64
-                    # 对于包含进度显示的脚本，使用base64编码但先显示进度信息
-                    if "🚀 " in script_content and "printf" in script_content:
-                        # 分离初始进度显示和主要工作脚本
-                        lines = script_content.split('\n')
-                        initial_progress = []
-                        main_script_lines = []
-                        
-                        # 提取开头的进度显示行
-                        for i, line in enumerate(lines):
-                            if 'echo "🚀 ' in line or (i < 10 and ('echo' in line or line.strip().startswith('#'))):
-                                initial_progress.append(line)
-                            else:
-                                main_script_lines.extend(lines[i:])
-                                break
-                        
-                        if initial_progress:
-                            initial_script = '\n'.join(initial_progress)
-                            main_script = '\n'.join(main_script_lines)
-                            encoded_main_script = base64.b64encode(main_script.encode('utf-8')).decode('ascii')
-                            bash_safe_command = f'{initial_script} && echo "{encoded_main_script}" | base64 -d | {cmd}'
-                        else:
-                            # 没有找到进度显示，直接编码整个脚本
-                            encoded_script = base64.b64encode(script_content.encode('utf-8')).decode('ascii')
-                            bash_safe_command = f'echo "{encoded_script}" | base64 -d | {cmd}'
-                    else:
-                        # 没有进度显示，直接编码整个脚本
-                        encoded_script = base64.b64encode(script_content.encode('utf-8')).decode('ascii')
-                        bash_safe_command = f'echo "{encoded_script}" | base64 -d | {cmd}'
+                    # 统一使用base64编码处理所有复杂脚本，简化逻辑
+                    # 确保base64编码不包含换行符和空格
+                    encoded_script = base64.b64encode(script_content.encode('utf-8')).decode('ascii').replace('\n', '').replace('\r', '').replace(' ', '')
+                    
+
+                    bash_safe_command = f'echo "{encoded_script}" | base64 -d | {cmd}'
                 else:
                     # 分别转义命令和每个参数，但特殊处理重定向符号和~路径
                     escaped_cmd = shlex.quote(cmd)
@@ -1471,7 +1450,7 @@ fi
                     f'    # 确保tmp目录存在\n'
                     f'    mkdir -p "{self.main_instance.REMOTE_ROOT}/tmp"\n'
                     f'    \n'
-                    f'    echo "🚀 : {display_command}"\n'
+
                     f'    \n'
                     f'    # 执行命令（包含重定向）\n'
                     f'    EXITCODE_FILE="{self.main_instance.REMOTE_ROOT}/tmp/cmd_exitcode_{timestamp}_{cmd_hash}"\n'
@@ -1491,7 +1470,7 @@ fi
                     f'    # 确保tmp目录存在\n'
                     f'    mkdir -p "{self.main_instance.REMOTE_ROOT}/tmp"\n'
                     f'    \n'
-                    f'    echo "🚀 : {display_command}"\n'
+
                     f'    \n'
                     f'    # 执行命令并捕获输出\n'
                     f'    OUTPUT_FILE="{self.main_instance.REMOTE_ROOT}/tmp/cmd_stdout_{timestamp}_{cmd_hash}"\n'
@@ -2400,6 +2379,14 @@ GDS (Google Drive Shell) Commands:
   Remote Execution:
     python <file>               - execute python file remotely
     python -c '<code>'          - execute python code remotely
+
+  Package Management:
+    pip install <package>       - install Python packages
+    pip list                    - list installed packages  
+    pip show <package>          - show package information
+    deps <package> [options]    - analyze package dependencies
+      --depth=N                 - set analysis depth (default: 2)
+      --analysis-type=TYPE      - use 'smart' or 'depth' analysis
 
   Search:
     find [path] -name [pattern] - search for files matching pattern

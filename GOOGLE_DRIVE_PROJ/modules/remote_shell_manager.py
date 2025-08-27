@@ -191,22 +191,15 @@ def list_remote_shells(command_identifier=None):
                 "active_shell": active_shell
             }, command_identifier)
         else:
-            print(f"📋 远程Shell列表 (共{len(shells)}个):")
-            print("-" * 60)
+            print(f"Total {len(shells)} shells:")
             for shell_id, shell_config in shells.items():
-                is_active = "🟢" if shell_id == active_shell else "⚪"
-                print(f"{is_active} {shell_config['name']}")
-                print(f"   ID: {shell_id}")
-                print(f"   文件夹: {shell_config['folder_id'] or 'root'}")
-                print(f"   创建时间: {shell_config['created_time']}")
-                print(f"   最后访问: {shell_config['last_accessed']}")
-                print(f"   状态: {shell_config['status']}")
-                print()
+                is_active = "*" if shell_id == active_shell else " "
+                print(f"{is_active} {shell_config['name']} (ID: {shell_id})")
         
         return 0
         
     except Exception as e:
-        error_msg = f"❌ 列出远程shell时出错: {e}"
+        error_msg = f"Error listing remote shells: {e}"
         if is_run_environment(command_identifier):
             write_to_json_output({"success": False, "error": error_msg}, command_identifier)
         else:
@@ -248,7 +241,7 @@ def terminate_remote_shell(shell_id, command_identifier=None):
         shells_data = load_remote_shells()
         
         if shell_id not in shells_data["shells"]:
-            error_msg = f"❌ 找不到Shell ID: {shell_id}"
+            error_msg = f"Cannot find shell ID: {shell_id}"
             if is_run_environment(command_identifier):
                 write_to_json_output({"success": False, "error": error_msg}, command_identifier)
             else:
@@ -273,10 +266,8 @@ def terminate_remote_shell(shell_id, command_identifier=None):
         
         # 保存配置
         if save_remote_shells(shells_data):
-            success_msg = f"✅ 远程shell '{shell_name}' 已终止"
             result_data = {
                 "success": True,
-                "message": success_msg,
                 "terminated_shell_id": shell_id,
                 "terminated_shell_name": shell_name,
                 "new_active_shell": shells_data["active_shell"],
@@ -286,16 +277,10 @@ def terminate_remote_shell(shell_id, command_identifier=None):
             if is_run_environment(command_identifier):
                 write_to_json_output(result_data, command_identifier)
             else:
-                print(success_msg)
-                print(f"🗑️ 已删除Shell ID: {shell_id}")
-                if shells_data["active_shell"]:
-                    new_active_name = shells_data["shells"][shells_data["active_shell"]]["name"]
-                    print(f"🔄 新的活跃shell: {new_active_name}")
-                else:
-                    print("📭 没有剩余的远程shell")
+                print(f"Shell ID deleted: {shell_id}")
             return 0
         else:
-            error_msg = "❌ 保存shell配置失败"
+            error_msg = "Failed to save shell configuration"
             if is_run_environment(command_identifier):
                 write_to_json_output({"success": False, "error": error_msg}, command_identifier)
             else:
@@ -303,7 +288,7 @@ def terminate_remote_shell(shell_id, command_identifier=None):
             return 1
             
     except Exception as e:
-        error_msg = f"❌ 终止远程shell时出错: {e}"
+        error_msg = f"Error terminating remote shell: {e}"
         if is_run_environment(command_identifier):
             write_to_json_output({"success": False, "error": error_msg}, command_identifier)
         else:
@@ -430,9 +415,35 @@ def enter_shell_mode(command_identifier=None):
                         shell_mkdir(path)
                     elif cmd.startswith("cd "):
                         path = cmd[3:].strip()
-                        shell_cd(path)
+                        # 使用GoogleDriveShell实例执行cd命令
+                        try:
+                            import sys
+                            import os
+                            sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+                            from google_drive_shell import GoogleDriveShell
+                            shell_instance = GoogleDriveShell()
+                            result = shell_instance.cmd_cd(path)
+                            if result.get("success"):
+                                print(result.get("message", f"Switched to directory: {result.get('new_path', path)}"))
+                            else:
+                                print(result.get("error", "cd command failed"))
+                        except Exception as e:
+                            print(f"Error executing cd command: {e}")
                     elif cmd == "cd":
-                        shell_cd("~")
+                        # cd到根目录
+                        try:
+                            import sys
+                            import os
+                            sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+                            from google_drive_shell import GoogleDriveShell
+                            shell_instance = GoogleDriveShell()
+                            result = shell_instance.cmd_cd("~")
+                            if result.get("success"):
+                                print(result.get("message", f"Switched to directory: {result.get('new_path', '~')}"))
+                            else:
+                                print(result.get("error", "cd command failed"))
+                        except Exception as e:
+                            print(f"Error executing cd command: {e}")
                     elif cmd.startswith("rm -rf "):
                         path = cmd[7:].strip()
                         shell_rm(path, True)

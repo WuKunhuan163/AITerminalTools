@@ -204,13 +204,13 @@ class TestRUN(unittest.TestCase):
 
     @unittest.skipIf(RUN is None, "RUN module not available")
     def test_all_run_compatible_tools(self):
-        """Test all RUN-compatible tools from _bin.json registry"""
+        """Test all RUN-compatible tools from AI_TOOL.json registry"""
         import json
         
-        # Load _bin.json registry
-        bin_json_path = Path(__file__).parent.parent / '_bin.json'
+        # Load AI_TOOL.json registry
+        bin_json_path = Path(__file__).parent.parent / 'AI_TOOL.json'
         if not bin_json_path.exists():
-            self.skipTest("_bin.json not found")
+            self.skipTest("AI_TOOL.json not found")
         
         with open(bin_json_path, 'r') as f:
             registry = json.load(f)

@@ -185,11 +185,6 @@ class GoogleDriveMain:
     def list_drive_files(self, *args, **kwargs):
         """委托到drive_api_service管理器"""
         return self.drive_api_service.list_drive_files(*args, **kwargs)
-    
-    def upload_file_to_drive(self, *args, **kwargs):
-        """委托到drive_api_service管理器"""
-        return self.drive_api_service.upload_file_to_drive(*args, **kwargs)
-    
     # 委托方法 - Shell Commands
     def shell_ls(self, *args, **kwargs):
         """委托到shell_commands管理器"""

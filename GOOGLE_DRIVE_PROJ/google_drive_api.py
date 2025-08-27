@@ -27,6 +27,9 @@ class GoogleDriveService:
         self.credentials = None
         self.key_path = None
         self.key_data = None
+        # 路径解析缓存，减少重复API调用
+        self._path_cache = {}
+        self._cache_max_size = 100  # 最大缓存条目数
         
         # 优先尝试从环境变量加载密钥信息
         if self._load_from_environment():
@@ -177,89 +180,184 @@ class GoogleDriveService:
                 "error": f"列出文件失败: {e}"
             }
     
-    def create_folder(self, name, parent_id=None):
+    def list_files_by_absolute_path(self, absolute_path, remote_root_folder_id, max_results=100):
         """
-        创建文件夹
+        根据绝对路径列出文件
         
         Args:
-            name (str): 文件夹名称
-            parent_id (str): 父文件夹ID，None表示根目录
+            absolute_path (str): 绝对路径，如 "~/folder1/folder2" 或 "~"
+            remote_root_folder_id (str): 远程根目录的文件夹ID
+            max_results (int): 最大结果数
             
         Returns:
-            dict: 创建结果
+            dict: 包含成功状态、文件列表和目标文件夹ID的结果
         """
         try:
-            folder_metadata = {
-                'name': name,
-                'mimeType': 'application/vnd.google-apps.folder'
-            }
+            # 解析绝对路径到文件夹ID
+            folder_id, resolved_path = self._resolve_absolute_path_to_folder_id(
+                absolute_path, remote_root_folder_id
+            )
             
-            if parent_id:
-                folder_metadata['parents'] = [parent_id]
-            
-            folder = self.service.files().create(
-                body=folder_metadata,
-                fields='id, name'
-            ).execute()
-            
-            return {
-                "success": True,
-                "folder_id": folder.get('id'),
-                "folder_name": folder.get('name')
-            }
-        except Exception as e:
-            return {
-                "success": False,
-                "error": f"Failed to create folder: {e}"
-            }
-    
-    def upload_file(self, local_file_path, drive_folder_id=None, drive_filename=None):
-        """
-        上传文件到Google Drive
-        
-        Args:
-            local_file_path (str): 本地文件路径
-            drive_folder_id (str): Drive文件夹ID，None表示根目录
-            drive_filename (str): Drive中的文件名，None使用本地文件名
-            
-        Returns:
-            dict: 上传结果
-        """
-        try:
-            if not os.path.exists(local_file_path):
+            if not folder_id:
                 return {
                     "success": False,
-                    "error": f"Local file does not exist: {local_file_path}"
+                    "error": f"Path not found: {absolute_path}",
+                    "resolved_path": None,
+                    "folder_id": None
                 }
             
-            # 确定文件名
-            if not drive_filename:
-                drive_filename = os.path.basename(local_file_path)
-            
-            # 文件元数据
-            file_metadata = {'name': drive_filename}
-            if drive_folder_id:
-                file_metadata['parents'] = [drive_folder_id]
-            
-            # 上传文件
-            media = MediaFileUpload(local_file_path)
-            file = self.service.files().create(
-                body=file_metadata,
-                media_body=media,
-                fields='id, name, size'
+            # 列出该文件夹的内容
+            query = f"'{folder_id}' in parents"
+            results = self.service.files().list(
+                q=query,
+                pageSize=max_results,
+                fields="nextPageToken, files(id, name, mimeType, size, createdTime, modifiedTime)"
             ).execute()
+            
+            items = results.get('files', [])
             
             return {
                 "success": True,
-                "file_id": file.get('id'),
-                "file_name": file.get('name'),
-                "file_size": file.get('size')
+                "files": items,
+                "count": len(items),
+                "resolved_path": resolved_path,
+                "folder_id": folder_id
             }
+            
         except Exception as e:
             return {
                 "success": False,
-                "error": f"Failed to upload file: {e}"
+                "error": f"根据绝对路径列出文件失败: {e}",
+                "resolved_path": None,
+                "folder_id": None
             }
+    
+    def _resolve_absolute_path_to_folder_id(self, absolute_path, remote_root_folder_id):
+        """
+        将绝对路径解析为Google Drive文件夹ID
+        
+        Args:
+            absolute_path (str): 绝对路径
+            remote_root_folder_id (str): 远程根目录ID
+            
+        Returns:
+            tuple: (folder_id, resolved_path) 或 (None, None)
+        """
+        try:
+            # 检查缓存
+            cache_key = f"{remote_root_folder_id}:{absolute_path}"
+            if cache_key in self._path_cache:
+                return self._path_cache[cache_key]
+            
+            # 处理根目录
+            if absolute_path == "~":
+                result = (remote_root_folder_id, "~")
+                self._cache_result(cache_key, result)
+                return result
+            
+            # 处理以~/开头的路径
+            if not absolute_path.startswith("~/"):
+                result = (None, None)
+                self._cache_result(cache_key, result)
+                return result
+            
+            # 移除~/前缀
+            relative_path = absolute_path[2:]
+            if not relative_path:
+                result = (remote_root_folder_id, "~")
+                self._cache_result(cache_key, result)
+                return result
+            
+            # 分割路径
+            path_parts = [part for part in relative_path.split("/") if part]
+            
+            current_folder_id = remote_root_folder_id
+            current_path = "~"
+            
+            # 逐级解析路径
+            for part in path_parts:
+                # 处理特殊路径组件
+                if part == "..":
+                    # 父目录 - 需要通过API查找父目录
+                    parent_id = self._get_parent_folder_id(current_folder_id)
+                    if not parent_id:
+                        return None, None  # 没有父目录
+                    current_folder_id = parent_id
+                    # 更新逻辑路径
+                    if current_path == "~":
+                        return None, None  # 根目录没有父目录
+                    else:
+                        # 移除路径的最后一部分
+                        path_parts_current = current_path.split("/")
+                        if len(path_parts_current) > 1:
+                            current_path = "/".join(path_parts_current[:-1])
+                        else:
+                            current_path = "~"
+                elif part == ".":
+                    # 当前目录，跳过
+                    continue
+                else:
+                    # 普通目录名
+                    folder_id = self._find_folder_by_name(current_folder_id, part)
+                    if not folder_id:
+                        return None, None  # 文件夹不存在
+                    current_folder_id = folder_id
+                    # 更新逻辑路径
+                    if current_path == "~":
+                        current_path = f"~/{part}"
+                    else:
+                        current_path = f"{current_path}/{part}"
+            
+            # 缓存成功的结果
+            result = (current_folder_id, current_path)
+            self._cache_result(cache_key, result)
+            return result
+            
+        except Exception as e:
+            # 缓存失败的结果
+            result = (None, None)
+            self._cache_result(cache_key, result)
+            return result
+    
+    def _cache_result(self, cache_key, result):
+        """缓存结果，管理缓存大小"""
+        if len(self._path_cache) >= self._cache_max_size:
+            # 清除最老的一半缓存条目
+            keys_to_remove = list(self._path_cache.keys())[:self._cache_max_size // 2]
+            for key in keys_to_remove:
+                del self._path_cache[key]
+        
+        self._path_cache[cache_key] = result
+    
+    def _get_parent_folder_id(self, folder_id):
+        """获取文件夹的父目录ID"""
+        try:
+            file_metadata = self.service.files().get(
+                fileId=folder_id,
+                fields="parents"
+            ).execute()
+            
+            parents = file_metadata.get('parents', [])
+            return parents[0] if parents else None
+            
+        except Exception:
+            return None
+    
+    def _find_folder_by_name(self, parent_folder_id, folder_name):
+        """在父目录中查找指定名称的文件夹"""
+        try:
+            query = f"'{parent_folder_id}' in parents and name='{folder_name}' and mimeType='application/vnd.google-apps.folder'"
+            results = self.service.files().list(
+                q=query,
+                pageSize=1,
+                fields="files(id)"
+            ).execute()
+            
+            items = results.get('files', [])
+            return items[0]['id'] if items else None
+            
+        except Exception:
+            return None
     
     def download_file(self, file_id, local_save_path):
         """

@@ -1,0 +1,61 @@
+test_07_advanced_file_operations (test_gds.GDSTest.test_07_advanced_file_operations)
+测试高级文件操作（从测试10合并） ... FAIL
+
+======================================================================
+FAIL: test_07_advanced_file_operations (test_gds.GDSTest.test_07_advanced_file_operations)
+测试高级文件操作（从测试10合并）
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 863, in test_07_advanced_file_operations
+    self.assertTrue(self._verify_file_exists("advanced_project/src/main.py"))
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 121.815s
+
+FAILED (failures=1)
+🚀 设置GDS全面测试环境...
+📂 本地测试数据: /Users/wukunhuan/.local/bin/_UNITTEST/_DATA
+📂 本地临时文件: /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP
+📁 远端测试目录: ~/tmp/gds_test_20250826_161635_318643_d81b5585
+✅ 已切换到远端测试目录: ~/tmp/gds_test_20250826_161635_318643_d81b5585
+✅ 已切换到远端测试目录: ~/tmp/gds_test_20250826_161635_318643_d81b5585
+📁 本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_8fpcyr7j
+✅ 测试环境设置完成
+
+🧪 测试09: 高级文件操作
+
+🔧 执行命令: mkdir -p advanced_project/src/utils
+📤 返回码: 0
+📝 输出: =============
+GDS mkdir -p advanced_project/src/utils
+=============
+⏳ Waiting for result ......√
+⏳ Validating dir creation ...√
+...
+
+🔧 执行命令: 'echo "# Main module" > advanced_project/src/main.py'
+📤 返回码: 0
+📝 输出: =============
+GDS echo "# Main module" > advanced_project/src/main.py
+=============
+⏳ Waiting for result .....√
+⏳ Validating file creation ...√
+...
+
+🔧 执行命令: 'echo "# Utilities" > advanced_project/src/utils/helpers.py'
+📤 返回码: 0
+📝 输出: =============
+GDS echo "# Utilities" > advanced_project/src/utils/helpers.py
+=============
+⏳ Waiting for result ......√
+⏳ Validating file creation ...√
+...
+
+🔧 执行命令: ls advanced_project/src/main.py
+📤 返回码: 1
+📝 输出: =============
+GDS ls advanced_project/src/main.py
+=============
+Failed to list files: Path not found: ~/tmp/gds_test_20250826_161635_318643_d81b5585/advanced_project/src/main.py
+...

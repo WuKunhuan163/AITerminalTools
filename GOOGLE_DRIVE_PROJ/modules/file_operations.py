@@ -40,9 +40,17 @@ class FileOperations:
         """Delegate to venv_operations"""
         return self.venv_operations.list_venv_environments(*args, **kwargs)
     
+    def cmd_venv(self, *args, **kwargs):
+        """Delegate to venv_operations"""
+        return self.venv_operations.cmd_venv(*args, **kwargs)
+    
     def cmd_pip(self, *args, **kwargs):
         """Delegate to pip_operations"""
         return self.pip_operations.cmd_pip(*args, **kwargs)
+    
+    def cmd_deps(self, *args, **kwargs):
+        """Delegate to dependency_analysis"""
+        return self.dependency_analysis.cmd_deps(*args, **kwargs)
     
     def cmd_python(self, *args, **kwargs):
         """Delegate to python_execution"""

@@ -260,8 +260,7 @@ class VenvApiManager:
     def _get_current_timestamp(self):
         """获取当前时间戳"""
         import datetime
-        return datetime.datetime.now().isoformat()
-
+        return 
     def _save_all_venv_states(self, all_states):
         """保存完整的虚拟环境状态"""
         try:
@@ -275,6 +274,25 @@ class VenvApiManager:
             escaped_json = json_content.replace("'", "'\"'\"'")
             
             remote_command = f'''
+mkdir -p "{self._get_venv_base_path()}" && {{
+    echo '{escaped_json}' > "{state_file_path}"
+    echo "State file updated: {state_file_path}"
+}}
+'''
+            
+            result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
+            
+            if result.get("success"):
+                print("Venv states saved successfully")
+                return True
+            else:
+                print(f"Failed to save venv states: {result.get('error', 'Unknown error')}")
+                return False
+                
+        except Exception as e:
+            print(f"Error saving venv states: {str(e)}")
+            return False
+
     def _get_venv_api_manager(self):
         """获取虚拟环境API管理器"""
         if not hasattr(self, '_venv_api_manager'):
@@ -290,29 +308,29 @@ class VenvApiManager:
             try:
                 api_result = self._read_venv_states_via_api()
                 if api_result.get("success"):
-                    return api_result.get("data", {})
+                    return api_result.get("data", {{}})
             except Exception as api_error:
-                print(f"API call failed: {api_error}")
+                print(f"API call failed: {{api_error}}")
             
             # 回退到远程命令
             state_file = self._get_venv_state_file_path()
-            check_command = f'cat "{state_file}" 2>/dev/null || echo "{{}}"'
+            check_command = f'cat "{{state_file}}" 2>/dev/null || echo "{{}}"'
             result = self.main_instance.execute_generic_remote_command("bash", ["-c", check_command])
             if result.get("success") and result.get("stdout"):
                 stdout_content = result["stdout"].strip()
                 try:
                     state_data = json.loads(stdout_content)
-                    return state_data if isinstance(state_data, dict) else {}
+                    return state_data if isinstance(state_data, dict) else {{}}
                 except json.JSONDecodeError as e:
-                    return {}
+                    return {{}}
             else:
                 self._create_initial_venv_states_file()
-                return {}
+                return {{}}
             
         except Exception: 
             import traceback
             traceback.print_exc()
-            return {}
+            return {{}}
     
     def _create_initial_venv_states_file(self):
         """创建初始的虚拟环境状态文件"""
@@ -360,14 +378,14 @@ class VenvApiManager:
             
             # 确保环境存在
             if "environments" not in all_states:
-                all_states["environments"] = {}
+                all_states["environments"] = {{}}
             
             if env_name not in all_states["environments"]:
-                all_states["environments"][env_name] = {
+                all_states["environments"][env_name] = {{
                     "created_at": datetime.datetime.now().isoformat(),
                     "packages": {},
                     "last_updated": datetime.datetime.now().isoformat()
-                }
+                }}
             
             # 更新包信息
             all_states["environments"][env_name]["packages"] = packages_dict

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 _TEST.py - Universal Test Runner for Binary Tools
-Automatically discovers and runs all test_ files, manages test_passed status in _bin.json
+Automatically discovers and runs all test_ files, manages test_passed status in AI_TOOL.json
 """
 
 import os
@@ -54,9 +54,9 @@ class TestRunner:
     def __init__(self):
         self.test_dir = Path(__file__).parent
         self.bin_dir = self.test_dir.parent
-        self.bin_json_path = self.bin_dir / "_bin.json"
+        self.bin_json_path = self.bin_dir / "AI_TOOL.json"
         
-        # Load _bin.json
+        # Load AI_TOOL.json
         self.bin_data = self.load_bin_json()
         
         # Discover test files
@@ -66,22 +66,22 @@ class TestRunner:
         self.tool_test_mapping = self.create_tool_test_mapping()
     
     def load_bin_json(self) -> Dict:
-        """Load _bin.json file"""
+        """Load AI_TOOL.json file"""
         try:
             with open(self.bin_json_path, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except Exception as e:
-            print(f"❌ Error loading _bin.json: {e}")
+            print(f"❌ Error loading AI_TOOL.json: {e}")
             sys.exit(1)
     
     def save_bin_json(self) -> bool:
-        """Save _bin.json file"""
+        """Save AI_TOOL.json file"""
         try:
             with open(self.bin_json_path, 'w', encoding='utf-8') as f:
                 json.dump(self.bin_data, f, indent=2, ensure_ascii=False)
             return True
         except Exception as e:
-            print(f"❌ Error saving _bin.json: {e}")
+            print(f"❌ Error saving AI_TOOL.json: {e}")
             return False
     
     def discover_test_files(self) -> List[Path]:
@@ -115,13 +115,13 @@ class TestRunner:
                 else:
                     tool_name = tool_part.upper()
                 
-                # Check if tool exists in _bin.json
+                # Check if tool exists in AI_TOOL.json
                 if tool_name in self.bin_data.get("tools", {}):
                     if tool_name not in mapping:
                         mapping[tool_name] = []
                     mapping[tool_name].append(test_file)
                 else:
-                    print(f"⚠️  Warning: Test file {test_file.name} doesn't match any tool in _bin.json")
+                    print(f"⚠️  Warning: Test file {test_file.name} doesn't match any tool in AI_TOOL.json")
         
         return mapping
     
@@ -270,7 +270,7 @@ class TestRunner:
         print(f"\nTotal: {len(self.tool_test_mapping)} tools with tests")
     
     def ensure_test_file_fields(self) -> None:
-        """Ensure all tools in _bin.json have proper test file fields"""
+        """Ensure all tools in AI_TOOL.json have proper test file fields"""
         updated = False
         
         for tool_name, tool_data in self.bin_data["tools"].items():
@@ -298,7 +298,7 @@ class TestRunner:
         
         if updated:
             self.save_bin_json()
-            print("✅ Updated _bin.json with test file fields")
+            print("✅ Updated AI_TOOL.json with test file fields")
         else:
             print("✅ All tools already have proper test file fields")
 
@@ -314,7 +314,7 @@ Examples:
   python _TEST.py GOOGLE_DRIVE LEARN        # Test specific tools
   python _TEST.py --list                    # List available tools
   python _TEST.py --verbose                 # Run with verbose output
-  python _TEST.py --ensure-fields           # Ensure _bin.json has test fields
+  python _TEST.py --ensure-fields           # Ensure AI_TOOL.json has test fields
         """
     )
     
@@ -339,7 +339,7 @@ Examples:
     parser.add_argument(
         '--ensure-fields',
         action='store_true',
-        help='Ensure _bin.json has proper test file fields'
+        help='Ensure AI_TOOL.json has proper test file fields'
     )
     
     args = parser.parse_args()

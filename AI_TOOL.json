@@ -189,8 +189,8 @@
     },
     "GOOGLE_DRIVE": {
       "name": "GOOGLE_DRIVE",
-      "description": "Google Drive access tool with GDS (Google Drive Shell) for remote file management",
-      "purpose": "Access Google Drive in browser and manage files remotely through an interactive shell interface (GDS). Supports file operations, remote Python execution, and comprehensive Google Drive API integration.",
+      "description": "Google Drive access tool with GDS (Google Drive Shell) for remote file management and Python package management",
+      "purpose": "Access Google Drive in browser and manage files remotely through an interactive shell interface (GDS). Supports file operations, remote Python execution, Python package management with dependency analysis, and comprehensive Google Drive API integration.",
       "usage": "GOOGLE_DRIVE [url] [options] | GOOGLE_DRIVE --shell [command] | GDS [command]",
       "examples": [
         "GOOGLE_DRIVE",
@@ -207,6 +207,9 @@
         "GDS mkdir test",
         "GDS cd test",
         "GDS upload file.txt",
+        "GDS pip list",
+        "GDS pip install numpy",
+        "GDS pip --show-deps tensorflow --depth=2",
         "GOOGLE_DRIVE --create-remote-shell",
         "GOOGLE_DRIVE --list-remote-shell",
         "GOOGLE_DRIVE --console-setup",
@@ -221,7 +224,7 @@
       "testable": true,
       "test_passed": true,
       "ai_usable": true,
-      "tool_use_scenario": "When user needs to access Google Drive, manage remote files through shell interface, upload/download files, execute remote Python code, or set up Google Drive API integration",
+      "tool_use_scenario": "When user needs to access Google Drive, manage remote files through shell interface, upload/download files, execute remote Python code, manage Python packages with dependency analysis, or set up Google Drive API integration",
       "gds_commands": {
         "navigation": [
           "pwd",
@@ -248,6 +251,9 @@
         "remote_execution": [
           "python"
         ],
+        "package_management": [
+          "pip"
+        ],
         "search": [
           "find"
         ],
@@ -262,14 +268,17 @@
         "Path resolution supporting ~, .., relative and absolute paths",
         "Automatic download caching with cache management",
         "Remote Python code execution",
+        "Python package management with pip integration",
+        "Smart dependency tree analysis with PyPI API integration",
+        "Virtual environment state synchronization",
         "Google Drive API setup wizard",
         "Remote shell session management",
         "Google Drive Desktop application control"
       ],
       "file_hashes": {
         "binary": "44fef98442c7e718bb0ba3f77c414e036031a1ecd0572b812335dea39b659ed3",
-        "python": "a0cb6ef88c252e64d09caba42d2a04e3b8439a79b92612818ffa140a0429fb7a",
-        "markdown": "3ce9f74117c5b8a348837264722b94ab5b388d3e6158310546fbacc4579b3509"
+        "python": "d977f9772540c8b649a53173eaaf9b9cd79be5fb8bfabe976a85101310ea45ed",
+        "markdown": "65decd7289a0b47b34b3ffd866826235871782a0d9a500edcdd1a358ac0bdffb"
       },
       "test_command": [
         "python",
@@ -392,7 +401,9 @@
       "ai_usable": true,
       "tool_use_scenario": "When user needs to compile LaTeX documents or manage LaTeX project templates",
       "template_features": {
-        "available_templates": ["ICPRS"],
+        "available_templates": [
+          "ICPRS"
+        ],
         "template_operations": [
           "List available templates",
           "Copy template to new project directory",
@@ -592,11 +603,61 @@
       "test_command": [
         "--help"
       ]
+    },
+    "PYPI": {
+      "name": "PYPI",
+      "description": "PyPI Package Information Tool",
+      "purpose": "Retrieve package information, dependencies, and metadata from PyPI",
+      "usage": "PYPI <command> [options]",
+      "examples": [
+        "PYPI info requests",
+        "PYPI deps numpy",
+        "PYPI batch --packages requests numpy --json"
+      ],
+      "files": {
+        "binary": "PYPI",
+        "python": "PYPI.py",
+        "markdown": "PYPI.md"
+      },
+      "run_compatible": "true",
+      "testable": "true",
+      "test_passed": "true",
+      "ai_usable": "true",
+      "tool_use_scenario": "When user needs to get PyPI package information, dependencies, or metadata",
+      "file_hashes": {
+        "binary": "02cd18adddfff7eb1d304f8b6192a8d12240feda618279c0be84b0cb79eb5e3d",
+        "python": "bface66daa627894bba31d3c2a04847fa7efc6f612504c0492269c36d4ac3f9a",
+        "markdown": "056cbca9c0d3746dd738d6ed821d5a7190c56b713e410d0d440510ae445402a6"
+      }
+    },
+    "NETWORK": {
+      "name": "NETWORK",
+      "description": "Network Testing Tool",
+      "purpose": "Test network speed, latency, and connectivity",
+      "usage": "NETWORK --test",
+      "examples": [
+        "NETWORK --test"
+      ],
+      "files": {
+        "binary": "NETWORK",
+        "python": "NETWORK.py",
+        "markdown": "NETWORK.md"
+      },
+      "run_compatible": "true",
+      "testable": "true",
+      "test_passed": "true",
+      "ai_usable": "true",
+      "tool_use_scenario": "When user needs to test network performance and connectivity",
+      "file_hashes": {
+        "binary": "2946443616dc2b38846cf46ba231eee6d7262eeed59b2b4e974faac3121b5e8f",
+        "python": "23f08fbd21a9ec2984094fad8f9db6bee2529dcc02f0dd1d1cfe68da1ebb5a99",
+        "markdown": "14a847810109cd0e7468de6adea44335e6360f0564b6cf533043cb42ee49a68f"
+      }
     }
   },
   "metadata": {
     "version": "1.0.0",
-    "last_updated": "2025-07-20",
-    "total_tools": 16
+    "last_updated": "2025-08-22",
+    "total_tools": 19
   }
 }

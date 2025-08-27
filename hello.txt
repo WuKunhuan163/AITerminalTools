@@ -1,0 +1,5 @@
+=============
+GDS echo Hello World
+=============
+⏳ Waiting for result ....√
+Hello World

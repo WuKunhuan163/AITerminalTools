@@ -1,7 +1,7 @@
 {
-  "timestamp": "2025-08-22T13:17:29.454635",
-  "latency_ms": 820.0879096984863,
-  "download_speed_mbps": 0.32497258725641887,
-  "upload_speed_mbps": 0.3668579770276398,
+  "timestamp": "2025-08-22T17:59:48.517827",
+  "latency_ms": 1315.934181213379,
+  "download_speed_mbps": 0.2863927036318889,
+  "upload_speed_mbps": 0.2920595854371318,
   "status": "success"
 }

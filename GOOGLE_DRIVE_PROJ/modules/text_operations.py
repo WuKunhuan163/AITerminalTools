@@ -323,6 +323,125 @@ class TextOperations:
         
         return "\n".join(formatted_lines)
 
+    def _parse_find_args(self, args):
+        """解析find命令参数"""
+        try:
+            args_list = list(args)
+            
+            # 默认值
+            path = "."
+            pattern = "*"
+            case_sensitive = True
+            file_type = None  # None=both, "f"=files, "d"=directories
+            
+            i = 0
+            while i < len(args_list):
+                arg = args_list[i]
+                
+                if arg == "-name" and i + 1 < len(args_list):
+                    pattern = args_list[i + 1]
+                    case_sensitive = True
+                    i += 2
+                elif arg == "-iname" and i + 1 < len(args_list):
+                    pattern = args_list[i + 1]
+                    case_sensitive = False
+                    i += 2
+                elif arg == "-type" and i + 1 < len(args_list):
+                    file_type = args_list[i + 1]
+                    if file_type not in ["f", "d"]:
+                        return {"success": False, "error": "无效的文件类型，使用 'f' (文件) 或 'd' (目录)"}
+                    i += 2
+                elif not arg.startswith("-"):
+                    # 这是路径参数
+                    path = arg
+                    i += 1
+                else:
+                    i += 1
+            
+            return {
+                "success": True,
+                "path": path,
+                "pattern": pattern,
+                "case_sensitive": case_sensitive,
+                "file_type": file_type
+            }
+            
+        except Exception as e:
+            return {"success": False, "error": f"参数解析错误: {e}"}
+
+    def _recursive_find(self, search_path, pattern, case_sensitive=True, file_type=None):
+        """
+        递归查找匹配的文件和目录
+        
+        Args:
+            search_path: 搜索路径
+            pattern: 搜索模式（支持通配符）
+            case_sensitive: 是否大小写敏感
+            file_type: 文件类型过滤 ("f" for files, "d" for directories, None for both)
+        
+        Returns:
+            dict: {"success": bool, "files": list, "error": str}
+        """
+        try:
+            import fnmatch
+            
+            # 解析搜索路径
+            if search_path == ".":
+                # 使用当前shell路径
+                current_shell = self.main_instance.get_current_shell()
+                if current_shell:
+                    search_path = current_shell.get("current_path", "~")
+            
+            # 将~转换为实际的REMOTE_ROOT路径
+            if search_path.startswith("~"):
+                search_path = search_path.replace("~", "/content/drive/MyDrive/REMOTE_ROOT", 1)
+            
+            # 生成远程find命令
+            find_cmd_parts = ["find", f'"{search_path}"']
+            
+            # 添加文件类型过滤
+            if file_type == "f":
+                find_cmd_parts.append("-type f")
+            elif file_type == "d":
+                find_cmd_parts.append("-type d")
+            
+            # 添加名称模式
+            if case_sensitive:
+                find_cmd_parts.append(f'-name "{pattern}"')
+            else:
+                find_cmd_parts.append(f'-iname "{pattern}"')
+            
+            find_command = " ".join(find_cmd_parts)
+            
+            # 执行远程find命令
+            result = self.main_instance.execute_generic_remote_command("bash", ["-c", find_command])
+            
+            if result.get("success"):
+                stdout = result.get("stdout", "").strip()
+                if stdout:
+                    # 分割输出为文件路径列表
+                    files = [line.strip() for line in stdout.split("\n") if line.strip()]
+                    return {
+                        "success": True,
+                        "files": files
+                    }
+                else:
+                    return {
+                        "success": True,
+                        "files": []
+                    }
+            else:
+                return {
+                    "success": False,
+                    "error": f"Remote find command failed: {result.get('error', 'Unknown error')}"
+                }
+                
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Error executing find: {e}"
+            }
+
     def cmd_find(self, *args):
         """
         GDS find命令实现，类似bash find

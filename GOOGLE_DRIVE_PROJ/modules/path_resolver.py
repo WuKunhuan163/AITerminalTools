@@ -21,12 +21,20 @@ from typing import Dict
 try:
     from ..google_drive_api import GoogleDriveService
 except ImportError:
-    from GOOGLE_DRIVE_PROJ.google_drive_api import GoogleDriveService
+    try:
+        from GOOGLE_DRIVE_PROJ.google_drive_api import GoogleDriveService
+    except ImportError:
+        import sys
+        import os
+        current_dir = os.path.dirname(__file__)
+        parent_dir = os.path.dirname(current_dir)
+        sys.path.insert(0, parent_dir)
+        from google_drive_api import GoogleDriveService
 
 class PathResolver:
     """Google Drive Shell Path Resolver"""
 
-    def __init__(self, drive_service, main_instance=None):
+    def __init__(self, drive_service=None, main_instance=None):
         """初始化管理器"""
         self.drive_service = drive_service
         self.main_instance = main_instance  # 引用主实例以访问其他属性
@@ -373,6 +381,13 @@ class PathResolver:
                 return f"~/{relative_path}"
             elif path == home_dir:
                 return "~"
+            elif path.startswith(home_dir):
+                # 处理形如 /Users/username.. 的情况
+                relative_path = path[len(home_dir):]
+                if relative_path.startswith("/"):
+                    return f"~{relative_path}"
+                else:
+                    return f"~/{relative_path}"
             else:
                 # 不是home目录下的路径，保持原样
                 # 这包括：相对路径、绝对的远程路径（如/content/drive/...）等
@@ -380,6 +395,121 @@ class PathResolver:
         except Exception as e:
             # 如果转换失败，返回原路径，避免破坏用户输入
             return path
+
+    def compute_absolute_path(self, current_shell_path, input_path):
+        """
+        根据当前shell路径和输入路径计算绝对路径
+        
+        Args:
+            current_shell_path (str): 当前shell的路径，如 "~/folder1/folder2"
+            input_path (str): 用户输入的路径，可以是相对路径或绝对路径
+            
+        Returns:
+            str: 计算出的绝对路径
+        """
+        try:
+            # 首先转换可能被bash扩展的本地路径
+            input_path = self._convert_local_path_to_remote(input_path)
+            
+            # 如果输入路径已经是绝对路径（以~开头），直接返回
+            if input_path.startswith("~"):
+                return input_path
+            
+            # 处理特殊情况
+            if input_path == "." or input_path == "":
+                return current_shell_path
+            
+            # 处理相对路径
+            if input_path.startswith("./"):
+                input_path = input_path[2:]  # 移除 ./
+            
+            # 处理父目录路径
+            if input_path == "..":
+                return self._get_parent_path(current_shell_path)
+            
+            if input_path.startswith("../"):
+                # 先获取父目录，然后递归处理剩余路径
+                parent_path = self._get_parent_path(current_shell_path)
+                remaining_path = input_path[3:]  # 移除 ../
+                # 递归处理剩余路径
+                return self.compute_absolute_path(parent_path, remaining_path)
+            
+            # 普通相对路径，需要处理路径中的 .. 和 .
+            normalized_path = self._normalize_path_components(current_shell_path, input_path)
+            return normalized_path
+            
+        except Exception as e:
+            # 如果计算失败，返回输入路径
+            return input_path
+    
+    def _get_parent_path(self, path):
+        """获取路径的父目录"""
+        if path == "~":
+            return "~"  # 根目录没有父目录，返回自己
+        
+        if path.startswith("~/"):
+            parts = path.split("/")
+            if len(parts) <= 2:  # ~/something -> ~
+                return "~"
+            else:  # ~/a/b/c -> ~/a/b
+                return "/".join(parts[:-1])
+        
+        return path
+    
+    def _join_paths(self, base_path, relative_path):
+        """连接基础路径和相对路径"""
+        if not relative_path:
+            return base_path
+        
+        if base_path == "~":
+            return f"~/{relative_path}"
+        else:
+            return f"{base_path}/{relative_path}"
+    
+    def _normalize_path_components(self, base_path, relative_path):
+        """规范化路径组件，处理路径中的 .. 和 ."""
+        try:
+            # 先连接路径
+            combined_path = self._join_paths(base_path, relative_path)
+            
+            # 分解路径为组件
+            if combined_path == "~":
+                return "~"
+            
+            if not combined_path.startswith("~/"):
+                return combined_path
+            
+            # 移除 ~/ 前缀
+            path_without_root = combined_path[2:]
+            if not path_without_root:
+                return "~"
+            
+            # 分割路径组件
+            components = path_without_root.split("/")
+            normalized_components = []
+            
+            for component in components:
+                if component == "." or component == "":
+                    # 跳过当前目录和空组件
+                    continue
+                elif component == "..":
+                    # 父目录 - 移除上一个组件
+                    if normalized_components:
+                        normalized_components.pop()
+                    # 如果没有组件可移除，说明已经到根目录，忽略
+                else:
+                    # 普通目录名
+                    normalized_components.append(component)
+            
+            # 重建路径
+            if not normalized_components:
+                return "~"
+            else:
+                return "~/" + "/".join(normalized_components)
+                
+        except Exception as e:
+            # 如果规范化失败，返回原始连接的路径
+            return self._join_paths(base_path, relative_path)
 
     def resolve_remote_absolute_path(self, path, current_shell=None):
         """
