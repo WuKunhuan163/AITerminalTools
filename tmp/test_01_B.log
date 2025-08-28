@@ -1,0 +1,379 @@
+🚀 设置GDS全面测试环境...
+📁 远端测试目录: ~/tmp/gds_test_20250829_022059_901643_2e3dbae2
+⚠️ 创建远端测试目录失败: 返回码=1, stderr=, stdout=
+- Executing command 1/2: cd ~
+
+- Executing command 2/2: mkdir -p ~/tmp/gds_test_20250829_022059_901643_2e3dbae2
+🔒 DEBUG: [0.000s] [ENTRY] execute_generic_remote_command - 请求窗口槽位 - window_id: bash_8660021824_1756405261482_34b041f6, cmd: bash, thread: 8660021824
+🔒 DEBUG: [0.000s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+⏳ DEBUG: [0.001s] [QUEUE_WAITING] 加入等待队列: bash_8660021824_1756405261482_34b041f6, 位置: 1, thread: 8660021824
+💓 DEBUG: [0.001s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [0.001s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756405261482_34b041f6 -> 当前窗口: bash_8660021824_1756405055472_5cd8be41
+💓 DEBUG: [0.001s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756405261482_34b041f6
+💓 DEBUG: [0.001s] [HEARTBEAT_BEFORE] 注册前心跳状态: {}
+💓 DEBUG: [0.001s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756405261482_34b041f6
+💓 DEBUG: [0.001s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756405261482_34b041f6': 'false'}
+💓 DEBUG: [0.001s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [0.001s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+🔒 DEBUG: [0.505s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [0.505s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [0.505s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756405261482_34b041f6 -> 当前窗口: bash_8660021824_1756405055472_5cd8be41
+💓 DEBUG: [0.505s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756405261482_34b041f6
+💓 DEBUG: [0.505s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756405261482_34b041f6': 'false', 'bash_8660021824_1756405261482_d3ef9ace': 'false'}
+💓 DEBUG: [0.506s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756405261482_34b041f6
+💓 DEBUG: [0.506s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756405261482_34b041f6': 'false', 'bash_8660021824_1756405261482_d3ef9ace': 'false'}
+💓 DEBUG: [0.506s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [0.506s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+🔒 DEBUG: [1.011s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [1.011s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [1.012s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756405261482_34b041f6 -> 当前窗口: bash_8660021824_1756405055472_5cd8be41
+💓 DEBUG: [1.012s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756405261482_34b041f6
+💓 DEBUG: [1.012s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756405261482_34b041f6': 'false', 'bash_8660021824_1756405261482_d3ef9ace': 'false'}
+💓 DEBUG: [1.012s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756405261482_34b041f6
+💓 DEBUG: [1.012s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756405261482_34b041f6': 'false', 'bash_8660021824_1756405261482_d3ef9ace': 'false'}
+💓 DEBUG: [1.012s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [1.012s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [1.012s] [HEARTBEAT_CHECK] 检查心跳超时 - watcher: bash_8660021824_1756405261482_34b041f6, heartbeat: {'bash_8660021824_1756405261482_34b041f6': 'false', 'bash_8660021824_1756405261482_d3ef9ace': 'false'}
+💀 DEBUG: [1.012s] [HEARTBEAT_TIMEOUT] 心跳超时，清除窗口: bash_8660021824_1756405055472_5cd8be41
+💀 DEBUG: [1.013s] [HEARTBEAT_CLEAR] 心跳检测清除了卡住的窗口，重试获取槽位
+🔒 DEBUG: [1.013s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+🚀 DEBUG: [1.013s] [QUEUE_ACQUIRED] 立即获得窗口槽位: bash_8660021824_1756405261482_34b041f6, thread: 8660021824
+🔓 DEBUG: [1.013s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+✅ DEBUG: [1.014s] [ACQUIRED] 窗口槽位已获得 - window_id: bash_8660021824_1756405261482_34b041f6, cmd: bash
+🖥️ DEBUG: [1.021s] [EXEC] 开始执行远端命令 - window_id: bash_8660021824_1756405261482_34b041f6, cmd: bash
+💓 DEBUG: [1.223s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [1.426s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [1.910s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [2.145s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [2.351s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [2.561s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [2.765s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [2.980s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [3.196s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [3.404s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [3.608s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [3.818s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [4.027s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [4.256s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [4.556s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [4.763s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [4.965s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [5.171s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [5.376s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [5.579s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [5.785s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [5.991s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [6.193s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [6.399s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [6.602s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [6.824s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [7.028s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [7.234s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [7.440s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [7.645s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [7.849s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [8.053s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [8.259s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [8.462s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [8.759s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [8.968s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [9.174s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [9.379s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [9.583s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [9.789s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [9.995s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [10.199s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [10.405s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [10.611s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [10.816s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [11.020s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [11.222s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [11.428s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [11.632s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [11.838s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [12.044s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [12.249s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [12.455s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [12.657s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [12.863s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [13.068s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [13.274s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [13.479s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [13.683s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [13.884s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [14.090s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [14.296s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [14.501s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [14.707s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [14.938s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [15.140s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [15.346s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [15.549s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [15.755s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [15.960s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [16.166s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [16.371s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [16.577s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [16.783s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [16.985s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [17.186s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [17.388s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [17.594s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [17.797s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [17.999s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [18.204s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [18.409s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [18.613s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [18.815s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [19.020s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [19.247s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [19.469s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [19.682s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [19.887s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [20.093s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [20.298s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [20.500s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [20.706s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [20.911s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [21.117s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [21.322s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [21.528s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [21.733s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [21.938s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [22.141s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [22.346s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [22.552s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [22.757s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [22.963s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [23.165s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [23.371s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [23.576s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [23.782s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [23.987s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [24.191s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [24.397s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [24.602s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [24.808s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [25.013s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [25.216s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [25.423s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [25.428s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [25.632s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [25.633s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [25.834s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [25.834s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [26.040s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [26.040s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [26.246s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [26.246s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [26.448s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [26.448s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+📋 DEBUG: [26.572s] [RESULT] 远端命令执行完成 - window_id: bash_8660021824_1756405261482_34b041f6, success: False
+✅ DEBUG: [26.572s] [MARK_COMPLETED] 窗口标记为已完成: bash_8660021824_1756405261482_34b041f6
+✅ DEBUG: [26.573s] [MARK_COMPLETE] 窗口已标记为完成 - window_id: bash_8660021824_1756405261482_34b041f6
+🔓 DEBUG: [26.573s] [RELEASE] 释放窗口槽位 - window_id: bash_8660021824_1756405261482_34b041f6, cmd: bash
+🔒 DEBUG: [26.573s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+✅ DEBUG: [26.573s] [QUEUE_RELEASE] 释放当前窗口槽位: bash_8660021824_1756405261482_34b041f6, thread: 8660021824
+📊 DEBUG: [26.573s] [COUNTER] 窗口完成计数: 28 - window_id: bash_8660021824_1756405261482_34b041f6
+🔄 DEBUG: [26.574s] [QUEUE_NEXT] 下一个窗口获得槽位: bash_8660021824_1756405261482_d3ef9ace, thread: 8660021824
+🎯 DEBUG: [26.574s] [IMMEDIATE_RELEASE] 窗口槽位立即释放完成 - window_id: bash_8660021824_1756405261482_34b041f6
+🔓 DEBUG: [26.574s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+✅ DEBUG: [26.575s] [RELEASED] 窗口槽位已释放 - window_id: bash_8660021824_1756405261482_34b041f6, cmd: bash
+mkdir命令执行失败: User operation: Timeout or cancelled
+setUpClass (_UNITTEST.test_gds.GDSTest) ... ERROR
+
+======================================================================
+ERROR: setUpClass (_UNITTEST.test_gds.GDSTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 65, in setUpClass
+    cls._setup_remote_test_directory()
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 87, in _setup_remote_test_directory
+    raise RuntimeError(error_msg)
+RuntimeError: 创建远端测试目录失败: 返回码=1, stderr=, stdout=
+- Executing command 1/2: cd ~
+
+- Executing command 2/2: mkdir -p ~/tmp/gds_test_20250829_022059_901643_2e3dbae2
+🔒 DEBUG: [0.000s] [ENTRY] execute_generic_remote_command - 请求窗口槽位 - window_id: bash_8660021824_1756405261482_34b041f6, cmd: bash, thread: 8660021824
+🔒 DEBUG: [0.000s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+⏳ DEBUG: [0.001s] [QUEUE_WAITING] 加入等待队列: bash_8660021824_1756405261482_34b041f6, 位置: 1, thread: 8660021824
+💓 DEBUG: [0.001s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [0.001s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756405261482_34b041f6 -> 当前窗口: bash_8660021824_1756405055472_5cd8be41
+💓 DEBUG: [0.001s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756405261482_34b041f6
+💓 DEBUG: [0.001s] [HEARTBEAT_BEFORE] 注册前心跳状态: {}
+💓 DEBUG: [0.001s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756405261482_34b041f6
+💓 DEBUG: [0.001s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756405261482_34b041f6': 'false'}
+💓 DEBUG: [0.001s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [0.001s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+🔒 DEBUG: [0.505s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [0.505s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [0.505s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756405261482_34b041f6 -> 当前窗口: bash_8660021824_1756405055472_5cd8be41
+💓 DEBUG: [0.505s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756405261482_34b041f6
+💓 DEBUG: [0.505s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756405261482_34b041f6': 'false', 'bash_8660021824_1756405261482_d3ef9ace': 'false'}
+💓 DEBUG: [0.506s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756405261482_34b041f6
+💓 DEBUG: [0.506s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756405261482_34b041f6': 'false', 'bash_8660021824_1756405261482_d3ef9ace': 'false'}
+💓 DEBUG: [0.506s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [0.506s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+🔒 DEBUG: [1.011s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [1.011s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [1.012s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756405261482_34b041f6 -> 当前窗口: bash_8660021824_1756405055472_5cd8be41
+💓 DEBUG: [1.012s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756405261482_34b041f6
+💓 DEBUG: [1.012s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756405261482_34b041f6': 'false', 'bash_8660021824_1756405261482_d3ef9ace': 'false'}
+💓 DEBUG: [1.012s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756405261482_34b041f6
+💓 DEBUG: [1.012s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756405261482_34b041f6': 'false', 'bash_8660021824_1756405261482_d3ef9ace': 'false'}
+💓 DEBUG: [1.012s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [1.012s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [1.012s] [HEARTBEAT_CHECK] 检查心跳超时 - watcher: bash_8660021824_1756405261482_34b041f6, heartbeat: {'bash_8660021824_1756405261482_34b041f6': 'false', 'bash_8660021824_1756405261482_d3ef9ace': 'false'}
+💀 DEBUG: [1.012s] [HEARTBEAT_TIMEOUT] 心跳超时，清除窗口: bash_8660021824_1756405055472_5cd8be41
+💀 DEBUG: [1.013s] [HEARTBEAT_CLEAR] 心跳检测清除了卡住的窗口，重试获取槽位
+🔒 DEBUG: [1.013s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+🚀 DEBUG: [1.013s] [QUEUE_ACQUIRED] 立即获得窗口槽位: bash_8660021824_1756405261482_34b041f6, thread: 8660021824
+🔓 DEBUG: [1.013s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+✅ DEBUG: [1.014s] [ACQUIRED] 窗口槽位已获得 - window_id: bash_8660021824_1756405261482_34b041f6, cmd: bash
+🖥️ DEBUG: [1.021s] [EXEC] 开始执行远端命令 - window_id: bash_8660021824_1756405261482_34b041f6, cmd: bash
+💓 DEBUG: [1.223s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [1.426s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [1.910s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [2.145s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [2.351s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [2.561s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [2.765s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [2.980s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [3.196s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [3.404s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [3.608s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [3.818s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [4.027s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [4.256s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [4.556s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [4.763s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [4.965s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [5.171s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [5.376s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [5.579s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [5.785s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [5.991s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [6.193s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [6.399s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [6.602s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [6.824s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [7.028s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [7.234s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [7.440s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [7.645s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [7.849s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [8.053s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [8.259s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [8.462s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [8.759s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [8.968s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [9.174s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [9.379s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [9.583s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [9.789s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [9.995s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [10.199s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [10.405s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [10.611s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [10.816s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [11.020s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [11.222s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [11.428s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [11.632s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [11.838s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [12.044s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [12.249s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [12.455s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [12.657s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [12.863s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [13.068s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [13.274s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [13.479s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [13.683s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [13.884s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [14.090s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [14.296s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [14.501s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [14.707s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [14.938s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [15.140s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [15.346s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [15.549s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [15.755s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [15.960s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [16.166s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [16.371s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [16.577s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [16.783s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [16.985s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [17.186s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [17.388s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [17.594s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [17.797s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [17.999s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [18.204s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [18.409s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [18.613s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [18.815s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [19.020s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [19.247s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [19.469s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [19.682s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [19.887s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [20.093s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [20.298s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [20.500s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [20.706s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [20.911s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [21.117s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [21.322s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [21.528s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [21.733s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [21.938s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [22.141s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [22.346s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [22.552s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [22.757s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [22.963s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [23.165s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [23.371s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [23.576s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [23.782s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [23.987s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [24.191s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [24.397s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [24.602s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [24.808s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [25.013s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [25.216s] [HEARTBEAT_UPDATE_FAIL] 无法更新心跳 - window_id: bash_8660021824_1756405261482_34b041f6, current: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [25.423s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [25.428s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [25.632s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [25.633s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [25.834s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [25.834s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [26.040s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [26.040s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [26.246s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [26.246s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [26.448s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [26.448s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+📋 DEBUG: [26.572s] [RESULT] 远端命令执行完成 - window_id: bash_8660021824_1756405261482_34b041f6, success: False
+✅ DEBUG: [26.572s] [MARK_COMPLETED] 窗口标记为已完成: bash_8660021824_1756405261482_34b041f6
+✅ DEBUG: [26.573s] [MARK_COMPLETE] 窗口已标记为完成 - window_id: bash_8660021824_1756405261482_34b041f6
+🔓 DEBUG: [26.573s] [RELEASE] 释放窗口槽位 - window_id: bash_8660021824_1756405261482_34b041f6, cmd: bash
+🔒 DEBUG: [26.573s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+✅ DEBUG: [26.573s] [QUEUE_RELEASE] 释放当前窗口槽位: bash_8660021824_1756405261482_34b041f6, thread: 8660021824
+📊 DEBUG: [26.573s] [COUNTER] 窗口完成计数: 28 - window_id: bash_8660021824_1756405261482_34b041f6
+🔄 DEBUG: [26.574s] [QUEUE_NEXT] 下一个窗口获得槽位: bash_8660021824_1756405261482_d3ef9ace, thread: 8660021824
+🎯 DEBUG: [26.574s] [IMMEDIATE_RELEASE] 窗口槽位立即释放完成 - window_id: bash_8660021824_1756405261482_34b041f6
+🔓 DEBUG: [26.574s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+✅ DEBUG: [26.575s] [RELEASED] 窗口槽位已释放 - window_id: bash_8660021824_1756405261482_34b041f6, cmd: bash
+mkdir命令执行失败: User operation: Timeout or cancelled
+
+
+----------------------------------------------------------------------
+Ran 0 tests in 28.240s
+
+FAILED (errors=1)
+

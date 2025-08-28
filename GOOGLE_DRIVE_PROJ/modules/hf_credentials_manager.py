@@ -195,7 +195,6 @@ fi
             result = remote_cmd_instance.show_command_window_subprocess(
                 title=title,
                 command_text=remote_setup_commands.strip(),
-                instruction_text=instruction,
                 timeout_seconds=300
             )
             

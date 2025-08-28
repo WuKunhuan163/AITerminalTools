@@ -202,6 +202,38 @@ class RemoteCommands:
         
         return display_command
 
+    def _log_window_opening_time(self, window_id, cmd):
+        """
+        记录窗口打开时间到测试文件
+        
+        Args:
+            window_id (str): 窗口唯一标识符
+            cmd (str): 命令名称
+        """
+        try:
+            import time
+            from pathlib import Path
+            
+            # 获取当前时间（全局时间戳）
+            current_time = time.time()
+            timestamp_str = time.strftime('%H:%M:%S.%f', time.localtime(current_time))[:-3]  # 精确到毫秒
+            
+            # 写入到tmp文件夹中的窗口时间记录文件
+            current_dir = Path(__file__).parent.parent.parent
+            window_time_file = current_dir / "tmp" / "window_opening_times_new.txt"
+            window_time_file.parent.mkdir(exist_ok=True)
+            
+            with open(window_time_file, 'a', encoding='utf-8') as f:
+                f.write(f"[{timestamp_str}] WINDOW_OPENED: {window_id} - {cmd} (time: {current_time})\n")
+            
+            # 同时记录到通用调试文件
+            debug_file = current_dir / "tmp" / "concurrent_test_debug_new.txt"
+            with open(debug_file, 'a', encoding='utf-8') as f:
+                f.write(f"[{timestamp_str}] WINDOW_OPENED: {window_id} - {cmd} (PID: {os.getpid()}, thread: {threading.get_ident()})\n")
+                
+        except Exception as e:
+            print(f"Window opening time logging error: {e}")
+    
     def validate_bash_syntax_fast(self, command):
         """
         快速验证bash命令语法
@@ -229,7 +261,7 @@ class RemoteCommands:
                     ['bash', '-n', temp_file], 
                     capture_output=True, 
                     text=True, 
-                    timeout=0.1  # 0.1秒超时
+                    timeout=2.0  # 2秒超时，避免并发时的超时问题
                 )
                 
                 if result.returncode == 0:
@@ -1287,16 +1319,20 @@ fi
         def debug_log(message):
             """写入调试信息到文件"""
             try:
-                import os
-                log_file = os.path.join(os.path.dirname(__file__), "..", "..", "tmp", "debug_heartbeat.log")
-                os.makedirs(os.path.dirname(log_file), exist_ok=True)
-                with open(log_file, "a", encoding="utf-8") as f:
-                    f.write(f"{message}\n")
-                    f.flush()
+                # 写入到tmp文件夹中的调试文件
+                from pathlib import Path
+                current_dir = Path(__file__).parent.parent.parent
+                debug_file = current_dir / "tmp" / "remote_commands_debug_new.txt"
+                debug_file.parent.mkdir(exist_ok=True)
+                
+                with open(debug_file, 'a', encoding='utf-8') as f:
+                    timestamp = time.strftime('%H:%M:%S.%f')[:-3]  # 精确到毫秒
+                    f.write(f"[{timestamp}] {message}\n")
+                
+                # 同时输出到控制台（可选）
+                print(message)
             except Exception as e:
-                print(f"DEBUG_LOG_ERROR: {e}")
-            # 同时也输出到终端
-            print(message)
+                print(f"Debug logging error: {e}")
         
         window_id = f"{cmd}_{threading.get_ident()}_{int(time.time() * 1000)}_{uuid.uuid4().hex[:8]}"
         
@@ -1348,7 +1384,7 @@ fi
             
             # 正常执行流程：显示远端命令并通过tkinter获取用户执行结果
             debug_log(f"🖥️ DEBUG: [{get_relative_timestamp()}] [EXEC] 开始执行远端命令 - window_id: {window_id}, cmd: {cmd}")
-            result = self._execute_with_result_capture(remote_command_info, cmd, args, window_id, get_relative_timestamp, update_heartbeat)
+            result = self._execute_with_result_capture(remote_command_info, cmd, args, window_id, get_relative_timestamp, update_heartbeat, release_window_slot, debug_log)
             debug_log(f"📋 DEBUG: [{get_relative_timestamp()}] [RESULT] 远端命令执行完成 - window_id: {window_id}, success: {result.get('success', False)}")
             
             # 标记窗口为已完成（不管成功还是失败）
@@ -1375,14 +1411,8 @@ fi
                 "error": f"执行远端命令时出错: {str(e)}"
             }
         finally:
-            # 释放窗口槽位（统一管理点）
-            if release_window_slot:
-                debug_log(f"🔓 DEBUG: [{get_relative_timestamp()}] [RELEASE] 释放窗口槽位 - window_id: {window_id}, cmd: {cmd}")
-                try:
-                    release_window_slot(window_id)
-                    debug_log(f"✅ DEBUG: [{get_relative_timestamp()}] [RELEASED] 窗口槽位已释放 - window_id: {window_id}, cmd: {cmd}")
-                except Exception as e:
-                    debug_log(f"❌ DEBUG: [{get_relative_timestamp()}] [RELEASE_ERROR] 释放窗口槽位失败 - window_id: {window_id}, error: {e}")
+            # 注意：槽位释放现在由用户关闭窗口控制，不在命令执行完成时自动释放
+            debug_log(f"📋 DEBUG: [{get_relative_timestamp()}] [COMMAND_END] 命令执行流程结束，槽位保持占用直到用户关闭窗口 - window_id: {window_id}, cmd: {cmd}")
     
     def _is_redirect_command(self, cmd, args):
         """检测命令是否包含重定向操作"""
@@ -1694,7 +1724,7 @@ fi
         except Exception as e:
             raise Exception(f"生成远端命令失败: {str(e)}")
 
-    def _execute_with_result_capture(self, remote_command_info, cmd, args, window_id, get_timestamp_func, update_heartbeat_func):
+    def _execute_with_result_capture(self, remote_command_info, cmd, args, window_id, get_timestamp_func, update_heartbeat_func, release_window_slot_func, debug_log_func):
         """
         执行远端命令并捕获结果
         
@@ -1709,7 +1739,7 @@ fi
         Returns:
             dict: 执行结果
         """
-        print(f"🔧 DEBUG: [{get_timestamp_func()}] [CAPTURE_ENTRY] _execute_with_result_capture 开始 - window_id: {window_id}, cmd: {cmd}")
+        # print(f"🔧 DEBUG: [{get_timestamp_func()}] [CAPTURE_ENTRY] _execute_with_result_capture 开始 - window_id: {window_id}, cmd: {cmd}")
         
         # 启动心跳线程
         heartbeat_stop_event = None
@@ -1718,21 +1748,22 @@ fi
             heartbeat_stop_event = threading.Event()
             
             def heartbeat_worker():
-                while not heartbeat_stop_event.wait(0.1):  # 每0.1秒更新一次心跳
+                while not heartbeat_stop_event.wait(0.2):  # 每0.2秒更新一次心跳
                     try:
                         count = update_heartbeat_func(window_id)
                         if count > 0:
-                            print(f"💓 DEBUG: [{get_timestamp_func()}] [HEARTBEAT] 更新心跳，监视器数量: {count}")
+                            pass  # 心跳更新成功，无需输出
                     except Exception as e:
-                        print(f"❌ DEBUG: [{get_timestamp_func()}] [HEARTBEAT_ERROR] 心跳更新失败: {e}")
+                        # print(f"❌ DEBUG: [{get_timestamp_func()}] [HEARTBEAT_ERROR] 心跳更新失败: {e}")
+                        pass  # 心跳更新失败，但继续运行
                         break
             
             heartbeat_thread = threading.Thread(target=heartbeat_worker, daemon=True)
             heartbeat_thread.start()
-            print(f"💓 DEBUG: [{get_timestamp_func()}] [HEARTBEAT_START] 心跳线程已启动 - window_id: {window_id}")
+            # print(f"💓 DEBUG: [{get_timestamp_func()}] [HEARTBEAT_START] 心跳线程已启动 - window_id: {window_id}")
         try:
             remote_command, result_filename = remote_command_info
-            print(f"📄 DEBUG: [{get_timestamp_func()}] [FILES] 结果文件名: {result_filename} - window_id: {window_id}")
+            # print(f"📄 DEBUG: [{get_timestamp_func()}] [FILES] 结果文件名: {result_filename} - window_id: {window_id}")
             
             # 在显示命令窗口前进行语法检查
             syntax_check = self.validate_bash_syntax_fast(remote_command)
@@ -1746,26 +1777,57 @@ fi
                 }
             
             # 通过tkinter显示命令并获取用户反馈
-            print(f"🖥️ DEBUG: [{get_timestamp_func()}] [WINDOW] 准备显示窗口 - window_id: {window_id}, cmd: {cmd}")
+            # print(f"🖥️ DEBUG: [{get_timestamp_func()}] [WINDOW] 准备显示窗口 - window_id: {window_id}, cmd: {cmd}")
+            
+            # 记录窗口打开时间到专用的测试文件
+            self._log_window_opening_time(window_id, cmd)
+            
             debug_info = debug_capture.get_debug_info()
             debug_capture.start_capture()  # 启动debug捕获，避免窗口期间的debug输出
             debug_print("_execute_with_result_capture: 即将调用_show_command_window")
             debug_print(f"cmd: {cmd}, args: {args}")
             window_result = self._show_command_window(cmd, args, remote_command, debug_info)
             debug_print(f"_show_command_window返回结果: {window_result}")
-            print(f"📋 DEBUG: [{get_timestamp_func()}] [WINDOW_RESULT] 窗口操作完成 - window_id: {window_id}, action: {window_result.get('action', 'unknown')}")
+            # print(f"📋 DEBUG: [{get_timestamp_func()}] [WINDOW_RESULT] 窗口操作完成 - window_id: {window_id}, action: {window_result.get('action', 'unknown')}")
+            
+            # 检查用户窗口操作结果，并在适当时机释放槽位
+            user_completed_window = False
             
             if window_result.get("action") == "direct_feedback":
                 # 直接反馈已经在_show_command_window中处理完毕，直接返回结果
                 debug_print("_execute_with_result_capture: 检测到direct_feedback，直接返回window_result")
                 debug_print(f"window_result: {window_result}")
+                user_completed_window = True  # 用户完成了窗口操作
                 debug_capture.stop_capture()  # 在返回前停止debug捕获
+                
+                # 释放窗口槽位（用户完成操作）
+                if release_window_slot_func:
+                    try:
+                        release_window_slot_func(window_id)
+                        debug_log_func(f"🔓 DEBUG: [{get_timestamp_func()}] [USER_RELEASE] 用户完成直接反馈，释放槽位 - window_id: {window_id}")
+                    except Exception as e:
+                        debug_log_func(f"❌ DEBUG: [{get_timestamp_func()}] [RELEASE_ERROR] 释放槽位失败: {e}")
+                
                 return window_result
+            elif window_result.get("action") == "success":
+                # 用户确认执行完成
+                user_completed_window = True
+                debug_print("_execute_with_result_capture: 用户确认执行完成")
             elif window_result.get("action") != "success":
                 debug_print("_execute_with_result_capture: window_result.action != 'success'")
                 debug_print(f"实际的window_result.action: {window_result.get('action')}")
                 debug_print(f"完整window_result: {window_result}")
+                user_completed_window = True  # 用户取消或超时也算完成窗口操作
                 debug_capture.stop_capture()  # 在返回前停止debug捕获
+                
+                # 释放窗口槽位（用户取消或超时）
+                if release_window_slot_func:
+                    try:
+                        release_window_slot_func(window_id)
+                        debug_log_func(f"🔓 DEBUG: [{get_timestamp_func()}] [USER_CANCEL_RELEASE] 用户取消/超时，释放槽位 - window_id: {window_id}")
+                    except Exception as e:
+                        debug_log_func(f"❌ DEBUG: [{get_timestamp_func()}] [RELEASE_ERROR] 释放槽位失败: {e}")
+                
                 return {
                     "success": False,
                     "error": f"User operation: Timeout or cancelled",
@@ -1775,9 +1837,9 @@ fi
             debug_capture.stop_capture()  # 成功路径的debug捕获停止
             
             # 等待远端文件出现，最多等待60秒
-            print(f"⏳ DEBUG: [{get_timestamp_func()}] [WAIT_FILE] 等待结果文件 - window_id: {window_id}, filename: {result_filename}")
+            # print(f"⏳ DEBUG: [{get_timestamp_func()}] [WAIT_FILE] 等待结果文件 - window_id: {window_id}, filename: {result_filename}")
             result_data = self._wait_and_read_result_file(result_filename)
-            print(f"📄 DEBUG: [{get_timestamp_func()}] [FILE_READ] 结果文件读取完成 - window_id: {window_id}, success: {result_data.get('success', False)}")
+            # print(f"📄 DEBUG: [{get_timestamp_func()}] [FILE_READ] 结果文件读取完成 - window_id: {window_id}, success: {result_data.get('success', False)}")
             
             if not result_data.get("success"):
                 return {
@@ -1785,6 +1847,14 @@ fi
                     "error": "读取结果文件失败",
                     "read_error": result_data.get("error")
                 }
+            
+            # 用户确认执行完成，释放窗口槽位
+            if release_window_slot_func and user_completed_window:
+                try:
+                    release_window_slot_func(window_id)
+                    debug_log_func(f"🔓 DEBUG: [{get_timestamp_func()}] [USER_SUCCESS_RELEASE] 用户确认成功完成，释放槽位 - window_id: {window_id}")
+                except Exception as e:
+                    debug_log_func(f"❌ DEBUG: [{get_timestamp_func()}] [RELEASE_ERROR] 释放槽位失败: {e}")
             
             # 返回完整结果
             return {
@@ -1800,7 +1870,7 @@ fi
             }
             
         except Exception as e:
-            print(f"❌ DEBUG: [{get_timestamp_func()}] [CAPTURE_ERROR] _execute_with_result_capture 异常 - window_id: {window_id}, error: {str(e)}")
+            # print(f"❌ DEBUG: [{get_timestamp_func()}] [CAPTURE_ERROR] _execute_with_result_capture 异常 - window_id: {window_id}, error: {str(e)}")
             return {
                 "success": False,
                 "error": f"执行结果捕获失败: {str(e)}"
@@ -1809,9 +1879,9 @@ fi
             # 停止心跳线程
             if heartbeat_stop_event:
                 heartbeat_stop_event.set()
-                print(f"💓 DEBUG: [{get_timestamp_func()}] [HEARTBEAT_STOP] 心跳线程已停止 - window_id: {window_id}")
+                # print(f"💓 DEBUG: [{get_timestamp_func()}] [HEARTBEAT_STOP] 心跳线程已停止 - window_id: {window_id}")
             
-            print(f"🔧 DEBUG: [{get_timestamp_func()}] [CAPTURE_EXIT] _execute_with_result_capture 结束 - window_id: {window_id}")
+            # print(f"🔧 DEBUG: [{get_timestamp_func()}] [CAPTURE_EXIT] _execute_with_result_capture 结束 - window_id: {window_id}")
         # 注意：窗口槽位的释放由execute_generic_remote_command的finally块统一处理
 
     def _show_command_window(self, cmd, args, remote_command, debug_info=None):
@@ -2034,7 +2104,6 @@ fi
         Args:
             title (str): 窗口标题
             command_text (str): 要显示的命令文本
-            instruction_text (str): 指令说明文本（可选）
             timeout_seconds (int): 超时时间（秒）
         
         Returns:

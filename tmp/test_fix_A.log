@@ -1,0 +1,44 @@
+test_01_basic_echo_commands (_UNITTEST.test_gds.GDSTest.test_01_basic_echo_commands)
+测试基础echo命令 ... FAIL
+
+======================================================================
+FAIL: test_01_basic_echo_commands (_UNITTEST.test_gds.GDSTest.test_01_basic_echo_commands)
+测试基础echo命令
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 312, in _run_gds_command
+    self.assertEqual(result.returncode, 0, f"命令执行失败: {command}")
+AssertionError: 1 != 0 : 命令执行失败: echo "Complex: @#$%^&*() \"quotes\" 中文字符"
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 418, in test_01_basic_echo_commands
+    result = self._run_gds_command('echo "Complex: @#$%^&*() \\"quotes\\" 中文字符"')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 318, in _run_gds_command
+    self.fail(f"命令执行异常: {command} - {e}")
+AssertionError: 命令执行异常: echo "Complex: @#$%^&*() \"quotes\" 中文字符" - 1 != 0 : 命令执行失败: echo "Complex: @#$%^&*() \"quotes\" 中文字符"
+
+----------------------------------------------------------------------
+Ran 1 test in 421.221s
+
+FAILED (failures=1)
+🚀 设置GDS全面测试环境...
+📁 远端测试目录: ~/tmp/gds_test_20250829_022247_584768_9d5cb962
+✅ 已切换到远端测试目录: ~/tmp/gds_test_20250829_022247_584768_9d5cb962
+📁 本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local__0hibpxk
+✅ 测试环境设置完成
+
+🧪 测试01: 基础echo命令
+
+🔧 执行命令: echo "Hello World"
+📤 返回码: 0
+📝 输出: 🔒 DEBUG: [0.000s] [ENTRY] execute_generic_remote_command - 请求窗口槽位 - window_id: echo_8660021824_1756405549170_9b625582, cmd: echo, thread: 8660021824
+🔒 DEBUG: [0.000s] [FILE_LOCK] 成功获取文件锁: /Users/wukun...
+
+🔧 执行命令: echo "Complex: @#$%^&*() \"quotes\" 中文字符"
+📤 返回码: 1
+📝 输出: 🔒 DEBUG: [0.000s] [ENTRY] execute_generic_remote_command - 请求窗口槽位 - window_id: echo_8660021824_1756405593730_8dbeaa04, cmd: echo, thread: 8660021824
+🔒 DEBUG: [0.000s] [FILE_LOCK] 成功获取文件锁: /Users/wukun...
+💥 命令执行异常: 1 != 0 : 命令执行失败: echo "Complex: @#$%^&*() \"quotes\" 中文字符"

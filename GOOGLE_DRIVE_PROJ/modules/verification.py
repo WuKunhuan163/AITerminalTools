@@ -30,225 +30,49 @@ class Verification:
         if creation_type == "dir":
             return self._verify_mkdir_with_ls(path, current_shell, max_attempts)
         elif creation_type == "file":
-            return self._verify_file_creation_with_ls(path, current_shell, max_attempts)
+            return self._verify_creation_with_ls(path, current_shell, max_attempts, creation_type="file")
         else:
             return {
                 "success": False,
                 "error": f"Unsupported creation type: {creation_type}"
             }
     
-    def _verify_file_creation_with_ls(self, path, current_shell, max_attempts=60):
-        """使用GDS ls验证文件创建"""
+    def _verify_creation_with_ls(self, path, current_shell, max_attempts=60, creation_type="file"):
+        """使用GDS ls统一验证文件或目录创建"""
         import time
         
         try:
             # 输出验证进度提示
-            print("⏳ Validating file creation ...", end="", flush=True)
-            
-
-            
-            # 解析文件路径
-            if path.startswith("~/"):
-                # ~/dir/file.txt -> 验证文件在指定目录中存在
-                remaining_path = path[2:]  # 去掉~/
-                path_components = [comp for comp in remaining_path.split('/') if comp]
-                
-                if len(path_components) == 1:
-                    # 根目录下的文件
-                    target_dir = "~"
-                    target_filename = path_components[0]
-                else:
-                    # 嵌套目录中的文件
-                    target_dir = "~/" + "/".join(path_components[:-1])
-                    target_filename = path_components[-1]
-                
-
-                
+            if creation_type == "dir":
+                print("⏳ Validating dir creation ...", end="", flush=True)
             else:
-                # 相对路径或其他格式
-                if '/' in path:
-                    path_components = path.split('/')
-                    target_dir = "/".join(path_components[:-1]) or "."
-                    target_filename = path_components[-1]
-                else:
-                    target_dir = "."
-                    target_filename = path
-                
-
+                print("⏳ Validating file creation ...", end="", flush=True)
             
-            # 计算绝对路径
-            if target_dir == ".":
-                # 获取当前shell的路径
-                current_path = current_shell.get("current_path", "~")
-                
-                # 使用路径解析器计算绝对路径
-                try:
-                    absolute_path = self.main_instance.path_resolver.compute_absolute_path(current_path, target_filename)
-                    
-                    # 分解绝对路径
-                    if '/' in absolute_path:
-                        abs_components = absolute_path.split('/')
-                        target_dir = "/".join(abs_components[:-1]) or "~"
-                        target_filename = abs_components[-1]
-                except Exception as e:
-                    # 如果路径解析失败，保持原有逻辑
-                    pass
-            
-            # 验证文件存在
+            # 简化验证逻辑：直接使用FileCore的cmd_ls验证路径是否存在
             for attempt in range(max_attempts):
                 if attempt > 0:
                     time.sleep(1)
                     print(".", end="", flush=True)
                 
-                # 使用ls命令检查文件是否存在
-                ls_result = self.main_instance.cmd_ls(target_dir, detailed=False, recursive=False)
-                
-
+                # 使用FileCore的cmd_ls直接检查路径是否存在
+                # cmd_ls有统一的路径解析功能，不需要手动解析
+                ls_result = self.main_instance.cmd_ls(path, detailed=False, recursive=False)
                 
                 if ls_result["success"]:
-                    files = ls_result.get("files", [])
-                    
-                    # 检查目标文件是否存在
-                    for file in files:
-                        if file["name"] == target_filename:
-                            print("√")  # 成功标记
-                            return {
-                                "success": True,
-                                "message": f"File creation verified: {path}",
-                                "attempts": attempt + 1
-                            }
-                else:
-                    return {
-                        "success": False,
-                        "error": f"Validation failed, cannot execute ls command: {ls_result.get('error', 'Unknown error')}"
-                    }
-            
-            # 所有重试都失败了
-            print("✗")  # 失败标记
-            return {
-                "success": False,
-                "error": f"File '{path}' not found after {max_attempts} verification attempts",
-                "attempts": max_attempts
-            }
-            
-        except Exception as e:
-            print("✗")  # 失败标记
-            return {
-                "success": False,
-                "error": f"File verification process error: {e}"
-            }
-
-    def _verify_mkdir_with_ls(self, path, current_shell, max_attempts=60):
-        """使用GDS ls验证目录创建，支持嵌套路径验证和递归验证"""
-        import time
-        import sys
-        
-        try:
-            # 使用用户期望的验证风格
-            print("⏳ Validating dir creation ...", end="", flush=True)
-            
-            # 对于mkdir验证，我们需要验证的是实际创建的目录
-            # 对于路径如~/tmp/gds_test_xxx，实际创建的是gds_test_xxx目录在tmp文件夹中
-            # 但由于mkdir -p的特性，我们只需要验证顶级目录的存在即可
-            
-            # 检查当前路径是否已经在目标目录或其子目录中
-            current_path = current_shell.get("current_path", "~")
-            
-            # 检查是否为复杂嵌套路径，如果是则使用递归验证
-            path_depth = len([comp for comp in path.replace("~/", "").split('/') if comp])
-            if path_depth > 2:  # 超过2层深度的路径使用递归验证
-                return self._verify_mkdir_recursive_logic(path, current_shell)
-            
-            # 对于简单路径，继续使用原有逻辑
-            
-            if path.startswith("~/"):
-                # ~/tmp/gds_test_xxx -> 验证tmp目录在根目录中存在
-                remaining_path = path[2:]  # 去掉~/
-                path_components = [comp for comp in remaining_path.split('/') if comp]
-                target_dir_name = path_components[0]  # 要验证的顶级目录名 (tmp)
-                is_nested = len(path_components) > 1
-                
-                # 如果当前路径已经在目标目录或其子目录中，直接返回成功
-                if current_path.startswith(f"~/{target_dir_name}/") or current_path == f"~/{target_dir_name}":
+                    # 如果ls成功，说明路径存在
                     print("√")  # 成功标记
                     return {
                         "success": True,
-                        "message": f"Directory already exists (current path is in target directory): {path}",
-                        "attempts": 1
+                        "message": f"Creation verified: {path}",
+                        "attempts": attempt + 1
                     }
-            elif path == "~":
-                # 根目录本身，无需验证
-                print("√")
-                return {
-                    "success": True,
-                    "message": "Root directory already exists",
-                    "attempts": 1
-                }
-            elif '/' in path:
-                path_components = [comp for comp in path.split('/') if comp]
-                target_dir_name = path_components[0]
-                is_nested = len(path_components) > 1
-            else:
-                target_dir_name = path
-                is_nested = False
+                # 如果ls失败，继续重试
             
-            # 可配置重试机制，默认最多尝试60次
-            for attempt in range(max_attempts):
-                if attempt > 0:
-                    # 根据重试次数调整等待时间
-                    if max_attempts <= 3:
-                        time.sleep(2)  # 短重试：2秒间隔
-                    else:
-                        time.sleep(1)  # 长重试：1秒间隔
-                    
-                    # 每次重试显示一个点
-                    print(".", end="", flush=True)
-                
-                # 使用GDS ls的绝对路径功能，避免切换目录
-                if path.startswith("~/"):
-                    # 对于~/tmp/gds_test_xxx，我们需要验证tmp目录存在
-                    # 使用ls ~来列出根目录内容
-                    ls_result = self.main_instance.cmd_ls("~", detailed=False, recursive=False)
-                elif is_nested:
-                    # 对于嵌套路径a/b/c/d，验证a目录存在
-                    # 可以使用当前目录的ls
-                    ls_result = self.main_instance.cmd_ls(None, detailed=False, recursive=False)
-                else:
-                    # 单级目录，使用当前目录验证
-                    ls_result = self.main_instance.cmd_ls(None, detailed=False, recursive=False)
-                
-                if ls_result["success"]:
-                    folders = ls_result.get("folders", [])
-                    
-                    # 检查目标目录是否存在
-                    for folder in folders:
-                        if folder["name"] == target_dir_name:
-                            print("√")  # 成功标记
-                            if is_nested:
-                                return {
-                                    "success": True,
-                                    "message": f"Validation successful, nested directory created: {path}",
-                                    "folder_id": folder["id"],
-                                    "attempts": attempt + 1
-                                }
-                            else:
-                                return {
-                                    "success": True,
-                                    "message": f"Validation successful, directory created: {path}",
-                                    "folder_id": folder["id"],
-                                    "attempts": attempt + 1
-                                }
-                else:
-                    return {
-                        "success": False,
-                        "error": f"Validation failed, cannot execute ls command: {ls_result.get('error', 'Unknown error')}"
-                    }
-                        
             # 所有重试都失败了
             print("✗")  # 失败标记
             return {
                 "success": False,
-                "error": f"Directory '{path}' not found after {max_attempts} verification attempts",
+                "error": f"Path '{path}' not found after {max_attempts} verification attempts",
                 "attempts": max_attempts
             }
             
@@ -258,6 +82,10 @@ class Verification:
                 "success": False,
                 "error": f"Verification process error: {e}"
             }
+
+    def _verify_mkdir_with_ls(self, path, current_shell, max_attempts=60):
+        """使用统一验证函数验证目录创建"""
+        return self._verify_creation_with_ls(path, current_shell, max_attempts, creation_type="dir")
     
     def _verify_mkdir_recursive_logic(self, path, current_shell):
         """递归验证复杂嵌套路径的目录创建"""

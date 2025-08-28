@@ -1,0 +1,577 @@
+🚀 设置GDS全面测试环境...
+📁 远端测试目录: ~/tmp/gds_test_20250829_022059_901643_2e3dbae2
+⚠️ 创建远端测试目录失败: 返回码=1, stderr=, stdout=
+- Executing command 1/2: cd ~
+
+- Executing command 2/2: mkdir -p ~/tmp/gds_test_20250829_022059_901643_2e3dbae2
+🔒 DEBUG: [0.000s] [ENTRY] execute_generic_remote_command - 请求窗口槽位 - window_id: bash_8660021824_1756405261482_d3ef9ace, cmd: bash, thread: 8660021824
+🔒 DEBUG: [0.000s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+⏳ DEBUG: [0.001s] [QUEUE_WAITING] 加入等待队列: bash_8660021824_1756405261482_d3ef9ace, 位置: 2, thread: 8660021824
+💓 DEBUG: [0.001s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [0.001s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756405261482_d3ef9ace -> 当前窗口: bash_8660021824_1756405055472_5cd8be41
+💓 DEBUG: [0.001s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [0.001s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756405261482_34b041f6': 'false'}
+💓 DEBUG: [0.001s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [0.001s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756405261482_34b041f6': 'false', 'bash_8660021824_1756405261482_d3ef9ace': 'false'}
+💓 DEBUG: [0.001s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [0.001s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+🔒 DEBUG: [0.507s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [0.507s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [0.507s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756405261482_d3ef9ace -> 当前窗口: bash_8660021824_1756405055472_5cd8be41
+💓 DEBUG: [0.508s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [0.508s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756405261482_34b041f6': 'false', 'bash_8660021824_1756405261482_d3ef9ace': 'false'}
+💓 DEBUG: [0.508s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [0.508s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756405261482_34b041f6': 'false', 'bash_8660021824_1756405261482_d3ef9ace': 'false'}
+💓 DEBUG: [0.508s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [0.508s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+🔒 DEBUG: [1.013s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [1.014s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [1.014s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756405261482_d3ef9ace -> 当前窗口: bash_8660021824_1756405261482_34b041f6
+💓 DEBUG: [1.014s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [1.014s] [HEARTBEAT_BEFORE] 注册前心跳状态: {}
+💓 DEBUG: [1.014s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [1.014s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756405261482_d3ef9ace': 'false'}
+💓 DEBUG: [1.015s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [1.015s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [1.015s] [HEARTBEAT_CHECK] 检查心跳超时 - watcher: bash_8660021824_1756405261482_d3ef9ace, heartbeat: {'bash_8660021824_1756405261482_d3ef9ace': 'false'}
+💀 DEBUG: [1.015s] [HEARTBEAT_TIMEOUT] 心跳超时，清除窗口: bash_8660021824_1756405261482_34b041f6
+💀 DEBUG: [1.015s] [HEARTBEAT_CLEAR] 心跳检测清除了卡住的窗口，重试获取槽位
+🔒 DEBUG: [1.015s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+🚀 DEBUG: [1.016s] [QUEUE_ACQUIRED] 立即获得窗口槽位: bash_8660021824_1756405261482_d3ef9ace, thread: 8660021824
+🔓 DEBUG: [1.016s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+✅ DEBUG: [1.121s] [ACQUIRED] 窗口槽位已获得 - window_id: bash_8660021824_1756405261482_d3ef9ace, cmd: bash
+🖥️ DEBUG: [1.130s] [EXEC] 开始执行远端命令 - window_id: bash_8660021824_1756405261482_d3ef9ace, cmd: bash
+💓 DEBUG: [1.230s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [1.233s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [1.801s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [1.806s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [2.040s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [2.042s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [2.263s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [2.268s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [2.477s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [2.479s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [2.682s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [2.684s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [2.895s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [2.896s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [3.099s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [3.100s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [3.303s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [3.305s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [3.510s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [3.511s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [3.714s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [3.715s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [3.920s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [3.924s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [4.309s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [4.382s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [4.621s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [4.624s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [4.827s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [4.828s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [5.033s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [5.035s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [5.240s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [5.241s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [5.445s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [5.446s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [5.651s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [5.651s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [5.857s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [5.857s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [6.061s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [6.063s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [6.269s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [6.270s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [6.475s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [6.476s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [6.735s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [6.739s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [6.940s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [6.942s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [7.144s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [7.145s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [7.351s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [7.351s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [7.557s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [7.557s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [7.763s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [7.764s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [7.970s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [7.970s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [8.176s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [8.177s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [8.379s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [8.381s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [8.669s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [8.670s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [8.876s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [8.877s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [9.079s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [9.081s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [9.283s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [9.290s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [9.495s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [9.497s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [9.704s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [9.704s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [9.910s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [9.911s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [10.117s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [10.117s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [10.323s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [10.323s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [10.527s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [10.528s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [10.734s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [10.734s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [10.940s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [10.940s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [11.145s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [11.146s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [11.351s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [11.352s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [11.557s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [11.558s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [11.761s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [11.762s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [11.967s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [11.968s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [12.173s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [12.174s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [12.379s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [12.380s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [12.585s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [12.586s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [12.791s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [12.792s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [12.997s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [12.997s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [13.203s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [13.203s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [13.409s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [13.409s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [13.611s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [13.612s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [13.812s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [13.813s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [14.018s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [14.019s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [14.224s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [14.225s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [14.430s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [14.431s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [14.636s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [14.636s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [14.839s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [14.842s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [15.045s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [15.047s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [15.252s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [15.253s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [15.458s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [15.459s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [15.661s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [15.662s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [15.867s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [15.868s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [16.073s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [16.074s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [16.278s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [16.279s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [16.484s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [16.485s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [16.690s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [16.691s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [16.895s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [16.896s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [17.102s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [17.102s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [17.308s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [17.308s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [17.512s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [17.513s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [17.718s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [17.719s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [17.922s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [17.923s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [18.125s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [18.126s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [18.331s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [18.331s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [18.537s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [18.537s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [18.742s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [18.743s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [18.948s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [18.948s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [19.169s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [19.178s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [19.405s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [19.407s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [19.612s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [19.613s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [19.818s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [19.819s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [20.024s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [20.024s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [20.230s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [20.230s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [20.433s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [20.433s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [20.639s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [20.639s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [20.844s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [20.844s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [21.045s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [21.045s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [21.251s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [21.251s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [21.456s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [21.460s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [21.665s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [21.666s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [21.871s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [21.871s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [22.077s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [22.077s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [22.283s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [22.283s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [22.489s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [22.489s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [22.694s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [22.695s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [22.900s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [22.901s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [23.105s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [23.106s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [23.312s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [23.314s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [23.518s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [23.519s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [23.724s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [23.724s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [23.927s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [23.928s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [24.131s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [24.132s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [24.335s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [24.336s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [24.541s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [24.542s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [24.747s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [24.748s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [24.953s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [24.953s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [25.159s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [25.159s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+📋 DEBUG: [25.380s] [RESULT] 远端命令执行完成 - window_id: bash_8660021824_1756405261482_d3ef9ace, success: False
+✅ DEBUG: [25.277s] [MARK_COMPLETED] 窗口标记为已完成: bash_8660021824_1756405261482_d3ef9ace
+✅ DEBUG: [25.382s] [MARK_COMPLETE] 窗口已标记为完成 - window_id: bash_8660021824_1756405261482_d3ef9ace
+🔓 DEBUG: [25.383s] [RELEASE] 释放窗口槽位 - window_id: bash_8660021824_1756405261482_d3ef9ace, cmd: bash
+🔒 DEBUG: [25.279s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+✅ DEBUG: [25.279s] [QUEUE_RELEASE] 释放当前窗口槽位: bash_8660021824_1756405261482_d3ef9ace, thread: 8660021824
+📊 DEBUG: [25.279s] [COUNTER] 窗口完成计数: 27 - window_id: bash_8660021824_1756405261482_d3ef9ace
+🔄 DEBUG: [25.279s] [QUEUE_NEXT] 下一个窗口获得槽位: bash_8660021824_1756405261482_34b041f6, thread: 8660021824
+🎯 DEBUG: [25.280s] [IMMEDIATE_RELEASE] 窗口槽位立即释放完成 - window_id: bash_8660021824_1756405261482_d3ef9ace
+🔓 DEBUG: [25.280s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+✅ DEBUG: [25.386s] [RELEASED] 窗口槽位已释放 - window_id: bash_8660021824_1756405261482_d3ef9ace, cmd: bash
+mkdir命令执行失败: User operation: Timeout or cancelled
+setUpClass (_UNITTEST.test_gds.GDSTest) ... ERROR
+
+======================================================================
+ERROR: setUpClass (_UNITTEST.test_gds.GDSTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 65, in setUpClass
+    cls._setup_remote_test_directory()
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 87, in _setup_remote_test_directory
+    raise RuntimeError(error_msg)
+RuntimeError: 创建远端测试目录失败: 返回码=1, stderr=, stdout=
+- Executing command 1/2: cd ~
+
+- Executing command 2/2: mkdir -p ~/tmp/gds_test_20250829_022059_901643_2e3dbae2
+🔒 DEBUG: [0.000s] [ENTRY] execute_generic_remote_command - 请求窗口槽位 - window_id: bash_8660021824_1756405261482_d3ef9ace, cmd: bash, thread: 8660021824
+🔒 DEBUG: [0.000s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+⏳ DEBUG: [0.001s] [QUEUE_WAITING] 加入等待队列: bash_8660021824_1756405261482_d3ef9ace, 位置: 2, thread: 8660021824
+💓 DEBUG: [0.001s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [0.001s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756405261482_d3ef9ace -> 当前窗口: bash_8660021824_1756405055472_5cd8be41
+💓 DEBUG: [0.001s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [0.001s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756405261482_34b041f6': 'false'}
+💓 DEBUG: [0.001s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [0.001s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756405261482_34b041f6': 'false', 'bash_8660021824_1756405261482_d3ef9ace': 'false'}
+💓 DEBUG: [0.001s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [0.001s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+🔒 DEBUG: [0.507s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [0.507s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [0.507s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756405261482_d3ef9ace -> 当前窗口: bash_8660021824_1756405055472_5cd8be41
+💓 DEBUG: [0.508s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [0.508s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756405261482_34b041f6': 'false', 'bash_8660021824_1756405261482_d3ef9ace': 'false'}
+💓 DEBUG: [0.508s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [0.508s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756405261482_34b041f6': 'false', 'bash_8660021824_1756405261482_d3ef9ace': 'false'}
+💓 DEBUG: [0.508s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [0.508s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+🔒 DEBUG: [1.013s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [1.014s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [1.014s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756405261482_d3ef9ace -> 当前窗口: bash_8660021824_1756405261482_34b041f6
+💓 DEBUG: [1.014s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [1.014s] [HEARTBEAT_BEFORE] 注册前心跳状态: {}
+💓 DEBUG: [1.014s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756405261482_d3ef9ace
+💓 DEBUG: [1.014s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756405261482_d3ef9ace': 'false'}
+💓 DEBUG: [1.015s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [1.015s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [1.015s] [HEARTBEAT_CHECK] 检查心跳超时 - watcher: bash_8660021824_1756405261482_d3ef9ace, heartbeat: {'bash_8660021824_1756405261482_d3ef9ace': 'false'}
+💀 DEBUG: [1.015s] [HEARTBEAT_TIMEOUT] 心跳超时，清除窗口: bash_8660021824_1756405261482_34b041f6
+💀 DEBUG: [1.015s] [HEARTBEAT_CLEAR] 心跳检测清除了卡住的窗口，重试获取槽位
+🔒 DEBUG: [1.015s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+🚀 DEBUG: [1.016s] [QUEUE_ACQUIRED] 立即获得窗口槽位: bash_8660021824_1756405261482_d3ef9ace, thread: 8660021824
+🔓 DEBUG: [1.016s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+✅ DEBUG: [1.121s] [ACQUIRED] 窗口槽位已获得 - window_id: bash_8660021824_1756405261482_d3ef9ace, cmd: bash
+🖥️ DEBUG: [1.130s] [EXEC] 开始执行远端命令 - window_id: bash_8660021824_1756405261482_d3ef9ace, cmd: bash
+💓 DEBUG: [1.230s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [1.233s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [1.801s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [1.806s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [2.040s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [2.042s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [2.263s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [2.268s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [2.477s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [2.479s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [2.682s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [2.684s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [2.895s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [2.896s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [3.099s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [3.100s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [3.303s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [3.305s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [3.510s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [3.511s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [3.714s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [3.715s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [3.920s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [3.924s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [4.309s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [4.382s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [4.621s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [4.624s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [4.827s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [4.828s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [5.033s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [5.035s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [5.240s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [5.241s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [5.445s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [5.446s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [5.651s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [5.651s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [5.857s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [5.857s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [6.061s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [6.063s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [6.269s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [6.270s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [6.475s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [6.476s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [6.735s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [6.739s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [6.940s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [6.942s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [7.144s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [7.145s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [7.351s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [7.351s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [7.557s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [7.557s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [7.763s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [7.764s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [7.970s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [7.970s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [8.176s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [8.177s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [8.379s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [8.381s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [8.669s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [8.670s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [8.876s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [8.877s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [9.079s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [9.081s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [9.283s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [9.290s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [9.495s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [9.497s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [9.704s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [9.704s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [9.910s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [9.911s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [10.117s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [10.117s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [10.323s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [10.323s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [10.527s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [10.528s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [10.734s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [10.734s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [10.940s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [10.940s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [11.145s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [11.146s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [11.351s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [11.352s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [11.557s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [11.558s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [11.761s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [11.762s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [11.967s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [11.968s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [12.173s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [12.174s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [12.379s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [12.380s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [12.585s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [12.586s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [12.791s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [12.792s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [12.997s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [12.997s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [13.203s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [13.203s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [13.409s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [13.409s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [13.611s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [13.612s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [13.812s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [13.813s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [14.018s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [14.019s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [14.224s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [14.225s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [14.430s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [14.431s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [14.636s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [14.636s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [14.839s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [14.842s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [15.045s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [15.047s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [15.252s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [15.253s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [15.458s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [15.459s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [15.661s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [15.662s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [15.867s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [15.868s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [16.073s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [16.074s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [16.278s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [16.279s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [16.484s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [16.485s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [16.690s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [16.691s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [16.895s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [16.896s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [17.102s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [17.102s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [17.308s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [17.308s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [17.512s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [17.513s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [17.718s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [17.719s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [17.922s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [17.923s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [18.125s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [18.126s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [18.331s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [18.331s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [18.537s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [18.537s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [18.742s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [18.743s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [18.948s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [18.948s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [19.169s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [19.178s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [19.405s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [19.407s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [19.612s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [19.613s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [19.818s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [19.819s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [20.024s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [20.024s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [20.230s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [20.230s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [20.433s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [20.433s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [20.639s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [20.639s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [20.844s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [20.844s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [21.045s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [21.045s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [21.251s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [21.251s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [21.456s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [21.460s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [21.665s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [21.666s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [21.871s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [21.871s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [22.077s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [22.077s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [22.283s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [22.283s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [22.489s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [22.489s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [22.694s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [22.695s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [22.900s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [22.901s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [23.105s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [23.106s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [23.312s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [23.314s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [23.518s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [23.519s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [23.724s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [23.724s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [23.927s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [23.928s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [24.131s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [24.132s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [24.335s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [24.336s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [24.541s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [24.542s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [24.747s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [24.748s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [24.953s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [24.953s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [25.159s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [25.159s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+📋 DEBUG: [25.380s] [RESULT] 远端命令执行完成 - window_id: bash_8660021824_1756405261482_d3ef9ace, success: False
+✅ DEBUG: [25.277s] [MARK_COMPLETED] 窗口标记为已完成: bash_8660021824_1756405261482_d3ef9ace
+✅ DEBUG: [25.382s] [MARK_COMPLETE] 窗口已标记为完成 - window_id: bash_8660021824_1756405261482_d3ef9ace
+🔓 DEBUG: [25.383s] [RELEASE] 释放窗口槽位 - window_id: bash_8660021824_1756405261482_d3ef9ace, cmd: bash
+🔒 DEBUG: [25.279s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+✅ DEBUG: [25.279s] [QUEUE_RELEASE] 释放当前窗口槽位: bash_8660021824_1756405261482_d3ef9ace, thread: 8660021824
+📊 DEBUG: [25.279s] [COUNTER] 窗口完成计数: 27 - window_id: bash_8660021824_1756405261482_d3ef9ace
+🔄 DEBUG: [25.279s] [QUEUE_NEXT] 下一个窗口获得槽位: bash_8660021824_1756405261482_34b041f6, thread: 8660021824
+🎯 DEBUG: [25.280s] [IMMEDIATE_RELEASE] 窗口槽位立即释放完成 - window_id: bash_8660021824_1756405261482_d3ef9ace
+🔓 DEBUG: [25.280s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+✅ DEBUG: [25.386s] [RELEASED] 窗口槽位已释放 - window_id: bash_8660021824_1756405261482_d3ef9ace, cmd: bash
+mkdir命令执行失败: User operation: Timeout or cancelled
+
+
+----------------------------------------------------------------------
+Ran 0 tests in 27.127s
+
+FAILED (errors=1)
+

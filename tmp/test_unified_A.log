@@ -1,0 +1,47 @@
+setUpClass (_UNITTEST.test_gds.GDSTest) ... ERROR
+
+======================================================================
+ERROR: setUpClass (_UNITTEST.test_gds.GDSTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 65, in setUpClass
+    cls._setup_remote_test_directory()
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 87, in _setup_remote_test_directory
+    raise RuntimeError(error_msg)
+RuntimeError: 创建远端测试目录失败: 返回码=1, stderr=, stdout=
+- Executing command 1/2: cd ~
+
+- Executing command 2/2: mkdir -p ~/tmp/gds_test_20250829_025723_330001_46983f73
+🔒 DEBUG: [0.000s] [ENTRY] execute_generic_remote_command - 请求窗口槽位 - window_id: bash_8660021824_1756407444773_508084b5, cmd: bash, thread: 8660021824
+🔒 DEBUG: [0.000s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+🔍 DEBUG: [0.000s] [SLOT_CHECK] 检查槽位可用性 - current_window: True, status: active
+⏳ DEBUG: [0.000s] [SLOT_BUSY] 槽位忙碌 - current_window: bash_8660021824_1756407377147_d9c49093, status: active, start_time: 1756407377.148855
+⏳ DEBUG: [0.000s] [QUEUE_WAITING] 加入等待队列: bash_8660021824_1756407444773_508084b5, 位置: 3, thread: 8660021824
+💓 DEBUG: [0.001s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [0.001s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756407444773_508084b5 -> 当前窗口: bash_8660021824_1756407377147_d9c49093
+💓 DEBUG: [0.001s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756407444773_508084b5
+🔓 DEBUG: [0.001s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+执行mkdir命令时出错: 'current_window'
+
+
+----------------------------------------------------------------------
+Ran 0 tests in 1.554s
+
+FAILED (errors=1)
+🚀 设置GDS全面测试环境...
+📁 远端测试目录: ~/tmp/gds_test_20250829_025723_330001_46983f73
+⚠️ 创建远端测试目录失败: 返回码=1, stderr=, stdout=
+- Executing command 1/2: cd ~
+
+- Executing command 2/2: mkdir -p ~/tmp/gds_test_20250829_025723_330001_46983f73
+🔒 DEBUG: [0.000s] [ENTRY] execute_generic_remote_command - 请求窗口槽位 - window_id: bash_8660021824_1756407444773_508084b5, cmd: bash, thread: 8660021824
+🔒 DEBUG: [0.000s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+🔍 DEBUG: [0.000s] [SLOT_CHECK] 检查槽位可用性 - current_window: True, status: active
+⏳ DEBUG: [0.000s] [SLOT_BUSY] 槽位忙碌 - current_window: bash_8660021824_1756407377147_d9c49093, status: active, start_time: 1756407377.148855
+⏳ DEBUG: [0.000s] [QUEUE_WAITING] 加入等待队列: bash_8660021824_1756407444773_508084b5, 位置: 3, thread: 8660021824
+💓 DEBUG: [0.001s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [0.001s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756407444773_508084b5 -> 当前窗口: bash_8660021824_1756407377147_d9c49093
+💓 DEBUG: [0.001s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756407444773_508084b5
+🔓 DEBUG: [0.001s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+执行mkdir命令时出错: 'current_window'
+

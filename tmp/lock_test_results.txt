@@ -1,0 +1,6 @@
+[02:19:2] Process P1: LOCK ACQUIRED (attempt 1)
+[02:19:2] Process P1: LOCK RELEASED (attempt 1)
+[02:19:2] Process P1: LOCK ACQUIRED (attempt 2)
+[02:19:2] Process P1: LOCK RELEASED (attempt 2)
+[02:19:2] Process P1: LOCK ACQUIRED (attempt 3)
+[02:19:2] Process P1: LOCK RELEASED (attempt 3)

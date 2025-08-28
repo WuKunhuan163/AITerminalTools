@@ -7,3 +7,6 @@ test_02_echo_correct_json_syntax
 test_04_echo_create_python_script
 test_05_ls_full_path_support
 test_06_enhanced_ls_operations
+test_07_advanced_file_operations
+test_10_basic_navigation_commands
+test_11_file_upload_operations

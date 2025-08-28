@@ -1,0 +1,20 @@
+[03:50:1] 🔒 DEBUG: [0.000s] [ENTRY] execute_generic_remote_command - 请求窗口槽位 - window_id: bash_8660021824_1756410614410_0ea10973, cmd: bash, thread: 8660021824
+[03:50:1] ✅ DEBUG: [0.002s] [ACQUIRED] 窗口槽位已获得 - window_id: bash_8660021824_1756410614410_0ea10973, cmd: bash
+[03:50:1] 🖥️ DEBUG: [0.010s] [EXEC] 开始执行远端命令 - window_id: bash_8660021824_1756410614410_0ea10973, cmd: bash
+[03:50:2] 🔒 DEBUG: [0.000s] [ENTRY] execute_generic_remote_command - 请求窗口槽位 - window_id: bash_8660021824_1756410627558_67781597, cmd: bash, thread: 8660021824
+[03:50:2] ✅ DEBUG: [1.019s] [ACQUIRED] 窗口槽位已获得 - window_id: bash_8660021824_1756410627558_67781597, cmd: bash
+[03:50:2] 🖥️ DEBUG: [1.028s] [EXEC] 开始执行远端命令 - window_id: bash_8660021824_1756410627558_67781597, cmd: bash
+[03:50:5] 🔓 DEBUG: [25.356s] [USER_SUCCESS_RELEASE] 用户确认成功完成，释放槽位 - window_id: bash_8660021824_1756410627558_67781597
+[03:50:5] 📋 DEBUG: [25.357s] [RESULT] 远端命令执行完成 - window_id: bash_8660021824_1756410627558_67781597, success: True
+[03:50:5] ✅ DEBUG: [25.357s] [MARK_COMPLETE] 窗口已标记为完成 - window_id: bash_8660021824_1756410627558_67781597
+[03:50:5] 📋 DEBUG: [25.357s] [COMMAND_END] 命令执行流程结束，槽位保持占用直到用户关闭窗口 - window_id: bash_8660021824_1756410627558_67781597, cmd: bash
+[03:50:5] 🔒 DEBUG: [0.000s] [ENTRY] execute_generic_remote_command - 请求窗口槽位 - window_id: echo_8660021824_1756410658127_6bb6792e, cmd: echo, thread: 8660021824
+[03:50:5] ✅ DEBUG: [0.001s] [ACQUIRED] 窗口槽位已获得 - window_id: echo_8660021824_1756410658127_6bb6792e, cmd: echo
+[03:50:5] 🖥️ DEBUG: [0.008s] [EXEC] 开始执行远端命令 - window_id: echo_8660021824_1756410658127_6bb6792e, cmd: echo
+[03:51:2] 🔓 DEBUG: [21.994s] [USER_SUCCESS_RELEASE] 用户确认成功完成，释放槽位 - window_id: echo_8660021824_1756410658127_6bb6792e
+[03:51:2] 📋 DEBUG: [21.995s] [RESULT] 远端命令执行完成 - window_id: echo_8660021824_1756410658127_6bb6792e, success: True
+[03:51:2] ✅ DEBUG: [21.996s] [MARK_COMPLETE] 窗口已标记为完成 - window_id: echo_8660021824_1756410658127_6bb6792e
+[03:51:2] 📋 DEBUG: [21.996s] [COMMAND_END] 命令执行流程结束，槽位保持占用直到用户关闭窗口 - window_id: echo_8660021824_1756410658127_6bb6792e, cmd: echo
+[03:51:2] 🔒 DEBUG: [0.000s] [ENTRY] execute_generic_remote_command - 请求窗口槽位 - window_id: echo_8660021824_1756410681521_b7bc8c4e, cmd: echo, thread: 8660021824
+[03:51:2] ✅ DEBUG: [0.002s] [ACQUIRED] 窗口槽位已获得 - window_id: echo_8660021824_1756410681521_b7bc8c4e, cmd: echo
+[03:51:2] 🖥️ DEBUG: [0.020s] [EXEC] 开始执行远端命令 - window_id: echo_8660021824_1756410681521_b7bc8c4e, cmd: echo

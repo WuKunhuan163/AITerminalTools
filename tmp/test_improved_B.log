@@ -1,0 +1,101 @@
+setUpClass (_UNITTEST.test_gds.GDSTest) ... ERROR
+
+======================================================================
+ERROR: setUpClass (_UNITTEST.test_gds.GDSTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 65, in setUpClass
+    cls._setup_remote_test_directory()
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 87, in _setup_remote_test_directory
+    raise RuntimeError(error_msg)
+RuntimeError: 创建远端测试目录失败: 返回码=1, stderr=, stdout=
+- Executing command 1/2: cd ~
+
+- Executing command 2/2: mkdir -p ~/tmp/gds_test_20250829_023410_602648_3ecc1a80
+🔒 DEBUG: [0.000s] [ENTRY] execute_generic_remote_command - 请求窗口槽位 - window_id: bash_8660021824_1756406052225_7128cc8b, cmd: bash, thread: 8660021824
+🔒 DEBUG: [0.000s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+🚀 DEBUG: [0.001s] [QUEUE_ACQUIRED] 立即获得窗口槽位: bash_8660021824_1756406052225_7128cc8b, thread: 8660021824
+🔓 DEBUG: [0.001s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+✅ DEBUG: [0.001s] [ACQUIRED] 窗口槽位已获得 - window_id: bash_8660021824_1756406052225_7128cc8b, cmd: bash
+🖥️ DEBUG: [0.010s] [EXEC] 开始执行远端命令 - window_id: bash_8660021824_1756406052225_7128cc8b, cmd: bash
+💓 DEBUG: [0.215s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [0.216s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [0.420s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'false'}
+💓 DEBUG: [0.439s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [0.646s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [0.646s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [0.852s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'false'}
+💓 DEBUG: [0.852s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [1.053s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [1.054s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [1.258s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [1.263s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [1.482s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'false'}
+💓 DEBUG: [1.491s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [1.748s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'false'}
+💓 DEBUG: [1.749s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [1.962s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [2.199s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [2.409s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'false'}
+💓 DEBUG: [2.412s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [2.621s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [2.626s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+📋 DEBUG: [21.938s] [RESULT] 远端命令执行完成 - window_id: bash_8660021824_1756406052225_7128cc8b, success: False
+⚠️ DEBUG: [21.938s] [MARK_FAILED] 无法标记窗口完成，非当前窗口: bash_8660021824_1756406052225_7128cc8b
+✅ DEBUG: [21.939s] [MARK_COMPLETE] 窗口已标记为完成 - window_id: bash_8660021824_1756406052225_7128cc8b
+🔓 DEBUG: [21.939s] [RELEASE] 释放窗口槽位 - window_id: bash_8660021824_1756406052225_7128cc8b, cmd: bash
+🔒 DEBUG: [21.939s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+⚠️ DEBUG: [21.941s] [QUEUE_NOT_FOUND] 窗口未在队列中找到: bash_8660021824_1756406052225_7128cc8b, thread: 8660021824
+🔓 DEBUG: [21.941s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+✅ DEBUG: [21.941s] [RELEASED] 窗口槽位已释放 - window_id: bash_8660021824_1756406052225_7128cc8b, cmd: bash
+mkdir命令执行失败: User operation: Timeout or cancelled
+
+
+----------------------------------------------------------------------
+Ran 0 tests in 23.667s
+
+FAILED (errors=1)
+🚀 设置GDS全面测试环境...
+📁 远端测试目录: ~/tmp/gds_test_20250829_023410_602648_3ecc1a80
+⚠️ 创建远端测试目录失败: 返回码=1, stderr=, stdout=
+- Executing command 1/2: cd ~
+
+- Executing command 2/2: mkdir -p ~/tmp/gds_test_20250829_023410_602648_3ecc1a80
+🔒 DEBUG: [0.000s] [ENTRY] execute_generic_remote_command - 请求窗口槽位 - window_id: bash_8660021824_1756406052225_7128cc8b, cmd: bash, thread: 8660021824
+🔒 DEBUG: [0.000s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+🚀 DEBUG: [0.001s] [QUEUE_ACQUIRED] 立即获得窗口槽位: bash_8660021824_1756406052225_7128cc8b, thread: 8660021824
+🔓 DEBUG: [0.001s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+✅ DEBUG: [0.001s] [ACQUIRED] 窗口槽位已获得 - window_id: bash_8660021824_1756406052225_7128cc8b, cmd: bash
+🖥️ DEBUG: [0.010s] [EXEC] 开始执行远端命令 - window_id: bash_8660021824_1756406052225_7128cc8b, cmd: bash
+💓 DEBUG: [0.215s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [0.216s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [0.420s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'false'}
+💓 DEBUG: [0.439s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [0.646s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [0.646s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [0.852s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'false'}
+💓 DEBUG: [0.852s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [1.053s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [1.054s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [1.258s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [1.263s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [1.482s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'false'}
+💓 DEBUG: [1.491s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [1.748s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'false'}
+💓 DEBUG: [1.749s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [1.962s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [2.199s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [2.409s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'false'}
+💓 DEBUG: [2.412s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [2.621s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+💓 DEBUG: [2.626s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {'bash_8660021824_1756406052487_fcab365f': 'true'}
+📋 DEBUG: [21.938s] [RESULT] 远端命令执行完成 - window_id: bash_8660021824_1756406052225_7128cc8b, success: False
+⚠️ DEBUG: [21.938s] [MARK_FAILED] 无法标记窗口完成，非当前窗口: bash_8660021824_1756406052225_7128cc8b
+✅ DEBUG: [21.939s] [MARK_COMPLETE] 窗口已标记为完成 - window_id: bash_8660021824_1756406052225_7128cc8b
+🔓 DEBUG: [21.939s] [RELEASE] 释放窗口槽位 - window_id: bash_8660021824_1756406052225_7128cc8b, cmd: bash
+🔒 DEBUG: [21.939s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+⚠️ DEBUG: [21.941s] [QUEUE_NOT_FOUND] 窗口未在队列中找到: bash_8660021824_1756406052225_7128cc8b, thread: 8660021824
+🔓 DEBUG: [21.941s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+✅ DEBUG: [21.941s] [RELEASED] 窗口槽位已释放 - window_id: bash_8660021824_1756406052225_7128cc8b, cmd: bash
+mkdir命令执行失败: User operation: Timeout or cancelled
+

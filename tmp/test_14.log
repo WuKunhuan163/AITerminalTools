@@ -1,0 +1,98 @@
+test_14_file_editing_operations (_UNITTEST.test_gds.GDSTest.test_14_file_editing_operations)
+测试文件编辑操作 ... FAIL
+
+======================================================================
+FAIL: test_14_file_editing_operations (_UNITTEST.test_gds.GDSTest.test_14_file_editing_operations)
+测试文件编辑操作
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 1209, in test_14_file_editing_operations
+    self.assertTrue(success, f"基础文本替换编辑失败: {result.stderr if result else 'Unknown error'}")
+AssertionError: False is not true : 基础文本替换编辑失败: 
+
+----------------------------------------------------------------------
+Ran 1 test in 190.754s
+
+FAILED (failures=1)
+🚀 设置GDS全面测试环境...
+📁 远端测试目录: ~/tmp/gds_test_20250829_015820_202422_7c3cb04c
+✅ 已切换到远端测试目录: ~/tmp/gds_test_20250829_015820_202422_7c3cb04c
+📁 本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_sfzjva7r
+✅ 测试环境设置完成
+
+🧪 测试14: 文件编辑操作
+
+🔄 执行带重试的命令: upload --force /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP/test04_simple_hello.py
+🔍 验证命令: ['ls test04_simple_hello.py']
+🎯 最大重试次数: 3
+
+📍 尝试 1/3
+
+🔧 执行命令: upload --force /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP/test04_simple_hello.py
+📤 返回码: 0
+📝 输出: ⏳ Waiting for upload .........√
+⏳ Waiting for result ........√
+⏳ Validating test04_simple_hello.py ...√
+Upload completed: 1/1 files
+...
+  🔍 验证 1/1: ls test04_simple_hello.py
+
+🔧 执行命令: ls test04_simple_hello.py
+📤 返回码: 0
+📝 输出: test04_simple_hello.py
+...
+  ✅ 验证成功
+🎉 所有验证通过，命令成功执行
+
+🔄 执行带重试的命令: upload --force /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP/test04_simple_hello.py
+🔍 验证命令: ['ls test04_simple_hello.py']
+🎯 最大重试次数: 3
+
+📍 尝试 1/3
+
+🔧 执行命令: upload --force /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP/test04_simple_hello.py
+📤 返回码: 0
+📝 输出: ⏳ Waiting for upload ........√
+⏳ Waiting for result ......√
+⏳ Validating test04_simple_hello.py ...√
+Upload completed: 1/1 files
+...
+  🔍 验证 1/1: ls test04_simple_hello.py
+
+🔧 执行命令: ls test04_simple_hello.py
+📤 返回码: 0
+📝 输出: test04_simple_hello.py
+...
+  ✅ 验证成功
+🎉 所有验证通过，命令成功执行
+✅ upload --force覆盖功能验证成功
+
+🔄 执行带重试的命令: edit test04_simple_hello.py '[["Hello from remote project!", "Hello from MODIFIED remote project!"]]'
+🔍 验证命令: ['grep "MODIFIED" test04_simple_hello.py']
+🎯 最大重试次数: 3
+
+📍 尝试 1/3
+
+🔧 执行命令: edit test04_simple_hello.py '[["Hello from remote project!", "Hello from MODIFIED remote project!"]]'
+📤 返回码: 1
+📝 输出: Edit operation failed: 'TextOperations' object has no attribute 'cmd_download'
+...
+❌ 主命令失败，返回码: 1
+⏳ 等待1秒后重试...
+
+📍 尝试 2/3
+
+🔧 执行命令: edit test04_simple_hello.py '[["Hello from remote project!", "Hello from MODIFIED remote project!"]]'
+📤 返回码: 1
+📝 输出: Edit operation failed: 'TextOperations' object has no attribute 'cmd_download'
+...
+❌ 主命令失败，返回码: 1
+⏳ 等待1秒后重试...
+
+📍 尝试 3/3
+
+🔧 执行命令: edit test04_simple_hello.py '[["Hello from remote project!", "Hello from MODIFIED remote project!"]]'
+📤 返回码: 1
+📝 输出: Edit operation failed: 'TextOperations' object has no attribute 'cmd_download'
+...
+❌ 主命令失败，返回码: 1

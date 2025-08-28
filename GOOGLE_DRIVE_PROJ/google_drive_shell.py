@@ -816,7 +816,6 @@ class GoogleDriveShell:
                         result = self.remote_commands.show_command_window_subprocess(
                             title=title,
                             command_text=remote_command,
-                            instruction_text=instruction,
                             timeout_seconds=300
                         )
                         

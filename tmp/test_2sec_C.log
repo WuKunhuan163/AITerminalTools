@@ -1,0 +1,463 @@
+🚀 设置GDS全面测试环境...
+📁 远端测试目录: ~/tmp/gds_test_20250829_023958_574482_3492531d
+⚠️ 创建远端测试目录失败: 返回码=1, stderr=, stdout=
+- Executing command 1/2: cd ~
+
+- Executing command 2/2: mkdir -p ~/tmp/gds_test_20250829_023958_574482_3492531d
+🔒 DEBUG: [0.000s] [ENTRY] execute_generic_remote_command - 请求窗口槽位 - window_id: bash_8660021824_1756406400294_b47fa0ee, cmd: bash, thread: 8660021824
+🔒 DEBUG: [0.000s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+⏳ DEBUG: [0.001s] [QUEUE_WAITING] 加入等待队列: bash_8660021824_1756406400294_b47fa0ee, 位置: 2, thread: 8660021824
+💓 DEBUG: [0.001s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [0.001s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400294_50d09aa4
+💓 DEBUG: [0.001s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [0.001s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756406400366_de65e7ac': 'false'}
+💓 DEBUG: [0.001s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [0.001s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400366_de65e7ac': 'false', 'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [0.001s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [0.001s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+🔒 DEBUG: [0.503s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [0.504s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [0.504s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400294_50d09aa4
+💓 DEBUG: [0.504s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [0.504s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756406400366_de65e7ac': 'false', 'bash_8660021824_1756406400294_b47fa0ee': 'true'}
+💓 DEBUG: [0.504s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [0.504s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400366_de65e7ac': 'false', 'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [0.504s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [0.505s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+🔒 DEBUG: [1.010s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [1.010s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [1.010s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400294_50d09aa4
+💓 DEBUG: [1.010s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [1.011s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756406400366_de65e7ac': 'false', 'bash_8660021824_1756406400294_b47fa0ee': 'true'}
+💓 DEBUG: [1.011s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [1.011s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400366_de65e7ac': 'false', 'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [1.011s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [1.011s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [1.011s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400366_de65e7ac -> False
+💓 DEBUG: [1.011s] [HEARTBEAT_NOT_NEXT] 非下一个窗口，跳过心跳检测: bash_8660021824_1756406400294_b47fa0ee
+🔒 DEBUG: [1.512s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+⏰ DEBUG: [1.514s] [MIN_INTERVAL] 强制2秒间隔：距上次窗口 1.62s < 2.0s，等待中...
+💓 DEBUG: [1.514s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: False
+💓 DEBUG: [1.514s] [HEARTBEAT_NO_CURRENT] 没有当前窗口，无法注册心跳: bash_8660021824_1756406400294_b47fa0ee
+🔓 DEBUG: [1.515s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [1.515s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400366_de65e7ac -> False
+💓 DEBUG: [1.515s] [HEARTBEAT_NOT_NEXT] 非下一个窗口，跳过心跳检测: bash_8660021824_1756406400294_b47fa0ee
+🔒 DEBUG: [2.020s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [2.024s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [2.025s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400366_de65e7ac
+💓 DEBUG: [2.026s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [2.026s] [HEARTBEAT_BEFORE] 注册前心跳状态: {}
+💓 DEBUG: [2.028s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [2.028s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [2.029s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [2.029s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [2.030s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400366_de65e7ac -> False
+💓 DEBUG: [2.030s] [HEARTBEAT_NOT_NEXT] 非下一个窗口，跳过心跳检测: bash_8660021824_1756406400294_b47fa0ee
+🔒 DEBUG: [2.535s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [2.536s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [2.536s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400366_de65e7ac
+💓 DEBUG: [2.537s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [2.537s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'true'}
+💓 DEBUG: [2.538s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [2.539s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [2.539s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [2.539s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [2.540s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400366_de65e7ac -> False
+💓 DEBUG: [2.540s] [HEARTBEAT_NOT_NEXT] 非下一个窗口，跳过心跳检测: bash_8660021824_1756406400294_b47fa0ee
+🔒 DEBUG: [3.046s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [3.046s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [3.047s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400366_de65e7ac
+💓 DEBUG: [3.047s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [3.047s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'true'}
+💓 DEBUG: [3.047s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [3.047s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [3.047s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [3.047s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [3.047s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400366_de65e7ac -> False
+💓 DEBUG: [3.047s] [HEARTBEAT_NOT_NEXT] 非下一个窗口，跳过心跳检测: bash_8660021824_1756406400294_b47fa0ee
+🔒 DEBUG: [3.552s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [3.553s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [3.553s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400366_de65e7ac
+💓 DEBUG: [3.553s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [3.553s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'true'}
+💓 DEBUG: [3.555s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [3.555s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [3.555s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [3.555s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [3.556s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400366_de65e7ac -> False
+💓 DEBUG: [3.556s] [HEARTBEAT_NOT_NEXT] 非下一个窗口，跳过心跳检测: bash_8660021824_1756406400294_b47fa0ee
+🔒 DEBUG: [4.075s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [4.075s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [4.076s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400366_de65e7ac
+💓 DEBUG: [4.076s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [4.077s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'true'}
+💓 DEBUG: [4.079s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [4.079s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [4.079s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [4.080s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [4.080s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400366_de65e7ac -> False
+💓 DEBUG: [4.081s] [HEARTBEAT_NOT_NEXT] 非下一个窗口，跳过心跳检测: bash_8660021824_1756406400294_b47fa0ee
+🔒 DEBUG: [4.587s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [4.587s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [4.588s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400366_de65e7ac
+💓 DEBUG: [4.588s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [4.588s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'true'}
+💓 DEBUG: [4.588s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [4.588s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [4.588s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [4.589s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [4.589s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400366_de65e7ac -> False
+💓 DEBUG: [4.589s] [HEARTBEAT_NOT_NEXT] 非下一个窗口，跳过心跳检测: bash_8660021824_1756406400294_b47fa0ee
+🔒 DEBUG: [5.095s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [5.095s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [5.095s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400366_de65e7ac
+💓 DEBUG: [5.096s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [5.096s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'true'}
+💓 DEBUG: [5.096s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [5.096s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [5.096s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [5.096s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [5.096s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400366_de65e7ac -> False
+💓 DEBUG: [5.096s] [HEARTBEAT_NOT_NEXT] 非下一个窗口，跳过心跳检测: bash_8660021824_1756406400294_b47fa0ee
+🔒 DEBUG: [5.602s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [5.602s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [5.602s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400366_de65e7ac
+💓 DEBUG: [5.602s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [5.603s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'true'}
+💓 DEBUG: [5.603s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [5.603s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [5.603s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [5.603s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [5.603s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400366_de65e7ac -> False
+💓 DEBUG: [5.603s] [HEARTBEAT_NOT_NEXT] 非下一个窗口，跳过心跳检测: bash_8660021824_1756406400294_b47fa0ee
+🔒 DEBUG: [6.105s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [6.105s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [6.105s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400366_de65e7ac
+💓 DEBUG: [6.106s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [6.106s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'true'}
+💓 DEBUG: [6.106s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [6.106s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [6.106s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [6.106s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [6.107s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400366_de65e7ac -> False
+💓 DEBUG: [6.107s] [HEARTBEAT_NOT_NEXT] 非下一个窗口，跳过心跳检测: bash_8660021824_1756406400294_b47fa0ee
+🔒 DEBUG: [6.612s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [6.613s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [6.613s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400366_de65e7ac
+💓 DEBUG: [6.613s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [6.613s] [HEARTBEAT_BEFORE] 注册前心跳状态: {}
+💓 DEBUG: [6.613s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [6.613s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [6.613s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [6.613s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [6.613s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400294_b47fa0ee -> True
+💓 DEBUG: [6.614s] [HEARTBEAT_CHECK] 检查心跳超时 - watcher: bash_8660021824_1756406400294_b47fa0ee, heartbeat: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [6.614s] [HEARTBEAT_FAIL_COUNT] 心跳失败次数: 1/2 - watcher: bash_8660021824_1756406400294_b47fa0ee
+🔒 DEBUG: [7.120s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [7.120s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [7.120s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400366_de65e7ac
+💓 DEBUG: [7.120s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [7.121s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [7.121s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [7.121s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [7.121s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [7.121s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [7.121s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400294_b47fa0ee -> True
+💓 DEBUG: [7.122s] [HEARTBEAT_CHECK] 检查心跳超时 - watcher: bash_8660021824_1756406400294_b47fa0ee, heartbeat: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [7.122s] [HEARTBEAT_FAIL_COUNT] 心跳失败次数: 2/2 - watcher: bash_8660021824_1756406400294_b47fa0ee
+💀 DEBUG: [7.122s] [HEARTBEAT_TIMEOUT] 连续心跳失败，清除窗口: bash_8660021824_1756406400366_de65e7ac (失败次数: 2)
+💀 DEBUG: [7.122s] [HEARTBEAT_CLEAR] 心跳检测清除了卡住的窗口，重试获取槽位
+🔒 DEBUG: [7.122s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+🚀 DEBUG: [7.122s] [QUEUE_ACQUIRED] 立即获得窗口槽位: bash_8660021824_1756406400294_b47fa0ee, thread: 8660021824
+🔓 DEBUG: [7.123s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+✅ DEBUG: [7.229s] [ACQUIRED] 窗口槽位已获得 - window_id: bash_8660021824_1756406400294_b47fa0ee, cmd: bash
+🖥️ DEBUG: [7.240s] [EXEC] 开始执行远端命令 - window_id: bash_8660021824_1756406400294_b47fa0ee, cmd: bash
+💓 DEBUG: [7.352s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [7.354s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [7.560s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [7.561s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [7.763s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [7.763s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [7.969s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [7.969s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [8.175s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [8.175s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [8.380s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [8.381s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [8.585s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [8.586s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [8.787s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [8.788s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [8.993s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [8.994s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [9.198s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [9.198s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [9.404s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [9.405s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [9.611s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [9.613s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [9.815s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [9.825s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [10.042s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [10.083s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [10.368s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [10.387s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [10.606s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [10.610s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [10.853s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [10.854s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [11.057s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [11.064s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [11.283s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [11.288s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+📋 DEBUG: [11.510s] [RESULT] 远端命令执行完成 - window_id: bash_8660021824_1756406400294_b47fa0ee, success: False
+✅ DEBUG: [11.409s] [MARK_COMPLETED] 窗口标记为已完成: bash_8660021824_1756406400294_b47fa0ee
+✅ DEBUG: [11.516s] [MARK_COMPLETE] 窗口已标记为完成 - window_id: bash_8660021824_1756406400294_b47fa0ee
+🔓 DEBUG: [11.516s] [RELEASE] 释放窗口槽位 - window_id: bash_8660021824_1756406400294_b47fa0ee, cmd: bash
+🔒 DEBUG: [11.411s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+✅ DEBUG: [11.411s] [QUEUE_RELEASE] 释放当前窗口槽位: bash_8660021824_1756406400294_b47fa0ee, thread: 8660021824
+📊 DEBUG: [11.413s] [COUNTER] 窗口完成计数: 33 - window_id: bash_8660021824_1756406400294_b47fa0ee
+🔄 DEBUG: [11.413s] [QUEUE_NEXT] 下一个窗口获得槽位: bash_8660021824_1756406400294_b47fa0ee, thread: 8660021824
+🎯 DEBUG: [11.415s] [IMMEDIATE_RELEASE] 窗口槽位立即释放完成 - window_id: bash_8660021824_1756406400294_b47fa0ee
+🔓 DEBUG: [11.416s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+✅ DEBUG: [11.522s] [RELEASED] 窗口槽位已释放 - window_id: bash_8660021824_1756406400294_b47fa0ee, cmd: bash
+mkdir命令执行失败: User operation: Timeout or cancelled
+setUpClass (_UNITTEST.test_gds.GDSTest) ... ERROR
+
+======================================================================
+ERROR: setUpClass (_UNITTEST.test_gds.GDSTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 65, in setUpClass
+    cls._setup_remote_test_directory()
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 87, in _setup_remote_test_directory
+    raise RuntimeError(error_msg)
+RuntimeError: 创建远端测试目录失败: 返回码=1, stderr=, stdout=
+- Executing command 1/2: cd ~
+
+- Executing command 2/2: mkdir -p ~/tmp/gds_test_20250829_023958_574482_3492531d
+🔒 DEBUG: [0.000s] [ENTRY] execute_generic_remote_command - 请求窗口槽位 - window_id: bash_8660021824_1756406400294_b47fa0ee, cmd: bash, thread: 8660021824
+🔒 DEBUG: [0.000s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+⏳ DEBUG: [0.001s] [QUEUE_WAITING] 加入等待队列: bash_8660021824_1756406400294_b47fa0ee, 位置: 2, thread: 8660021824
+💓 DEBUG: [0.001s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [0.001s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400294_50d09aa4
+💓 DEBUG: [0.001s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [0.001s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756406400366_de65e7ac': 'false'}
+💓 DEBUG: [0.001s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [0.001s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400366_de65e7ac': 'false', 'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [0.001s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [0.001s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+🔒 DEBUG: [0.503s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [0.504s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [0.504s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400294_50d09aa4
+💓 DEBUG: [0.504s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [0.504s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756406400366_de65e7ac': 'false', 'bash_8660021824_1756406400294_b47fa0ee': 'true'}
+💓 DEBUG: [0.504s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [0.504s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400366_de65e7ac': 'false', 'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [0.504s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [0.505s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+🔒 DEBUG: [1.010s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [1.010s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [1.010s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400294_50d09aa4
+💓 DEBUG: [1.010s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [1.011s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756406400366_de65e7ac': 'false', 'bash_8660021824_1756406400294_b47fa0ee': 'true'}
+💓 DEBUG: [1.011s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [1.011s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400366_de65e7ac': 'false', 'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [1.011s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [1.011s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [1.011s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400366_de65e7ac -> False
+💓 DEBUG: [1.011s] [HEARTBEAT_NOT_NEXT] 非下一个窗口，跳过心跳检测: bash_8660021824_1756406400294_b47fa0ee
+🔒 DEBUG: [1.512s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+⏰ DEBUG: [1.514s] [MIN_INTERVAL] 强制2秒间隔：距上次窗口 1.62s < 2.0s，等待中...
+💓 DEBUG: [1.514s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: False
+💓 DEBUG: [1.514s] [HEARTBEAT_NO_CURRENT] 没有当前窗口，无法注册心跳: bash_8660021824_1756406400294_b47fa0ee
+🔓 DEBUG: [1.515s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [1.515s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400366_de65e7ac -> False
+💓 DEBUG: [1.515s] [HEARTBEAT_NOT_NEXT] 非下一个窗口，跳过心跳检测: bash_8660021824_1756406400294_b47fa0ee
+🔒 DEBUG: [2.020s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [2.024s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [2.025s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400366_de65e7ac
+💓 DEBUG: [2.026s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [2.026s] [HEARTBEAT_BEFORE] 注册前心跳状态: {}
+💓 DEBUG: [2.028s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [2.028s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [2.029s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [2.029s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [2.030s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400366_de65e7ac -> False
+💓 DEBUG: [2.030s] [HEARTBEAT_NOT_NEXT] 非下一个窗口，跳过心跳检测: bash_8660021824_1756406400294_b47fa0ee
+🔒 DEBUG: [2.535s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [2.536s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [2.536s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400366_de65e7ac
+💓 DEBUG: [2.537s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [2.537s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'true'}
+💓 DEBUG: [2.538s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [2.539s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [2.539s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [2.539s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [2.540s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400366_de65e7ac -> False
+💓 DEBUG: [2.540s] [HEARTBEAT_NOT_NEXT] 非下一个窗口，跳过心跳检测: bash_8660021824_1756406400294_b47fa0ee
+🔒 DEBUG: [3.046s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [3.046s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [3.047s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400366_de65e7ac
+💓 DEBUG: [3.047s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [3.047s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'true'}
+💓 DEBUG: [3.047s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [3.047s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [3.047s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [3.047s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [3.047s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400366_de65e7ac -> False
+💓 DEBUG: [3.047s] [HEARTBEAT_NOT_NEXT] 非下一个窗口，跳过心跳检测: bash_8660021824_1756406400294_b47fa0ee
+🔒 DEBUG: [3.552s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [3.553s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [3.553s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400366_de65e7ac
+💓 DEBUG: [3.553s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [3.553s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'true'}
+💓 DEBUG: [3.555s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [3.555s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [3.555s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [3.555s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [3.556s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400366_de65e7ac -> False
+💓 DEBUG: [3.556s] [HEARTBEAT_NOT_NEXT] 非下一个窗口，跳过心跳检测: bash_8660021824_1756406400294_b47fa0ee
+🔒 DEBUG: [4.075s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [4.075s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [4.076s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400366_de65e7ac
+💓 DEBUG: [4.076s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [4.077s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'true'}
+💓 DEBUG: [4.079s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [4.079s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [4.079s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [4.080s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [4.080s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400366_de65e7ac -> False
+💓 DEBUG: [4.081s] [HEARTBEAT_NOT_NEXT] 非下一个窗口，跳过心跳检测: bash_8660021824_1756406400294_b47fa0ee
+🔒 DEBUG: [4.587s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [4.587s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [4.588s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400366_de65e7ac
+💓 DEBUG: [4.588s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [4.588s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'true'}
+💓 DEBUG: [4.588s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [4.588s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [4.588s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [4.589s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [4.589s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400366_de65e7ac -> False
+💓 DEBUG: [4.589s] [HEARTBEAT_NOT_NEXT] 非下一个窗口，跳过心跳检测: bash_8660021824_1756406400294_b47fa0ee
+🔒 DEBUG: [5.095s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [5.095s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [5.095s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400366_de65e7ac
+💓 DEBUG: [5.096s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [5.096s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'true'}
+💓 DEBUG: [5.096s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [5.096s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [5.096s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [5.096s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [5.096s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400366_de65e7ac -> False
+💓 DEBUG: [5.096s] [HEARTBEAT_NOT_NEXT] 非下一个窗口，跳过心跳检测: bash_8660021824_1756406400294_b47fa0ee
+🔒 DEBUG: [5.602s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [5.602s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [5.602s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400366_de65e7ac
+💓 DEBUG: [5.602s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [5.603s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'true'}
+💓 DEBUG: [5.603s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [5.603s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [5.603s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [5.603s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [5.603s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400366_de65e7ac -> False
+💓 DEBUG: [5.603s] [HEARTBEAT_NOT_NEXT] 非下一个窗口，跳过心跳检测: bash_8660021824_1756406400294_b47fa0ee
+🔒 DEBUG: [6.105s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [6.105s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [6.105s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400366_de65e7ac
+💓 DEBUG: [6.106s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [6.106s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'true'}
+💓 DEBUG: [6.106s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [6.106s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [6.106s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [6.106s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [6.107s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400366_de65e7ac -> False
+💓 DEBUG: [6.107s] [HEARTBEAT_NOT_NEXT] 非下一个窗口，跳过心跳检测: bash_8660021824_1756406400294_b47fa0ee
+🔒 DEBUG: [6.612s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [6.613s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [6.613s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400366_de65e7ac
+💓 DEBUG: [6.613s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [6.613s] [HEARTBEAT_BEFORE] 注册前心跳状态: {}
+💓 DEBUG: [6.613s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [6.613s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [6.613s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [6.613s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [6.613s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400294_b47fa0ee -> True
+💓 DEBUG: [6.614s] [HEARTBEAT_CHECK] 检查心跳超时 - watcher: bash_8660021824_1756406400294_b47fa0ee, heartbeat: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [6.614s] [HEARTBEAT_FAIL_COUNT] 心跳失败次数: 1/2 - watcher: bash_8660021824_1756406400294_b47fa0ee
+🔒 DEBUG: [7.120s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [7.120s] [HEARTBEAT_CHECK_CURRENT] 检查当前窗口状态: True
+💓 DEBUG: [7.120s] [HEARTBEAT_TRY] 尝试注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee -> 当前窗口: bash_8660021824_1756406400366_de65e7ac
+💓 DEBUG: [7.120s] [HEARTBEAT_ENTER_INTERNAL] 进入内部心跳注册函数: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [7.121s] [HEARTBEAT_BEFORE] 注册前心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [7.121s] [HEARTBEAT_REG] 注册心跳监视器: bash_8660021824_1756406400294_b47fa0ee
+💓 DEBUG: [7.121s] [HEARTBEAT_AFTER] 注册后心跳状态: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [7.121s] [HEARTBEAT_TRY_RESULT] 注册心跳监视器结果: True
+🔓 DEBUG: [7.121s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+💓 DEBUG: [7.121s] [NEXT_CHECK] 检查是否为下一个窗口: bash_8660021824_1756406400294_b47fa0ee == bash_8660021824_1756406400294_b47fa0ee -> True
+💓 DEBUG: [7.122s] [HEARTBEAT_CHECK] 检查心跳超时 - watcher: bash_8660021824_1756406400294_b47fa0ee, heartbeat: {'bash_8660021824_1756406400294_b47fa0ee': 'false'}
+💓 DEBUG: [7.122s] [HEARTBEAT_FAIL_COUNT] 心跳失败次数: 2/2 - watcher: bash_8660021824_1756406400294_b47fa0ee
+💀 DEBUG: [7.122s] [HEARTBEAT_TIMEOUT] 连续心跳失败，清除窗口: bash_8660021824_1756406400366_de65e7ac (失败次数: 2)
+💀 DEBUG: [7.122s] [HEARTBEAT_CLEAR] 心跳检测清除了卡住的窗口，重试获取槽位
+🔒 DEBUG: [7.122s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+🚀 DEBUG: [7.122s] [QUEUE_ACQUIRED] 立即获得窗口槽位: bash_8660021824_1756406400294_b47fa0ee, thread: 8660021824
+🔓 DEBUG: [7.123s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+✅ DEBUG: [7.229s] [ACQUIRED] 窗口槽位已获得 - window_id: bash_8660021824_1756406400294_b47fa0ee, cmd: bash
+🖥️ DEBUG: [7.240s] [EXEC] 开始执行远端命令 - window_id: bash_8660021824_1756406400294_b47fa0ee, cmd: bash
+💓 DEBUG: [7.352s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [7.354s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [7.560s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [7.561s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [7.763s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [7.763s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [7.969s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [7.969s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [8.175s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [8.175s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [8.380s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [8.381s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [8.585s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [8.586s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [8.787s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [8.788s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [8.993s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [8.994s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [9.198s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [9.198s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [9.404s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [9.405s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [9.611s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [9.613s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [9.815s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [9.825s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [10.042s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [10.083s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [10.368s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [10.387s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [10.606s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [10.610s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [10.853s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [10.854s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [11.057s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [11.064s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+💓 DEBUG: [11.283s] [HEARTBEAT_UPDATE_BEFORE] 更新前心跳状态: {}
+💓 DEBUG: [11.288s] [HEARTBEAT_UPDATE_AFTER] 更新后心跳状态: {}
+📋 DEBUG: [11.510s] [RESULT] 远端命令执行完成 - window_id: bash_8660021824_1756406400294_b47fa0ee, success: False
+✅ DEBUG: [11.409s] [MARK_COMPLETED] 窗口标记为已完成: bash_8660021824_1756406400294_b47fa0ee
+✅ DEBUG: [11.516s] [MARK_COMPLETE] 窗口已标记为完成 - window_id: bash_8660021824_1756406400294_b47fa0ee
+🔓 DEBUG: [11.516s] [RELEASE] 释放窗口槽位 - window_id: bash_8660021824_1756406400294_b47fa0ee, cmd: bash
+🔒 DEBUG: [11.411s] [FILE_LOCK] 成功获取文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+✅ DEBUG: [11.411s] [QUEUE_RELEASE] 释放当前窗口槽位: bash_8660021824_1756406400294_b47fa0ee, thread: 8660021824
+📊 DEBUG: [11.413s] [COUNTER] 窗口完成计数: 33 - window_id: bash_8660021824_1756406400294_b47fa0ee
+🔄 DEBUG: [11.413s] [QUEUE_NEXT] 下一个窗口获得槽位: bash_8660021824_1756406400294_b47fa0ee, thread: 8660021824
+🎯 DEBUG: [11.415s] [IMMEDIATE_RELEASE] 窗口槽位立即释放完成 - window_id: bash_8660021824_1756406400294_b47fa0ee
+🔓 DEBUG: [11.416s] [FILE_LOCK] 释放文件锁: /Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/../GOOGLE_DRIVE_DATA/remote_window_queue.lock
+✅ DEBUG: [11.522s] [RELEASED] 窗口槽位已释放 - window_id: bash_8660021824_1756406400294_b47fa0ee, cmd: bash
+mkdir命令执行失败: User operation: Timeout or cancelled
+
+
+----------------------------------------------------------------------
+Ran 0 tests in 13.612s
+
+FAILED (errors=1)
+

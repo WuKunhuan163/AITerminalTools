@@ -319,28 +319,15 @@ Shell commands: ls -la && echo "done"
             return None
     
     def _verify_file_exists(self, filename):
-        """验证远端文件是否存在（使用统一的路径解析API）"""
+        """验证远端文件或目录是否存在"""
         try:
-            # 使用统一的路径解析API，和文件创建验证一致
-            import sys
-            import os
-            sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-            from GOOGLE_DRIVE_PROJ.google_drive_shell import GoogleDriveShell
-            
-            shell_instance = GoogleDriveShell()
-            current_shell = shell_instance.get_current_shell()
-            if not current_shell:
-                return False
-                
-            # 使用和文件创建验证相同的API
-            result = shell_instance.verification._verify_file_creation_with_ls(filename, current_shell, max_attempts=1)
-            return result.get("success", False)
-        except Exception as e:
-            # 如果新方法失败，回退到旧方法
+            # 简单直接的方法：使用ls命令检查文件/目录是否存在
             result = self._run_gds_command(f'ls {filename}', expect_success=False)
             if result is None or result.returncode != 0:
                 return False
             return "Path not found" not in result.stdout and "not found" not in result.stdout.lower()
+        except Exception as e:
+            return False
     
     def _verify_file_content_contains(self, filename, expected_content):
         """验证远端文件内容包含特定文本（基于功能结果）"""
