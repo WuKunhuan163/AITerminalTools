@@ -1,0 +1,47 @@
+test_06_enhanced_ls_operations (_UNITTEST.test_gds.GDSTest.test_06_enhanced_ls_operations)
+测试增强的GDS ls操作（修复后的完整功能测试） ... FAIL
+
+======================================================================
+FAIL: test_06_enhanced_ls_operations (_UNITTEST.test_gds.GDSTest.test_06_enhanced_ls_operations)
+测试增强的GDS ls操作（修复后的完整功能测试）
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 317, in _run_gds_command
+    self.assertEqual(result.returncode, 0, f"命令执行失败: {command}")
+AssertionError: 1 != 0 : 命令执行失败: mkdir -p ls_test_subdir && cd ls_test_subdir
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 640, in test_06_enhanced_ls_operations
+    result = self._run_gds_command('mkdir -p ls_test_subdir && cd ls_test_subdir')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 323, in _run_gds_command
+    self.fail(f"命令执行异常: {command} - {e}")
+AssertionError: 命令执行异常: mkdir -p ls_test_subdir && cd ls_test_subdir - 1 != 0 : 命令执行失败: mkdir -p ls_test_subdir && cd ls_test_subdir
+
+----------------------------------------------------------------------
+Ran 1 test in 149.047s
+
+FAILED (failures=1)
+🚀 设置GDS全面测试环境...
+📂 本地测试数据: /Users/wukunhuan/.local/bin/_UNITTEST/_DATA
+📂 本地临时文件: /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP
+📁 远端测试目录: ~/tmp/gds_test_20250828_142144_812598_ec2505a1
+✅ 已切换到远端测试目录: ~/tmp/gds_test_20250828_142144_812598_ec2505a1
+✅ 已切换到远端测试目录: ~/tmp/gds_test_20250828_142144_812598_ec2505a1
+📁 本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_zbzj4_hp
+✅ 测试环境设置完成
+
+🧪 测试06: 增强的LS操作测试
+📁 切换到测试子目录
+
+🔧 执行命令: mkdir -p ls_test_subdir && cd ls_test_subdir
+📤 返回码: 1
+📝 输出: =============
+GDS mkdir -p ls_test_subdir
+=============
+⏳ Waiting for result .......√
+⏳ Validating dir creation ..............................................................✗
+目录创建可能失败，验证超时: ls_test_s...
+💥 命令执行异常: 1 != 0 : 命令执行失败: mkdir -p ls_test_subdir && cd ls_test_subdir

@@ -1,5 +1,10 @@
 
 import time
+import os
+from pathlib import Path
+
+# 导入debug捕获系统
+from .remote_commands import debug_capture, debug_print
 
 class FileCore:
     """
@@ -236,7 +241,7 @@ class FileCore:
             debug_print(f"cmd_upload called with source_files={source_files}, target_path='{target_path}', force={force}")
             
             # 0. 检查Google Drive Desktop是否运行
-            if not self.ensure_google_drive_desktop_running():
+            if not self.main_instance.file_operations.ensure_google_drive_desktop_running():
                 return {"success": False, "error": "用户取消上传操作"}
             
             # 1. 验证输入参数
@@ -364,9 +369,9 @@ class FileCore:
                 }
             
             # 5. 检测网络连接
-            network_result = self.check_network_connection()
-            if not network_result["success"]:
-                print(f"⚠️ 网络连接检测: {network_result['error']}")
+            network_result = self.main_instance.file_operations.check_network_connection()
+            if not network_result:
+                print("⚠️ 网络连接检测失败")
                 print("📱 将继续执行，但请确保网络连接正常")
             else:
                 # 静默处理网络检查
@@ -402,7 +407,7 @@ class FileCore:
             # 8. 静默生成远端命令
             debug_print(f"Before generate_remote_commands - file_moves={file_moves}")
             debug_print(f"Before generate_remote_commands - target_path='{target_path}'")
-            remote_command = self.generate_remote_commands(file_moves, target_path, folder_upload_info)
+            remote_command = self.main_instance.remote_commands.generate_remote_commands(file_moves, target_path, folder_upload_info)
             debug_print(f"After generate_remote_commands - remote_command preview: {remote_command[:200]}...")
             
             # 7.5. 远端目录创建已经集成到generate_remote_commands中，无需额外处理
@@ -553,6 +558,8 @@ class FileCore:
         except Exception as e:
             # 停止debug信息捕获
             debug_capture.stop_capture()
+            import traceback
+            traceback.print_exc()
             return {
                 "success": False,
                 "error": f"Upload error: {str(e)}"
@@ -579,6 +586,8 @@ class FileCore:
     def cmd_ls(self, path=None, detailed=False, recursive=False, show_hidden=False):
         """列出目录内容，支持递归、详细模式和扩展信息模式，支持文件路径"""
         try:
+            # Debug: print(f"🔍 DEBUG: cmd_ls called with path='{path}', detailed={detailed}, recursive={recursive}")
+            
             if not self.drive_service:
                 return {"success": False, "error": "Google Drive API服务未初始化"}
                 
@@ -586,26 +595,36 @@ class FileCore:
             if not current_shell:
                 return {"success": False, "error": "没有活跃的远程shell，请先创建或切换到一个shell"}
             
+            # Debug: print(f"🔍 DEBUG: current_shell info - current_path='{current_shell.get('current_path', 'UNKNOWN')}', current_folder_id='{current_shell.get('current_folder_id', 'UNKNOWN')}'")
+            
             if path is None or path == ".":
                 # 当前目录
                 target_folder_id = current_shell.get("current_folder_id", self.main_instance.REMOTE_ROOT_FOLDER_ID)
                 display_path = current_shell.get("current_path", "~")
+                # Debug: print(f"🔍 DEBUG: Using current directory - target_folder_id='{target_folder_id}', display_path='{display_path}'")
             elif path == "~":
                 # 根目录
                 target_folder_id = self.main_instance.REMOTE_ROOT_FOLDER_ID
                 display_path = "~"
+                # Debug: print(f"🔍 DEBUG: Using root directory - target_folder_id='{target_folder_id}'")
             else:
+                # Debug: print(f"🔍 DEBUG: Processing custom path '{path}'")
                 # 首先尝试作为目录解析
+                # Debug: print(f"🔍 DEBUG: Step 1 - Trying to resolve '{path}' as directory")
                 target_folder_id, display_path = self.main_instance.resolve_path(path, current_shell)
+                # Debug: print(f"🔍 DEBUG: resolve_path result - target_folder_id='{target_folder_id}', display_path='{display_path}'")
                 
                 if not target_folder_id:
+                    # Debug: print(f"🔍 DEBUG: Step 2 - Directory resolution failed, trying as file path")
                     # 如果作为目录解析失败，尝试作为文件路径解析
                     file_result = self._resolve_file_path(path, current_shell)
+                    # Debug: print(f"🔍 DEBUG: _resolve_file_path result: {file_result is not None}")
                     if file_result:
                         # 这是一个文件路径，返回单个文件信息
+                        # Debug: print(f"🔍 DEBUG: ✅ Found as file, returning single file info")
                         return self._ls_single_file(file_result, path)
                     else:
-
+                        # Debug: print(f"🔍 DEBUG: ❌ Neither directory nor file found for path '{path}'")
                         return {"success": False, "error": f"Path not found: {path}"}
             
             if recursive:
@@ -1017,17 +1036,10 @@ class FileCore:
     def _ls_single_file(self, file_info, original_path):
         """返回单个文件的ls信息"""
         try:
-            # 判断是文件夹还是文件
-            if file_info['mimeType'] == 'application/vnd.google-apps.folder':
-                print(f"{file_info['name']}/")
-            else:
-                print(f"{file_info['name']}")
-            
             return {
                 "success": True,
                 "path": original_path,
-                "files": [file_info] if file_info['mimeType'] != 'application/vnd.google-apps.folder' else [],
-                "folders": [file_info] if file_info['mimeType'] == 'application/vnd.google-apps.folder' else [],
+                "files": [file_info],
                 "count": 1,
                 "mode": "single_file"
             }
@@ -1415,33 +1427,52 @@ class FileCore:
     def _resolve_file_path(self, file_path, current_shell):
         """解析文件路径，返回文件信息（如果存在）"""
         try:
+            # Debug: print(f"🔍 DEBUG: _resolve_file_path called with file_path='{file_path}'")
+            # Debug: print(f"🔍 DEBUG: current_shell current_path='{current_shell.get('current_path', 'UNKNOWN')}'")
+            # Debug: print(f"🔍 DEBUG: current_shell current_folder_id='{current_shell.get('current_folder_id', 'UNKNOWN')}'")
+            
             # 分离目录和文件名
             if "/" in file_path:
                 dir_path = "/".join(file_path.split("/")[:-1])
                 filename = file_path.split("/")[-1]
+                # Debug: print(f"🔍 DEBUG: Path with directory - dir_path='{dir_path}', filename='{filename}'")
             else:
                 # 相对于当前目录
                 dir_path = "."
                 filename = file_path
+                # Debug: print(f"🔍 DEBUG: Path without directory - dir_path='{dir_path}', filename='{filename}'")
             
             # 解析目录路径
             if dir_path == ".":
                 parent_folder_id = current_shell.get("current_folder_id", self.main_instance.REMOTE_ROOT_FOLDER_ID)
+                # Debug: print(f"🔍 DEBUG: Using current directory folder_id='{parent_folder_id}'")
             else:
                 parent_folder_id, _ = self.main_instance.resolve_path(dir_path, current_shell)
+                # Debug: print(f"🔍 DEBUG: Resolved directory path '{dir_path}' to folder_id='{parent_folder_id}'")
                 if not parent_folder_id:
+                    # Debug: print(f"🔍 DEBUG: Failed to resolve directory path '{dir_path}'")
                     return None
             
             # 在父目录中查找文件
+            # Debug: print(f"🔍 DEBUG: Listing files in folder_id='{parent_folder_id}' looking for filename='{filename}'")
             result = self.drive_service.list_files(folder_id=parent_folder_id, max_results=100)
+            # Debug: print(f"🔍 DEBUG: list_files result success={result.get('success')}")
+            
             if not result['success']:
+                # Debug: print(f"🔍 DEBUG: list_files failed with error: {result.get('error', 'Unknown error')}")
                 return None
             
-            for file in result['files']:
-                if file['name'] == filename:
+            files = result.get('files', [])
+            # Debug: print(f"🔍 DEBUG: Found {len(files)} files in directory")
+            for i, file in enumerate(files):
+                file_name = file.get('name', 'UNKNOWN')
+                # Debug: print(f"🔍 DEBUG: File {i+1}: '{file_name}' (type: {file.get('mimeType', 'UNKNOWN')})")
+                if file_name == filename:
+                    # Debug: print(f"🔍 DEBUG: ✅ MATCH FOUND! File '{filename}' exists")
                     file['url'] = self._generate_web_url(file)
                     return file
             
+            # Debug: print(f"🔍 DEBUG: ❌ File '{filename}' NOT FOUND in {len(files)} files")
             return None
             
         except Exception as e:

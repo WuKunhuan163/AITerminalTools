@@ -128,6 +128,7 @@ class PythonExecution:
             commands = [
                 # source环境文件，如果失败则忽略（会使用默认的PYTHONPATH）
                 f"source {env_file} 2>/dev/null || true",
+
                 python_cmd
             ]
             command = " && ".join(commands)

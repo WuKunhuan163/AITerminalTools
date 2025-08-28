@@ -17,8 +17,7 @@ class DependencyAnalysis:
             
             # 解析参数
             packages = []
-            max_depth = 2  # 默认深度
-            analysis_type = "smart"  # 默认使用智能分析
+            max_depth = 2
             
             i = 0
             while i < len(args):
@@ -57,7 +56,7 @@ class DependencyAnalysis:
                 return {"success": False, "error": "No packages specified for dependency analysis"}
             
             print(f"Analyzing dependencies for: {', '.join(packages)}")
-            print(f"Analysis type: {analysis_type}, Max depth: {max_depth}")
+            print(f"Analysis depth: {max_depth}")
             
             # 获取当前环境的已安装包信息
             installed_packages = self._detect_current_environment_packages()

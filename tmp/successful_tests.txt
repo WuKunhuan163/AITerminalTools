@@ -1,0 +1,5 @@
+# 成功的测试记录
+test_03_echo_local_redirect_test
+test_06c_path_edge_cases
+test_06b_enhanced_path_resolution_tests
+test_01_basic_echo_commands

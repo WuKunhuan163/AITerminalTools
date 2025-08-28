@@ -110,6 +110,8 @@ class VenvOperations:
             # 使用正确的路径：REMOTE_ENV/venv
             env_path = f"{self._get_venv_base_path()}/{env_name}"
             
+
+            
             # 使用API管理器检查环境是否已存在
             try:
                 api_manager = self._get_venv_api_manager()
@@ -343,6 +345,8 @@ fi
             venv_states_file = f"{self._get_venv_base_path()}/venv_states.json"
             env_path = f"{self._get_venv_base_path()}/{env_name}"
             
+
+            
             remote_env_path = self.main_instance.REMOTE_ENV
             remote_command = f'''
 # 获取当前shell ID
@@ -464,9 +468,16 @@ fi
                         "action": "activate"
                     }
                 else:
+                    # 提供更有用的错误信息
+                    error_msg = f"Virtual environment activation failed"
+                    if output.strip():
+                        error_msg += f": {output}"
+                    else:
+                        error_msg += f". Environment '{env_name}' may not exist. Please check available environments with 'GDS venv --list'"
+                    
                     return {
                         "success": False,
-                        "error": f"Virtual environment activation failed: {output}"
+                        "error": error_msg
                     }
             else:
                 return {

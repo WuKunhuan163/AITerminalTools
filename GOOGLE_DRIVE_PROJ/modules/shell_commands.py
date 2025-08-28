@@ -84,7 +84,7 @@ HOME_FOLDER_ID = "root"  # Google Drive中My Drive的文件夹ID
 REMOTE_ROOT_FOLDER_ID = "1LSndouoVj8pkoyi-yTYnC4Uv03I77T8f"  # REMOTE_ROOT文件夹ID
 
 def shell_ls(path=None, command_identifier=None):
-    """列出指定路径或当前路径的文件和文件夹"""
+    """列出指定路径或当前路径的文件和文件夹 - 统一版本，调用内部cmd_ls方法"""
     try:
         current_shell = get_current_shell()
         
@@ -96,97 +96,82 @@ def shell_ls(path=None, command_identifier=None):
                 print(error_msg)
             return 1
         
-        # 导入路径解析器和API服务
-        import sys
-        api_service_path = Path(__file__).parent.parent / "google_drive_api.py"
-        if not api_service_path.exists():
-            error_msg = "API service file not found, please run GOOGLE_DRIVE --console-setup"
-            if is_run_environment(command_identifier):
-                write_to_json_output({"success": False, "error": error_msg}, command_identifier)
-            else:
-                print(error_msg)
-            return 1
-        
-        sys.path.insert(0, str(api_service_path.parent))
-        from google_drive_api import GoogleDriveService #type: ignore
-        
-        # 导入路径解析器
+        # 使用统一的内部API，但先进行路径预处理
         try:
-            from path_resolver import PathResolver
-            path_resolver = PathResolver()
-        except ImportError:
-            # 如果导入失败，回退到旧方法
-            return _shell_ls_fallback(path, command_identifier, current_shell)
-        
-        # 创建服务实例
-        drive_service = GoogleDriveService()
-        
-        # 计算要列出的绝对路径
-        current_shell_path = current_shell.get("current_path", "~")
-        
-        if path is None or path == ".":
-            # 列出当前目录
-            absolute_path = current_shell_path
-        elif path == "~":
-            # 列出根目录
-            absolute_path = "~"
-        else:
-            # 计算绝对路径
-            absolute_path = path_resolver.compute_absolute_path(current_shell_path, path)
-        
-        # 使用新的API列出文件
-        result = drive_service.list_files_by_absolute_path(
-            absolute_path=absolute_path,
-            remote_root_folder_id=REMOTE_ROOT_FOLDER_ID,
-            max_results=50
-        )
-        
-        if result['success']:
-            files = result['files']
-            resolved_path = result.get('resolved_path', absolute_path)
-            folder_id = result.get('folder_id')
+            import sys
+            import os
+            sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+            from google_drive_shell import GoogleDriveShell
             
-            if is_run_environment(command_identifier):
-                # RUN环境下返回JSON
-                write_to_json_output({
-                    "success": True,
-                    "path": resolved_path,
-                    "folder_id": folder_id,
-                    "files": files,
-                    "count": len(files)
-                }, command_identifier)
-            else:
-                # 直接执行时显示bash风格的列表
-                if not files:
-                    # 目录为空时不显示任何内容，就像bash一样
-                    pass
+            # 导入路径解析器进行路径预处理
+            try:
+                from path_resolver import PathResolver
+                path_resolver = PathResolver()
+                
+                # 对复杂路径进行预处理
+                if path and "/" in path:
+                    current_shell_path = current_shell.get("current_path", "~")
+                    # 计算绝对路径，这会处理 ../、./、testdir/../ 等复杂路径
+                    resolved_path = path_resolver.compute_absolute_path(current_shell_path, path)
+                    # Debug: print(f"🔧 Path resolution: '{path}' -> '{resolved_path}'")
+                    path = resolved_path
+            except ImportError:
+                print("⚠️ Path resolver not available, using path as-is")
+                pass
+            
+            shell_instance = GoogleDriveShell()
+            
+            # 调用统一的cmd_ls方法
+            result = shell_instance.cmd_ls(path=path, detailed=False, recursive=False, show_hidden=False)
+            
+            if result.get('success'):
+                files = result.get('files', [])
+                resolved_path = result.get('path', path or '.')
+                
+                if is_run_environment(command_identifier):
+                    # RUN环境下返回JSON
+                    write_to_json_output({
+                        "success": True,
+                        "path": resolved_path,
+                        "files": files,
+                        "count": len(files)
+                    }, command_identifier)
                 else:
-                    # 按名称排序，文件夹优先
-                    folders = sorted([f for f in files if f['mimeType'] == 'application/vnd.google-apps.folder'], 
-                                   key=lambda x: x['name'].lower())
-                    other_files = sorted([f for f in files if f['mimeType'] != 'application/vnd.google-apps.folder'], 
-                                       key=lambda x: x['name'].lower())
-                    
-                    # 合并列表，文件夹在前
-                    all_items = folders + other_files
-                    
-                    # 简单的列表格式，类似bash ls
-                    for item in all_items:
-                        name = item['name']
-                        if item['mimeType'] == 'application/vnd.google-apps.folder':
-                            # 文件夹用不同颜色或标记（这里用简单文本）
-                            print(f"{name}/")
-                        else:
-                            print(name)
-            
-            return 0
-        else:
-            error_msg = f"Failed to list files: {result['error']}"
-            if is_run_environment(command_identifier):
-                write_to_json_output({"success": False, "error": error_msg}, command_identifier)
+                    # 直接执行时显示bash风格的列表
+                    if not files:
+                        # 目录为空时不显示任何内容，就像bash一样
+                        pass
+                    else:
+                        # 按名称排序，文件夹优先
+                        folders = sorted([f for f in files if f.get('mimeType') == 'application/vnd.google-apps.folder'], 
+                                       key=lambda x: x.get('name', '').lower())
+                        other_files = sorted([f for f in files if f.get('mimeType') != 'application/vnd.google-apps.folder'], 
+                                           key=lambda x: x.get('name', '').lower())
+                        
+                        # 合并列表，文件夹在前
+                        all_items = folders + other_files
+                        
+                        # 简单的列表格式，类似bash ls
+                        for item in all_items:
+                            name = item.get('name', 'Unknown')
+                            if item.get('mimeType') == 'application/vnd.google-apps.folder':
+                                # 文件夹用不同颜色或标记（这里用简单文本）
+                                print(f"{name}/")
+                            else:
+                                print(name)
+                
+                return 0
             else:
-                print(error_msg)
-            return 1
+                error_msg = result.get('error', 'Unknown error')
+                if is_run_environment(command_identifier):
+                    write_to_json_output({"success": False, "error": error_msg}, command_identifier)
+                else:
+                    print(f"Failed to list files: {error_msg}")
+                return 1
+                
+        except Exception as e:
+            # 如果统一API失败，回退到旧方法
+            return _shell_ls_fallback(path, command_identifier, current_shell)
             
     except Exception as e:
         error_msg = f"Error executing ls command: {e}"

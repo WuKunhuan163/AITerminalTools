@@ -429,8 +429,10 @@ print(f"JSON file updated successfully")
             if current_env:
                 env_path = f"{self.main_instance.REMOTE_ENV}/venv/{current_env}"
                 # 不设置PYTHONPATH，因为使用统一的远程Python
-                # 只添加pip安装目标目录（使用单引号避免f-string中的引号冲突）
-                pip_target_option = f" --target '{env_path}'"
+                # 只添加pip安装目标目录（不使用引号，避免双重引号问题）
+                pip_target_option = f" --target {env_path}"
+                
+
             
             # 使用Python subprocess包装pip执行，确保正确捕获所有输出和错误
             python_script = f'''

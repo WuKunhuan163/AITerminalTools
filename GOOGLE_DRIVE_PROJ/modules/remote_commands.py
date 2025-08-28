@@ -1436,72 +1436,46 @@ fi
                     bash_safe_command = f"{escaped_cmd} {' '.join(escaped_args)}"
             else:
                 bash_safe_command = shlex.quote(cmd)
-            
-            # 为echo显示创建安全版本，避免特殊字符破坏bash语法
-            display_command = self._escape_for_display(full_command)
-            
-            # 检查命令是否包含重定向符号
-            has_redirect = any(op in args for op in ['>', '>>', '<', '|'])
-            
-            if has_redirect:
-                # 命令本身包含重定向，不要添加额外的输出捕获
-                remote_command = (
-                    f'cd "{remote_path}" && {{\n'
-                    f'    # 确保tmp目录存在\n'
-                    f'    mkdir -p "{self.main_instance.REMOTE_ROOT}/tmp"\n'
-                    f'    \n'
+            # 普通命令，使用标准的输出捕获
+            remote_command = (
+                f'# 确保工作目录存在\n'
+                f'mkdir -p "{remote_path}"\n'
+                f'cd "{remote_path}" && {{\n'
+                f'    # 确保tmp目录存在\n'
+                f'    mkdir -p "{self.main_instance.REMOTE_ROOT}/tmp"\n'
+                f'    \n'
 
-                    f'    \n'
-                    f'    # 执行命令（包含重定向）\n'
-                    f'    EXITCODE_FILE="{self.main_instance.REMOTE_ROOT}/tmp/cmd_exitcode_{timestamp}_{cmd_hash}"\n'
-                    f'    \n'
-                    f'    # 直接执行命令，不捕获输出（因为命令本身有重定向）\n'
-                    f'    set +e  # 允许命令失败\n'
-                    f'    {bash_safe_command} && clear && echo "✅ 执行完成" || echo "❌ 执行失败"\n'
-                    f'    EXIT_CODE=$?\n'
-                    f'    echo "$EXIT_CODE" > "$EXITCODE_FILE"\n'
-                    f'    set -e\n'
-                    f'    \n'
-                )
-            else:
-                # 普通命令，使用标准的输出捕获
-                remote_command = (
-                    f'cd "{remote_path}" && {{\n'
-                    f'    # 确保tmp目录存在\n'
-                    f'    mkdir -p "{self.main_instance.REMOTE_ROOT}/tmp"\n'
-                    f'    \n'
-
-                    f'    \n'
-                    f'    # 执行命令并捕获输出\n'
-                    f'    OUTPUT_FILE="{self.main_instance.REMOTE_ROOT}/tmp/cmd_stdout_{timestamp}_{cmd_hash}"\n'
-                    f'    ERROR_FILE="{self.main_instance.REMOTE_ROOT}/tmp/cmd_stderr_{timestamp}_{cmd_hash}"\n'
-                    f'    EXITCODE_FILE="{self.main_instance.REMOTE_ROOT}/tmp/cmd_exitcode_{timestamp}_{cmd_hash}"\n'
-                    f'    \n'
-                    f'    # 直接执行命令，捕获输出和错误\n'
-                    f'    set +e  # 允许命令失败\n'
-                    f'    {bash_safe_command} > "$OUTPUT_FILE" 2> "$ERROR_FILE"\n'
-                    f'    EXIT_CODE=$?\n'
-                    f'    echo "$EXIT_CODE" > "$EXITCODE_FILE"\n'
-                    f'    set -e\n'
-                    f'    \n'
-                    f'    # 显示stdout内容\n'
-                    f'    if [ -s "$OUTPUT_FILE" ]; then\n'
-                    f'        cat "$OUTPUT_FILE"\n'
-                    f'    fi\n'
-                    f'    \n'
-                    f'    # 显示stderr内容（如果有）\n'
-                    f'    if [ -s "$ERROR_FILE" ]; then\n'
-                    f'        cat "$ERROR_FILE" >&2\n'
-                    f'    fi\n'
-                    f'    \n'
-                    f'    # 统一的执行完成提示\n'
-                    f'    if [ "$EXIT_CODE" -eq 0 ]; then\n'
-                    f'        clear && echo "✅ 执行完成"\n'
-                    f'    else\n'
-                    f'        echo "❌ 执行失败 (退出码: $EXIT_CODE)"\n'
-                    f'    fi\n'
-                    f'    \n'
-                )
+                f'    \n'
+                f'    # 执行命令并捕获输出\n'
+                f'    OUTPUT_FILE="{self.main_instance.REMOTE_ROOT}/tmp/cmd_stdout_{timestamp}_{cmd_hash}"\n'
+                f'    ERROR_FILE="{self.main_instance.REMOTE_ROOT}/tmp/cmd_stderr_{timestamp}_{cmd_hash}"\n'
+                f'    EXITCODE_FILE="{self.main_instance.REMOTE_ROOT}/tmp/cmd_exitcode_{timestamp}_{cmd_hash}"\n'
+                f'    \n'
+                f'    # 直接执行命令，捕获输出和错误\n'
+                f'    set +e  # 允许命令失败\n'
+                f'    {bash_safe_command} > "$OUTPUT_FILE" 2> "$ERROR_FILE"\n'
+                f'    EXIT_CODE=$?\n'
+                f'    echo "$EXIT_CODE" > "$EXITCODE_FILE"\n'
+                f'    set -e\n'
+                f'    \n'
+                f'    # 显示stdout内容\n'
+                f'    if [ -s "$OUTPUT_FILE" ]; then\n'
+                f'        cat "$OUTPUT_FILE"\n'
+                f'    fi\n'
+                f'    \n'
+                f'    # 显示stderr内容（如果有）\n'
+                f'    if [ -s "$ERROR_FILE" ]; then\n'
+                f'        cat "$ERROR_FILE" >&2\n'
+                f'    fi\n'
+                f'    \n'
+                f'    # 统一的执行完成提示（无论成功失败都显示完成）\n'
+                f'    if [ "$EXIT_CODE" -eq 0 ]; then\n'
+                f'        clear && echo "✅ 执行完成"\n'
+                f'    else\n'
+                f'        clear && echo "✅ 执行完成"\n'
+                f'    fi\n'
+                f'    \n'
+            )
             
             # 添加JSON结果文件生成部分（对于所有命令）
             remote_command += (

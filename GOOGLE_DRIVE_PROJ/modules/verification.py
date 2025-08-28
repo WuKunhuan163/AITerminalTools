@@ -45,6 +45,8 @@ class Verification:
             # 输出验证进度提示
             print("⏳ Validating file creation ...", end="", flush=True)
             
+
+            
             # 解析文件路径
             if path.startswith("~/"):
                 # ~/dir/file.txt -> 验证文件在指定目录中存在
@@ -59,6 +61,9 @@ class Verification:
                     # 嵌套目录中的文件
                     target_dir = "~/" + "/".join(path_components[:-1])
                     target_filename = path_components[-1]
+                
+
+                
             else:
                 # 相对路径或其他格式
                 if '/' in path:
@@ -68,6 +73,26 @@ class Verification:
                 else:
                     target_dir = "."
                     target_filename = path
+                
+
+            
+            # 计算绝对路径
+            if target_dir == ".":
+                # 获取当前shell的路径
+                current_path = current_shell.get("current_path", "~")
+                
+                # 使用路径解析器计算绝对路径
+                try:
+                    absolute_path = self.main_instance.path_resolver.compute_absolute_path(current_path, target_filename)
+                    
+                    # 分解绝对路径
+                    if '/' in absolute_path:
+                        abs_components = absolute_path.split('/')
+                        target_dir = "/".join(abs_components[:-1]) or "~"
+                        target_filename = abs_components[-1]
+                except Exception as e:
+                    # 如果路径解析失败，保持原有逻辑
+                    pass
             
             # 验证文件存在
             for attempt in range(max_attempts):
@@ -77,6 +102,8 @@ class Verification:
                 
                 # 使用ls命令检查文件是否存在
                 ls_result = self.main_instance.cmd_ls(target_dir, detailed=False, recursive=False)
+                
+
                 
                 if ls_result["success"]:
                     files = ls_result.get("files", [])

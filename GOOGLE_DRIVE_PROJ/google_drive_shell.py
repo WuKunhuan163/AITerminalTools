@@ -198,6 +198,10 @@ class GoogleDriveShell:
         """委托到file_operations管理器"""
         return self.file_operations.cmd_cd(*args, **kwargs)
     
+    def cmd_deps(self, *args, **kwargs):
+        """委托到file_operations管理器"""
+        return self.file_operations.cmd_deps(*args, **kwargs)
+    
     def cmd_download(self, *args, **kwargs):
         """委托到file_operations管理器"""
         return self.file_operations.cmd_download(*args, **kwargs)
@@ -702,6 +706,13 @@ class GoogleDriveShell:
                     cmd = 'python'
                     # 提取-c后面的所有内容作为Python代码
                     python_code = shell_cmd_clean.strip()[len('python -c '):].strip()
+                    
+                    # 去掉外层的引号（如果存在）
+                    if python_code.startswith('"') and python_code.endswith('"'):
+                        python_code = python_code[1:-1]
+                    elif python_code.startswith("'") and python_code.endswith("'"):
+                        python_code = python_code[1:-1]
+                    
                     args = ['-c', python_code]
 
                 else:
