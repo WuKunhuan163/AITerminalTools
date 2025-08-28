@@ -292,9 +292,29 @@ class RemoteCommands:
                 time.sleep(1)
                 print(".", end="", flush=True)
             
-            # 超时，提供用户输入fallback
+            # 超时，检查是否在后台模式
             print()  # 换行
-            print(f"Waiting for result file: {remote_file_path} timed out")
+            print(f"⏰ Waiting for result file: {remote_file_path} timed out")
+            
+            # 检查是否在后台模式或无交互环境
+            import sys
+            import os
+            is_background_mode = (
+                not sys.stdin.isatty() or  # 非交互式终端
+                not sys.stdout.isatty() or  # 输出被重定向
+                os.getenv('PYTEST_CURRENT_TEST') is not None or  # pytest环境
+                os.getenv('CI') is not None  # CI环境
+            )
+            
+            if is_background_mode:
+                print("🤖 后台模式检测：自动返回超时错误")
+                return {
+                    "success": False,
+                    "error": f"Result file timeout after 60 seconds: {remote_file_path}",
+                    "timeout": True,
+                    "background_mode": True
+                }
+            
             print("This may be because:")
             print("  1. The command is running in the background (e.g. http-server service)")
             print("  2. The command execution time exceeds 60 seconds")
@@ -540,7 +560,7 @@ class RemoteCommands:
 
     def show_remote_command_window(self, remote_command, command_type="upload", debug_info=None):
         """
-        显示远端命令的 tkinter 窗口（统一版本，使用_show_generic_command_window）
+        显示远端命令的 tkinter 窗口（统一版本，使用_show_command_window）
         
         Args:
             remote_command (str): 要显示的远端命令
@@ -553,7 +573,7 @@ class RemoteCommands:
         try:
             # 调用统一的通用窗口
             debug_info = debug_capture.get_debug_info()
-            window_result = self._show_generic_command_window(command_type, [], remote_command, debug_info)
+            window_result = self._show_command_window(command_type, [], remote_command, debug_info)
             
             # 适配返回格式以保持向后兼容
             if window_result.get("action") == "success":
@@ -1607,6 +1627,7 @@ fi
     def _execute_with_result_capture(self, remote_command_info, cmd, args):
         """
         执行远端命令并捕获结果
+        集成队列管理，确保在结果JSON下载完成后才释放窗口槽位
         
         Args:
             remote_command_info (tuple): (远端命令, 结果文件名)
@@ -1616,7 +1637,31 @@ fi
         Returns:
             dict: 执行结果
         """
+        # 导入队列管理器
         try:
+            from .remote_window_queue import request_window_slot, release_window_slot
+        except ImportError:
+            print("⚠️ 警告：无法导入队列管理器，将直接执行")
+            request_window_slot = None
+            release_window_slot = None
+        
+        # 生成唯一的窗口ID
+        import threading
+        import time
+        window_id = f"{cmd}_{threading.get_ident()}_{int(time.time() * 1000)}"
+        
+        try:
+            # 请求窗口槽位
+            if request_window_slot:
+                if not request_window_slot(window_id, timeout_seconds=3600):
+                    return {
+                        "success": False,
+                        "action": "queue_timeout",
+                        "error": "等待远程窗口槽位超时",
+                        "cmd": cmd,
+                        "args": args,
+                        "source": "window_queue"
+                    }
             remote_command, result_filename = remote_command_info
             
             # 在显示命令窗口前进行语法检查
@@ -1633,13 +1678,13 @@ fi
             # 通过tkinter显示命令并获取用户反馈
             debug_info = debug_capture.get_debug_info()
             debug_capture.start_capture()  # 启动debug捕获，避免窗口期间的debug输出
-            debug_print("_execute_with_result_capture: 即将调用_show_generic_command_window")
+            debug_print("_execute_with_result_capture: 即将调用_show_command_window")
             debug_print(f"cmd: {cmd}, args: {args}")
-            window_result = self._show_generic_command_window(cmd, args, remote_command, debug_info)
-            debug_print(f"_show_generic_command_window返回结果: {window_result}")
+            window_result = self._show_command_window(cmd, args, remote_command, debug_info)
+            debug_print(f"_show_command_window返回结果: {window_result}")
             
             if window_result.get("action") == "direct_feedback":
-                # 直接反馈已经在_show_generic_command_window中处理完毕，直接返回结果
+                # 直接反馈已经在_show_command_window中处理完毕，直接返回结果
                 debug_print("_execute_with_result_capture: 检测到direct_feedback，直接返回window_result")
                 debug_print(f"window_result: {window_result}")
                 debug_capture.stop_capture()  # 在返回前停止debug捕获
@@ -1685,8 +1730,12 @@ fi
                 "success": False,
                 "error": f"执行结果捕获失败: {str(e)}"
             }
+        finally:
+            # 在结果JSON下载完成后释放窗口槽位
+            if release_window_slot:
+                release_window_slot(window_id)
 
-    def _show_generic_command_window(self, cmd, args, remote_command, debug_info=None):
+    def _show_command_window(self, cmd, args, remote_command, debug_info=None):
         """
         显示远端命令的窗口（使用subprocess方法，完全抑制IMK信息）
         
@@ -1700,17 +1749,15 @@ fi
             dict: 用户操作结果
         """
         try:
-            # show_command_window_subprocess现在是类方法
             
+            # show_command_window_subprocess现在是类方法
             title = f"GDS Remote Command: {cmd}"
             instruction = f"Command: {cmd} {' '.join(args)}\n\nPlease execute the following command in your remote environment:"
             
-            # 使用subprocess方法显示窗口
+            # 使用subprocess方法显示窗口（修复参数不匹配问题）
             result = self.show_command_window_subprocess(
                 title=title,
-                command_text=remote_command,
-                instruction_text=instruction,
-                timeout_seconds=300
+                command_text=remote_command
             )
             
             # 转换结果格式以保持兼容性
@@ -1900,7 +1947,7 @@ fi
         
         return unzip_command
     
-    def show_command_window_subprocess(self, title, command_text, instruction_text="", timeout_seconds=300):
+    def show_command_window_subprocess(self, title, command_text, timeout_seconds=3600):
         """
         在subprocess中显示命令窗口，完全抑制所有系统输出
         恢复原来GDS的窗口设计：500x50，三按钮，自动复制
@@ -2214,7 +2261,7 @@ except Exception as e:
                 [sys.executable, '-c', subprocess_script],
                 capture_output=True,
                 text=True,
-                timeout=timeout_seconds + 10  # 给子进程额外时间
+                timeout=timeout_seconds
             )
             
             if result.returncode == 0 and result.stdout.strip():

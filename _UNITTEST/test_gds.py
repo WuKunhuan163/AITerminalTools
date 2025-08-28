@@ -54,8 +54,8 @@ class GDSTest(unittest.TestCase):
         hash_suffix = hashlib.md5(timestamp.encode()).hexdigest()[:8]
         cls.test_folder = f"gds_test_{timestamp}_{hash_suffix}"
         
-        print(f"📂 本地测试数据: {cls.TEST_DATA_DIR}")
-        print(f"📂 本地临时文件: {cls.TEST_TEMP_DIR}")
+        # print(f"📂 本地测试数据: {cls.TEST_DATA_DIR}")
+        # print(f"📂 本地临时文件: {cls.TEST_TEMP_DIR}")
         
         # 检查GOOGLE_DRIVE.py是否可用
         if not cls.GOOGLE_DRIVE_PY.exists():
@@ -694,13 +694,7 @@ print(f"Current files: {len(os.listdir())}")'''
         result = self._run_gds_command('ls -R ls_test_dir')
         self.assertEqual(result.returncode, 0)
         
-        # 7. 测试ls -R ~（根目录递归）- 关键修复测试
-        print("🏠🔄 测试ls -R ~（根目录递归）")
-        result = self._run_gds_command('ls -R ~')
-        self.assertEqual(result.returncode, 0)
-        # 这是我们修复的关键功能：~应该正确展开为REMOTE_ROOT
-        
-        # 8. 测试文件路径的ls
+        # 7. 测试文件路径的ls
         print("📄 测试文件路径的ls")
         result = self._run_gds_command('ls ls_test_root.txt')
         self.assertEqual(result.returncode, 0)

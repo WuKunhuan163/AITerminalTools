@@ -3109,7 +3109,7 @@ mkdir -p "{self._get_venv_base_path()}" && {{
             
             # 调用统一的远程命令窗口
             try:
-                result = self.main_instance.remote_commands._show_generic_command_window(
+                result = self.main_instance.remote_commands._show_command_window(
                     action_description,  # cmd
                     [context_name] if context_name else [],  # args
                     full_command_with_verification,  # remote_command
@@ -7127,7 +7127,7 @@ except Exception as e:
             
             # 调用统一的远程命令窗口
             try:
-                result = self.main_instance.remote_commands._show_generic_command_window(
+                result = self.main_instance.remote_commands._show_command_window(
                     "pip",  # cmd
                     pip_command.split(),  # args
                     full_command,  # remote_command

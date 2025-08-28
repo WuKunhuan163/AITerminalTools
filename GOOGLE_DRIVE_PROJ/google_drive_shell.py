@@ -626,17 +626,15 @@ class GoogleDriveShell:
             is_quoted_command = shell_cmd.startswith("__QUOTED_COMMAND__")
             if is_quoted_command:
                 shell_cmd = shell_cmd[len("__QUOTED_COMMAND__"):]  # 移除标记
-            # 显示命令分割线
-            print("=" * 13)
-            # 在banner中将换行符替换为空格，以便单行显示
-            display_cmd = shell_cmd.replace('\n', ' ')
-            # 修复shell展开的家目录路径显示问题
+            # 显示命令
+            # print("=" * 13)
+            # display_cmd = shell_cmd.replace('\n', ' ')
             import os
-            local_home = os.path.expanduser("~")
-            if local_home in display_cmd:
-                display_cmd = display_cmd.replace(local_home, "~")
-            print(f"GDS {display_cmd}")
-            print("=" * 13)
+            # local_home = os.path.expanduser("~")
+            # if local_home in display_cmd:
+            #     display_cmd = display_cmd.replace(local_home, "~")
+            # print(f"GDS {display_cmd}")
+            # print("=" * 13)
             
             # 首先检测引号包围的完整命令（在命令解析之前）
             shell_cmd_clean = shell_cmd.strip()
@@ -881,7 +879,10 @@ class GoogleDriveShell:
                             # 简单的列表格式，类似bash ls
                             for item in all_sorted_items:
                                 name = item.get('name', 'Unknown')
-                                print(name)
+                                if item.get('mimeType') == 'application/vnd.google-apps.folder':
+                                    print(f"{name}/")
+                                else:
+                                    print(name)
                         
                         return 0
                     else:

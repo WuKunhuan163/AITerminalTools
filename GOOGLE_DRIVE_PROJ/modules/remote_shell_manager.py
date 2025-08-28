@@ -427,7 +427,10 @@ def enter_shell_mode(command_identifier=None):
                                     all_sorted_items = sorted_folders + sorted_files
                                     for item in all_sorted_items:
                                         name = item.get('name', 'Unknown')
-                                        print(name)
+                                        if item.get('mimeType') == 'application/vnd.google-apps.folder':
+                                            print(f"{name}/")
+                                        else:
+                                            print(name)
                             else:
                                 print(result.get('error', 'ls command failed'))
                         except Exception as e:

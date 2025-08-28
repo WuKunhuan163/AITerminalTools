@@ -1,0 +1,22 @@
+{
+  "current_window": {
+    "id": "bash_8660021824_1756393101759",
+    "start_time": 1756393108.792901,
+    "thread_id": 8660021824
+  },
+  "waiting_queue": [
+    {
+      "id": "bash_8660021824_1756393095851",
+      "request_time": 1756393095.8513658,
+      "thread_id": 8660021824
+    },
+    {
+      "id": "bash_8660021824_1756393101759",
+      "request_time": 1756393101.759577,
+      "thread_id": 8660021824
+    }
+  ],
+  "last_update": 1756393108.792921,
+  "completed_windows_count": 7,
+  "description": "Default clean state for remote window queue - use this to reset when tests get stuck"
+}
