@@ -622,7 +622,15 @@ class FileCore:
                     if file_result:
                         # 这是一个文件路径，返回单个文件信息
                         # Debug: print(f"🔍 DEBUG: ✅ Found as file, returning single file info")
-                        return self._ls_single_file(file_result, path)
+                        # 内联_ls_single_file的逻辑
+                        return {
+                            "success": True,
+                            "path": path,
+                            "files": [file_result],
+                            "folders": [],
+                            "count": 1,
+                            "mode": "single_file"
+                        }
                     else:
                         # Debug: print(f"🔍 DEBUG: ❌ Neither directory nor file found for path '{path}'")
                         return {"success": False, "error": f"Path not found: {path}"}
@@ -630,7 +638,64 @@ class FileCore:
             if recursive:
                 return self._ls_recursive(target_folder_id, display_path, detailed, show_hidden)
             else:
-                return self._ls_single(target_folder_id, display_path, detailed, show_hidden)
+                # 内联_ls_single的逻辑
+                result = self.drive_service.list_files(folder_id=target_folder_id, max_results=50)
+                
+                if result['success']:
+                    files = result['files']
+                    
+                    # 添加网页链接到每个文件
+                    for file in files:
+                        file['url'] = self._generate_web_url(file)
+                    
+                    # 按名称排序，文件夹优先
+                    folders = sorted([f for f in files if f['mimeType'] == 'application/vnd.google-apps.folder'], 
+                                   key=lambda x: x['name'].lower())
+                    other_files = sorted([f for f in files if f['mimeType'] != 'application/vnd.google-apps.folder'], 
+                                       key=lambda x: x['name'].lower())
+                    
+                    # 去重处理
+                    seen_names = set()
+                    clean_folders = []
+                    clean_files = []
+                    
+                    # 处理文件夹
+                    for folder in folders:
+                        if folder["name"] not in seen_names:
+                            clean_folders.append(folder)
+                            seen_names.add(folder["name"])
+                    
+                    # 处理文件
+                    for file in other_files:
+                        if file["name"] not in seen_names:
+                            clean_files.append(file)
+                            seen_names.add(file["name"])
+                    
+                    if detailed:
+                        # 详细模式：返回完整JSON
+                        return {
+                            "success": True,
+                            "path": display_path,
+                            "folder_id": target_folder_id,
+                            "folder_url": self._generate_folder_url(target_folder_id),
+                            "files": clean_files,  # 只有非文件夹文件
+                            "folders": clean_folders,  # 只有文件夹
+                            "count": len(clean_folders) + len(clean_files),
+                            "mode": "detailed"
+                        }
+                    else:
+                        # bash风格：只返回文件名列表
+                        return {
+                            "success": True,
+                            "path": display_path,
+                            "folder_id": target_folder_id,
+                            "files": clean_files,  # 只有非文件夹文件
+                            "folders": clean_folders,  # 只有文件夹
+                            "count": len(clean_folders) + len(clean_files),
+                            "mode": "bash"
+                        }
+                else:
+                    return {"success": False, "error": f"列出文件失败: {result['error']}"}
                 
         except Exception as e:
 
@@ -836,26 +901,22 @@ class FileCore:
             current_shell_path = current_shell.get("current_path", "~")
             absolute_path = self.main_instance.path_resolver.compute_absolute_path(current_shell_path, path)
             
-            # 使用ls API验证路径是否存在
+            # 使用cmd_ls验证路径是否存在（与mkdir验证保持一致）
             try:
-                # 使用main_instance中的REMOTE_ROOT_FOLDER_ID
-                remote_root_folder_id = self.main_instance.REMOTE_ROOT_FOLDER_ID
+                # 使用统一的cmd_ls接口检测目录是否存在
+                ls_result = self.main_instance.cmd_ls(absolute_path)
                 
-                result = self.main_instance.drive_service.list_files_by_absolute_path(
-                    absolute_path=absolute_path,
-                    remote_root_folder_id=remote_root_folder_id,
-                    max_results=1  # 只需要验证存在性
-                )
-                
-                if not result['success']:
+                if not ls_result.get('success'):
                     return {"success": False, "error": f"Directory does not exist: {path}"}
                 
-                # 获取目标文件夹ID和解析后的路径
-                target_id = result.get('folder_id')
-                target_path = result.get('resolved_path', absolute_path)
+                # 如果ls成功，说明目录存在，使用resolve_path获取目标ID和路径
+                target_id, target_path = self.main_instance.resolve_path(path, current_shell)
                 
-            except (ImportError, Exception) as e:
-                # 如果新方法失败，回退到旧方法
+                if not target_id:
+                    return {"success": False, "error": f"Directory does not exist: {path}"}
+                
+            except Exception as e:
+                # 如果cmd_ls失败，回退到旧方法
                 target_id, target_path = self.main_instance.resolve_path(path, current_shell)
                 
                 if not target_id:
@@ -969,83 +1030,9 @@ class FileCore:
         except Exception as e:
             return {"success": False, "error": f"执行mkdir命令时出错: {e}"}
 
-    def _ls_single(self, target_folder_id, display_path, detailed, show_hidden=False):
-        """列出单个目录内容（统一实现，包含去重处理）"""
-        try:
-            result = self.drive_service.list_files(folder_id=target_folder_id, max_results=50)
-            
-            if result['success']:
-                files = result['files']
-                
-                # 添加网页链接到每个文件
-                for file in files:
-                    file['url'] = self._generate_web_url(file)
-                
-                # 按名称排序，文件夹优先
-                folders = sorted([f for f in files if f['mimeType'] == 'application/vnd.google-apps.folder'], 
-                               key=lambda x: x['name'].lower())
-                other_files = sorted([f for f in files if f['mimeType'] != 'application/vnd.google-apps.folder'], 
-                                   key=lambda x: x['name'].lower())
-                
-                # 去重处理
-                seen_names = set()
-                clean_folders = []
-                clean_files = []
-                
-                # 处理文件夹
-                for folder in folders:
-                    if folder["name"] not in seen_names:
-                        clean_folders.append(folder)
-                        seen_names.add(folder["name"])
-                
-                # 处理文件
-                for file in other_files:
-                    if file["name"] not in seen_names:
-                        clean_files.append(file)
-                        seen_names.add(file["name"])
-                
-                if detailed:
-                    # 详细模式：返回完整JSON
-                    return {
-                        "success": True,
-                        "path": display_path,
-                        "folder_id": target_folder_id,
-                        "folder_url": self._generate_folder_url(target_folder_id),
-                        "files": clean_files,  # 只有非文件夹文件
-                        "folders": clean_folders,  # 只有文件夹
-                        "count": len(clean_folders) + len(clean_files),
-                        "mode": "detailed"
-                    }
-                else:
-                    # bash风格：只返回文件名列表
-                    return {
-                        "success": True,
-                        "path": display_path,
-                        "folder_id": target_folder_id,
-                        "files": clean_files,  # 只有非文件夹文件
-                        "folders": clean_folders,  # 只有文件夹
-                        "count": len(clean_folders) + len(clean_files),
-                        "mode": "bash"
-                    }
-            else:
-                return {"success": False, "error": f"列出文件失败: {result['error']}"}
-                
-        except Exception as e:
-            return {"success": False, "error": f"列出单个目录时出错: {e}"}
 
-    def _ls_single_file(self, file_info, original_path):
-        """返回单个文件的ls信息"""
-        try:
-            return {
-                "success": True,
-                "path": original_path,
-                "files": [file_info],
-                "count": 1,
-                "mode": "single_file"
-            }
-            
-        except Exception as e:
-            return {"success": False, "error": f"显示单个文件时出错: {e}"}
+
+
 
     def _generate_folder_url(self, folder_id):
         """生成文件夹的网页链接"""

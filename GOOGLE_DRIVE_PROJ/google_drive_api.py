@@ -180,58 +180,6 @@ class GoogleDriveService:
                 "error": f"列出文件失败: {e}"
             }
     
-    def list_files_by_absolute_path(self, absolute_path, remote_root_folder_id, max_results=100):
-        """
-        根据绝对路径列出文件
-        
-        Args:
-            absolute_path (str): 绝对路径，如 "~/folder1/folder2" 或 "~"
-            remote_root_folder_id (str): 远程根目录的文件夹ID
-            max_results (int): 最大结果数
-            
-        Returns:
-            dict: 包含成功状态、文件列表和目标文件夹ID的结果
-        """
-        try:
-            # 解析绝对路径到文件夹ID
-            folder_id, resolved_path = self._resolve_absolute_path_to_folder_id(
-                absolute_path, remote_root_folder_id
-            )
-            
-            if not folder_id:
-                return {
-                    "success": False,
-                    "error": f"Path not found: {absolute_path}",
-                    "resolved_path": None,
-                    "folder_id": None
-                }
-            
-            # 列出该文件夹的内容
-            query = f"'{folder_id}' in parents"
-            results = self.service.files().list(
-                q=query,
-                pageSize=max_results,
-                fields="nextPageToken, files(id, name, mimeType, size, createdTime, modifiedTime)"
-            ).execute()
-            
-            items = results.get('files', [])
-            
-            return {
-                "success": True,
-                "files": items,
-                "count": len(items),
-                "resolved_path": resolved_path,
-                "folder_id": folder_id
-            }
-            
-        except Exception as e:
-            return {
-                "success": False,
-                "error": f"根据绝对路径列出文件失败: {e}",
-                "resolved_path": None,
-                "folder_id": None
-            }
-    
     def _resolve_absolute_path_to_folder_id(self, absolute_path, remote_root_folder_id):
         """
         将绝对路径解析为Google Drive文件夹ID

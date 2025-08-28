@@ -767,13 +767,6 @@ class GoogleDriveShell:
                 from shell_commands import shell_pwd
                 return shell_pwd(command_identifier)
             elif cmd == 'ls':
-                # 导入shell_commands模块中的具体函数
-                current_dir = os.path.dirname(__file__)
-                modules_dir = os.path.join(current_dir, 'modules')
-                if modules_dir not in sys.path:
-                    sys.path.append(modules_dir)
-                
-                from shell_commands import shell_ls
                 
                 # 解析ls命令的参数
                 recursive = False
@@ -869,7 +862,32 @@ class GoogleDriveShell:
                         traceback.print_exc()
                         return 1
                 else:
-                    return shell_ls(path, command_identifier)
+                    # 直接使用cmd_ls
+                    result = self.cmd_ls(path=path, detailed=detailed, recursive=recursive, show_hidden=False)
+                    
+                    if result.get("success"):
+                        files = result.get("files", [])
+                        folders = result.get("folders", [])
+                        all_items = folders + files
+                        
+                        if all_items:
+                            # 按名称排序，文件夹优先
+                            sorted_folders = sorted(folders, key=lambda x: x.get('name', '').lower())
+                            sorted_files = sorted(files, key=lambda x: x.get('name', '').lower())
+                            
+                            # 合并列表，文件夹在前
+                            all_sorted_items = sorted_folders + sorted_files
+                            
+                            # 简单的列表格式，类似bash ls
+                            for item in all_sorted_items:
+                                name = item.get('name', 'Unknown')
+                                print(name)
+                        
+                        return 0
+                    else:
+                        error_msg = result.get('error', 'Unknown error')
+                        print(f"Failed to list files: {error_msg}")
+                        return 1
             elif cmd == 'cd':
                 if not args:
                     print("❌ cd command needs a path")

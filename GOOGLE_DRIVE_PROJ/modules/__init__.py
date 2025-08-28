@@ -174,8 +174,7 @@ class ShellCommands:
         self.drive_service = drive_service
         self.main_instance = main_instance
     
-    def shell_ls(self, *args, **kwargs):
-        return shell_ls(*args, **kwargs)
+
     
     def shell_cd(self, *args, **kwargs):
         # 使用main_instance的cmd_cd方法
@@ -304,7 +303,6 @@ __all__ = [
     "set_local_sync_dir",
     "setup_remote_hf_credentials",
     "shell_cd",
-    "shell_ls",
     "shell_ls_with_id",
     "shell_mkdir",
     "shell_pwd",

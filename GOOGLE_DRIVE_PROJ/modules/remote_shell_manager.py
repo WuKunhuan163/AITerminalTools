@@ -409,7 +409,29 @@ def enter_shell_mode(command_identifier=None):
                     elif cmd == "pwd":
                         shell_pwd()
                     elif cmd == "ls":
-                        shell_ls()
+                        # 使用GoogleDriveShell实例执行ls命令
+                        try:
+                            import sys
+                            import os
+                            sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+                            from google_drive_shell import GoogleDriveShell
+                            shell_instance = GoogleDriveShell()
+                            result = shell_instance.cmd_ls(path=None, detailed=False, recursive=False, show_hidden=False)
+                            if result.get("success"):
+                                files = result.get("files", [])
+                                folders = result.get("folders", [])
+                                all_items = folders + files
+                                if all_items:
+                                    sorted_folders = sorted(folders, key=lambda x: x.get('name', '').lower())
+                                    sorted_files = sorted(files, key=lambda x: x.get('name', '').lower())
+                                    all_sorted_items = sorted_folders + sorted_files
+                                    for item in all_sorted_items:
+                                        name = item.get('name', 'Unknown')
+                                        print(name)
+                            else:
+                                print(result.get('error', 'ls command failed'))
+                        except Exception as e:
+                            print(f"Error executing ls command: {e}")
                     elif cmd.startswith("mkdir "):
                         path = cmd[6:].strip()
                         shell_mkdir(path)
