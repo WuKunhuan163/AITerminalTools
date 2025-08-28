@@ -113,11 +113,6 @@ class GDSTest(unittest.TestCase):
             cwd=cls.BIN_DIR
         )
         
-        if result.returncode == 0:
-            print(f"✅ 已切换到远端测试目录: ~/tmp/{cls.test_folder}")
-        else:
-            print(f"⚠️ 无法验证远端目录切换")
-        
         # 本地也切换到临时目录，避免本地重定向问题
         import tempfile
         import os

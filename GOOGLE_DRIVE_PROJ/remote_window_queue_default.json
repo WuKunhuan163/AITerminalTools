@@ -1,7 +1,0 @@
-{
-  "current_window": null,
-  "waiting_queue": [],
-  "last_update": 0,
-  "completed_windows_count": 0,
-  "description": "Default clean state for remote window queue - use this to reset when tests get stuck"
-}
