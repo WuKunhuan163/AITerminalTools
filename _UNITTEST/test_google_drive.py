@@ -447,7 +447,7 @@ def test_desktop_status_option():
     
     print("✅ test_desktop_status_option passed")
 
-def test_list_remote_shell():
+def test_list_shell():
     """Test --list-remote-shell option"""
     result = run_tool(["--list-remote-shell"])
     
@@ -458,7 +458,7 @@ def test_list_remote_shell():
     output = result.stdout.lower()
     assert "shell" in output or "没有" in output or "not found" in output, "Should provide information about shell status"
     
-    print("✅ test_list_remote_shell passed")
+    print("✅ test_list_shell passed")
 
 def test_tool_structure():
     """Test that the tool has proper structure"""
@@ -615,7 +615,7 @@ def test_desktop_restart():
     
     print("✅ test_desktop_restart passed")
 
-def test_create_remote_shell():
+def test_create_shell():
     """Test creating remote shell"""
     result = run_tool(["--create-remote-shell"])
     
@@ -624,25 +624,25 @@ def test_create_remote_shell():
     output_lower = result.stdout.lower()
     assert ("shell" in output_lower or "created" in output_lower or "创建" in result.stdout), "Should show shell creation message"
     
-    print("✅ test_create_remote_shell passed")
+    print("✅ test_create_shell passed")
 
-def test_checkout_remote_shell():
+def test_checkout_shell():
     """Test checkout remote shell"""
     result = run_tool(["--checkout-remote-shell", "default_shell"])
     
     assert result.returncode == 0, "Checkout remote shell should return exit code 0"
     # Should handle checkout (success or not found)
     
-    print("✅ test_checkout_remote_shell passed")
+    print("✅ test_checkout_shell passed")
 
-def test_terminate_remote_shell():
+def test_terminate_shell():
     """Test terminate remote shell with nonexistent shell"""
     result = run_tool(["--terminate-remote-shell", "nonexistent_shell"])
     
     assert result.returncode == 0, "Terminate should return exit code 0"
     assert ("not found" in result.stdout.lower() or "找不到" in result.stdout), "Should handle nonexistent shell"
     
-    print("✅ test_terminate_remote_shell passed")
+    print("✅ test_terminate_shell passed")
 
 def test_shell_invalid_command():
     """Test shell with invalid command"""
@@ -967,7 +967,7 @@ ALL_GOOGLE_DRIVE_TESTS = [
     test_shell_help_command,
     test_my_drive_option,
     test_desktop_status_option,
-    test_list_remote_shell,
+    test_list_shell,
     test_tool_structure,
     test_run_environment_compatibility,
     # New comprehensive tests
@@ -981,9 +981,9 @@ ALL_GOOGLE_DRIVE_TESTS = [
     test_desktop_launch,
     test_desktop_shutdown,
     test_desktop_restart,
-    test_create_remote_shell,
-    test_checkout_remote_shell,
-    test_terminate_remote_shell,
+    test_create_shell,
+    test_checkout_shell,
+    test_terminate_shell,
     test_shell_invalid_command,
     test_cd_without_argument,
     test_mkdir_without_argument,

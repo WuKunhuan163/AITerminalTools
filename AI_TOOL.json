@@ -198,18 +198,34 @@
         "GOOGLE_DRIVE https://drive.google.com/drive/my-drive",
         "GOOGLE_DRIVE --shell",
         "GOOGLE_DRIVE --shell pwd",
-        "GOOGLE_DRIVE --shell ls",
+        "GOOGLE_DRIVE --shell ls -R",
         "GOOGLE_DRIVE --shell \"cd test && ls\"",
         "GOOGLE_DRIVE --shell upload file.txt",
+        "GOOGLE_DRIVE --shell upload --target-dir docs file.txt",
+        "GOOGLE_DRIVE --shell rm -rf old_folder",
+        "GOOGLE_DRIVE --shell edit file.py '[[\"old_code\", \"new_code\"]]'",
+        "GOOGLE_DRIVE --shell python -c 'print(\"Hello World\")'",
         "GOOGLE_DRIVE --upload file.txt remote/path",
         "GDS pwd",
-        "GDS ls",
-        "GDS mkdir test",
+        "GDS ls --detailed",
+        "GDS mkdir -p deep/nested/folder",
         "GDS cd test",
         "GDS upload file.txt",
+        "GDS download report.pdf",
+        "GDS cat config.json",
+        "GDS grep \"error\" log.txt",
+        "GDS find . -name \"*.py\"",
+        "GDS touch new_file.txt",
+        "GDS mv old_name.txt new_name.txt",
+        "GDS read script.py 10 20",
+        "GDS echo \"Hello\" > greeting.txt",
         "GDS pip list",
         "GDS pip install numpy",
-        "GDS pip --show-deps tensorflow --depth=2",
+        "GDS deps tensorflow --depth=2",
+        "GDS venv --create myenv",
+        "GDS venv --activate myenv",
+        "GDS venv --list",
+        "GDS linter script.py",
         "GOOGLE_DRIVE --create-remote-shell",
         "GOOGLE_DRIVE --list-remote-shell",
         "GOOGLE_DRIVE --console-setup",
@@ -224,38 +240,59 @@
       "testable": true,
       "test_passed": true,
       "ai_usable": true,
-      "tool_use_scenario": "When user needs to access Google Drive, manage remote files through shell interface, upload/download files, execute remote Python code, manage Python packages with dependency analysis, or set up Google Drive API integration",
+      "tool_use_scenario": "When user needs to access Google Drive, manage remote files through shell interface, upload/download files, execute remote Python code, manage Python packages with dependency analysis, create and manage virtual environments, perform code quality checks, edit files with advanced features, or set up Google Drive API integration",
       "gds_commands": {
         "navigation": [
           "pwd",
-          "ls",
-          "cd"
+          "ls [path] [--detailed] [-R]",
+          "cd <path>"
         ],
         "file_operations": [
-          "mkdir",
-          "rm",
-          "mv",
-          "cat",
-          "read"
+          "mkdir [-p] <dir>",
+          "rm <file>",
+          "rm -rf <dir>", 
+          "rm -f <file>",
+          "mv <source> <dest>",
+          "cat <file>",
+          "read <file> [start end]",
+          "touch <file>"
         ],
         "upload_download": [
-          "upload",
-          "upload-folder",
-          "download"
+          "upload [--target-dir TARGET] <files...>",
+          "upload [--remove-local] <files...>",
+          "upload-folder [--keep-zip] <folder> [target]",
+          "download [--force] <file> [path]"
         ],
         "text_operations": [
-          "echo",
-          "grep",
-          "edit"
+          "echo <text>",
+          "echo <text> > <file>",
+          "grep <pattern> <file>",
+          "grep <file>",
+          "edit [--preview] [--backup] <file> '<spec>'"
         ],
         "remote_execution": [
-          "python"
+          "python <file>",
+          "python -c '<code>'"
         ],
         "package_management": [
-          "pip"
+          "pip install <package>",
+          "pip list",
+          "pip show <package>",
+          "deps <package> [options]"
+        ],
+        "virtual_environment": [
+          "venv --create <env_name...>",
+          "venv --delete <env_name...>",
+          "venv --activate <env_name>",
+          "venv --deactivate",
+          "venv --list"
         ],
         "search": [
-          "find"
+          "find [path] -name [pattern]",
+          "find [path] -type [f|d] -name [pattern]"
+        ],
+        "code_quality": [
+          "linter <file>"
         ],
         "help": [
           "help",
@@ -264,16 +301,23 @@
       },
       "advanced_features": [
         "Multi-file operations with [[src1, dst1], [src2, dst2]] syntax",
-        "Command chaining with && operator",
+        "Command chaining with && and || operators",
+        "Command piping with | operator (grep, head, tail, sort, uniq)",
         "Path resolution supporting ~, .., relative and absolute paths",
         "Automatic download caching with cache management",
-        "Remote Python code execution",
+        "Remote Python code execution with full environment support",
         "Python package management with pip integration",
         "Smart dependency tree analysis with PyPI API integration",
-        "Virtual environment state synchronization",
-        "Google Drive API setup wizard",
-        "Remote shell session management",
-        "Google Drive Desktop application control"
+        "Virtual environment creation, activation, and management",
+        "Virtual environment state synchronization across sessions",
+        "Multi-segment file editing with preview and backup modes",
+        "Intelligent file upload with conflict detection",
+        "Base64-encoded file creation for special characters",
+        "Code quality checking with multi-language linter support",
+        "Google Drive API setup wizard with GUI assistance",
+        "Remote shell session management with isolation",
+        "Google Drive Desktop application control and monitoring",
+        "Unified help system with context-aware formatting"
       ],
       "file_hashes": {
         "binary": "44fef98442c7e718bb0ba3f77c414e036031a1ecd0572b812335dea39b659ed3",

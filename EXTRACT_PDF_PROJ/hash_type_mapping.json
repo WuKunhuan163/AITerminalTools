@@ -59,12 +59,26 @@
     "6f8c41936babd309c13ef7f3a760b96f3b4985f5ffb83c3be6004bb08c28a107": "table",
     "46956a9795e8f4e6d79b67e7dfd145d223b80a977cc8b8d025026452dd2cff96": "table",
     "ceb64f1e11b82fbc4dcf08207f00a72de4063d15441ab775b86c0861b58eb548": "table",
-    "3fc2b0c35c4b2cfe17af48b889ab0357b08596cf8d6138fb20289c65b119a005": "table"
+    "3fc2b0c35c4b2cfe17af48b889ab0357b08596cf8d6138fb20289c65b119a005": "table",
+    "5d98b2d12ef10351df71d6cfb6e2f9a909e1c212f7a8f4c7df0c0b350a7eee78": "image",
+    "974eedf9b44f4b388fc94be62aa6dc84a043ad39c1cb3e844b3e1372c1c5e790": "table",
+    "78eb5472e66e13435fc4050163a1f8987903096920381ab7bd9e4a5f9bb53ffe": "interline_equation",
+    "4bbbeaefd142dbfaedf793661f1eeed08703672019a240560df385757bb30ca5": "interline_equation",
+    "fcedb68b6cdc720a429e32df1833477ff03e7a0f332720aba16e3970457bf0a8": "interline_equation",
+    "8f75bd33e3d384cf2827738c1f607ab346f0e88fa951a34e2c6051aed38002d9": "interline_equation",
+    "51b4bf0515d5237e8175ed6ab02fdb18a9df1c0aa734989733e21a0c8babf01d": "interline_equation",
+    "eb65be1df3598389af2137cfb8852601945cd60d9db858b22b94cdd0ffbdfee0": "interline_equation",
+    "7812c18bb762c0f0dc5fb98b139262555bd7ed88c68c60dbf5ccc69c23e950f4": "image",
+    "1377308d057118b7d75d67f370d928eeb4e156b44b530ed10f5de2d5b2a35a3f": "interline_equation",
+    "da448976a31bda3ca761f1174841a25f5bb707e4c350550265a080e24ec90595": "interline_equation",
+    "edcba52f798aa2a4347aef26b9106ca6ab8706e89e59d8e02d357b39c3aa5c4d": "interline_equation",
+    "85e9989ca200186d66ab7a06e61d613cd7a0478f638f11536bfda5d2bef78838": "interline_equation",
+    "d8b4816dc23f360b01d4faaddf1cda22834c22b84356ed5d6e7ce45f8987af22": "interline_equation"
   },
   "usage_notes": [
     "This file maps image file hashes to their content types (image, formula, table)",
     "Used for placeholder regeneration when type information is missing",
     "Automatically updated when processing items with known types"
   ],
-  "last_updated": "2025-07-27T10:22:47.805735"
+  "last_updated": "2025-08-31T10:42:15.151258"
 }

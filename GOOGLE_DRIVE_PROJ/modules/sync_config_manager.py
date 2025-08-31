@@ -26,6 +26,68 @@ load_dotenv()
 #     GoogleDriveShell = None
 
 # 添加缺失的工具函数
+def get_multiline_input_safe(prompt, single_line=False):
+    """
+    安全的多行输入函数，支持Ctrl+D结束输入
+    
+    Args:
+        prompt (str): 输入提示
+        single_line (bool): 是否只接受单行输入
+        
+    Returns:
+        str: 用户输入的内容，如果用户取消则返回None
+    """
+    try:
+        # 配置readline以支持中文字符
+        import readline
+        try:
+            readline.set_startup_hook(None)
+            readline.clear_history()
+            
+            # 设置编辑模式为emacs（支持更好的中文编辑）
+            readline.parse_and_bind("set editing-mode emacs")
+            # 启用UTF-8支持
+            readline.parse_and_bind("set input-meta on")
+            readline.parse_and_bind("set output-meta on")
+            readline.parse_and_bind("set convert-meta off")
+            # 启用中文字符显示
+            readline.parse_and_bind("set print-completions-horizontally off")
+            readline.parse_and_bind("set skip-completed-text on")
+            # 确保正确处理宽字符
+            readline.parse_and_bind("set enable-bracketed-paste on")
+        except Exception:
+            pass  # 如果配置失败，继续使用默认设置
+        
+        print(prompt, end="", flush=True)
+        
+        if single_line:
+            # 单行输入
+            try:
+                return input()
+            except EOFError:
+                return None
+        else:
+            # 多行输入，直到Ctrl+D
+            lines = []
+            print("(多行输入，按 Ctrl+D 结束):")
+            try:
+                while True:
+                    line = input()
+                    lines.append(line)
+            except EOFError:
+                # Ctrl+D被按下，结束输入
+                pass
+            
+            return '\n'.join(lines) if lines else None
+            
+    except KeyboardInterrupt:
+        # Ctrl+C被按下
+        print("\n输入已取消")
+        return None
+    except Exception as e:
+        print(f"\n输入错误: {e}")
+        return None
+
 def is_run_environment(command_identifier=None):
     """Check if running in RUN environment by checking environment variables"""
     if command_identifier:

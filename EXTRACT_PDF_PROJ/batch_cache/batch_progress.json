@@ -1,0 +1,72 @@
+{
+  "254dafb6371607559c428d330f8f8bb6": {
+    "pdf_hash": "254dafb6371607559c428d330f8f8bb6",
+    "pdf_path": "/Users/wukunhuan/Desktop/GaussianObject_paper.pdf",
+    "total_pages": 2,
+    "pages": {
+      "1": {
+        "page_num": 1,
+        "status": "failed",
+        "start_time": 1756608003.825186,
+        "end_time": 1756608004.027793,
+        "output_file": null,
+        "error_message": "页面 1 处理异常: MinerU not available"
+      },
+      "2": {
+        "page_num": 2,
+        "status": "failed",
+        "start_time": 1756608004.028306,
+        "end_time": 1756608004.173358,
+        "output_file": null,
+        "error_message": "页面 2 处理异常: MinerU not available"
+      }
+    },
+    "created_time": 1756607810.4474628,
+    "updated_time": 1756608004.173362,
+    "output_dir": "/Users/wukunhuan/Desktop/GaussianObject_batch_test2"
+  },
+  "e9237c20eeb81fdd298590b17f25bec6": {
+    "pdf_hash": "e9237c20eeb81fdd298590b17f25bec6",
+    "pdf_path": "/var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/extract_pdf_test_x7fk7dbl/sample.pdf",
+    "total_pages": 2,
+    "pages": {
+      "1": {
+        "page_num": 1,
+        "status": "failed",
+        "start_time": 1756608567.990807,
+        "end_time": 1756608568.1375098,
+        "output_file": null,
+        "error_message": "页面 1 处理异常: MinerU not available"
+      },
+      "2": {
+        "page_num": 2,
+        "status": "failed",
+        "start_time": 1756608568.13812,
+        "end_time": 1756608568.268768,
+        "output_file": null,
+        "error_message": "页面 2 处理异常: MinerU not available"
+      }
+    },
+    "created_time": 1756608459.961469,
+    "updated_time": 1756608568.2687721,
+    "output_dir": "/var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/extract_pdf_test_y01p_dvs/cli_output"
+  },
+  "359b3b8ed8b411d2f01ab2c2490f2315": {
+    "pdf_hash": "359b3b8ed8b411d2f01ab2c2490f2315",
+    "pdf_path": "/var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/tmp_jemtokj/test.pdf",
+    "total_pages": 1,
+    "pages": {
+      "1": {
+        "page_num": 1,
+        "status": "failed",
+        "start_time": 1756608823.61698,
+        "end_time": 1756608823.824973,
+        "output_file": null,
+        "error_message": "页面 1 处理异常: MinerU not available"
+      }
+    },
+    "created_time": 1756608823.6166642,
+    "updated_time": 1756608823.8249779,
+    "output_dir": "/var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/tmp_jemtokj/integration_output"
+  }
+}

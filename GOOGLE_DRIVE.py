@@ -164,21 +164,21 @@ class GoogleDriveMain:
         return self.sync_config_manager.get_google_drive_status(*args, **kwargs)
     
     # 委托方法 - Remote Shell Manager
-    def create_remote_shell(self, *args, **kwargs):
+    def create_shell(self, *args, **kwargs):
         """委托到remote_shell_manager管理器"""
-        return self.remote_shell_manager.create_remote_shell(*args, **kwargs)
+        return self.remote_shell_manager.create_shell(*args, **kwargs)
     
-    def list_remote_shells(self, *args, **kwargs):
+    def list_shells(self, *args, **kwargs):
         """委托到remote_shell_manager管理器"""
-        return self.remote_shell_manager.list_remote_shells(*args, **kwargs)
+        return self.remote_shell_manager.list_shells(*args, **kwargs)
     
-    def checkout_remote_shell(self, *args, **kwargs):
+    def checkout_shell(self, *args, **kwargs):
         """委托到remote_shell_manager管理器"""
-        return self.remote_shell_manager.checkout_remote_shell(*args, **kwargs)
+        return self.remote_shell_manager.checkout_shell(*args, **kwargs)
     
-    def terminate_remote_shell(self, *args, **kwargs):
+    def terminate_shell(self, *args, **kwargs):
         """委托到remote_shell_manager管理器"""
-        return self.remote_shell_manager.terminate_remote_shell(*args, **kwargs)
+        return self.remote_shell_manager.terminate_shell(*args, **kwargs)
     
     def enter_shell_mode(self, *args, **kwargs):
         """委托到remote_shell_manager管理器"""

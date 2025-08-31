@@ -1356,6 +1356,42 @@ class GoogleDriveShell:
                 else:
                     print(result.get("error", "Find failed"))
                     return 1
+            elif cmd == 'rm':
+                # 使用委托方法处理rm命令
+                if not args:
+                    print("❌ rm command needs a file or directory name")
+                    return 1
+                
+                # 解析rm选项
+                recursive = False
+                force = False
+                paths = []
+                
+                for arg in args:
+                    if arg == '-r' or arg == '-rf' or arg == '-fr':
+                        recursive = True
+                        if 'f' in arg:
+                            force = True
+                    elif arg == '-f':
+                        force = True
+                    elif not arg.startswith('-'):
+                        paths.append(arg)
+                
+                if not paths:
+                    print("❌ rm command needs at least one file or directory to delete")
+                    return 1
+                
+                # 处理每个路径
+                success_count = 0
+                for path in paths:
+                    result = self.cmd_rm(path, recursive=recursive, force=force)
+                    if result.get("success", False):
+                        success_count += 1
+                        # rm命令成功时通常不显示消息，像bash一样
+                    else:
+                        print(result.get("error", f"Failed to delete {path}"))
+                
+                return 0 if success_count == len(paths) else 1
             elif cmd == 'grep':
                 # 使用委托方法处理grep命令
                 if len(args) < 1:

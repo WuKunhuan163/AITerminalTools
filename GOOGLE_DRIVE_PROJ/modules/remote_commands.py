@@ -202,38 +202,6 @@ class RemoteCommands:
         
         return display_command
 
-    def _log_window_opening_time(self, window_id, cmd):
-        """
-        记录窗口打开时间到测试文件
-        
-        Args:
-            window_id (str): 窗口唯一标识符
-            cmd (str): 命令名称
-        """
-        try:
-            import time
-            from pathlib import Path
-            
-            # 获取当前时间（全局时间戳）
-            current_time = time.time()
-            timestamp_str = time.strftime('%H:%M:%S.%f', time.localtime(current_time))[:-3]  # 精确到毫秒
-            
-            # 写入到tmp文件夹中的窗口时间记录文件
-            current_dir = Path(__file__).parent.parent.parent
-            window_time_file = current_dir / "tmp" / "window_opening_times_new.txt"
-            window_time_file.parent.mkdir(exist_ok=True)
-            
-            with open(window_time_file, 'a', encoding='utf-8') as f:
-                f.write(f"[{timestamp_str}] WINDOW_OPENED: {window_id} - {cmd} (time: {current_time})\n")
-            
-            # 同时记录到通用调试文件
-            debug_file = current_dir / "tmp" / "concurrent_test_debug_new.txt"
-            with open(debug_file, 'a', encoding='utf-8') as f:
-                f.write(f"[{timestamp_str}] WINDOW_OPENED: {window_id} - {cmd} (PID: {os.getpid()}, thread: {threading.get_ident()})\n")
-                
-        except Exception as e:
-            print(f"Window opening time logging error: {e}")
-    
     def validate_bash_syntax_fast(self, command):
         """
         快速验证bash命令语法
@@ -1809,7 +1777,6 @@ fi
             
             # 记录窗口打开时间到专用的测试文件
             try:
-                self._log_window_opening_time(window_id, cmd)
                 debug_log_func(f"📝 DEBUG: [{get_timestamp_func()}] [LOG_TIME] 窗口时间记录成功 - window_id: {window_id}")
             except Exception as e:
                 debug_log_func(f"⚠️ DEBUG: [{get_timestamp_func()}] [LOG_TIME_ERROR] 窗口时间记录失败: {e} - window_id: {window_id}")
@@ -2532,116 +2499,18 @@ def write_to_json_output(data, command_identifier=None):
 
 def show_help():
     """显示帮助信息"""
-    help_text = """GOOGLE_DRIVE - Google Drive access tool with GDS (Google Drive Shell)
-
-Usage: GOOGLE_DRIVE [url] [options]
-
-Arguments:
-  url                  Custom Google Drive URL (default: https://drive.google.com/)
-
-Options:
-  -my                  Open My Drive (https://drive.google.com/drive/u/0/my-drive)
-  --console-setup      Start Google Drive API setup wizard with GUI assistance
-  --shell [COMMAND]    Enter interactive shell mode or execute shell command (alias: GDS)
-  --upload FILE [PATH] Upload a file to Google Drive via local sync (PATH defaults to REMOTE_ROOT)
-  --create-remote-shell        Create a new remote shell session
-  --list-remote-shell          List all remote shell sessions
-  --checkout-remote-shell ID   Switch to a specific remote shell
-  --terminate-remote-shell ID  Terminate a remote shell session
-  --desktop --status           Check Google Drive Desktop application status
-  --desktop --shutdown         Shutdown Google Drive Desktop application
-  --desktop --launch           Launch Google Drive Desktop application
-  --desktop --restart          Restart Google Drive Desktop application
-  --desktop --set-local-sync-dir    Set local sync directory path
-  --desktop --set-global-sync-dir   Set global sync directory (Drive folder)
-  --help, -h           Show this help message
-
-GDS (Google Drive Shell) Commands:
-  When using --shell or in interactive mode, the following commands are available:
-
-  Navigation:
-    pwd                         - show current directory path
-    ls [path] [--detailed] [-R] - list directory contents (recursive with -R)
-    cd <path>                   - change directory (supports ~, .., relative paths)
-
-  File Operations:
-    mkdir [-p] <dir>            - create directory (recursive with -p)
-    rm <file>                   - remove file
-    rm -rf <dir>                - remove directory recursively
-    mv <source> <dest>          - move/rename file or folder
-    cat <file>                  - display file contents
-    read <file> [start end]     - read file content with line numbers
-
-  Upload/Download:
-    upload [--target-dir TARGET] <files...> - upload files to Google Drive (default: current directory)
-    upload-folder [--keep-zip] <folder> [target] - upload folder (zip->upload->unzip->cleanup)
-    download [--force] <file> [path] - download file with caching
-
-  Text Operations:
-    echo <text>                 - display text
-    echo <text> > <file>        - create file with text
-    grep <pattern> <file>       - search for pattern in file
-    edit [--preview] [--backup] <file> '<spec>' - edit file with multi-segment replacement
-
-  Remote Execution:
-    python <file>               - execute python file remotely
-    python -c '<code>'          - execute python code remotely
-
-  Package Management:
-    pip install <package>       - install Python packages
-    pip list                    - list installed packages  
-    pip show <package>          - show package information
-    deps <package> [options]    - analyze package dependencies
-      --depth=N                 - set analysis depth (default: 2)
-      --analysis-type=TYPE      - use 'smart' or 'depth' analysis
-
-  Search:
-    find [path] -name [pattern] - search for files matching pattern
-
-  Help:
-    help                        - show available commands
-    exit                        - exit shell mode
-
-Advanced Features:
-  - Multi-file operations: upload [[src1, dst1], [src2, dst2], ...]
-  - Command chaining: cmd1 && cmd2 && cmd3
-  - Path resolution: supports ~, .., relative and absolute paths
-  - File caching: automatic download caching with cache management
-  - Remote execution: run Python code on remote Google Drive environment
-
-Examples:
-  GOOGLE_DRIVE                                    # Open main Google Drive
-  GOOGLE_DRIVE -my                                # Open My Drive folder
-  GOOGLE_DRIVE https://drive.google.com/drive/my-drive  # Open specific folder
-  GOOGLE_DRIVE --console-setup                    # Start API setup wizard
-  GOOGLE_DRIVE --shell                            # Enter interactive shell mode
-  GOOGLE_DRIVE --shell pwd                        # Show current path
-  GOOGLE_DRIVE --shell ls                         # List directory contents
-  GOOGLE_DRIVE --shell mkdir test                 # Create directory
-  GOOGLE_DRIVE --shell cd hello                   # Change directory
-  GOOGLE_DRIVE --shell rm file.txt               # Remove file
-  GOOGLE_DRIVE --shell rm -rf folder              # Remove directory
-  GOOGLE_DRIVE --shell upload file1.txt file2.txt    # Upload multiple files to current directory
-  GOOGLE_DRIVE --shell upload --target-dir docs file.txt  # Upload file to docs directory
-  GOOGLE_DRIVE --shell "ls && cd test && pwd"     # Chain commands
-  GOOGLE_DRIVE --upload file.txt                 # Upload file to REMOTE_ROOT
-  GOOGLE_DRIVE --upload file.txt subfolder       # Upload file to REMOTE_ROOT/subfolder
-  GDS pwd                                         # Using alias (same as above)
-  GOOGLE_DRIVE --create-remote-shell              # Create remote shell
-  GOOGLE_DRIVE --list-remote-shell                # List remote shells
-  GOOGLE_DRIVE --checkout-remote-shell abc123     # Switch to shell
-  GOOGLE_DRIVE --terminate-remote-shell abc123    # Terminate shell
-  GOOGLE_DRIVE --desktop --status                 # Check Desktop app status
-  GOOGLE_DRIVE --desktop --shutdown               # Shutdown Desktop app
-  GOOGLE_DRIVE --desktop --launch                 # Launch Desktop app
-  GOOGLE_DRIVE --desktop --restart                # Restart Desktop app
-  GOOGLE_DRIVE --desktop --set-local-sync-dir     # Set local sync directory
-  GOOGLE_DRIVE --desktop --set-global-sync-dir    # Set global sync directory
-  GOOGLE_DRIVE --setup-hf                         # Setup HuggingFace credentials on remote
-  GOOGLE_DRIVE --test-hf                          # Test HuggingFace configuration on remote
-  GOOGLE_DRIVE --help                             # Show help"""
-    
-    print(help_text)
+    try:
+        from .help_system import show_unified_help
+        return show_unified_help(context="command_line")
+    except ImportError:
+        try:
+            from help_system import show_unified_help
+            return show_unified_help(context="command_line")
+        except ImportError:
+            # Fallback to basic help if help_system is not available
+            print("GOOGLE_DRIVE - Google Drive access tool with GDS (Google Drive Shell)")
+            print("Use --shell for interactive mode. Type 'help' in shell for commands.")
+            return 0
 
 def main():
     """主函数"""
@@ -2649,20 +2518,20 @@ def main():
     
     # 从其他模块直接导入需要的函数
     try:
-        from .remote_shell_manager import list_remote_shells, create_remote_shell, checkout_remote_shell, terminate_remote_shell, enter_shell_mode
+        from .remote_shell_manager import list_shells, create_shell, checkout_shell, terminate_shell, enter_shell_mode
         from .drive_api_service import open_google_drive
         from .sync_config_manager import set_local_sync_dir, set_global_sync_dir
     except ImportError:
         try:
-            from modules.remote_shell_manager import list_remote_shells, create_remote_shell, checkout_remote_shell, terminate_remote_shell, enter_shell_mode
+            from modules.remote_shell_manager import list_shells, create_shell, checkout_shell, terminate_shell, enter_shell_mode
             from modules.drive_api_service import open_google_drive
             from modules.sync_config_manager import set_local_sync_dir, set_global_sync_dir
         except ImportError:
             # 如果导入失败，尝试从全局命名空间获取
-            list_remote_shells = globals().get('list_remote_shells')
-            create_remote_shell = globals().get('create_remote_shell')
-            checkout_remote_shell = globals().get('checkout_remote_shell')
-            terminate_remote_shell = globals().get('terminate_remote_shell')
+            list_shells = globals().get('list_shells')
+            create_shell = globals().get('create_shell')
+            checkout_shell = globals().get('checkout_shell')
+            terminate_shell = globals().get('terminate_shell')
             enter_shell_mode = globals().get('enter_shell_mode')
             console_setup_interactive = globals().get('console_setup_interactive')
             open_google_drive = globals().get('open_google_drive')
@@ -2688,21 +2557,21 @@ def main():
     elif args[0] == '--console-setup':
         return console_setup_interactive() if console_setup_interactive else 1
     elif args[0] == '--create-remote-shell':
-        return create_remote_shell(None, None, command_identifier) if create_remote_shell else 1
+        return create_shell(None, None, command_identifier) if create_shell else 1
     elif args[0] == '--list-remote-shell':
-        return list_remote_shells(command_identifier) if list_remote_shells else 1
+        return list_shells(command_identifier) if list_shells else 1
     elif args[0] == '--checkout-remote-shell':
         if len(args) < 2:
             print("❌ 错误: 需要指定shell ID")
             return 1
         shell_id = args[1]
-        return checkout_remote_shell(shell_id, command_identifier) if checkout_remote_shell else 1
+        return checkout_shell(shell_id, command_identifier) if checkout_shell else 1
     elif args[0] == '--terminate-remote-shell':
         if len(args) < 2:
             print("❌ 错误: 需要指定shell ID")
             return 1
         shell_id = args[1]
-        return terminate_remote_shell(shell_id, command_identifier) if terminate_remote_shell else 1
+        return terminate_shell(shell_id, command_identifier) if terminate_shell else 1
     elif args[0] == '--shell':
         if len(args) == 1:
             # 进入交互模式

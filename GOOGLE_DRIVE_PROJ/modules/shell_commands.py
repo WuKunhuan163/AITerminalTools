@@ -429,14 +429,14 @@ def _shell_cd_fallback(path, command_identifier, current_shell):
             return 1
         
         # 更新shell的当前位置
-        shells_data = load_remote_shells()
+        shells_data = load_shells()
         shell_id = current_shell['id']
         
         shells_data["shells"][shell_id]["current_path"] = target_path
         shells_data["shells"][shell_id]["current_folder_id"] = target_id
         shells_data["shells"][shell_id]["last_accessed"] = time.strftime("%Y-%m-%d %H:%M:%S")
         
-        if save_remote_shells(shells_data):
+        if save_shells(shells_data):
             success_msg = f"Switched to directory: {target_path}"
             result_data = {
                 "success": True,
@@ -635,11 +635,11 @@ def open_dir(path, command_identifier=None):
         }
         
         # 保存shell
-        shells_data = load_remote_shells()
+        shells_data = load_shells()
         shells_data["shells"][shell_id] = shell_config
         shells_data["active_shell"] = shell_id
         
-        if save_remote_shells(shells_data):
+        if save_shells(shells_data):
             success_msg = f"Created shell and opened directory: {target_path}"
             result_data = {
                 "success": True,
@@ -712,39 +712,32 @@ def shell_pwd(command_identifier=None):
 
 def shell_help(command_identifier=None):
     """显示帮助信息"""
-    help_text = """pwd                         - show current directory
+    try:
+        from .help_system import show_unified_help
+        return show_unified_help(context="shell", command_identifier=command_identifier)
+    except ImportError:
+        try:
+            from help_system import show_unified_help
+            return show_unified_help(context="shell", command_identifier=command_identifier)
+        except ImportError:
+            # Fallback to basic help if help_system is not available
+            basic_help = """pwd                         - show current directory
 ls [path] [--detailed] [-R] - list directory contents (recursive with -R)
 mkdir [-p] <dir>             - create directory (recursive with -p)
-touch <file>                 - create empty file
 cd <path>                    - change directory
 rm <file>                    - remove file
 rm -rf <dir>                 - remove directory recursively
 echo <text>                  - display text
-echo <text> > <file>         - create file with text
 cat <file>                   - display file contents
-grep <pattern> <file>        - search for pattern in file
-python <file>                - execute python file
-python -c '<code>'           - execute python code
-download [--force] <file> [path] - download file with caching
-read <file> [start end]      - read file content with line numbers
-find [path] -name [pattern]  - search for files matching pattern
-mv <source> <dest>           - move/rename file or folder
-edit [--preview] [--backup] <file> '<spec>' - edit file with multi-segment replacement
-upload [--target-dir TARGET] <files...> - upload files to Google Drive (default: current directory)
-upload-folder [--keep-zip] <folder> [target] - upload folder (zip->upload->unzip->cleanup)
-venv --create <env_name...>  - create virtual environment(s) (supports multiple names)
-venv --delete <env_name...>  - delete virtual environment(s) (supports multiple names, protects GaussianObject)
-venv --activate <env_name>   - activate virtual environment (set PYTHONPATH)
-venv --deactivate           - deactivate virtual environment (clear PYTHONPATH)
-venv --list                 - list all virtual environments
-pip <command> [options]      - pip package manager (auto-targets active venv)"""
-    
-    if is_run_environment(command_identifier):
-        write_to_json_output({"success": True, "help": help_text}, command_identifier)
-    else:
-        print(help_text)
-    
-    return 0
+help                         - show available commands
+exit                         - exit shell mode"""
+            
+            if is_run_environment(command_identifier):
+                write_to_json_output({"success": True, "help": basic_help}, command_identifier)
+            else:
+                print(basic_help)
+            
+            return 0
 
 def handle_pipe_commands(shell_cmd, command_identifier=None):
     """处理用|连接的pipe命令"""

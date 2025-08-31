@@ -18,6 +18,68 @@ load_dotenv()
 
 
 # 添加缺失的工具函数
+def get_multiline_input_safe(prompt, single_line=False):
+    """
+    安全的多行输入函数，支持Ctrl+D结束输入
+    
+    Args:
+        prompt (str): 输入提示
+        single_line (bool): 是否只接受单行输入
+        
+    Returns:
+        str: 用户输入的内容，如果用户取消则返回None
+    """
+    try:
+        # 配置readline以支持中文字符
+        import readline
+        try:
+            readline.set_startup_hook(None)
+            readline.clear_history()
+            
+            # 设置编辑模式为emacs（支持更好的中文编辑）
+            readline.parse_and_bind("set editing-mode emacs")
+            # 启用UTF-8支持
+            readline.parse_and_bind("set input-meta on")
+            readline.parse_and_bind("set output-meta on")
+            readline.parse_and_bind("set convert-meta off")
+            # 启用中文字符显示
+            readline.parse_and_bind("set print-completions-horizontally off")
+            readline.parse_and_bind("set skip-completed-text on")
+            # 确保正确处理宽字符
+            readline.parse_and_bind("set enable-bracketed-paste on")
+        except Exception:
+            pass  # 如果配置失败，继续使用默认设置
+        
+        print(prompt, end="", flush=True)
+        
+        if single_line:
+            # 单行输入
+            try:
+                return input()
+            except EOFError:
+                return None
+        else:
+            # 多行输入，直到Ctrl+D
+            lines = []
+            print("(多行输入，按 Ctrl+D 结束):")
+            try:
+                while True:
+                    line = input()
+                    lines.append(line)
+            except EOFError:
+                # Ctrl+D被按下，结束输入
+                pass
+            
+            return '\n'.join(lines) if lines else None
+            
+    except KeyboardInterrupt:
+        # Ctrl+C被按下
+        print("\n输入已取消")
+        return None
+    except Exception as e:
+        print(f"\n输入错误: {e}")
+        return None
+
 def is_run_environment(command_identifier=None):
     """Check if running in RUN environment by checking environment variables"""
     if command_identifier:
@@ -51,7 +113,7 @@ HOME_URL = "https://drive.google.com/drive/u/0/my-drive"
 HOME_FOLDER_ID = "root"  # Google Drive中My Drive的文件夹ID
 REMOTE_ROOT_FOLDER_ID = "1LSndouoVj8pkoyi-yTYnC4Uv03I77T8f"  # REMOTE_ROOT文件夹ID
 
-def get_remote_shells_file():
+def get_shells_file():
     """获取远程shell配置文件路径"""
     # 获取bin目录路径（从modules向上两级：modules -> GOOGLE_DRIVE_PROJ -> bin）
     bin_dir = Path(__file__).parent.parent.parent
@@ -59,9 +121,9 @@ def get_remote_shells_file():
     data_dir.mkdir(exist_ok=True)
     return data_dir / "remote_shells.json"
 
-def load_remote_shells():
+def load_shells():
     """加载远程shell配置"""
-    shells_file = get_remote_shells_file()
+    shells_file = get_shells_file()
     if shells_file.exists():
         try:
             with open(shells_file, 'r', encoding='utf-8') as f:
@@ -70,9 +132,9 @@ def load_remote_shells():
             pass
     return {"shells": {}, "active_shell": None}
 
-def save_remote_shells(shells_data):
+def save_shells(shells_data):
     """保存远程shell配置"""
-    shells_file = get_remote_shells_file()
+    shells_file = get_shells_file()
     try:
         with open(shells_file, 'w', encoding='utf-8') as f:
             json.dump(shells_data, f, indent=2, ensure_ascii=False)
@@ -89,7 +151,7 @@ def generate_shell_id():
     combined = f"{timestamp}_{random_uuid}"
     return hashlib.sha256(combined.encode()).hexdigest()[:16]
 
-def create_remote_shell(name=None, folder_id=None, command_identifier=None):
+def create_shell(name=None, folder_id=None, command_identifier=None):
     """创建远程shell"""
     try:
         # 生成shell ID
@@ -115,7 +177,7 @@ def create_remote_shell(name=None, folder_id=None, command_identifier=None):
         }
         
         # 加载现有shells
-        shells_data = load_remote_shells()
+        shells_data = load_shells()
         
         # 添加新shell
         shells_data["shells"][shell_id] = shell_config
@@ -125,7 +187,7 @@ def create_remote_shell(name=None, folder_id=None, command_identifier=None):
             shells_data["active_shell"] = shell_id
         
         # 保存配置
-        if save_remote_shells(shells_data):
+        if save_shells(shells_data):
             success_msg = f"✅ 远程shell创建成功"
             result_data = {
                 "success": True,
@@ -161,10 +223,10 @@ def create_remote_shell(name=None, folder_id=None, command_identifier=None):
             print(error_msg)
         return 1
 
-def list_remote_shells(command_identifier=None):
+def list_shells(command_identifier=None):
     """列出所有远程shell"""
     try:
-        shells_data = load_remote_shells()
+        shells_data = load_shells()
         shells = shells_data["shells"]
         active_shell = shells_data["active_shell"]
         
@@ -206,7 +268,7 @@ def list_remote_shells(command_identifier=None):
             print(error_msg)
         return 1
 
-def checkout_remote_shell(shell_id, command_identifier=None):
+def checkout_shell(shell_id, command_identifier=None):
     """切换到指定的远程shell"""
     try:
         # from GOOGLE_DRIVE_PROJ.google_drive_shell import GoogleDriveShell
@@ -235,10 +297,10 @@ def checkout_remote_shell(shell_id, command_identifier=None):
             print(error_msg)
         return 1
 
-def terminate_remote_shell(shell_id, command_identifier=None):
+def terminate_shell(shell_id, command_identifier=None):
     """终止指定的远程shell"""
     try:
-        shells_data = load_remote_shells()
+        shells_data = load_shells()
         
         if shell_id not in shells_data["shells"]:
             error_msg = f"Cannot find shell ID: {shell_id}"
@@ -265,7 +327,7 @@ def terminate_remote_shell(shell_id, command_identifier=None):
                 shells_data["active_shell"] = None
         
         # 保存配置
-        if save_remote_shells(shells_data):
+        if save_shells(shells_data):
             result_data = {
                 "success": True,
                 "terminated_shell_id": shell_id,
@@ -295,7 +357,7 @@ def terminate_remote_shell(shell_id, command_identifier=None):
             print(error_msg)
         return 1
 
-def exit_remote_shell(command_identifier=None):
+def exit_shell(command_identifier=None):
     """退出当前的远程shell"""
     try:
         current_shell = get_current_shell()
@@ -309,10 +371,10 @@ def exit_remote_shell(command_identifier=None):
             return 1
         
         # 清除活跃shell
-        shells_data = load_remote_shells()
+        shells_data = load_shells()
         shells_data["active_shell"] = None
         
-        if save_remote_shells(shells_data):
+        if save_shells(shells_data):
             success_msg = f"✅ 已退出远程shell: {current_shell['name']}"
             result_data = {
                 "success": True,
@@ -344,7 +406,7 @@ def exit_remote_shell(command_identifier=None):
 
 def get_current_shell():
     """获取当前活跃的shell"""
-    shells_data = load_remote_shells()
+    shells_data = load_shells()
     active_shell_id = shells_data.get("active_shell")
     
     if not active_shell_id or active_shell_id not in shells_data["shells"]:
@@ -360,7 +422,7 @@ def enter_shell_mode(command_identifier=None):
         if not current_shell:
             # 如果没有活跃shell，创建一个默认的
             print("🚀 No active remote shell, creating default shell...")
-            create_result = create_remote_shell("default_shell", None, None)
+            create_result = create_shell("default_shell", None, None)
             if create_result != 0:
                 error_msg = "❌ Failed to create default shell"
                 if is_run_environment(command_identifier):
@@ -476,16 +538,25 @@ def enter_shell_mode(command_identifier=None):
                         path = cmd[3:].strip()
                         shell_rm(path, False)
                     elif cmd == "help":
-                        print("📋 Available commands:")
-                        print("  pwd           - Show current remote logical address")
-                        print("  ls            - List current directory content")
-                        print("  mkdir <dir>   - Create directory")
-                        print("  cd <path>     - Switch directory")
-                        print("  rm <file>     - Delete file")
-                        print("  rm -rf <dir>  - Recursively delete directory")
-                        print("  help          - Show help information")
-                        print("  exit          - Exit shell mode")
-                        print()
+                        try:
+                            from .help_system import show_unified_help
+                            show_unified_help(context="shell")
+                        except ImportError:
+                            try:
+                                from help_system import show_unified_help
+                                show_unified_help(context="shell")
+                            except ImportError:
+                                # Fallback to basic help
+                                print("📋 Available commands:")
+                                print("  pwd           - Show current remote logical address")
+                                print("  ls            - List current directory content")
+                                print("  mkdir <dir>   - Create directory")
+                                print("  cd <path>     - Switch directory")
+                                print("  rm <file>     - Delete file")
+                                print("  rm -rf <dir>  - Recursively delete directory")
+                                print("  help          - Show help information")
+                                print("  exit          - Exit shell mode")
+                                print()
                     elif cmd == "read":
                         if not args:
                             result = {"success": False, "error": "Usage: read <filename> [start end] or read <filename> [[start1, end1], [start2, end2], ...]"}

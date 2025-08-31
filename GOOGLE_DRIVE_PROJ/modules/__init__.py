@@ -135,17 +135,17 @@ class RemoteShellManager:
         self.drive_service = drive_service
         self.main_instance = main_instance
     
-    def create_remote_shell(self, *args, **kwargs):
-        return create_remote_shell(*args, **kwargs)
+    def create_shell(self, *args, **kwargs):
+        return create_shell(*args, **kwargs)
     
-    def list_remote_shells(self, *args, **kwargs):
-        return list_remote_shells(*args, **kwargs)
+    def list_shells(self, *args, **kwargs):
+        return list_shells(*args, **kwargs)
     
-    def checkout_remote_shell(self, *args, **kwargs):
-        return checkout_remote_shell(*args, **kwargs)
+    def checkout_shell(self, *args, **kwargs):
+        return checkout_shell(*args, **kwargs)
     
-    def terminate_remote_shell(self, *args, **kwargs):
-        return terminate_remote_shell(*args, **kwargs)
+    def terminate_shell(self, *args, **kwargs):
+        return terminate_shell(*args, **kwargs)
     
     def enter_shell_mode(self, *args, **kwargs):
         return enter_shell_mode(*args, **kwargs)
@@ -253,7 +253,7 @@ __all__ = [
     "ShellCommands",
     "HfCredentialsManager",
     # 函数（向后兼容）
-    "checkout_remote_shell",
+    "checkout_shell",
     "console_setup_interactive",
     "console_setup_step2",
     "console_setup_step3",
@@ -262,11 +262,11 @@ __all__ = [
     "console_setup_step6",
     "console_setup_step7",
     "copy_to_clipboard",
-    "create_remote_shell",
+    "create_shell",
     "delete_drive_file",
     "download_file_from_drive",
     "enter_shell_mode",
-    "exit_remote_shell",
+    "exit_shell",
     "extract_folder_id_from_url",
     "generate_shell_id",
     "get_current_shell",
@@ -276,7 +276,7 @@ __all__ = [
     "get_local_hf_token",
     "get_multiline_input_safe",
     "get_project_id_from_user",
-    "get_remote_shells_file",
+    "get_shells_file",
     "get_setup_config_file",
     "get_sync_config_file",
     "handle_multiple_commands",
@@ -285,8 +285,8 @@ __all__ = [
     "is_run_environment",
     "launch_google_drive",
     "list_drive_files",
-    "list_remote_shells",
-    "load_remote_shells",
+    "list_shells",
+    "load_shells",
     "load_setup_config",
     "load_sync_config",
     "main",
@@ -296,7 +296,7 @@ __all__ = [
     "resolve_path",
     "resolve_relative_path",
     "restart_google_drive",
-    "save_remote_shells",
+    "save_shells",
     "save_setup_config",
     "save_sync_config",
     "set_global_sync_dir",
@@ -313,7 +313,7 @@ __all__ = [
     "show_setup_step_3",
     "show_setup_step_4",
     "shutdown_google_drive",
-    "terminate_remote_shell",
+    "terminate_shell",
     "test_api_connection",
     "test_drive_folder_access",
     "test_drive_service",

@@ -324,13 +324,43 @@ class PDFExtractor:
             return False, f"Basic extraction failed: {str(e)}"
     
     def extract_pdf_mineru(self, pdf_path: Path, page_spec: str = None, output_dir: Path = None, 
-                          enable_analysis: bool = False) -> Tuple[bool, str]:
+                          enable_analysis: bool = False, use_batch_processing: bool = True) -> Tuple[bool, str]:
         """使用MinerU进行PDF提取"""
         import time
         
         start_time = time.time()
         
         try:
+            # 如果启用批处理模式，使用新的分页处理器
+            if use_batch_processing:
+                try:
+                    from EXTRACT_PDF_PROJ.page_batch_processor import PageBatchProcessor
+                    
+                    processor = PageBatchProcessor()
+                    
+                    # 设置输出目录
+                    if output_dir is None:
+                        output_dir = self.data_dir / "batch_output" / pdf_path.stem
+                    
+                    print(f"🚀 使用批处理模式处理PDF: {pdf_path.name}")
+                    success, message = processor.process_pdf_batch(pdf_path, output_dir, page_spec)
+                    
+                    if success:
+                        # 计算处理时间
+                        end_time = time.time()
+                        processing_time = end_time - start_time
+                        return True, f"批处理完成 ({processing_time:.1f}s): {message}"
+                    else:
+                        print(f"⚠️ 批处理失败，回退到传统模式: {message}")
+                        # 继续使用传统模式
+                except ImportError as e:
+                    print(f"⚠️ 批处理模块不可用，使用传统模式: {e}")
+                except Exception as e:
+                    print(f"⚠️ 批处理模式出错，使用传统模式: {e}")
+            
+            # 传统模式处理
+            print("🔄 使用传统模式处理PDF...")
+            
             # 检查MinerU CLI是否可用
             mineru_cli = self.proj_dir / "pdf_extract_cli.py"
             if not mineru_cli.exists():
@@ -512,7 +542,7 @@ class PDFExtractor:
             return False, f"Failed to clean data: {str(e)}"
     
     def extract_pdf(self, pdf_path: str, page_spec: str = None, output_dir: str = None, 
-                   engine_mode: str = "mineru") -> Tuple[bool, str]:
+                   engine_mode: str = "mineru", use_batch_processing: bool = True) -> Tuple[bool, str]:
         """执行PDF提取"""
         pdf_path = Path(pdf_path).expanduser().resolve()
         
@@ -520,7 +550,7 @@ class PDFExtractor:
         engine_descriptions = {
             "basic": "Basic extractor (no image/formula/table processing)",
             "basic-asyn": "Basic extractor asynchronous mode (disable analysis)",
-            "mineru": "MinerU extractor (no image/formula/table processing)",
+            "mineru": "MinerU extractor (batch processing enabled)" if use_batch_processing else "MinerU extractor (traditional mode)",
             "mineru-asyn": "MinerU extractor asynchronous mode (disable analysis)",
             "full": "Full processing pipeline (includes image/formula/table processing)"
         }
@@ -539,11 +569,11 @@ class PDFExtractor:
         elif engine_mode == "basic-asyn":
             return self.extract_pdf_basic(pdf_path, page_spec, output_dir_path)
         elif engine_mode == "mineru":
-            return self.extract_pdf_mineru(pdf_path, page_spec, output_dir_path, enable_analysis=False)
+            return self.extract_pdf_mineru(pdf_path, page_spec, output_dir_path, enable_analysis=False, use_batch_processing=use_batch_processing)
         elif engine_mode == "mineru-asyn":
-            return self.extract_pdf_mineru(pdf_path, page_spec, output_dir_path, enable_analysis=False)
+            return self.extract_pdf_mineru(pdf_path, page_spec, output_dir_path, enable_analysis=False, use_batch_processing=use_batch_processing)
         elif engine_mode == "full":
-            return self.extract_pdf_mineru(pdf_path, page_spec, output_dir_path, enable_analysis=True)
+            return self.extract_pdf_mineru(pdf_path, page_spec, output_dir_path, enable_analysis=True, use_batch_processing=use_batch_processing)
         else:
             return False, f"Unknown engine mode: {engine_mode}"
     
@@ -1867,6 +1897,15 @@ def main(args=None, command_identifier=None):
         elif arg == '--clean-data':
             clean_data = True
             i += 1
+        elif arg == '--batch':
+            # 启用批处理模式（默认已启用）
+            i += 1
+        elif arg == '--no-batch':
+            # 禁用批处理模式
+            i += 1
+        elif arg == '--status':
+            # 显示批处理状态
+            i += 1
         elif arg == '--ids':
             if i + 1 < len(args):
                 post_ids = args[i + 1]
@@ -1991,7 +2030,7 @@ def main(args=None, command_identifier=None):
             if is_run_environment(command_identifier):
                 write_to_json_output(success_data, command_identifier)
             else:
-            print(f"{message}")
+                print(f"{message}")
             return 0
         else:
             error_data = {
