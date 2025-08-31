@@ -1177,6 +1177,27 @@ class DependencyAnalysis:
                 installed_packages = self._detect_current_environment_packages(None)
             
             # 使用基于深度的依赖分析
+            # 首先检查包是否存在
+            print("Checking package existence...")
+            nonexistent_packages = []
+            for package in packages:
+                base_name = package.split('==')[0].split('>=')[0].split('<=')[0].split('>')[0].split('<')[0].split('!=')[0]
+                try:
+                    deps = self._get_pypi_dependencies(base_name)
+                    if deps is None:
+                        nonexistent_packages.append(base_name)
+                except Exception:
+                    nonexistent_packages.append(base_name)
+            
+            if nonexistent_packages:
+                error_msg = f"Package(s) not found on PyPI: {', '.join(nonexistent_packages)}"
+                print(f"❌ Error: {error_msg}")
+                return {
+                    "success": False,
+                    "error": error_msg,
+                    "nonexistent_packages": nonexistent_packages
+                }
+            
             smart_analysis = self._depth_based_dependency_analysis(
                 packages, 
                 max_depth=max_depth, 

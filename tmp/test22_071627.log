@@ -1,0 +1,46 @@
+.
+----------------------------------------------------------------------
+Ran 1 test in 184.112s
+
+OK
+🚀 设置GDS全面测试环境...
+📁 远端测试目录: ~/tmp/gds_test_20250831_071627_432369_f0e8a299
+✅ 已切换到远端测试目录: ~/tmp/gds_test_20250831_071627_432369_f0e8a299
+📁 本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_mbwekuvg
+✅ 测试环境设置完成
+
+🧪 测试21b: Edit命令与Linter集成测试
+
+🔄 执行带重试的命令: 'echo -e "def hello_world(\nprint(\"Missing closing parenthesis\")\nreturn True\n\ndef calculate_sum(a, b:\nreturn a + b\n\nif __name__ == \"__main__\":\nhello_world()\nresult = calculate_sum(5, 3)\nprint(f\"Sum: {result}\")\n" > syntax_error_test.py'
+🔍 验证命令: ['ls syntax_error_test.py']
+🎯 最大重试次数: 3
+
+📍 尝试 1/3
+
+🔧 执行命令: 'echo -e "def hello_world(\nprint(\"Missing closing parenthesis\")\nreturn True\n\ndef calculate_sum(a, b:\nreturn a + b\n\nif __name__ == \"__main__\":\nhello_world()\nresult = calculate_sum(5, 3)\nprint(f\"Sum: {result}\")\n" > syntax_error_test.py'
+📤 返回码: 0
+📝 输出: ⏳ Waiting for result .........√
+⏳ Validating file creation ...√
+...
+  🔍 验证 1/1: ls syntax_error_test.py
+
+🔧 执行命令: ls syntax_error_test.py
+📤 返回码: 0
+📝 输出: syntax_error_test.py
+...
+  ✅ 验证成功
+🎉 所有验证通过，命令成功执行
+🔧 执行edit命令，应该触发linter检查...
+
+🔧 执行命令: edit syntax_error_test.py '[["Missing closing parenthesis", "Fixed syntax error"]]'
+📤 返回码: 0
+📝 输出: ⏳ Waiting for upload .........√
+⏳ Waiting for result .........√
+⏳ Validating syntax_error_test.py ...√
+
+Edit comparison: syntax_error_test.py
+==================================================
+--- syn...
+📋 检查edit命令输出格式...
+⚠️ 未检测到linter错误输出，可能linter未运行或文件语法正确
+✅ Edit与Linter集成测试完成

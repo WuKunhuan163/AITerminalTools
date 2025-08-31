@@ -1,0 +1,34 @@
+F
+======================================================================
+FAIL: test_20b_current_environment_detection (test_gds.GDSTest.test_20b_current_environment_detection)
+测试当前环境检测功能
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 1703, in test_20b_current_environment_detection
+    self.assertIn("No virtual environment is currently activated", result.stdout)
+AssertionError: 'No virtual environment is currently activated' not found in 'No virtual environment currently activated\n'
+
+----------------------------------------------------------------------
+Ran 1 test in 113.186s
+
+FAILED (failures=1)
+🚀 设置GDS全面测试环境...
+📁 远端测试目录: ~/tmp/gds_test_20250831_064410_389355_fc1064a0
+✅ 已切换到远端测试目录: ~/tmp/gds_test_20250831_064410_389355_fc1064a0
+📁 本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_f_yzne3k
+✅ 测试环境设置完成
+
+🧪 测试20b: 当前环境检测功能
+📦 虚拟环境名称: current_test_env_1756593901
+🧹 清理测试环境...
+
+🔧 执行命令: venv --deactivate
+📤 返回码: 0
+📝 输出: ⏳ Waiting for result .......√
+Virtual environment deactivated successfully
+...
+
+🔧 执行命令: venv --current
+📤 返回码: 0
+📝 输出: No virtual environment currently activated
+...

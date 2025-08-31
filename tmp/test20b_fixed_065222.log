@@ -1,0 +1,63 @@
+.
+----------------------------------------------------------------------
+Ran 1 test in 252.308s
+
+OK
+🚀 设置GDS全面测试环境...
+📁 远端测试目录: ~/tmp/gds_test_20250831_065222_470825_7e5db1b8
+✅ 已切换到远端测试目录: ~/tmp/gds_test_20250831_065222_470825_7e5db1b8
+📁 本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_6kgud66x
+✅ 测试环境设置完成
+
+🧪 测试20b: 当前环境检测功能
+📦 虚拟环境名称: current_test_env_1756594376
+🧹 清理测试环境...
+
+🔧 执行命令: venv --deactivate
+📤 返回码: 0
+📝 输出: ⏳ Waiting for result .......√
+Virtual environment deactivated successfully
+...
+
+🔧 执行命令: venv --current
+📤 返回码: 0
+📝 输出: No virtual environment currently activated
+...
+
+🔧 执行命令: venv --create current_test_env_1756594376
+📤 返回码: 0
+📝 输出: ⏳ Waiting for result ........√
+Virtual environment 'current_test_env_1756594376' created successfully
+Environment path: /content/drive/MyDrive/REMOTE_ENV/venv/current_test_env_1756594376
+...
+
+🔧 执行命令: venv --activate current_test_env_1756594376
+📤 返回码: 0
+📝 输出: ⏳ Waiting for result ........√
+Virtual environment activated successfully
+...
+
+🔧 执行命令: venv --current
+📤 返回码: 0
+📝 输出: Current virtual environment: current_test_env_1756594376
+Environment path: /content/drive/MyDrive/REMOTE_ENV/venv/current_test_env_1756594376
+Activated at: 2025-08-30T22:54:36.063364
+...
+
+🔧 执行命令: venv --deactivate
+📤 返回码: 0
+📝 输出: ⏳ Waiting for result .....√
+Virtual environment deactivated successfully
+...
+
+🔧 执行命令: venv --current
+📤 返回码: 0
+📝 输出: No virtual environment currently activated
+...
+
+🔧 执行命令: venv --delete current_test_env_1756594376
+📤 返回码: 0
+📝 输出: Deleting 1 virtual environment(s): current_test_env_1756594376
+⏳ Waiting for result .......√
+...
+✅ 当前环境检测功能测试完成

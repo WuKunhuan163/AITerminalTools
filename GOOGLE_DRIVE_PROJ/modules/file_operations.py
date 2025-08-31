@@ -144,6 +144,65 @@ class FileOperations:
         """Delegate to text_operations"""
         return self.text_operations.cmd_wc(*args, **kwargs)
     
+    def cmd_read(self, filename, *args, **kwargs):
+        """Read file content - delegate to text_operations cat command for now"""
+        # For now, use cat command as a simple implementation of read
+        return self.text_operations.cmd_cat(filename)
+    
+    def cmd_linter(self, filename, *args, **kwargs):
+        """Lint file - delegate to linter functionality"""
+        try:
+            # Get file content first
+            cat_result = self.text_operations.cmd_cat(filename)
+            if not cat_result.get("success"):
+                return {
+                    "success": False,
+                    "error": f"Could not read file {filename}: {cat_result.get('error', 'Unknown error')}"
+                }
+            
+            content = cat_result.get("output", "")
+            
+            # Import and use the linter
+            from .linter import GDSLinter
+            linter = GDSLinter()
+            
+            # Run linter on content
+            result = linter.lint_content(content, filename)
+            
+            # Format output for display
+            output_lines = []
+            output_lines.append(f"Language: {result.get('language', 'unknown')}")
+            output_lines.append(f"Status: {'✅ PASS' if result.get('success', False) else '❌ FAIL'}")
+            output_lines.append(f"Message: {result.get('message', '')}")
+            
+            if result.get('errors'):
+                output_lines.append("\n🚫 Errors:")
+                for error in result['errors']:
+                    output_lines.append(f"  • {error}")
+            
+            if result.get('warnings'):
+                output_lines.append("\n⚠️  Warnings:")
+                for warning in result['warnings']:
+                    output_lines.append(f"  • {warning}")
+            
+            if result.get('info'):
+                output_lines.append("\nℹ️  Info:")
+                for info in result['info']:
+                    output_lines.append(f"  • {info}")
+            
+            return {
+                "success": True,
+                "output": "\n".join(output_lines),
+                "has_errors": bool(result.get('errors')),
+                "linter_result": result
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Linter execution failed: {str(e)}"
+            }
+    
     def check_network_connection(self):
         """Check network connection"""
         try:

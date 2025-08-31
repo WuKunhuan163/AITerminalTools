@@ -1,0 +1,43 @@
+F
+======================================================================
+FAIL: test_23_pipe_basic_functionality (test_gds.GDSTest.test_23_pipe_basic_functionality)
+测试基础pipe功能
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 312, in _run_gds_command
+    self.assertEqual(result.returncode, 0, f"命令执行失败: {command}")
+AssertionError: 1 != 0 : 命令执行失败: ls | grep pipe_test
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 1969, in test_23_pipe_basic_functionality
+    result = self._run_gds_command('ls | grep pipe_test')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 318, in _run_gds_command
+    self.fail(f"命令执行异常: {command} - {e}")
+AssertionError: 命令执行异常: ls | grep pipe_test - 1 != 0 : 命令执行失败: ls | grep pipe_test
+
+----------------------------------------------------------------------
+Ran 1 test in 160.816s
+
+FAILED (failures=1)
+🚀 设置GDS全面测试环境...
+📁 远端测试目录: ~/tmp/gds_test_20250831_072428_173123_253f7622
+✅ 已切换到远端测试目录: ~/tmp/gds_test_20250831_072428_173123_253f7622
+📁 本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_sy7ivin2
+✅ 测试环境设置完成
+
+🧪 测试21c: 基础pipe功能
+
+🔧 执行命令: echo "hello world" | grep hello
+📤 返回码: 0
+📝 输出: hello world
+...
+
+🔧 执行命令: echo "test content" > pipe_test.txt
+📤 返回码: 0
+
+🔧 执行命令: ls | grep pipe_test
+📤 返回码: 1
+💥 命令执行异常: 1 != 0 : 命令执行失败: ls | grep pipe_test

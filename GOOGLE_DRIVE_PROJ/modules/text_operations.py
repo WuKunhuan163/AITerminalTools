@@ -7,6 +7,20 @@ class TextOperations:
     def __init__(self, drive_service, main_instance):
         self.drive_service = drive_service
         self.main_instance = main_instance
+    
+    def cmd_download(self, *args, **kwargs):
+        """Delegate to file_core for download operations"""
+        # Import FileCore for download operations
+        from .file_core import FileCore
+        file_core = FileCore(self.drive_service, self.main_instance)
+        return file_core.cmd_download(*args, **kwargs)
+    
+    def cmd_upload(self, *args, **kwargs):
+        """Delegate to file_core for upload operations"""
+        # Import FileCore for upload operations
+        from .file_core import FileCore
+        file_core = FileCore(self.drive_service, self.main_instance)
+        return file_core.cmd_upload(*args, **kwargs)
 
     def _find_folder(self, folder_name, parent_id):
         """在指定父目录中查找文件夹"""
@@ -49,7 +63,7 @@ class TextOperations:
             if result.get("success"):
                 # 验证文件是否真的被创建了
                 verification_result = self.main_instance.verify_creation_with_ls(
-                    filename, current_shell, creation_type="file", max_attempts=30
+                    filename, current_shell, creation_type="file", max_attempts=60
                 )
                 
                 if verification_result.get("success", False):

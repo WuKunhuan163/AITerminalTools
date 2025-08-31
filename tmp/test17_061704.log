@@ -1,0 +1,41 @@
+F
+======================================================================
+FAIL: test_17_real_world_development_workflow (test_gds.GDSTest.test_17_real_world_development_workflow)
+测试真实的远端项目开发工作流程
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 312, in _run_gds_command
+    self.assertEqual(result.returncode, 0, f"命令执行失败: {command}")
+AssertionError: 1 != 0 : 命令执行失败: mkdir -p myproject/src myproject/tests myproject/docs
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 1317, in test_17_real_world_development_workflow
+    result = self._run_gds_command('mkdir -p myproject/src myproject/tests myproject/docs')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 318, in _run_gds_command
+    self.fail(f"命令执行异常: {command} - {e}")
+AssertionError: 命令执行异常: mkdir -p myproject/src myproject/tests myproject/docs - 1 != 0 : 命令执行失败: mkdir -p myproject/src myproject/tests myproject/docs
+
+----------------------------------------------------------------------
+Ran 1 test in 248.646s
+
+FAILED (failures=1)
+🚀 设置GDS全面测试环境...
+📁 远端测试目录: ~/tmp/gds_test_20250831_061705_230812_39c38e19
+✅ 已切换到远端测试目录: ~/tmp/gds_test_20250831_061705_230812_39c38e19
+📁 本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_3xekgyzj
+✅ 测试环境设置完成
+
+🧪 测试17: 真实远端项目开发工作流程
+📦 阶段1: 项目初始化
+
+🔧 执行命令: mkdir -p myproject/src myproject/tests myproject/docs
+📤 返回码: 1
+📝 输出: ⏳ Waiting for result ........√
+⏳ Validating dir creation ................................✗
+❌ 目录 myproject/src 验证失败
+⏳ Validating dir creation ................................✗
+❌ 目录 myproject/tests 验证失败...
+💥 命令执行异常: 1 != 0 : 命令执行失败: mkdir -p myproject/src myproject/tests myproject/docs

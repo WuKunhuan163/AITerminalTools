@@ -953,7 +953,7 @@ class GoogleDriveShell:
                         all_verified = True
                         for dir_name in dir_names:
                             verification_result = self.verify_creation_with_ls(
-                                dir_name, current_shell, creation_type="dir", max_attempts=30
+                                dir_name, current_shell, creation_type="dir", max_attempts=60
                             )
                             if not verification_result.get("success", False):
                                 print(f"❌ 目录 {dir_name} 验证失败")
@@ -1404,9 +1404,11 @@ class GoogleDriveShell:
                     result_data = result.get("result", {})
                     has_matches = False
                     
+                    has_file_errors = False
                     for filename, file_result in result_data.items():
                         if "error" in file_result:
                             print(f"❌ {filename}: {file_result['error']}")
+                            has_file_errors = True
                         else:
                             occurrences = file_result.get("occurrences", {})
                             if occurrences:
@@ -1425,10 +1427,13 @@ class GoogleDriveShell:
                                 else:
                                     print(f"❌ 无法读取文件内容: {filename}")
                     
-                    if not has_matches:
-                        # 没有匹配项，模仿bash grep的行为（静默退出）
-                        pass
-                    return 0
+                    # 按照bash grep的标准行为返回退出码
+                    if has_file_errors:
+                        return 2  # 文件错误（如文件不存在）
+                    elif not has_matches:
+                        return 1  # 没有匹配项
+                    else:
+                        return 0  # 有匹配项
                 else:
                     print(result.get("error", "❌ Grep命令执行失败"))
                     return 1

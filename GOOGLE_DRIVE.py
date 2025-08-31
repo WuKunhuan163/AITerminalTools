@@ -63,10 +63,21 @@ class GoogleDriveMain:
     
     def __init__(self):
         """初始化Google Drive主管理器"""
-        # 设置全局常量
-        self.HOME_URL = HOME_URL
-        self.HOME_FOLDER_ID = HOME_FOLDER_ID
-        self.REMOTE_ROOT_FOLDER_ID = REMOTE_ROOT_FOLDER_ID
+        # 从配置文件加载常量
+        try:
+            sys.path.insert(0, str(google_drive_proj_dir))
+            from modules.config_loader import get_config
+            config = get_config()
+            self.HOME_URL = config.HOME_URL
+            self.HOME_FOLDER_ID = config.HOME_FOLDER_ID
+            self.REMOTE_ROOT_FOLDER_ID = config.REMOTE_ROOT_FOLDER_ID
+            self.REMOTE_ROOT = config.REMOTE_ROOT
+        except ImportError:
+            # 降级使用硬编码常量
+            self.HOME_URL = HOME_URL
+            self.HOME_FOLDER_ID = HOME_FOLDER_ID
+            self.REMOTE_ROOT_FOLDER_ID = REMOTE_ROOT_FOLDER_ID
+            self.REMOTE_ROOT = "/content/drive/MyDrive/REMOTE_ROOT"
         
         # 初始化管理器
         self._initialize_managers()
@@ -185,10 +196,6 @@ class GoogleDriveMain:
     def list_drive_files(self, *args, **kwargs):
         """委托到drive_api_service管理器"""
         return self.drive_api_service.list_drive_files(*args, **kwargs)
-    # 委托方法 - Shell Commands
-    def shell_ls(self, *args, **kwargs):
-        """委托到shell_commands管理器"""
-        return self.shell_commands.shell_ls(*args, **kwargs)
     
     def shell_cd(self, *args, **kwargs):
         """委托到shell_commands管理器"""

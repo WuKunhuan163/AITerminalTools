@@ -31,9 +31,11 @@ class PipOperations:
             
             # 特殊处理不同的pip命令
             if pip_args[0] == "--show-deps":
-                # 直接处理 --show-deps，不需要远程执行，静默获取包信息
+                # 直接处理 --show-deps，委托给dependency_analysis
                 current_packages = self._get_packages_from_json(current_venv) if current_venv else {}
-                return self._show_dependency_tree(pip_args, current_packages)
+                from .dependency_analysis import DependencyAnalysis
+                dep_analysis = DependencyAnalysis(self.drive_service, self.main_instance)
+                return dep_analysis._show_dependency_tree(pip_args, current_packages)
             
             # 检测当前环境中的包（用于显示[√]标记）
             current_packages = self._detect_current_environment_packages(current_venv)

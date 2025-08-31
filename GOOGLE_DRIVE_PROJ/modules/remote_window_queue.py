@@ -22,21 +22,22 @@ def get_global_timestamp():
     return f"{time.time() - _debug_start_time:.3f}s"
 
 def debug_log(message):
-    """写入调试信息到文件"""
-    try:
-        # 写入到tmp文件夹中的调试文件
-        current_dir = Path(__file__).parent.parent.parent
-        debug_file = current_dir / "tmp" / "queue_debug_new.txt"
-        debug_file.parent.mkdir(exist_ok=True)
-        
-        with open(debug_file, 'a', encoding='utf-8') as f:
-            timestamp = time.strftime('%H:%M:%S.%f')[:-3]  # 精确到毫秒
-            f.write(f"[{timestamp}] {message}\n")
-        
-        # 同时输出到控制台（可选）
-        print(message)
-    except Exception as e:
-        print(f"Debug logging error: {e}")
+    """写入调试信息到文件 - 已注释以减少队列管理debug消息"""
+    pass  # 注释掉debug输出以减少噪音
+    # try:
+    #     # 写入到tmp文件夹中的调试文件
+    #     current_dir = Path(__file__).parent.parent.parent
+    #     debug_file = current_dir / "tmp" / "patience_test_debug.txt"
+    #     debug_file.parent.mkdir(exist_ok=True)
+    #     
+    #     with open(debug_file, 'a', encoding='utf-8') as f:
+    #         timestamp = time.strftime('%H:%M:%S.%f')[:-3]  # 精确到毫秒
+    #         f.write(f"[{timestamp}] {message}\n")
+    #     
+    #     # 不输出到控制台，保持用户界面干净
+    #     # print(message)
+    # except Exception as e:
+    #     pass  # 忽略调试日志写入错误
 
 class RemoteWindowQueue:
     """远程命令窗口队列管理器"""
@@ -468,8 +469,13 @@ class RemoteWindowQueue:
                 self._remove_current_window(queue_data)
                 
                 # 增加完成计数器
-                queue_data["completed_windows_count"] = queue_data.get("completed_windows_count", 0) + 1
-                debug_log(f"📊 DEBUG: [{get_global_timestamp()}] [COUNTER] 窗口完成计数: {queue_data['completed_windows_count']} - window_id: {window_id}")
+                old_count = queue_data.get("completed_windows_count", 0)
+                queue_data["completed_windows_count"] = old_count + 1
+                debug_log(f"📊 DEBUG: [{get_global_timestamp()}] [COUNTER] 窗口完成计数: {old_count} -> {queue_data['completed_windows_count']} - window_id: {window_id}")
+                
+                # 同时更新旧版本的completed_count字段以保持兼容性
+                queue_data["completed_count"] = queue_data["completed_windows_count"]
+                debug_log(f"📊 DEBUG: [{get_global_timestamp()}] [COUNTER_COMPAT] 兼容计数器更新: {queue_data['completed_count']} - window_id: {window_id}")
                 
                 # 检查是否有等待的窗口需要激活
                 next_window = self._get_current_window(queue_data)
@@ -675,7 +681,7 @@ class RemoteWindowQueue:
             debug_log(f"💓 DEBUG: [{get_global_timestamp()}] [HEARTBEAT_THREAD_START] 启动心跳更新线程: {window_id}")
             while True:
                 try:
-                    # 检查窗口是否仍然是当前活跃窗口
+                    # 检查窗口是否仍然是当前活跃窗口，并更新心跳（在同一个锁中完成）
                     with self.local_lock:
                         queue_data = self._read_queue_file()
                         current_window = self._get_current_window(queue_data)
@@ -687,12 +693,13 @@ class RemoteWindowQueue:
                         if current_window.get("status") == "completed":
                             debug_log(f"💓 DEBUG: [{get_global_timestamp()}] [HEARTBEAT_THREAD_COMPLETED] 心跳线程退出，窗口已完成: {window_id}")
                             break
-                    
-                    # 更新心跳
-                    success = self.update_heartbeat(window_id)
-                    if not success:
-                        debug_log(f"💓 DEBUG: [{get_global_timestamp()}] [HEARTBEAT_UPDATE_FAILED] 心跳更新失败，退出线程: {window_id}")
-                        break
+                        
+                        # 直接在这里更新心跳，避免重复获取锁
+                        old_heartbeat = current_window.get("heartbeat", False)
+                        current_window["heartbeat"] = True  # 设置为布尔值true
+                        
+                        self._write_queue_file(queue_data)
+                        debug_log(f"💓 DEBUG: [{get_global_timestamp()}] [HEARTBEAT_DIRECT_UPDATE] 窗口 {window_id} 直接更新心跳: {old_heartbeat} -> True")
                     
                     # 等待0.1秒
                     time.sleep(0.1)

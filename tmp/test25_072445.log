@@ -1,0 +1,38 @@
+F
+======================================================================
+FAIL: test_25_pip_dependency_analysis (test_gds.GDSTest.test_25_pip_dependency_analysis)
+测试pip依赖树分析功能
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 312, in _run_gds_command
+    self.assertEqual(result.returncode, 0, f"命令执行失败: {command}")
+AssertionError: 1 != 0 : 命令执行失败: pip --show-deps requests --depth=1
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 2029, in test_25_pip_dependency_analysis
+    result = self._run_gds_command('pip --show-deps requests --depth=1')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 318, in _run_gds_command
+    self.fail(f"命令执行异常: {command} - {e}")
+AssertionError: 命令执行异常: pip --show-deps requests --depth=1 - 1 != 0 : 命令执行失败: pip --show-deps requests --depth=1
+
+----------------------------------------------------------------------
+Ran 1 test in 81.730s
+
+FAILED (failures=1)
+🚀 设置GDS全面测试环境...
+📁 远端测试目录: ~/tmp/gds_test_20250831_072445_953602_6022cc24
+✅ 已切换到远端测试目录: ~/tmp/gds_test_20250831_072445_953602_6022cc24
+📁 本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_3917o3tj
+✅ 测试环境设置完成
+
+🧪 测试24: pip依赖树分析功能
+🔍 测试简单包依赖分析（depth=1）
+
+🔧 执行命令: pip --show-deps requests --depth=1
+📤 返回码: 1
+📝 输出: pip命令执行失败: 'PipOperations' object has no attribute '_show_dependency_tree'
+...
+💥 命令执行异常: 1 != 0 : 命令执行失败: pip --show-deps requests --depth=1
