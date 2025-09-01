@@ -50,12 +50,12 @@ def test_help_output():
     assert 'Environment Variable Export Tool' in result.stdout
     assert 'Usage:' in result.stdout
     assert 'Examples:' in result.stdout
-    print("test_help_output passed")
+    print(f"test_help_output passed")
 
 def test_run_environment_detection():
     """Test RUN environment detection"""
     if not EXPORT_AVAILABLE:
-        print("⏭️  test_run_environment_detection skipped - EXPORT module not available")
+        print(f"test_run_environment_detection skipped - EXPORT module not available")
         return
     
     # Test without RUN environment
@@ -64,12 +64,12 @@ def test_run_environment_detection():
     # Test with RUN environment
     with patch.dict(os.environ, {'RUN_IDENTIFIER_test123': 'True'}):
         assert EXPORT.is_run_environment('test123')
-    print("test_run_environment_detection passed")
+    print(f"test_run_environment_detection passed")
 
 def test_json_output_creation():
     """Test JSON output format for RUN environment"""
     if not EXPORT_AVAILABLE:
-        print("⏭️  test_json_output_creation skipped - EXPORT module not available")
+        print(f"test_json_output_creation skipped - EXPORT module not available")
         return
     
     # Test successful JSON output
@@ -84,12 +84,12 @@ def test_json_output_creation():
         mock_write.return_value = True
         result = EXPORT.write_to_json_output(test_data)
         mock_write.assert_called_once_with(test_data)
-    print("test_json_output_creation passed")
+    print(f"test_json_output_creation passed")
 
 def test_variable_name_validation():
     """Test environment variable name validation in export_variable"""
     if not EXPORT_AVAILABLE:
-        print("⏭️  test_variable_name_validation skipped - EXPORT module not available")
+        print(f"test_variable_name_validation skipped - EXPORT module not available")
         return
     
     with patch.object(EXPORT, 'write_to_json_output'):
@@ -101,12 +101,12 @@ def test_variable_name_validation():
                 result = EXPORT.export_variable(name, 'test_value')
                 # Should not fail due to variable name validation
                 assert isinstance(result, int)
-    print("test_variable_name_validation passed")
+    print(f"test_variable_name_validation passed")
 
 def test_get_shell_config_files():
     """Test getting shell configuration files"""
     if not EXPORT_AVAILABLE:
-        print("⏭️  test_get_shell_config_files skipped - EXPORT module not available")
+        print(f"test_get_shell_config_files skipped - EXPORT module not available")
         return
     
     config_files = EXPORT.get_shell_config_files()
@@ -119,12 +119,12 @@ def test_get_shell_config_files():
     assert '.bashrc' in file_names
     assert '.bash_profile' in file_names
     assert '.zshrc' in file_names
-    print("test_get_shell_config_files passed")
+    print(f"test_get_shell_config_files passed")
 
 def test_remove_existing_export():
     """Test removal of existing export statements"""
     if not EXPORT_AVAILABLE:
-        print("⏭️  test_remove_existing_export skipped - EXPORT module not available")
+        print(f"test_remove_existing_export skipped - EXPORT module not available")
         return
     
     # Test data with existing export
@@ -143,12 +143,12 @@ def test_remove_existing_export():
     assert 'export TEST_VAR=old_value' not in result_text
     assert 'export OTHER_VAR=other_value' in result_text
     assert '# Test file' in result_text
-    print("test_remove_existing_export passed")
+    print(f"test_remove_existing_export passed")
 
 def test_add_export_statement():
     """Test adding export statement to configuration"""
     if not EXPORT_AVAILABLE:
-        print("⏭️  test_add_export_statement skipped - EXPORT module not available")
+        print(f"test_add_export_statement skipped - EXPORT module not available")
         return
     
     test_lines = ["# Test file\n"]
@@ -159,12 +159,12 @@ def test_add_export_statement():
     result_text = ''.join(result)
     assert 'export TEST_VAR="test_value"' in result_text
     assert '# Test file' in result_text
-    print("test_add_export_statement passed")
+    print(f"test_add_export_statement passed")
 
 def test_help_function():
     """Test help function output"""
     if not EXPORT_AVAILABLE:
-        print("⏭️  test_help_function skipped - EXPORT module not available")
+        print(f"test_help_function skipped - EXPORT module not available")
         return
     
     with patch('builtins.print') as mock_print:
@@ -177,7 +177,7 @@ def test_help_function():
         assert 'EXPORT' in help_text
         assert 'Usage:' in help_text
         assert 'Examples:' in help_text
-    print("test_help_function passed")
+    print(f"test_help_function passed")
 
 def test_command_line_execution():
     """Test command line execution of EXPORT"""
@@ -188,13 +188,13 @@ def test_command_line_execution():
     assert result.returncode == 0
     assert 'Environment Variable Export Tool' in result.stdout
     assert 'OPENROUTER_API_KEY' in result.stdout  # Check for example
-    print("test_command_line_execution passed")
+    print(f"test_command_line_execution passed")
 
 def test_run_show_compatibility():
     """Test RUN --show compatibility"""
     run_py = Path(__file__).parent.parent / 'RUN.py'
     if not run_py.exists():
-        print("⏭️  test_run_show_compatibility skipped - RUN.py not found")
+        print(f"test_run_show_compatibility skipped - RUN.py not found")
         return
     
     result = subprocess.run([
@@ -206,12 +206,12 @@ def test_run_show_compatibility():
         try:
             output_json = json.loads(result.stdout)
             assert 'success' in output_json or 'help' in output_json
-            print("RUN --show EXPORT integration successful")
+            print(f"RUN --show EXPORT integration successful")
         except json.JSONDecodeError:
             raise AssertionError(f"RUN --show should output valid JSON: {result.stdout[:200]}...")
     else:
         # RUN integration failure is acceptable
-        print("RUN --show EXPORT test completed (failure expected without full setup)")
+        print(f"RUN --show EXPORT test completed (failure expected without full setup)")
 
 def test_missing_arguments_error():
     """Test error handling when no arguments provided"""
@@ -221,7 +221,7 @@ def test_missing_arguments_error():
     
     assert result.returncode != 0  # Should fail
     assert 'Error' in result.stdout or 'Usage' in result.stdout, f"Expected error message, got: {result.stdout}"
-    print("test_missing_arguments_error passed")
+    print(f"test_missing_arguments_error passed")
 
 def test_update_option():
     """Test --update option functionality"""
@@ -231,11 +231,11 @@ def test_update_option():
     
     # --update option should be recognized (may succeed or fail based on environment)
     if result.returncode == 0:
-        print("--update option executed successfully")
+        print(f"--update option executed successfully")
     else:
         # Check if it's a reasonable failure (e.g., permission issues)
         if 'configuration' in result.stdout.lower() or 'update' in result.stdout.lower():
-            print("--update option processed (expected failure in test environment)")
+            print(f"--update option processed (expected failure in test environment)")
         else:
             raise AssertionError(f"Unexpected error with --update option: {result.stdout}")
 
@@ -249,12 +249,12 @@ def test_export_variable_dry_run():
     # Should not crash and should provide reasonable output
     if result.returncode == 0:
         assert 'exported' in result.stdout.lower()
-        print("Export variable executed successfully")
+        print(f"Export variable executed successfully")
     else:
         # Check for reasonable error messages
         assert 'error' in result.stdout.lower() or 'failed' in result.stdout.lower(), \
             f"Expected error message for failed export, got: {result.stdout[:200]}..."
-        print("Export variable handled error appropriately")
+        print(f"Export variable handled error appropriately")
 
 # All test functions list
 ALL_UNIT_TESTS = [
@@ -275,7 +275,7 @@ ALL_UNIT_TESTS = [
 
 def run_all_unit_tests():
     """Run all unit tests"""
-    print("🧪 Running all EXPORT unit tests...")
+    print(f"Running all EXPORT unit tests...")
     passed = 0
     failed = 0
     
@@ -287,13 +287,13 @@ def run_all_unit_tests():
             print(f"Error: {test_func.__name__} failed: {e}")
             failed += 1
     
-    print(f"\n📊 Test Results: {passed} passed, {failed} failed")
+    print(f"\nTest Results: {passed} passed, {failed} failed")
     return failed == 0
 
 def run_integration_tests(test_names):
     """Run specific integration tests from _TEST.py"""
     if not INTEGRATION_TEST_AVAILABLE:
-        print("Error:  Integration tests not available - _TEST.py not found")
+        print(f"Error:  Integration tests not available - _TEST.py not found")
         return False
     
     suite = unittest.TestSuite()
@@ -337,11 +337,11 @@ if __name__ == '__main__':
     success = True
     
     if args.integration_only or args.export_only:
-        print("🧪 Running EXPORT integration test only...")
+        print(f"Running EXPORT integration test only...")
         success = run_integration_tests(['test_09_export'])
         
     elif args.with_google_drive:
-        print("🧪 Running EXPORT and GOOGLE_DRIVE integration tests...")
+        print(f"Running EXPORT and GOOGLE_DRIVE integration tests...")
         success = run_integration_tests(['test_09_export', 'test_07_google_drive'])
         
     else:

@@ -292,9 +292,9 @@ class GoogleDriveShell:
         """委托到shell_management管理器"""
         return self.shell_management.create_shell(*args, **kwargs)
     
-    def execute_generic_remote_command(self, *args, **kwargs):
+    def execute_generic_command(self, *args, **kwargs):
         """委托到remote_commands管理器"""
-        return self.remote_commands.execute_generic_remote_command(*args, **kwargs)
+        return self.remote_commands.execute_generic_command(*args, **kwargs)
     
     def _verify_mkdir_with_ls(self, *args, **kwargs):
         """委托到verification管理器"""
@@ -346,7 +346,7 @@ class GoogleDriveShell:
                             print(name)
             else:
                 # 其他模式的显示逻辑可以在这里添加
-                print("Recursive ls results (detailed mode):")
+                print(f"Recursive ls results (detailed mode):")
                 print(f"Path: {result.get('path', 'unknown')}")
                 print(f"Total: {result.get('count', 0)} items")
                 
@@ -359,7 +359,7 @@ class GoogleDriveShell:
         """统一的echo命令处理逻辑 - 支持长内容的base64编码"""
         # 空echo命令
         if not args:
-            print("")
+            print(f"")
             return 0
         
         # 检测是否为重定向命令，如果是则统一使用base64编码
@@ -408,15 +408,16 @@ class GoogleDriveShell:
                     return 1
         
         # 使用通用的远程命令执行机制
-        result = self.execute_generic_remote_command('echo', args)
+        result = self.execute_generic_command('echo', args)
         
         if result.get("success", False):
-            # result_print已经在remote_commands.py中处理了输出显示
-            # 这里只需要处理错误输出
+            # 统一在命令处理结束后打印输出
+            stdout = result.get("stdout", "").strip()
+            if stdout:
+                print(stdout)
             stderr = result.get("stderr", "").strip()
             if stderr:
-                from GOOGLE_DRIVE_PROJ.modules.progress_manager import normal_print
-                normal_print(stderr)
+                print(stderr, file=sys.stderr)
             return 0
         else:
             error_msg = result.get("error", "Echo command failed")
@@ -434,7 +435,7 @@ class GoogleDriveShell:
             match = re.match(r'^echo\s+(["\'])(.*?)\1\s*>\s*(.+)$', shell_cmd_clean.strip(), re.DOTALL)
             
             if not match:
-                print("Error: Unable to parse echo redirect command format")
+                print(f"Error: Unable to parse echo redirect command format")
                 return 1
             
             content = match.group(2)
@@ -534,9 +535,9 @@ class GoogleDriveShell:
         """委托到remote_commands管理器"""
         return self.remote_commands.generate_mkdir_commands(*args, **kwargs)
     
-    def generate_remote_commands(self, *args, **kwargs):
+    def generate_commands(self, *args, **kwargs):
         """委托到remote_commands管理器"""
-        return self.remote_commands.generate_remote_commands(*args, **kwargs)
+        return self.remote_commands.generate_commands(*args, **kwargs)
     
     def generate_shell_id(self, *args, **kwargs):
         """委托到shell_management管理器"""
@@ -601,11 +602,7 @@ class GoogleDriveShell:
     def save_shells(self, *args, **kwargs):
         """委托到shell_management管理器"""
         return self.shell_management.save_shells(*args, **kwargs)
-    
-    def show_remote_command_window(self, *args, **kwargs):
-        """委托到remote_commands管理器"""
-        return self.remote_commands.show_remote_command_window(*args, **kwargs)
-    
+
     def terminate_shell(self, *args, **kwargs):
         """委托到shell_management管理器"""
         return self.shell_management.terminate_shell(*args, **kwargs)
@@ -666,14 +663,14 @@ class GoogleDriveShell:
             if is_quoted_command:
                 shell_cmd = shell_cmd[len("__QUOTED_COMMAND__"):]  # 移除标记
             # 显示命令
-            # print("=" * 13)
+            # print(f"=" * 13)
             # display_cmd = shell_cmd.replace('\n', ' ')
             import os
             # local_home = os.path.expanduser("~")
             # if local_home in display_cmd:
             #     display_cmd = display_cmd.replace(local_home, "~")
             # print(f"GDS {display_cmd}")
-            # print("=" * 13)
+            # print(f"=" * 13)
             
             # 首先检测引号包围的完整命令（在命令解析之前）
             shell_cmd_clean = shell_cmd.strip()
@@ -720,9 +717,9 @@ class GoogleDriveShell:
                         
                         if diff_output and diff_output != "No changes detected":
                             print(f"\nEdit comparison: {filename}")
-                            print("=" * 50)
+                            print(f"=" * 50)
                             print(diff_output)
-                            print("=" * 50)
+                            print(f"=" * 50)
                         
                         # 对于正常模式，显示成功信息
                         if result.get("mode") != "preview":
@@ -771,7 +768,7 @@ class GoogleDriveShell:
                     except ValueError as e:
                         # 如果shlex解析失败，回退到简单分割
                         print(f"Warning: Shell command parsing failed with shlex: {e}")
-                        print("Warning: Falling back to simple space splitting")
+                        print(f"Warning: Falling back to simple space splitting")
                         cmd_parts = shell_cmd_clean.split()
                         if not cmd_parts:
                             return 1
@@ -808,49 +805,66 @@ class GoogleDriveShell:
                 # 解析ls命令的参数
                 recursive = False
                 detailed = False
-                path = None
+                force_mode = False  # -f选项
+                directory_mode = False  # -d选项：显示目录本身而不是内容
+                paths = []  # 支持多个路径
                 
                 for arg in args:
                     if arg == '-R':
                         recursive = True
                     elif arg == '--detailed':
                         detailed = True
+                    elif arg == '-f':
+                        force_mode = True
+                    elif arg == '-d':
+                        directory_mode = True
                     elif not arg.startswith('-'):
-                        path = arg
+                        paths.append(arg)
                 
                 # 修复shell展开的家目录路径问题
-                if path and path.startswith('/Users/'):
-                    import os
-                    local_home = os.path.expanduser("~")
-                    if path.startswith(local_home):
+                import os
+                local_home = os.path.expanduser("~")
+                fixed_paths = []
+                for path in paths:
+                    if path and path.startswith('/Users/') and path.startswith(local_home):
                         # 将本地家目录路径转换为远程路径格式
                         relative_path = path[len(local_home):].lstrip('/')
                         if relative_path:
-                            path = f"~/{relative_path}"
+                            fixed_paths.append(f"~/{relative_path}")
                         else:
-                            path = "~"
-                
-                if recursive:
-                    # 使用远端ls -R命令，提高效率
-                    if path:
-                        cmd_args = ["-R", path]
+                            fixed_paths.append("~")
                     else:
-                        cmd_args = ["-R"]
+                        fixed_paths.append(path)
+                paths = fixed_paths
+                
+                # 如果有多个路径或使用了-R/-f/-d选项，使用远端命令执行
+                if len(paths) > 1 or recursive or force_mode or directory_mode:
+                    # 构建ls命令参数
+                    cmd_args = []
+                    if recursive:
+                        cmd_args.append("-R")
+                    if force_mode:
+                        cmd_args.append("-f")
+                    if directory_mode:
+                        cmd_args.append("-d")
+                    cmd_args.extend(paths)
                     
                     # 直接调用远程命令处理，绕过特殊命令检查
                     try:
                         current_shell = self.get_current_shell()
                         if not current_shell:
-                            print("Error: 没有活跃的shell会话")
+                            print(f"Error: 没有活跃的shell会话")
                             return 1
                         
                         # 生成远程命令
-                        remote_command_info = self.remote_commands._generate_remote_command("ls", cmd_args, current_shell)
+                        remote_command_info = self.remote_commands._generate_command("ls", cmd_args, current_shell)
                         remote_command, result_filename = remote_command_info
                         
                         # 显示远程命令窗口
-                        title = f"GDS Remote Command: ls -R"
-                        instruction = f"Command: ls -R {path if path else ''}\n\nPlease execute the following command in your remote environment:"
+                        options_str = " ".join(opt for opt in ["-R" if recursive else "", "-f" if force_mode else "", "-d" if directory_mode else ""] if opt)
+                        paths_str = " ".join(paths) if paths else ""
+                        title = f"GDS Remote Command: ls {options_str} {paths_str}".strip()
+                        instruction = f"Command: ls {options_str} {paths_str}\n\nPlease execute the following command in your remote environment:"
                         
                         result = self.remote_commands.show_command_window_subprocess(
                             title=title,
@@ -858,7 +872,7 @@ class GoogleDriveShell:
                             timeout_seconds=300
                         )
                         
-                        # 处理结果，模拟execute_generic_remote_command的逻辑
+                        # 处理结果，模拟execute_generic_command的逻辑
                         if result["action"] == "success":
                             # 等待并读取结果文件
                             result_data = self.remote_commands._wait_and_read_result_file(result_filename)
@@ -890,15 +904,16 @@ class GoogleDriveShell:
                                 print(f"Error: 处理直接反馈时出错: {e}")
                                 return 1
                         else:
-                            print(result.get("error", "Error: ls -R命令执行失败"))
+                            print(result.get("error", "Error: ls -R command execution failed"))
                             return 1
                     except Exception as e:
-                        print(f"Error: ls -R命令执行失败: {e}")
+                        print(f"Error: ls -R command execution failed: {e}")
                         import traceback
                         traceback.print_exc()
                         return 1
                 else:
-                    # 直接使用cmd_ls
+                    # 单个路径或无路径的情况，直接使用cmd_ls
+                    path = paths[0] if paths else None
                     result = self.cmd_ls(path=path, detailed=detailed, recursive=recursive, show_hidden=False)
                     
                     if result.get("success"):
@@ -929,7 +944,7 @@ class GoogleDriveShell:
                         return 1
             elif cmd == 'cd':
                 if not args:
-                    print("Error: cd command needs a path")
+                    print(f"Error: cd command needs a path")
                     return 1
                 # 使用file_operations中的cmd_cd方法
                 path = args[0]
@@ -938,11 +953,11 @@ class GoogleDriveShell:
                     # cd命令成功时不显示输出（像bash一样）
                     return 0
                 else:
-                    print(result.get("error", "Error: cd命令执行失败"))
+                    print(result.get("error", "Error: cd command execution failed"))
                     return 1
             elif cmd == 'mkdir':
                 if not args:
-                    print("Error: mkdir command needs a directory name")
+                    print(f"Error: mkdir command needs a directory name")
                     return 1
                 # 导入shell_commands模块中的具体函数
                 current_dir = os.path.dirname(__file__)
@@ -954,7 +969,7 @@ class GoogleDriveShell:
                 recursive = '-p' in args
                 dir_names = [arg for arg in args if arg != '-p']
                 if not dir_names:
-                    print("Error: mkdir command needs directory name(s)")
+                    print(f"Error: mkdir command needs directory name(s)")
                     return 1
                 
                 # 支持多个目录创建 - 使用单个远端命令提高效率
@@ -964,14 +979,14 @@ class GoogleDriveShell:
                     if result.get("success"):
                         return 0
                     else:
-                        error_msg = result.get("error", "Error: mkdir命令执行失败")
+                        error_msg = result.get("error", "Error: mkdir command execution failed")
                         print(error_msg)
                         return 1
                 else:
                     # 多个目录，合并为单个远端命令
                     current_shell = self.get_current_shell()
                     if not current_shell:
-                        print("Error: 没有活跃的远程shell")
+                        print(f"Error: no active remote shell")
                         return 1
                     
                     # 构建合并的mkdir命令
@@ -985,7 +1000,7 @@ class GoogleDriveShell:
                     combined_command = " && ".join([f'{mkdir_prefix} "{path}"' for path in absolute_paths])
                     
                     # 执行合并的命令
-                    result = self.execute_generic_remote_command("bash", ["-c", combined_command])
+                    result = self.execute_generic_command("bash", ["-c", combined_command])
                     
                     if result.get("success"):
                         # 验证所有目录都被创建了
@@ -995,17 +1010,17 @@ class GoogleDriveShell:
                                 dir_name, current_shell, creation_type="dir", max_attempts=60
                             )
                             if not verification_result.get("success", False):
-                                print(f"Error: 目录 {dir_name} 验证失败")
+                                print(f"Error: Directory {dir_name} verification failed")
                                 all_verified = False
                         
                         return 0 if all_verified else 1
                     else:
-                        error_msg = result.get("error", "多目录创建失败")
+                        error_msg = result.get("error", "Multiple directory creation failed")
                         print(f"Error: {error_msg}")
                         return 1
             elif cmd == 'touch':
                 if not args:
-                    print("Error: touch command needs a filename")
+                    print(f"Error: touch command needs a filename")
                     return 1
                 
                 filename = args[0]
@@ -1015,7 +1030,7 @@ class GoogleDriveShell:
                 if result.get("success"):
                     return 0
                 else:
-                    print(result.get("error", "Error: touch命令执行失败"))
+                    print(result.get("error", "Error: touch command execution failed"))
                     return 1
 
             elif cmd == 'echo':
@@ -1044,12 +1059,12 @@ class GoogleDriveShell:
                     # 显示stderr如果存在
                     stderr = result.get("stderr", "")
                     if stderr.strip():
-                        print(f"\nError: STDERR内容:\n{stderr.strip()}")
+                        print(f"\nError: STDERR content:\n{stderr.strip()}")
                     
                     # 显示用户错误信息（如果有）
                     user_error = result.get("user_error_info", "")
                     if user_error:
-                        print(f"\n👤 用户提供的错误信息:\n{user_error}")
+                        print(f"\nError: User provided content:\n{user_error}")
                     
                     return 1
             elif cmd == 'linter':
@@ -1087,7 +1102,7 @@ class GoogleDriveShell:
             elif cmd == 'cat':
                 # 使用委托方法处理cat命令
                 if not args:
-                    print("Error: cat command needs a file name")
+                    print(f"Error: cat command needs a file name")
                     return 1
                 result = self.cmd_cat(args[0])
                 if result.get("success", False):
@@ -1100,7 +1115,7 @@ class GoogleDriveShell:
             elif cmd == 'edit':
                 # 使用委托方法处理edit命令
                 if len(args) < 2:
-                    print("Error: edit command needs a file name and edit specification")
+                    print(f"Error: edit command needs a file name and edit specification")
                     return 1
                 
                 # 解析选项参数
@@ -1117,7 +1132,7 @@ class GoogleDriveShell:
                         remaining_args.append(arg)
                 
                 if len(remaining_args) < 2:
-                    print("Error: edit command needs a file name and edit specification")
+                    print(f"Error: edit command needs a file name and edit specification")
                     return 1
                     
                 filename = remaining_args[0]
@@ -1155,7 +1170,7 @@ class GoogleDriveShell:
                     
                     if diff_output and diff_output != "No changes detected":
                         print(f"\nEdit comparison: {filename}")
-                        print("=" * 50)
+                        print(f"=" * 50)
                         
                         # 过滤diff输出，移除文件头和行号信息
                         diff_lines = diff_output.splitlines()
@@ -1172,9 +1187,9 @@ class GoogleDriveShell:
                         # 显示过滤后的diff内容
                         if filtered_lines:
                             print('\n'.join(filtered_lines))
-                        print("=" * 50)
+                        print(f"=" * 50)
                     elif diff_output == "No changes detected":
-                        print("No changes detected")
+                        print(f"No changes detected")
                     
                     # 对于正常模式，显示成功信息
                     if result.get("mode") != "preview":
@@ -1182,16 +1197,16 @@ class GoogleDriveShell:
                     
                     # 显示linter结果（如果有）
                     if result.get("has_linter_issues"):
-                        print("=" * 50)
+                        print(f"=" * 50)
                         linter_output = result.get("linter_output", "")
                         total_issues = linter_output.count("ERROR:") + linter_output.count("WARNING:")
                         print(f"{total_issues} linter warnings or errors found:")
                         print(linter_output)
-                        print("=" * 50)
+                        print(f"=" * 50)
                     elif result.get("linter_error"):
-                        print("=" * 50)
+                        print(f"=" * 50)
                         print(f"Linter check failed: {result.get('linter_error')}")
-                        print("=" * 50)
+                        print(f"=" * 50)
                     elif result.get("has_linter_issues") == False:
                         # Only show "no issues" message if linter actually ran
                         pass  # No need to show anything for clean files
@@ -1203,7 +1218,7 @@ class GoogleDriveShell:
             elif cmd == 'read':
                 # 使用委托方法处理read命令
                 if not args:
-                    print("Error: read command needs a file name")
+                    print(f"Error: read command needs a file name")
                     return 1
                 
                 # 解析--force标志
@@ -1217,7 +1232,7 @@ class GoogleDriveShell:
                         remaining_args.append(arg)
                 
                 if not remaining_args:
-                    print("Error: read command needs a file name")
+                    print(f"Error: read command needs a file name")
                     return 1
                 
                 filename = remaining_args[0]
@@ -1234,12 +1249,12 @@ class GoogleDriveShell:
             elif cmd == 'python':
                 # 使用委托方法处理python命令
                 if not args:
-                    print("Error: python command needs a file name or code")
+                    print(f"Error: python command needs a file name or code")
                     return 1
                 if args[0] == '-c':
                     # 执行Python代码
                     if len(args) < 2:
-                        print("Error: python -c needs code")
+                        print(f"Error: python -c needs code")
                         return 1
                     # 过滤掉命令行选项参数，只保留Python代码
                     code_args = []
@@ -1263,12 +1278,12 @@ class GoogleDriveShell:
                 if result.get("success", False):
                     # 检查是否来自direct_feedback，如果是则不重复打印
                     if result.get("source") != "direct_feedback":
-                        # 显示stdout输出
+                        # 统一在命令处理结束后打印输出
                         stdout = result.get("stdout", "")
                         if stdout:
                             print(stdout, end="")
                         
-                        # 显示stderr输出
+                        # 显示stderr输出（如果有）
                         stderr = result.get("stderr", "")
                         if stderr:
                             print(stderr, end="", file=sys.stderr)
@@ -1282,7 +1297,7 @@ class GoogleDriveShell:
             elif cmd == 'upload':
                 # 使用委托方法处理upload命令
                 if not args:
-                    print("Error: upload command needs a file name")
+                    print(f"Error: upload command needs a file name")
                     return 1
                 
                 # 参数解析规则：
@@ -1301,7 +1316,7 @@ class GoogleDriveShell:
                             target_path = args[i + 1]
                             i += 2  # 跳过--target-dir和其值
                         else:
-                            print("Error: --target-dir option requires a directory path")
+                            print(f"Error: --target-dir option requires a directory path")
                             return 1
                     elif args[i] == '--force':
                         force = True
@@ -1314,7 +1329,7 @@ class GoogleDriveShell:
                         i += 1
                 
                 if not source_files:
-                    print("Error: No source files specified for upload")
+                    print(f"Error: No source files specified for upload")
                     return 1
                 
                 result = self.cmd_upload(source_files, target_path, force=force, remove_local=remove_local)
@@ -1327,7 +1342,7 @@ class GoogleDriveShell:
             elif cmd == 'upload-folder':
                 # 使用委托方法处理upload-folder命令
                 if not args:
-                    print("Error: upload-folder command needs a folder path")
+                    print(f"Error: upload-folder command needs a folder path")
                     return 1
                 
                 # 解析参数: upload-folder [--keep-zip] [--force] <folder> [target]
@@ -1353,7 +1368,7 @@ class GoogleDriveShell:
                         i += 1
                 
                 if folder_path is None:
-                    print("Error: upload-folder command needs a folder path")
+                    print(f"Error: upload-folder command needs a folder path")
                     return 1
                 
                 result = self.cmd_upload_folder(folder_path, target_path, keep_zip, force)
@@ -1366,7 +1381,7 @@ class GoogleDriveShell:
             elif cmd == 'download':
                 # 使用委托方法处理download命令
                 if not args:
-                    print("Error: download command needs a file name")
+                    print(f"Error: download command needs a file name")
                     return 1
                 result = self.cmd_download(*args)
                 if result.get("success", False):
@@ -1378,7 +1393,7 @@ class GoogleDriveShell:
             elif cmd == 'mv':
                 # 使用委托方法处理mv命令
                 if len(args) < 2:
-                    print("Error: mv command needs a source file and target file")
+                    print(f"Error: mv command needs a source file and target file")
                     return 1
                 result = self.cmd_mv(args[0], args[1])
                 if result.get("success", False):
@@ -1400,7 +1415,7 @@ class GoogleDriveShell:
             elif cmd == 'rm':
                 # 使用委托方法处理rm命令
                 if not args:
-                    print("Error: rm command needs a file or directory name")
+                    print(f"Error: rm command needs a file or directory name")
                     return 1
                 
                 # 解析rm选项
@@ -1419,7 +1434,7 @@ class GoogleDriveShell:
                         paths.append(arg)
                 
                 if not paths:
-                    print("Error: rm command needs at least one file or directory to delete")
+                    print(f"Error: rm command needs at least one file or directory to delete")
                     return 1
                 
                 # 处理每个路径
@@ -1436,7 +1451,7 @@ class GoogleDriveShell:
             elif cmd == 'grep':
                 # 使用委托方法处理grep命令
                 if len(args) < 1:
-                    print("Error: grep command needs at least a file name")
+                    print(f"Error: grep command needs at least a file name")
                     return 1
                 
                 # 处理参数解析
@@ -1516,10 +1531,11 @@ class GoogleDriveShell:
                     return 1
             else:
                 # 尝试通过通用远程命令执行
-                result = self.execute_generic_remote_command(cmd, args)
+                result = self.execute_generic_command(cmd, args)
                 if result.get("success", False):
                     stdout = result.get("stdout", "").strip()
                     stderr = result.get("stderr", "").strip()
+                    # 统一在命令处理结束后打印输出
                     if stdout:
                         print(stdout)
                     if stderr:

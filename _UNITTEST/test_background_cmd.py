@@ -262,7 +262,7 @@ class TestBackgroundCmdCLI(unittest.TestCase):
 
 def run_tests():
     """运行所有测试"""
-    print("=== BACKGROUND_CMD Unit Tests ===")
+    print(f"=== BACKGROUND_CMD Unit Tests ===")
     print()
     
     # 创建测试套件
@@ -279,18 +279,18 @@ def run_tests():
     
     # 输出结果
     print()
-    print("=== Test Results ===")
+    print(f"=== Test Results ===")
     print(f"Tests run: {result.testsRun}")
     print(f"Failures: {len(result.failures)}")
     print(f"Errors: {len(result.errors)}")
     
     if result.failures:
-        print("\nFailures:")
+        print(f"\nFailures:")
         for test, traceback in result.failures:
             print(f"- {test}: {traceback}")
     
     if result.errors:
-        print("\nErrors:")
+        print(f"\nErrors:")
         for test, traceback in result.errors:
             print(f"- {test}: {traceback}")
     

@@ -58,7 +58,7 @@ class TextOperations:
             remote_command = f'echo "{content_base64}" | base64 -d > "{remote_absolute_path}"'
             
             # 使用远程命令执行接口
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", remote_command])
             
             if result.get("success"):
                 # 验证文件是否真的被创建了
@@ -428,7 +428,7 @@ class TextOperations:
             find_command = " ".join(find_cmd_parts)
             
             # 执行远程find命令
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", find_command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", find_command])
             
             if result.get("success"):
                 stdout = result.get("stdout", "").strip()
@@ -1065,14 +1065,14 @@ class TextOperations:
         except KeyboardInterrupt:
             # 用户中断，输出debug信息
             if debug_info:
-                print("\n🔧 DEBUG INFO (due to KeyboardInterrupt):")
+                print(f"\nDEBUG INFO (due to KeyboardInterrupt):")
                 for i, info in enumerate(debug_info, 1):
                     print(f"  {i}. {info}")
             raise  # 重新抛出KeyboardInterrupt
         except Exception as e:
             # 输出debug信息用于异常诊断
             if debug_info:
-                print("🔧 DEBUG INFO (due to exception):")
+                print(f"DEBUG INFO (due to exception):")
                 for i, info in enumerate(debug_info, 1):
                     print(f"  {i}. {info}")
             return {"success": False, "error": f"Edit operation failed: {str(e)}"}
@@ -1111,7 +1111,7 @@ class TextOperations:
             
             if not download_result["success"]:
                 if backup_debug:
-                    print("🔧 BACKUP DEBUG INFO (download failed):")
+                    print(f"BACKUP DEBUG INFO (download failed):")
                     for i, info in enumerate(backup_debug, 1):
                         print(f"  {i}. {info}")
                 return {"success": False, "error": f"Failed to download original file for backup: {download_result.get('error')}"}
@@ -1123,7 +1123,7 @@ class TextOperations:
             
             if not cache_file_path or not os.path.exists(cache_file_path):
                 if backup_debug:
-                    print("🔧 BACKUP DEBUG INFO (cache file not found):")
+                    print(f"BACKUP DEBUG INFO (cache file not found):")
                     for i, info in enumerate(backup_debug, 1):
                         print(f"  {i}. {info}")
                 return {"success": False, "error": "Failed to get cache file path for backup"}
@@ -1164,7 +1164,7 @@ class TextOperations:
                 return {"success": True, "message": f"Backup created: {backup_filename}"}
             else:
                 if backup_debug:
-                    print("🔧 BACKUP DEBUG INFO (upload failed):")
+                    print(f"BACKUP DEBUG INFO (upload failed):")
                     for i, info in enumerate(backup_debug, 1):
                         print(f"  {i}. {info}")
                 return {"success": False, "error": f"Failed to create backup: {upload_result.get('error')}"}
@@ -1172,7 +1172,7 @@ class TextOperations:
         except KeyboardInterrupt:
             # 用户中断备份过程
             if backup_debug:
-                print("\n🔧 BACKUP DEBUG INFO (due to KeyboardInterrupt):")
+                print(f"\nBACKUP DEBUG INFO (due to KeyboardInterrupt):")
                 for i, info in enumerate(backup_debug, 1):
                     print(f"  {i}. {info}")
             raise

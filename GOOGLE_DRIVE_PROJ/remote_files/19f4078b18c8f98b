@@ -1,5 +1,5 @@
 def greet():
-    print("Hello World")
+    print(f"Hello World")
     return "success"
 
 main() 

@@ -23,7 +23,7 @@ def test_new_progress_manager():
     """测试新的progress_manager功能"""
     
     # (1) 输出模拟指令
-    normal_print("$ echo 'Hello World'")
+    normal_print(f"$ echo 'Hello World'")
     
     # (2) 开始进度显示
     start_progress_buffering("⏳ Waiting for result ...")
@@ -31,13 +31,14 @@ def test_new_progress_manager():
     # 每秒添加一个点，持续5秒（缩短测试时间）
     for i in range(5):
         time.sleep(1)
-        progress_print(".")
+        progress_print(f".")
     
     # (3) 显示最终结果（会自动擦除进度）
-    result_print("Hello World")
+    result_print(f"Hello World")
     
     # 测试正常输出
-    normal_print("Test completed successfully!")
+    normal_print(f"Test completed successfully!")
 
 if __name__ == "__main__":
     test_new_progress_manager()
+

@@ -134,7 +134,7 @@ class TestRunner:
         for tool_name in tools:
             if tool_name in self.bin_data["tools"]:
                 self.bin_data["tools"][tool_name]["test_passed"] = False
-                print(f"🔄 Reset {tool_name} test_passed to false")
+                print(f"Reset {tool_name} test_passed to false")
     
     def set_test_passed(self, tool_name: str, passed: bool) -> None:
         """Set test_passed status for a tool"""
@@ -169,13 +169,13 @@ class TestRunner:
             return False
         
         test_files = self.tool_test_mapping[tool_name]
-        print(f"\n🧪 Testing {tool_name} ({len(test_files)} test file(s))")
-        print("=" * 50)
+        print(f"\nTesting {tool_name} ({len(test_files)} test file(s))")
+        print(f"=" * 50)
         
         all_passed = True
         
         for test_file in test_files:
-            print(f"📋 Running {test_file.name}...")
+            print(f"Running {test_file.name}...")
             
             success, stdout, stderr = self.run_test_file(test_file)
             
@@ -188,7 +188,7 @@ class TestRunner:
                 all_passed = False
                 
                 if stderr:
-                    print(f"💥 Error:\n{stderr}")
+                    print(f"Error:\n{stderr}")
                 if stdout and verbose:
                     print(f"Output:\n{stdout}")
         
@@ -231,9 +231,9 @@ class TestRunner:
         end_time = time.time()
         duration = end_time - start_time
         
-        print("\n" + "=" * 60)
-        print("📊 TEST SUMMARY")
-        print("=" * 60)
+        print(f"\n" + "=" * 60)
+        print(f"TEST SUMMARY")
+        print(f"=" * 60)
         
         passed_count = sum(1 for passed in results.values() if passed)
         total_count = len(results)
@@ -242,21 +242,21 @@ class TestRunner:
             status = "✅ PASSED" if passed else "❌ FAILED"
             print(f"{tool_name:20} {status}")
         
-        print("-" * 60)
+        print(f"-" * 60)
         print(f"Total: {passed_count}/{total_count} tools passed")
         print(f"Duration: {duration:.2f} seconds")
         
         if passed_count == total_count:
-            print("🎉 All tests passed!")
+            print(f"All tests passed!")
         else:
-            print(f"💔 {total_count - passed_count} tool(s) failed")
+            print(f"{total_count - passed_count} tool(s) failed")
         
         return results
     
     def list_tools(self) -> None:
         """List all available tools and their test files"""
-        print("📋 Available Tools and Test Files:")
-        print("=" * 50)
+        print(f"Available Tools and Test Files:")
+        print(f"=" * 50)
         
         for tool_name in sorted(self.tool_test_mapping.keys()):
             test_files = self.tool_test_mapping[tool_name]
@@ -265,7 +265,7 @@ class TestRunner:
             
             print(f"{status_icon} {tool_name}")
             for test_file in test_files:
-                print(f"    📄 {test_file.name}")
+                print(f"    {test_file.name}")
         
         print(f"\nTotal: {len(self.tool_test_mapping)} tools with tests")
     
@@ -298,9 +298,9 @@ class TestRunner:
         
         if updated:
             self.save_bin_json()
-            print("Updated AI_TOOL.json with test file fields")
+            print(f"Updated AI_TOOL.json with test file fields")
         else:
-            print("All tools already have proper test file fields")
+            print(f"All tools already have proper test file fields")
 
 
 def main():

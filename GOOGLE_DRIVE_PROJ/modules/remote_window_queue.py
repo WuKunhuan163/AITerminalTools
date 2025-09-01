@@ -200,7 +200,7 @@ class RemoteWindowQueue:
         
         cleaned_count = original_count - len(cleaned_queue)
         if cleaned_count > 0:
-            print(f"🧹 清理了 {cleaned_count} 个无效的窗口请求")
+            print(f"清理了 {cleaned_count} 个无效的窗口请求")
             
         return cleaned_any
     
@@ -806,18 +806,18 @@ class RemoteWindowQueue:
                     }
                     
                     self._write_queue_file(reset_data)
-                    print("🔄 Queue reset to default state")
+                    print(f"Queue reset to default state")
                     return True
                 except Exception as e:
                     print(f"Error: Read default config failed: {e}")
                     # 如果读取默认文件失败，直接重置
                     self._reset_queue_file()
-                    print("🔄 Queue force reset")
+                    print(f"Queue force reset")
                     return True
             else:
                 # 如果没有默认文件，直接重置
                 self._reset_queue_file()
-                print("🔄 Queue reset (no default config file found)")
+                print(f"Queue reset (no default config file found)")
                 return True
 
 # 全局队列管理器实例

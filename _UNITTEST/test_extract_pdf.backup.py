@@ -181,26 +181,26 @@ class TestExtractPDFEngines(BaseTest):
                 md_file = pdf_file.with_suffix('.md')
                 if md_file.exists():
                     md_file.unlink()
-                    print(f"🗑️  Cleaned up: {md_file.name}")
+                    print(f"Cleaned up: {md_file.name}")
                 
                 # 清理带页码的md文件
                 for pattern in [f"{pdf_file.stem}_p*.md"]:
                     for md_file in pdf_file.parent.glob(pattern):
                         md_file.unlink()
-                        print(f"🗑️  Cleaned up: {md_file.name}")
+                        print(f"Cleaned up: {md_file.name}")
                 
                 # 清理_extract_data文件夹
                 extract_data_dir = pdf_file.parent / f"{pdf_file.stem}_extract_data"
                 if extract_data_dir.exists():
                     shutil.rmtree(extract_data_dir)
-                    print(f"🗑️  Cleaned up: {extract_data_dir.name}")
+                    print(f"Cleaned up: {extract_data_dir.name}")
                 
                 # 清理带页码的_extract_data文件夹
                 for pattern in [f"{pdf_file.stem}_p*_extract_data"]:
                     for data_dir in pdf_file.parent.glob(pattern):
                         if data_dir.is_dir():
                             shutil.rmtree(data_dir)
-                            print(f"🗑️  Cleaned up: {data_dir.name}")
+                            print(f"Cleaned up: {data_dir.name}")
 
     def test_01_basic_engine_mode(self):
         """测试基础引擎模式"""
@@ -317,13 +317,13 @@ class TestExtractPDFPreprocessing(BaseTest):
             md_file = self.test_pdf_preprocess.with_suffix('.md')
             if md_file.exists():
                 md_file.unlink()
-                print(f"🗑️  Cleaned up: {md_file.name}")
+                print(f"Cleaned up: {md_file.name}")
             
             # 清理_extract_data文件夹
             extract_data_dir = self.test_pdf_preprocess.parent / f"{self.test_pdf_preprocess.stem}_extract_data"
             if extract_data_dir.exists():
                 shutil.rmtree(extract_data_dir)
-                print(f"🗑️  Cleaned up: {extract_data_dir.name}")
+                print(f"Cleaned up: {extract_data_dir.name}")
     
     def test_01_preprocessing_without_full_pipeline(self):
         """测试前处理：不使用full pipeline，验证公式图片被保存但未处理"""
@@ -371,7 +371,7 @@ class TestExtractPDFPreprocessing(BaseTest):
                     # 这种情况下我们检查是否有文本内容被提取
                     self.assertGreater(len(md_content.strip()), 100, 
                                      "Should have extracted meaningful text content")
-                    print("ℹ️  Basic engine extracted text but no placeholders found")
+                    print(f"Basic engine extracted text but no placeholders found")
                     return None  # 跳过后续的placeholder测试
                 else:
                     print(f"Found placeholders in content: {[p for p in ['[placeholder: formula]', '[placeholder: image]', '[placeholder: table]'] if p in md_content]}")
@@ -383,7 +383,7 @@ class TestExtractPDFPreprocessing(BaseTest):
                     self.assertGreater(len(image_files), 0, "Should have extracted image files")
                     print(f"Preprocessing successful: found {len(image_files)} image files")
                 else:
-                    print("⚠️  No images directory found (may be expected for some PDFs)")
+                    print(f" No images directory found (may be expected for some PDFs)")
                 
                 return expected_md  # 返回markdown文件路径供后续测试使用
             else:
@@ -397,7 +397,7 @@ class TestExtractPDFPreprocessing(BaseTest):
                 if result2.returncode == 0:
                     expected_md = Path(temp_dir) / "test_extract_preprocess.md"
                     if expected_md.exists():
-                        print("MinerU preprocessing successful")
+                        print(f"MinerU preprocessing successful")
                         return expected_md
                 
                 # 两种引擎都失败
@@ -462,9 +462,9 @@ class TestExtractPDFPreprocessing(BaseTest):
                 
                 # 验证处理结果
                 if content_after != content_before:
-                    print("Post-processing completed: content was modified")
+                    print(f"Post-processing completed: content was modified")
                 else:
-                    print("ℹ️  Post-processing completed but content unchanged")
+                    print(f"Post-processing completed but content unchanged")
             else:
                 # 后处理失败是可以接受的（可能缺少依赖）
                 self.assertTrue(
@@ -472,7 +472,7 @@ class TestExtractPDFPreprocessing(BaseTest):
                         ["unimernet", "extract_img", "not available", "failed"]),
                     f"Post-processing failed with unexpected error: {output}"
                 )
-                print("ℹ️  Post-processing failed as expected (missing dependencies)")
+                print(f"Post-processing failed as expected (missing dependencies)")
 
 
 class TestExtractPDFPostProcessing(BaseTest):
@@ -825,13 +825,13 @@ class TestExtractPDFPaper2(BaseTest):
             for pattern in ["*_step1.md", "*_step2.md", "*_full.md"]:
                 for file in cls.test_data_dir.glob(pattern):
                     file.unlink()
-                    print(f"🗑️  Cleaned up: {file.name}")
+                    print(f"Cleaned up: {file.name}")
             
             # 清理images文件夹（完整测试需要）
             images_dir = cls.test_data_dir / "images"
             if images_dir.exists():
                 shutil.rmtree(images_dir)
-                print(f"🗑️  Cleaned up: {images_dir.name}")
+                print(f"Cleaned up: {images_dir.name}")
     
     @classmethod
     def _cleanup_full_test_files(cls):
@@ -840,19 +840,19 @@ class TestExtractPDFPaper2(BaseTest):
         md_file = cls.test_pdf_paper2.with_suffix('.md')
         if md_file.exists():
             md_file.unlink()
-            print(f"🗑️  Cleaned up: {md_file.name}")
+            print(f"Cleaned up: {md_file.name}")
         
         # 清理_postprocess.json文件
         postprocess_json = cls.test_pdf_paper2.parent / f"{cls.test_pdf_paper2.stem}_postprocess.json"
         if postprocess_json.exists():
             postprocess_json.unlink()
-            print(f"🗑️  Cleaned up: {postprocess_json.name}")
+            print(f"Cleaned up: {postprocess_json.name}")
         
         # 清理_extract_data文件夹
         extract_data_dir = cls.test_pdf_paper2.parent / f"{cls.test_pdf_paper2.stem}_extract_data"
         if extract_data_dir.exists():
             shutil.rmtree(extract_data_dir)
-            print(f"🗑️  Cleaned up: {extract_data_dir.name}")
+            print(f"Cleaned up: {extract_data_dir.name}")
     
     @classmethod  
     def _cleanup_preprocessing_files(cls):
@@ -867,19 +867,19 @@ class TestExtractPDFPaper2(BaseTest):
         for file in files_to_clean:
             if file.exists():
                 file.unlink()
-                print(f"🗑️  Cleaned up: {file.name}")
+                print(f"Cleaned up: {file.name}")
         
         # 清理_postprocess.json文件
         postprocess_json = cls.test_pdf_paper2.parent / f"{cls.test_pdf_paper2.stem}_postprocess.json"
         if postprocess_json.exists():
             postprocess_json.unlink()
-            print(f"🗑️  Cleaned up: {postprocess_json.name}")
+            print(f"Cleaned up: {postprocess_json.name}")
         
         # 清理_extract_data文件夹
         extract_data_dir = cls.test_pdf_paper2.parent / f"{cls.test_pdf_paper2.stem}_extract_data"
         if extract_data_dir.exists():
             shutil.rmtree(extract_data_dir)
-            print(f"🗑️  Cleaned up: {extract_data_dir.name}")
+            print(f"Cleaned up: {extract_data_dir.name}")
     
     def setUp(self):
         super().setUp()
@@ -918,8 +918,8 @@ class TestExtractPDFPaper2(BaseTest):
             has_table_placeholder = "[placeholder: table]" in md_content
             has_formula_placeholder = "[placeholder: formula]" in md_content or "[placeholder: interline_equation]" in md_content
             
-            print(f"📊 Table placeholders found: {has_table_placeholder}")
-            print(f"🧮 Formula placeholders found: {has_formula_placeholder}")
+            print(f"Table placeholders found: {has_table_placeholder}")
+            print(f"Formula placeholders found: {has_formula_placeholder}")
             
             # 至少要有其中一种placeholder
             self.assertTrue(
@@ -932,12 +932,12 @@ class TestExtractPDFPaper2(BaseTest):
             if images_dir.exists():
                 image_files = list(images_dir.glob("*.png")) + list(images_dir.glob("*.jpg"))
                 if image_files:
-                    print(f"🖼️  Found {len(image_files)} image files")
+                    print(f"  Found {len(image_files)} image files")
             
             # 保存步骤1的结果用于比较
             step1_md = self.test_data_dir / "test_extract_paper2_step1.md"
             shutil.copy2(expected_md, step1_md)
-            print(f"💾 Saved step1 result: {step1_md.name}")
+            print(f"Saved step1 result: {step1_md.name}")
             
             return expected_md  # 返回markdown文件路径供后续测试使用
         else:
@@ -965,7 +965,7 @@ class TestExtractPDFPaper2(BaseTest):
         if not found_placeholders:
             self.skipTest("No placeholders found in preprocessing result")
         
-        print(f"📋 Found placeholders: {found_placeholders}")
+        print(f"Found placeholders: {found_placeholders}")
         
         # 进行后处理（处理所有类型的placeholder）
         result = self.run_subprocess([
@@ -983,32 +983,32 @@ class TestExtractPDFPaper2(BaseTest):
             
             # 验证处理结果
             if content_after != content_before:
-                print("Post-processing completed: content was modified")
+                print(f"Post-processing completed: content was modified")
                 
                 # 检查是否有处理结果或错误信息
                 result_markers = ["$$", "description:", "reason:", "公式识别", "表格识别", "图像分析"]
                 has_results = any(marker in content_after for marker in result_markers)
                 
                 if has_results:
-                    print("Processing successful: found results or error info")
+                    print(f"Processing successful: found results or error info")
                     
                     # 统计处理结果
                     formula_results = content_after.count("$$")
                     description_blocks = content_after.count("description:")
                     reason_blocks = content_after.count("reason:")
                     
-                    print(f"🧮 Formula results: {formula_results // 2} (pairs of $$)")
+                    print(f"Formula results: {formula_results // 2} (pairs of $$)")
                     print(f"Description blocks: {description_blocks}")
                     print(f"Warning:  Reason blocks (errors): {reason_blocks}")
                 else:
-                    print("⚠️  Post-processing completed but no clear results found")
+                    print(f" Post-processing completed but no clear results found")
             else:
-                print("ℹ️  Post-processing completed but content unchanged")
+                print(f"Post-processing completed but content unchanged")
             
             # 保存步骤2的结果用于比较
             step2_md = self.test_data_dir / "test_extract_paper2_step2.md"
             shutil.copy2(expected_md, step2_md)
-            print(f"💾 Saved step2 result: {step2_md.name}")
+            print(f"Saved step2 result: {step2_md.name}")
             
         else:
             # 后处理失败是可以接受的（可能缺少依赖）
@@ -1017,7 +1017,7 @@ class TestExtractPDFPaper2(BaseTest):
                     ["unimernet", "extract_img", "img2text", "not available", "failed"]),
                 f"Post-processing failed with unexpected error: {output}"
             )
-            print("ℹ️  Post-processing failed as expected (missing dependencies)")
+            print(f"Post-processing failed as expected (missing dependencies)")
     
     def test_04_full_pipeline_paper2(self):
         """测试完整流程：验证等于前处理+后处理的结果（6分钟限时）"""
@@ -1050,33 +1050,33 @@ class TestExtractPDFPaper2(BaseTest):
                 with open(expected_md, 'r', encoding='utf-8') as f:
                     final_content = f.read()
                 
-                print("Full pipeline completed successfully")
+                print(f"Full pipeline completed successfully")
                 
                 # 验证最终内容包含处理结果
                 result_markers = ["$$", "description:", "reason:", "公式识别", "表格识别", "图像分析"]
                 has_results = any(marker in final_content for marker in result_markers)
                 
                 if has_results:
-                    print("Full pipeline produced processing results")
+                    print(f"Full pipeline produced processing results")
                     
                     # 统计最终结果
                     formula_results = final_content.count("$$")
                     description_blocks = final_content.count("description:")
                     reason_blocks = final_content.count("reason:")
                     
-                    print(f"🧮 Final formula results: {formula_results // 2} (pairs of $$)")
+                    print(f"Final formula results: {formula_results // 2} (pairs of $$)")
                     print(f"Final description blocks: {description_blocks}")
                     print(f"Warning:  Final reason blocks (errors): {reason_blocks}")
                 else:
-                    print("ℹ️  Full pipeline completed but no processing results found")
+                    print(f"Full pipeline completed but no processing results found")
                 
                 # 保存完整流程的结果用于比较
                 full_md = self.test_data_dir / "test_extract_paper2_full.md"
                 shutil.copy2(expected_md, full_md)
-                print(f"💾 Saved full pipeline result: {full_md.name}")
+                print(f"Saved full pipeline result: {full_md.name}")
                 
             else:
-                print("⚠️  Full pipeline completed but no markdown file found")
+                print(f" Full pipeline completed but no markdown file found")
             
             # 即使有警告，只要流程执行了就算成功
             self.assertTrue(
@@ -1122,9 +1122,9 @@ class TestExtractPDFPaper2(BaseTest):
         
         # 比较内容
         if step2_content == full_content:
-            print("Perfect match: Step1+Step2 == Full pipeline")
+            print(f"Perfect match: Step1+Step2 == Full pipeline")
         else:
-            print("⚠️  Differences found between Step1+Step2 and Full pipeline")
+            print(f" Differences found between Step1+Step2 and Full pipeline")
             
             # 使用diff命令进行详细比较
             try:
@@ -1133,18 +1133,18 @@ class TestExtractPDFPaper2(BaseTest):
                 ], capture_output=True, text=True)
                 
                 if diff_result.returncode == 0:
-                    print("Files are identical (diff confirms)")
+                    print(f"Files are identical (diff confirms)")
                 else:
-                    print("📋 Differences found:")
+                    print(f"Differences found:")
                     print(diff_result.stdout[:1000])  # 显示前1000个字符的差异
                     if len(diff_result.stdout) > 1000:
-                        print("... (truncated)")
+                        print(f"... (truncated)")
                     
                     # 这不算失败，只是信息性的
-                    print("ℹ️  Differences are acceptable for comparison purposes")
+                    print(f"Differences are acceptable for comparison purposes")
                     
             except FileNotFoundError:
-                print("ℹ️  diff command not available, skipping detailed comparison")
+                print(f"diff command not available, skipping detailed comparison")
             
             # 统计两个文件的结果标记
             step2_markers = {
@@ -1159,8 +1159,8 @@ class TestExtractPDFPaper2(BaseTest):
                 "reasons": full_content.count("reason:")
             }
             
-            print(f"📊 Step1+Step2: {step2_markers}")
-            print(f"📊 Full pipeline: {full_markers}")
+            print(f"Step1+Step2: {step2_markers}")
+            print(f"Full pipeline: {full_markers}")
 
 
 class TestExtractPDFPostProcessingQuality(unittest.TestCase):
@@ -1217,15 +1217,15 @@ class TestExtractPDFPostProcessingQuality(unittest.TestCase):
         
         # 检查图片分析结果格式
         image_analysis_blocks = re.findall(r'--- 图像分析结果 ---.*?--------------------', content, re.DOTALL)
-        print(f"📊 Found {len(image_analysis_blocks)} image analysis blocks")
+        print(f"Found {len(image_analysis_blocks)} image analysis blocks")
         
         # 检查表格内容格式
         table_blocks = re.findall(r'\*\*表格内容:\*\*\s*\$\$.*?\$\$', content, re.DOTALL)
-        print(f"📊 Found {len(table_blocks)} table content blocks")
+        print(f"Found {len(table_blocks)} table content blocks")
         
         # 检查公式格式
         formula_blocks = re.findall(r'\$\$[^$]*\$\$', content)
-        print(f"📊 Found {len(formula_blocks)} formula blocks")
+        print(f"Found {len(formula_blocks)} formula blocks")
     
     def test_02_multiple_processing_stability(self):
         """测试多次处理的稳定性（不产生重复内容）"""
@@ -1369,7 +1369,7 @@ class TestExtractPDFBatchProcessing(BaseTest):
             from EXTRACT_PDF_PROJ.page_batch_processor import PageBatchProcessor
             processor = PageBatchProcessor()
             self.assertIsNotNone(processor)
-            print("PageBatchProcessor导入成功")
+            print(f"PageBatchProcessor导入成功")
         except ImportError as e:
             self.skipTest(f"PageBatchProcessor不可用: {e}")
     
@@ -1429,7 +1429,7 @@ class TestExtractPDFBatchProcessing(BaseTest):
                 loaded_progress = processor.load_progress()
                 self.assertIn(batch_progress.pdf_hash, loaded_progress)
                 
-                print("批处理进度持久化测试通过")
+                print(f"批处理进度持久化测试通过")
                 
         except ImportError as e:
             self.skipTest(f"PageBatchProcessor不可用: {e}")
@@ -1474,9 +1474,9 @@ class TestExtractPDFBatchProcessing(BaseTest):
                 # 获取状态（应该为None，因为还没有处理过）
                 status = processor.get_batch_status(pdf_path)
                 if status is None:
-                    print("新PDF状态检查正确（无历史记录）")
+                    print(f"新PDF状态检查正确（无历史记录）")
                 else:
-                    print(f"📊 找到现有状态: {status}")
+                    print(f"找到现有状态: {status}")
             
         except ImportError as e:
             self.skipTest(f"PageBatchProcessor不可用: {e}")
@@ -1547,7 +1547,7 @@ class TestExtractPDFBatchProcessing(BaseTest):
                 loaded_progress = processor.load_progress()
                 self.assertNotIn(batch_progress.pdf_hash, loaded_progress)
                 
-                print("缓存清理功能正常")
+                print(f"缓存清理功能正常")
             
         except ImportError as e:
             self.skipTest(f"PageBatchProcessor不可用: {e}")
@@ -1573,7 +1573,7 @@ class TestExtractPDFBatchProcessing(BaseTest):
             )
             
             # 无论成功还是失败都是正常的（取决于环境）
-            print(f"📊 批处理集成测试结果: {success}")
+            print(f"批处理集成测试结果: {success}")
             print(f"消息: {message}")
             
             # 检查是否有输出文件

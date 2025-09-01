@@ -134,7 +134,7 @@ class VenvOperations:
             
             # 使用bash -c执行命令脚本
             command_script = " && ".join(commands)
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", command_script])
+            result = self.main_instance.execute_generic_command("bash", ["-c", command_script])
             
             if result.get("success", False):
                 # 检查远程命令的实际执行结果
@@ -216,7 +216,7 @@ class VenvOperations:
             
             # 生成删除环境的远程命令，添加执行状态提示
             command = f"rm -rf {env_path}"
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", command])
             
             if result.get("success", False):
                 print(f"Virtual environment '{env_name}' deleted successfully")
@@ -288,7 +288,7 @@ fi
         full_command = "; ".join(delete_script_parts)
         
         # 执行单个远程命令
-        result = self.main_instance.execute_generic_remote_command("bash", ["-c", full_command])
+        result = self.main_instance.execute_generic_command("bash", ["-c", full_command])
         
         if result.get("success"):
             # 解析远程输出，统计删除结果
@@ -441,14 +441,14 @@ fi
 '''
             
             # 执行远程命令（这会显示远端窗口）
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", remote_command])
             
             if result.get("success"):
                 output = result.get("stdout", "").strip()
                 
                 # 检查是否已经激活
                 if "already active" in output:
-                    print("💡 Virtual environment already activated!")
+                    print(f"Virtual environment already activated!")
                     return {
                         "success": True,
                         "message": f"Virtual environment '{env_name}' is already active",
@@ -459,7 +459,7 @@ fi
                 # 检查是否成功激活
                 if "activated successfully" in output:
                     # 添加额外的提示信息
-                    print("Virtual environment activated successfully")
+                    print(f"Virtual environment activated successfully")
                     return {
                         "success": True,
                         "message": f"Virtual environment '{env_name}' activated successfully",
@@ -554,11 +554,11 @@ if [ "$VERIFICATION_RESULT" != "VERIFICATION_SUCCESS" ]; then
 fi
 '''
             
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", remote_command])
             
             if result.get("success", False):
                 # 添加额外的提示信息
-                print("Virtual environment deactivated successfully")
+                print(f"Virtual environment deactivated successfully")
                 return {
                     "success": True,
                     "message": "Virtual environment deactivated successfully"
@@ -595,7 +595,7 @@ fi
                 current_env = None
             
             if not env_names:
-                print("No virtual environments found")
+                print(f"No virtual environments found")
                 return {
                     "success": True,
                     "message": "No virtual environments found",
@@ -659,13 +659,13 @@ fi
                         }
                 
                 # 没有激活的环境
-                print("No virtual environment currently activated")
+                print(f"No virtual environment currently activated")
                 return {"success": True, "current": None}
             else:
-                print("No virtual environment currently activated")
+                print(f"No virtual environment currently activated")
                 return {"success": True, "current": None}
                 
         except Exception as e:
-            print("No virtual environment currently activated")
+            print(f"No virtual environment currently activated")
             return {"success": True, "current": None, "error": str(e)}
 

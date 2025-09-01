@@ -535,7 +535,7 @@ GDS echo 'import numpy as np
 import tensorflow as tf
 print(f"NumPy version: {np.__version__}")
 print(f"TensorFlow version: {tf.__version__}")
-print("ML environment is ready!")' > ml_setup_test.py
+print(f"ML environment is ready!")' > ml_setup_test.py
 
 GDS python ml_setup_test.py
 
@@ -839,7 +839,7 @@ echo '{"name": "test", "value": 123}' > config.json    # 单引号包围，无�
 echo '{"debug": true, "items": [1,2,3]}' > settings.json
 
 # Python脚本创建
-echo -e 'import json\nprint("Hello Python")' > script.py
+echo -e 'import json\nprint(f"Hello Python")' > script.py
 
 # 复杂内容创建
 echo -e 'Line 1\nLine 2 with "quotes"\nLine 3' > multiline.txt

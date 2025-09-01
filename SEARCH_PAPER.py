@@ -67,8 +67,8 @@ def get_interactive_query(command_identifier=None):
         write_to_json_output(error_data, command_identifier)
         return None
     
-    print("=== Academic Paper Search Tool ===", file=sys.stderr)
-    print("Enter your search query (or 'quit' to exit):", file=sys.stderr)
+    print(f"=== Academic Paper Search Tool ===", file=sys.stderr)
+    print(f"Enter your search query (or 'quit' to exit):", file=sys.stderr)
     print(file=sys.stderr)
     
     try:
@@ -76,11 +76,11 @@ def get_interactive_query(command_identifier=None):
         if query.lower() in ['quit', 'exit', 'q']:
             return None
         if not query:
-            print("Empty query. Please try again.", file=sys.stderr)
+            print(f"Empty query. Please try again.", file=sys.stderr)
             return get_interactive_query(command_identifier)
         return query
     except (KeyboardInterrupt, EOFError):
-        print("\nSearch cancelled.", file=sys.stderr)
+        print(f"\nSearch cancelled.", file=sys.stderr)
         return None
 
 class MultiPlatformPaperSearcher:
@@ -652,11 +652,11 @@ def format_output(result: Dict[str, Any], command_identifier=None):
         print(f"Found {result['total_papers_found']} papers")
         
         if 'source_results' in result:
-            print("\nSource Results:")
+            print(f"\nSource Results:")
             for source, count in result['source_results'].items():
                 print(f"  {source}: {count}")
         
-        print("\nPapers:")
+        print(f"\nPapers:")
         for i, paper in enumerate(result['papers'], 1):
             print(f"\n{i}. {paper['title']}")
             if paper['authors']:
@@ -731,17 +731,17 @@ def main():
         try:
             # 仅在非RUN环境下提示输入
             if not os.environ.get('RUN_IDENTIFIER'):
-                 print("Search query: ", file=sys.stderr, end="")
+                 print(f"Search query: ", file=sys.stderr, end="")
             query = input().strip()
             if not query:
-                print("Empty query, exiting.", file=sys.stderr)
+                print(f"Empty query, exiting.", file=sys.stderr)
                 # 在RUN环境下，返回一个表示错误的JSON
                 if os.environ.get('RUN_IDENTIFIER'):
                     print(json.dumps({"success": False, "error": "Empty query"}, ensure_ascii=False, indent=2))
                     return 0
                 return 1
         except (KeyboardInterrupt, EOFError):
-            print("\nSearch cancelled.", file=sys.stderr)
+            print(f"\nSearch cancelled.", file=sys.stderr)
             if os.environ.get('RUN_IDENTIFIER'):
                 print(json.dumps({"success": False, "error": "Search cancelled"}, ensure_ascii=False, indent=2))
                 return 0

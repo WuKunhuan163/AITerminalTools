@@ -69,7 +69,7 @@ class CacheManager:
                     if file_path.exists():
                         file_path.unlink()
                         cleaned_files.append(filename)
-                        # print(f"🧹 清理LOCAL_EQUIVALENT文件: {filename}")
+                        # print(f"Clear LOCAL_EQUIVALENT file: {filename}")
                         
                         # 记录删除到缓存（使用原始文件名）
                         original_filename = file_info.get("original_filename", filename)
@@ -140,7 +140,7 @@ class CacheManager:
             
             # 添加调试信息
             from .remote_commands import debug_print
-            debug_print(f"🕐 Checking rename for {filename}: found {len(deletion_records)} deletion records")
+            debug_print(f"Checking rename for {filename}: found {len(deletion_records)} deletion records")
             
             # 检查5分钟内是否删除过同名文件
             for record in deletion_records:
@@ -148,13 +148,13 @@ class CacheManager:
                 record_timestamp = record.get("timestamp", 0)
                 time_diff = current_time - record_timestamp
                 
-                debug_print(f"🕐 Record: {record_filename}, age: {time_diff:.1f}s")
+                debug_print(f"Record: {record_filename}, age: {time_diff:.1f}s")
                 
                 if (record_filename == filename and time_diff < 300):  # 5分钟 = 300秒
-                    debug_print(f"🏷️  Should rename {filename} (found in deletion cache, age: {time_diff:.1f}s)")
+                    debug_print(f"Should rename {filename} (found in deletion cache, age: {time_diff:.1f}s)")
                     return True
             
-            debug_print(f"🏷️  No need to rename {filename} (not in recent deletion cache)")
+            debug_print(f"No need to rename {filename} (not in recent deletion cache)")
             return False
         except Exception as e:
             print(f"Warning: Check file rename suggestion failed: {e}")

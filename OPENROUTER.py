@@ -583,8 +583,8 @@ def list_models():
         print(json.dumps(model_data, ensure_ascii=False, indent=2))
     else:
         # 在普通环境下显示格式化的模型列表（只显示可用模型）
-        print("Available models list:")
-        print("=" * 40)
+        print(f"Available models list:")
+        print(f"=" * 40)
         for i, model_id in enumerate(useable_models, 1):
             info = models[model_id]
             input_cost = info.get('input_cost_per_1m', 0)
@@ -830,7 +830,7 @@ Note: 只有标记为可用(useable=true)的模型才会显示在列表中。
             print(json.dumps(result, ensure_ascii=False, indent=2))
         else:
             # 普通模式：输出格式化文本
-            print("OpenRouter API connection test results:")
+            print(f"OpenRouter API connection test results:")
             print()
             
             for test_result in result["results"]:
@@ -866,13 +866,13 @@ Note: 只有标记为可用(useable=true)的模型才会显示在列表中。
             try:
                 query_content = sys.stdin.read().strip()
                 if not query_content:
-                    print("Error: Content read from stdin is empty", file=sys.stderr)
+                    print(f"Error: Content read from stdin is empty", file=sys.stderr)
                     sys.exit(1)
             except Exception as e:
                 print(f"Error: Failed to read content from stdin: {e}", file=sys.stderr)
                 sys.exit(1)
         else:
-            print("Error: No query content provided", file=sys.stderr)
+            print(f"Error: No query content provided", file=sys.stderr)
             sys.exit(1)
     
     result = call_openrouter_api(

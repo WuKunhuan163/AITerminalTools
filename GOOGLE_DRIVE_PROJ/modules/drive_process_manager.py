@@ -168,7 +168,7 @@ def launch_google_drive(command_identifier=None):
             return 0
         
         if not is_run_environment(command_identifier):
-            print("Launching Google Drive...")
+            print(f"Launching Google Drive...")
         
         # 启动Google Drive
         result = subprocess.run(['open', '-a', 'Google Drive'], 
@@ -246,14 +246,14 @@ def restart_google_drive(command_identifier=None):
     """重启Google Drive Desktop"""
     try:
         if not is_run_environment(command_identifier):
-            print("🔄 正在重启 Google Drive...")
+            print(f"Restarting Google Drive...")
         
         # 先关闭
         shutdown_result = shutdown_google_drive(command_identifier)
         if shutdown_result != 0:
             error_data = {
                 "success": False,
-                "error": "重启失败 - 关闭阶段失败",
+                "error": "Restart failed - shutdown phase failed",
                 "action": "restart"
             }
             
@@ -271,7 +271,7 @@ def restart_google_drive(command_identifier=None):
         if launch_result != 0:
             error_data = {
                 "success": False,
-                "error": "重启失败 - 启动阶段失败",
+                "error": "Restart failed - launch phase failed",
                 "action": "restart"
             }
             
@@ -296,7 +296,7 @@ def restart_google_drive(command_identifier=None):
     except Exception as e:
         error_data = {
             "success": False,
-            "error": f"重启 Google Drive 时出错: {e}",
+            "error": f"Restart Google Drive failed: {e}",
             "action": "restart"
         }
         

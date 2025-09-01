@@ -766,7 +766,8 @@ def handle_pipe_commands(shell_cmd, command_identifier=None):
         
         # 执行pipe命令链
         if not is_run_environment(command_identifier):
-            print(f"Executing pipe command chain: {shell_cmd}")
+            pass
+            # print(f"Executing pipe command chain: {shell_cmd}")
         
         previous_output = ""
         final_result = 0
@@ -775,7 +776,8 @@ def handle_pipe_commands(shell_cmd, command_identifier=None):
             cmd_part = cmd_part.strip()
             
             if not is_run_environment(command_identifier):
-                print(f"\n- Executing command {i+1}/{len(pipe_parts)}: {cmd_part}")
+                pass
+                # print(f"- Executing command {i+1}/{len(pipe_parts)}: {cmd_part}")
             
             # 如果不是第一个命令，将上一个命令的输出作为输入
             if i > 0:
@@ -832,7 +834,7 @@ def _execute_pipe_command(cmd, input_text, shell, command_identifier=None):
             # 实现简单的grep功能
             if len(cmd_parts) < 2:
                 if not is_run_environment(command_identifier):
-                    print("grep: missing pattern")
+                    print(f"grep: missing pattern")
                 return 1
             
             pattern = cmd_parts[1]
@@ -1020,7 +1022,8 @@ def handle_multiple_commands(shell_cmd, command_identifier=None):
             
             if should_execute:
                 if not is_run_environment(command_identifier):
-                    print(f"\n- Executing command {i+1}/{len(commands_with_operators)}: {cmd}")
+                    pass
+                    # print(f"- Executing command {i+1}/{len(commands_with_operators)}: {cmd}")
                 
                 # 通过GoogleDriveShell执行单个命令
                 try:
@@ -1164,7 +1167,7 @@ def shell_ls_with_id(folder_id, detailed=False, command_identifier=None):
                                         truncated = f"{item[:col_width-5]}..."
                                         formatted_line.append(f"{truncated:<{col_width}}")
                                 
-                                print("".join(formatted_line).rstrip())
+                                print(f"".join(formatted_line).rstrip())
             
             return 0
         else:

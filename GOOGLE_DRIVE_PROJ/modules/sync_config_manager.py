@@ -69,7 +69,7 @@ def get_multiline_input_safe(prompt, single_line=False):
         else:
             # 多行输入，直到Ctrl+D
             lines = []
-            print("(多行输入，按 Ctrl+D 结束):")
+            print(f"(多行输入，按 Ctrl+D 结束):")
             try:
                 while True:
                     line = input()
@@ -82,7 +82,7 @@ def get_multiline_input_safe(prompt, single_line=False):
             
     except KeyboardInterrupt:
         # Ctrl+C被按下
-        print("\n输入已取消")
+        print(f"\n输入已取消")
         return None
     except Exception as e:
         print(f"\n输入错误: {e}")
@@ -175,15 +175,15 @@ def set_local_sync_dir(command_identifier=None):
             }, command_identifier)
             return 0
         
-        print("🔧 设置本地同步目录")
-        print("=" * 50)
+        print(f"设置本地同步目录")
+        print(f"=" * 50)
         print(f"当前设置: {current_local}")
         print()
         
         new_path = get_multiline_input_safe("请输入新的本地同步目录路径 (直接回车保持不变): ", single_line=True)
         
         if not new_path:
-            print("Keep current setting")
+            print(f"Keep current setting")
             return 0
         
         # 展开路径
@@ -192,7 +192,7 @@ def set_local_sync_dir(command_identifier=None):
         # 检查路径是否存在
         if not os.path.exists(expanded_path):
             print(f"Error: Path does not exist: {expanded_path}")
-            print("请确认路径正确后重试")
+            print(f"请确认路径正确后重试")
             return 1
         
         if not os.path.isdir(expanded_path):
@@ -206,11 +206,11 @@ def set_local_sync_dir(command_identifier=None):
             print(f"Local sync directory updated: {expanded_path}")
             return 0
         else:
-            print("Error:  Save configuration failed")
+            print(f"Error:  Save configuration failed")
             return 1
             
     except KeyboardInterrupt:
-        print("\n❌ Operation cancelled")
+        print(f"\nError: Operation cancelled")
         return 1
     except Exception as e:
         error_msg = f"Error setting local sync directory: {e}"
@@ -239,8 +239,8 @@ def set_global_sync_dir(command_identifier=None):
             }, command_identifier)
             return 0
         
-        print("🔧 设置全局同步目录")
-        print("=" * 50)
+        print(f"设置全局同步目录")
+        print(f"=" * 50)
         print(f"当前设置:")
         print(f"  逻辑路径: {current_drive}")
         print(f"  文件夹ID: {current_folder_id}")
@@ -250,55 +250,55 @@ def set_global_sync_dir(command_identifier=None):
         folder_url = get_multiline_input_safe("请输入Google Drive文件夹链接 (直接回车保持不变): ", single_line=True)
         
         if not folder_url:
-            print("Keep current setting")
+            print(f"Keep current setting")
             return 0
         
         # 提取文件夹ID
         folder_id = extract_folder_id_from_url(folder_url)
         if not folder_id:
-            print("Error: Unable to extract folder ID from URL")
-            print("请确认URL格式正确，例如: https://drive.google.com/drive/u/0/folders/1E6Dw-LZlPF7WT5RV0EhIquDwdP2oZYbY")
+            print(f"Error: Unable to extract folder ID from URL")
+            print(f"请确认URL格式正确，例如: https://drive.google.com/drive/u/0/folders/1E6Dw-LZlPF7WT5RV0EhIquDwdP2oZYbY")
             return 1
         
         print(f"Extracted folder ID: {folder_id}")
         
         # 测试文件夹访问
-        print("🔍 测试文件夹访问权限...")
+        print(f"测试文件夹访问权限...")
         if not test_drive_folder_access(folder_id):
-            print("Error: Unable to access the folder")
-            print("请确认:")
-            print("  1. 文件夹ID正确")
-            print("  2. 服务账户有访问权限")
-            print("  3. 网络连接正常")
+            print(f"Error: Unable to access the folder")
+            print(f"请确认:")
+            print(f"  1. 文件夹ID正确")
+            print(f"  2. 服务账户有访问权限")
+            print(f"  3. 网络连接正常")
             return 1
         
-        print("Folder access test passed")
+        print(f"Folder access test passed")
         
         # 获取逻辑路径
         logical_path = get_multiline_input_safe("请输入该文件夹对应的逻辑路径 (例如: /content/drive/Othercomputers/我的 MacBook Air/Google Drive): ", single_line=True)
         
         if not logical_path:
-            print("Error: Logical path cannot be empty")
+            print(f"Error: Logical path cannot be empty")
             return 1
         
         # 测试上传工作流程
-        print("🧪 Testing upload workflow...")
+        print(f"Testing upload workflow...")
         test_result = test_upload_workflow(logical_path, folder_id, command_identifier)
         
         if not test_result["success"]:
             print(f"Error: Upload workflow test failed: {test_result['error']}")
-            print("请检查逻辑路径是否正确")
-            print("注意: REMOTE_ROOT的逻辑路径应为 /content/drive/MyDrive/REMOTE_ROOT")
+            print(f"请检查逻辑路径是否正确")
+            print(f"注意: REMOTE_ROOT的逻辑路径应为 /content/drive/MyDrive/REMOTE_ROOT")
             return 1
         
-        print("Upload workflow test passed")
+        print(f"Upload workflow test passed")
         
         # 更新配置
         config["drive_equivalent"] = logical_path
         config["drive_equivalent_folder_id"] = folder_id
         
         if save_sync_config(config):
-            print("Global sync directory configuration updated:")
+            print(f"Global sync directory configuration updated:")
             print(f"  文件夹ID: {folder_id}")
             print(f"  逻辑路径: {logical_path}")
             
@@ -307,17 +307,17 @@ def set_global_sync_dir(command_identifier=None):
                 shell = GoogleDriveShell()
                 shell.DRIVE_EQUIVALENT = logical_path
                 shell.DRIVE_EQUIVALENT_FOLDER_ID = folder_id
-                print("Runtime configuration also updated")
+                print(f"Runtime configuration also updated")
             except:
                 pass  # 如果更新失败也不影响主要功能
             
             return 0
         else:
-            print("Error:  Save configuration failed")
+            print(f"Error:  Save configuration failed")
             return 1
             
     except KeyboardInterrupt:
-        print("\n❌ Operation cancelled")
+        print(f"\nError: Operation cancelled")
         return 1
     except Exception as e:
         error_msg = f"Error setting global sync directory: {e}"

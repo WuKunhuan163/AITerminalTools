@@ -31,7 +31,7 @@ def ensure_huggingface_hub():
         import huggingface_hub
         return True
     except ImportError:
-        print("Installing huggingface_hub...")
+        print(f"Installing huggingface_hub...")
         try:
             subprocess.check_call([
                 sys.executable, "-m", "pip", "install", 
@@ -76,9 +76,9 @@ def login_interactive():
         
         from huggingface_hub import login
         
-        print("🤗 HuggingFace Interactive Login")
-        print("Please visit https://huggingface.co/settings/tokens to get your token")
-        print("You can create a new token or use an existing one.")
+        print(f"🤗 HuggingFace Interactive Login")
+        print(f"Please visit https://huggingface.co/settings/tokens to get your token")
+        print(f"You can create a new token or use an existing one.")
         print()
         
         token = input("Enter your HuggingFace token: ").strip()

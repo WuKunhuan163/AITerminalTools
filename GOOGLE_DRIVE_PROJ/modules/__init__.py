@@ -187,7 +187,7 @@ class ShellCommands:
                 print(result.get("error", "cd command failed"))
                 return 1
         else:
-            print("Error:  cd command needs a path")
+            print(f"Error:  cd command needs a path")
             return 1
     
     def shell_mkdir(self, *args, **kwargs):

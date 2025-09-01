@@ -391,7 +391,7 @@ End of document.
 
 def run_tests():
     """Run all tests with detailed output"""
-    print("=== UNIMERNET Unified Unit Tests ===")
+    print(f"=== UNIMERNET Unified Unit Tests ===")
     print()
     
     # Create test suite
@@ -407,18 +407,18 @@ def run_tests():
     
     # Output results
     print()
-    print("=== Test Results ===")
+    print(f"=== Test Results ===")
     print(f"Tests run: {result.testsRun}")
     print(f"Failures: {len(result.failures)}")
     print(f"Errors: {len(result.errors)}")
     
     if result.failures:
-        print("\nFailures:")
+        print(f"\nFailures:")
         for test, traceback in result.failures:
             print(f"- {test}: {traceback}")
     
     if result.errors:
-        print("\nErrors:")
+        print(f"\nErrors:")
         for test, traceback in result.errors:
             print(f"- {test}: {traceback}")
     

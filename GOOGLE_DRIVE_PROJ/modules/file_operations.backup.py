@@ -190,9 +190,9 @@ class FileOperations:
         """委托到file_utils的文件可用性验证"""
         return self.main_instance.file_utils._verify_files_available(file_moves)
     
-    def generate_remote_commands(self, *args, **kwargs):
+    def generate_commands(self, *args, **kwargs):
         """委托到remote_commands的远程命令生成"""
-        return self.main_instance.remote_commands.generate_remote_commands(*args, **kwargs)
+        return self.main_instance.remote_commands.generate_commands(*args, **kwargs)
     
     def _cleanup_local_equivalent_files(self, file_moves):
         """委托到cache_manager的本地等效文件清理"""
@@ -208,7 +208,7 @@ class FileOperations:
                 return True
             
             # 如果没有运行，尝试启动
-            print("🚀 启动Google Drive Desktop...")
+            print(f"启动Google Drive Desktop...")
             if platform.system() == "Darwin":  # macOS
                 subprocess.run(['open', '-a', 'Google Drive'], check=False)
             elif platform.system() == "Linux":
@@ -222,10 +222,10 @@ class FileOperations:
                 result = subprocess.run(['pgrep', '-f', 'Google Drive'], 
                                       capture_output=True, text=True)
                 if result.returncode == 0 and bool(result.stdout.strip()):
-                    print("Google Drive Desktop started successfully")
+                    print(f"Google Drive Desktop started successfully")
                     return True
             
-            print("Error:  Google Drive Desktop failed to start")
+            print(f"Error:  Google Drive Desktop failed to start")
             return False
             
         except Exception as e:
@@ -257,12 +257,12 @@ class FileOperations:
     
     def _handle_large_files(self, large_files, target_path, current_shell):
         """处理大文件上传"""
-        print(f"\n📁 Detected {len(large_files)} large files (>1GB):")
+        print(f"\nDetected {len(large_files)} large files (>1GB):")
         for file_info in large_files:
             size_gb = file_info["size"] / (1024 * 1024 * 1024)
             print(f"  - {file_info['name']} ({size_gb:.1f} GB)")
         
-        print(f"\n💡 Large files need to be manually uploaded to Google Drive:")
+        print(f"\nLarge files need to be manually uploaded to Google Drive:")
         print(f"  1. Open Google Drive web version")
         print(f"  2. Manually drag and drop these large files")
         print(f"  3. Wait for upload to complete")
@@ -424,7 +424,7 @@ class FileOperations:
             try:
                 if 'zip_path' in locals() and Path(zip_path).exists():
                     Path(zip_path).unlink()
-                    print(f"🧹 已清理本地临时文件: {zip_path}")
+                    print(f"已清理本地临时文件: {zip_path}")
             except:
                 pass
             return {"success": False, "error": f"文件夹上传过程出错: {e}"}
@@ -443,7 +443,7 @@ class FileOperations:
         """
         try:
             # 立即显示进度消息
-            print("⏳ Waiting for upload ...", end="", flush=True)
+            print(f"Waiting for upload ...", end="", flush=True)
             debug_capture.start_capture()
             
             # 延迟启动debug信息捕获，让重命名信息能够显示
@@ -515,7 +515,7 @@ class FileOperations:
                 target_folder_id = None  # 标记为需要创建
                 target_display_path = target_path
             elif not self.drive_service:
-                print("⚠️ 警告: Google Drive API 服务未初始化，将使用模拟模式")
+                print(f"警告: Google Drive API 服务未初始化，将使用模拟模式")
             
             # 3.5. 检查目标文件是否已存在，避免冲突（除非使用--force）
             overridden_files = []
@@ -581,7 +581,7 @@ class FileOperations:
             network_result = self.check_network_connection()
             if not network_result["success"]:
                 print(f"Warning: Network connection check failed: {network_result['error']}")
-                print("📱 Will continue to execute, but please ensure network connection is normal")
+                print(f"📱 Will continue to execute, but please ensure network connection is normal")
             else:
                 # 静默处理网络检查
                 pass
@@ -595,8 +595,8 @@ class FileOperations:
             if not sync_result["success"]:
                 # 同步检测失败，但继续执行
                 print(f"Warning: File sync check failed: {sync_result.get('error', 'Unknown error')}")
-                print("📱 Upload may have succeeded, please manually verify files have been uploaded")
-                print("💡 You can retry upload if needed")
+                print(f"📱 Upload may have succeeded, please manually verify files have been uploaded")
+                print(f"You can retry upload if needed")
                 
                 # 返回失败结果，让用户决定是否重试
                 return {
@@ -614,12 +614,12 @@ class FileOperations:
             self._verify_files_available(file_moves)
             
             # 8. 静默生成远端命令
-            debug_print(f"Before generate_remote_commands - file_moves={file_moves}")
-            debug_print(f"Before generate_remote_commands - target_path='{target_path}'")
-            remote_command = self.generate_remote_commands(file_moves, target_path, folder_upload_info)
-            debug_print(f"After generate_remote_commands - remote_command preview: {remote_command[:200]}...")
+            debug_print(f"Before generate_commands - file_moves={file_moves}")
+            debug_print(f"Before generate_commands - target_path='{target_path}'")
+            remote_command = self.generate_commands(file_moves, target_path, folder_upload_info)
+            debug_print(f"After generate_commands - remote_command preview: {remote_command[:200]}...")
             
-            # 7.5. 远端目录创建已经集成到generate_remote_commands中，无需额外处理
+            # 7.5. 远端目录创建已经集成到generate_commands中，无需额外处理
             
             # 8. 使用统一的远端命令执行接口
             # 对于文件夹上传，跳过文件验证因为验证的是zip文件而不是解压后的内容
@@ -643,7 +643,7 @@ class FileOperations:
                     "file_moves": file_moves
                 }
             
-            execution_result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
+            execution_result = self.main_instance.execute_generic_command("bash", ["-c", remote_command])
             
             # 如果执行失败，直接返回错误
             if not execution_result["success"]:
@@ -731,11 +731,11 @@ class FileOperations:
             
             # Always show debug information to diagnose verification problems
             if used_direct_feedback:
-                debug_print("User used direct feedback, showing debug information:")
+                debug_print(f"User used direct feedback, showing debug information:")
             elif upload_failed:
-                debug_print("Upload failed, showing debug information:")
+                debug_print(f"Upload failed, showing debug information:")
             else:
-                debug_print("Upload completed, showing verification debug information:")
+                debug_print(f"Upload completed, showing verification debug information:")
             
             debug_print(f"verify_result={verify_result}")
             debug_print(f"sync_result={sync_result}")
@@ -748,7 +748,7 @@ class FileOperations:
             # Always print debug capture buffer
             captured_debug = debug_capture.get_debug_info()
             if captured_debug:
-                debug_print("Captured debug output:")
+                debug_print(f"Captured debug output:")
                 debug_print(captured_debug)
             
             # 添加本地文件删除信息
@@ -1070,7 +1070,7 @@ class FileOperations:
             }
             
             # 使用统一接口执行远端命令
-            execution_result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
+            execution_result = self.main_instance.execute_generic_command("bash", ["-c", remote_command])
             
             if execution_result["success"]:
                 # 简洁返回，像bash shell一样成功时不显示任何信息
@@ -1270,7 +1270,7 @@ class FileOperations:
                 remote_command = f'rm "{absolute_path}"'
             
             # 执行远程命令
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", remote_command])
             
             if result["success"]:
                 # 简化验证逻辑：如果远程命令执行完成，就认为删除成功
@@ -1309,7 +1309,7 @@ class FileOperations:
             remote_command = f'echo "{content_base64}" | base64 -d > "{remote_absolute_path}"'
             
             # 使用远程命令执行接口
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", remote_command])
             
             if result.get("success"):
                 # 验证文件是否真的被创建了
@@ -1670,7 +1670,7 @@ class FileOperations:
                 }
             
             # 生成异步远端命令
-            remote_command = self._generate_multi_file_remote_commands(all_file_moves)
+            remote_command = self._generate_multi_file_commands(all_file_moves)
             
             # 执行远端命令
             context_info = {
@@ -1678,7 +1678,7 @@ class FileOperations:
                 "multi_file": True
             }
             
-            execution_result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
+            execution_result = self.main_instance.execute_generic_command("bash", ["-c", remote_command])
             
             if not execution_result["success"]:
                 return {
@@ -1985,7 +1985,7 @@ class FileOperations:
                 validated_pairs.append([source, destination])
             
             # 生成多文件mv的远端命令
-            remote_command = self._generate_multi_mv_remote_commands(validated_pairs, current_shell)
+            remote_command = self._generate_multi_mv_commands(validated_pairs, current_shell)
             
             # 执行远端命令
             context_info = {
@@ -1993,7 +1993,7 @@ class FileOperations:
                 "multi_file": True
             }
             
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", remote_command])
             
             if result.get("success"):
                 return {
@@ -2035,7 +2035,7 @@ class FileOperations:
             remote_command = f"({base_command})"
             
             # 使用远端指令执行接口
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", remote_command])
             
             if result.get("success"):
                 # 验证文件是否真的被移动了
@@ -2153,7 +2153,7 @@ class FileOperations:
                 env_path = f"{self._get_venv_base_path()}/{current_venv}"
                 current_packages = self._scan_environment_packages_real(env_path, current_venv)
             else:
-                print("No active virtual environment, scanning system packages")
+                print(f"No active virtual environment, scanning system packages")
                 # 对于系统环境，我们假设有一些基础包
                 current_packages = {
                     'pip': '23.0.0',
@@ -2180,7 +2180,7 @@ class FileOperations:
             
             # 显示当前环境信息
             env_info = f"环境: {current_venv}" if current_venv else "环境: system"
-            print(f"📦 {env_info} | 已有 {len(current_packages)} 个包")
+            print(f"{env_info} | 已有 {len(current_packages)} 个包")
             
             # 检查哪些包已经安装
             installed_packages = []
@@ -2197,7 +2197,7 @@ class FileOperations:
             
             # 显示已安装的包
             if installed_packages:
-                print("已安装的包:")
+                print(f"已安装的包:")
                 for pkg in installed_packages:
                     print(f"  {pkg}")
             
@@ -2220,7 +2220,7 @@ class FileOperations:
             conflict_result = self._check_pip_version_conflicts(new_packages)
             if conflict_result.get("has_conflicts"):
                 print(f"Warning:  {conflict_result['conflicts_summary']}")
-                print(f"💡 建议: {conflict_result['suggestion']}")
+                print(f"建议: {conflict_result['suggestion']}")
             
             # 尝试智能安装（用于多包安装）
             if len(new_packages) >= 2:
@@ -2246,7 +2246,7 @@ class FileOperations:
                 for pkg_name, version in sorted(current_packages.items()):
                     print(f"  {pkg_name} == {version}")
             else:
-                print("\\n未检测到已安装的包")
+                print(f"\\n未检测到已安装的包")
             
             # 如果有额外的list参数，执行原始pip list命令
             if list_args:
@@ -2273,9 +2273,9 @@ class FileOperations:
             
             # 检查包是否已安装
             if package_name in current_packages:
-                print(f"📦 {package_name} [√] v{current_packages[package_name]} (已安装)")
+                print(f"{package_name} [√] v{current_packages[package_name]} (已安装)")
             else:
-                print(f"📦 {package_name} [×] (未安装)")
+                print(f"{package_name} [×] (未安装)")
             
             # 执行原始pip show命令获取详细信息
             show_command = f"show {' '.join(show_args)}"
@@ -2502,7 +2502,7 @@ class FileOperations:
             if len(remote_packages) < 2:
                 return {"use_smart_install": False}
             
-            print("Activating smart package management system...")
+            print(f"Activating smart package management system...")
             print(f"Analyzing {len(remote_packages)} packages for dependency optimization")
             
             # 检测当前虚拟环境中已有的包
@@ -2510,13 +2510,13 @@ class FileOperations:
             print(f"Current environment has {len(current_packages)} packages installed")
             
             # 简化的智能安装逻辑（实际的依赖分析比较复杂，这里提供基础框架）
-            print("Smart install analysis completed")
-            print("No significant optimizations found, using standard installation")
+            print(f"Smart install analysis completed")
+            print(f"No significant optimizations found, using standard installation")
             return {"use_smart_install": False}
                 
         except Exception as e:
             print(f"Smart install system error: {str(e)}")
-            print("Falling back to standard pip install")
+            print(f"Falling back to standard pip install")
             return {"use_smart_install": False}
 
     def _execute_pip_command_enhanced(self, pip_command, current_env, target_info):
@@ -2544,7 +2544,7 @@ import json
 import sys
 from datetime import datetime
 
-print("Starting pip {pip_command}...")
+print(f"Starting pip {pip_command}...")
 
 # 执行pip命令并捕获所有输出
 try:
@@ -2556,10 +2556,10 @@ try:
     
     # 显示pip的完整输出
     if result.stdout:
-        print("STDOUT:")
+        print(f"STDOUT:")
         print(result.stdout)
     if result.stderr:
-        print("STDERR:")
+        print(f"STDERR:")
         print(result.stderr)
     
     # 检查是否有严重ERROR关键字（排除依赖冲突警告）
@@ -2569,7 +2569,7 @@ try:
     
     print(f"Pip command completed with exit code: {{result.returncode}}")
     if has_error:
-        print("⚠️  Detected ERROR messages in pip output")
+        print(f" Detected ERROR messages in pip output")
     
     # 生成结果JSON
     result_data = {{
@@ -2588,12 +2588,12 @@ try:
     
     # 显示最终状态
     if result.returncode == 0 and not has_error:
-        print("pip command completed successfully")
+        print(f"pip command completed successfully")
     else:
         print(f"pip command failed (exit_code: {{result.returncode}}, has_error: {{has_error}})")
 
 except subprocess.TimeoutExpired:
-    print("Error:  Pip command timed out after 5 minutes")
+    print(f"Error:  Pip command timed out after 5 minutes")
     result_data = {{
         "success": False,
         "pip_command": "{pip_command}",
@@ -2633,7 +2633,7 @@ except Exception as e:
             full_command = " && ".join(commands)
             
             # 执行远程命令
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", full_command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", full_command])
             
             if result.get("success"):
                 return {
@@ -2678,7 +2678,7 @@ except Exception as e:
             detected_packages = {}
             
             if not stdout or stdout.strip() == "":
-                print("Empty scan output")
+                print(f"Empty scan output")
                 return detected_packages
             
             lines = stdout.strip().split('\n')
@@ -2816,9 +2816,9 @@ for env_name in env_names:
 if new_envs_added:
     with open(state_file, 'w') as f:
         json.dump(states, f, indent=2, ensure_ascii=False)
-    print("Initialized state for " + str(len(new_envs_added)) + " environment(s): " + ", ".join(new_envs_added))
+    print(f"Initialized state for " + str(len(new_envs_added)) + " environment(s): " + ", ".join(new_envs_added))
 else:
-    print("All environments already have state entries")
+    print(f"All environments already have state entries")
 '''
             
             # 构建完整的命令
@@ -2882,10 +2882,10 @@ mkdir -p "{self._get_venv_base_path()}" && {{
 }}
 '''
             
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", remote_command])
             
             if result.get("success"):
-                print("Venv states saved successfully")
+                print(f"Venv states saved successfully")
                 return True
             else:
                 print(f"Failed to save venv states: {result.get('error', 'Unknown error')}")
@@ -2969,7 +2969,7 @@ mkdir -p "{self._get_venv_base_path()}" && {{
             command = " && ".join(commands)
             
             # 执行远程命令
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", command])
             
             if result.get("success"):
                 return {
@@ -3045,7 +3045,7 @@ mkdir -p "{self._get_venv_base_path()}" && {{
             '''.strip()
             
             # 执行远程命令
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", command])
             
             if result.get("success"):
                 return {
@@ -3132,15 +3132,15 @@ mkdir -p "{self._get_venv_base_path()}" && {{
                     }
             except Exception as e:
                 # 如果tkinter窗口失败，回退到终端提示
-                print(f"\n🔧 Execute the following command in remote main shell to {action_description}{context_str}:")
+                print(f"\nExecute the following command in remote main shell to {action_description}{context_str}:")
                 print(f"Command: {full_command_with_verification}")
-                print("💡 Copy and execute the above command, then press Ctrl+D")
+                print(f"Copy and execute the above command, then press Ctrl+D")
             
             # 如果使用了tkinter窗口，等待文件检测
             remote_file_path = f"~/tmp/{result_filename}"
             
             # 等待并检测结果文件
-            print("⏳ Validating results ...", end="", flush=True)
+            print(f"⏳ Validating results ...", end="", flush=True)
             max_attempts = 60
             
             for attempt in range(max_attempts):
@@ -3150,7 +3150,7 @@ mkdir -p "{self._get_venv_base_path()}" && {{
                     
                     if check_result.get("exists"):
                         # 文件存在，读取内容
-                        print("√")  # 成功标记
+                        print(f"√")  # 成功标记
                         read_result = self.main_instance.remote_commands._read_result_file_via_gds(result_filename)
                         
                         if read_result.get("success"):
@@ -3186,7 +3186,7 @@ mkdir -p "{self._get_venv_base_path()}" && {{
                     
                     # 文件不存在，等待1秒并输出进度点
                     time.sleep(1)
-                    print(".", end="", flush=True)
+                    print(f".", end="", flush=True)
                     
                 except Exception as e:
                     print(f"\nError: Error checking result file: {str(e)[:100]}")
@@ -3221,7 +3221,7 @@ mkdir -p "{self._get_venv_base_path()}" && {{
             env_names = api_manager.list_venv_environments()
             
             if not env_names:
-                print("⚠️ API未找到虚拟环境，回退到远程命令")
+                print(f"API未找到虚拟环境，回退到远程命令")
                 return self._get_venv_environments_via_remote()
             
             return env_names
@@ -3246,7 +3246,7 @@ else
 fi
 '''
             
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", remote_command])
             
             if result.get("success"):
                 output = result.get("stdout", "").strip()
@@ -3278,7 +3278,7 @@ fi
             # 回退到远程命令
             state_file = self._get_venv_state_file_path()
             check_command = f'cat "{state_file}" 2>/dev/null || echo "{{}}"'
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", check_command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", check_command])
             if result.get("success") and result.get("stdout"):
                 stdout_content = result["stdout"].strip()
                 try:
@@ -3311,13 +3311,13 @@ fi
             # 确保目录存在
             venv_dir = f"{self._get_venv_base_path()}"
             mkdir_command = f'mkdir -p "{venv_dir}"'
-            mkdir_result = self.main_instance.execute_generic_remote_command("bash", ["-c", mkdir_command])
+            mkdir_result = self.main_instance.execute_generic_command("bash", ["-c", mkdir_command])
             print(f"创建目录结果: {mkdir_result}")
             
             # 写入初始JSON文件
             json_content = json.dumps(initial_structure, indent=2, ensure_ascii=False)
             create_command = f'cat > "{state_file}" << \'EOF\'\n{json_content}\nEOF'
-            create_result = self.main_instance.execute_generic_remote_command("bash", ["-c", create_command])
+            create_result = self.main_instance.execute_generic_command("bash", ["-c", create_command])
             print(f"创建JSON文件结果: {create_result}")
             
             if create_result.get("success"):
@@ -3402,7 +3402,7 @@ fi
             ]
             
             command_script = " && ".join(commands)
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", command_script])
+            result = self.main_instance.execute_generic_command("bash", ["-c", command_script])
             
             return result.get("success", False)
             
@@ -3441,7 +3441,7 @@ fi
             ]
             
             command_script = " && ".join(commands)
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", command_script])
+            result = self.main_instance.execute_generic_command("bash", ["-c", command_script])
             
             return result.get("success", False)
             
@@ -3470,7 +3470,7 @@ fi
             
             # 通过远程命令检查虚拟环境状态文件
             check_command = f'cat "{current_venv_file}" 2>/dev/null || echo "none"'
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", check_command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", check_command])
             
             if result.get("success") and result.get("stdout"):
                 venv_name = result["stdout"].strip()
@@ -3503,7 +3503,7 @@ fi
             command = " && ".join(commands)
             
             # 执行远程命令
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", command])
             
             if result.get("success"):
                 return {
@@ -3557,7 +3557,7 @@ fi
             }
             
             # 使用统一接口执行远端命令
-            execution_result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
+            execution_result = self.main_instance.execute_generic_command("bash", ["-c", remote_command])
             
             if execution_result["success"]:
                 # 执行成功后，进行验证以确保目录真正创建（最多60次重试）
@@ -4094,7 +4094,7 @@ fi
             find_command = " ".join(find_cmd_parts)
             
             # 执行远程find命令
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", find_command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", find_command])
             
             if result.get("success"):
                 stdout = result.get("stdout", "").strip()
@@ -4672,14 +4672,14 @@ fi
         except KeyboardInterrupt:
             # 用户中断，输出debug信息
             if debug_info:
-                print("\n🔧 DEBUG INFO (due to KeyboardInterrupt):")
+                print(f"\nDEBUG INFO (due to KeyboardInterrupt):")
                 for i, info in enumerate(debug_info, 1):
                     print(f"  {i}. {info}")
             raise  # 重新抛出KeyboardInterrupt
         except Exception as e:
             # 输出debug信息用于异常诊断
             if debug_info:
-                print("🔧 DEBUG INFO (due to exception):")
+                print(f"DEBUG INFO (due to exception):")
                 for i, info in enumerate(debug_info, 1):
                     print(f"  {i}. {info}")
             return {"success": False, "error": f"Edit operation failed: {str(e)}"}
@@ -4718,7 +4718,7 @@ fi
             
             if not download_result["success"]:
                 if backup_debug:
-                    print("🔧 BACKUP DEBUG INFO (download failed):")
+                    print(f"BACKUP DEBUG INFO (download failed):")
                     for i, info in enumerate(backup_debug, 1):
                         print(f"  {i}. {info}")
                 return {"success": False, "error": f"Failed to download original file for backup: {download_result.get('error')}"}
@@ -4730,7 +4730,7 @@ fi
             
             if not cache_file_path or not os.path.exists(cache_file_path):
                 if backup_debug:
-                    print("🔧 BACKUP DEBUG INFO (cache file not found):")
+                    print(f"BACKUP DEBUG INFO (cache file not found):")
                     for i, info in enumerate(backup_debug, 1):
                         print(f"  {i}. {info}")
                 return {"success": False, "error": "Failed to get cache file path for backup"}
@@ -4771,7 +4771,7 @@ fi
                 return {"success": True, "message": f"Backup created: {backup_filename}"}
             else:
                 if backup_debug:
-                    print("🔧 BACKUP DEBUG INFO (upload failed):")
+                    print(f"BACKUP DEBUG INFO (upload failed):")
                     for i, info in enumerate(backup_debug, 1):
                         print(f"  {i}. {info}")
                 return {"success": False, "error": f"Failed to create backup: {upload_result.get('error')}"}
@@ -4779,7 +4779,7 @@ fi
         except KeyboardInterrupt:
             # 用户中断备份过程
             if backup_debug:
-                print("\n🔧 BACKUP DEBUG INFO (due to KeyboardInterrupt):")
+                print(f"\nBACKUP DEBUG INFO (due to KeyboardInterrupt):")
                 for i, info in enumerate(backup_debug, 1):
                     print(f"  {i}. {info}")
             raise
@@ -4879,7 +4879,7 @@ fi
             
             # 使用bash -c执行命令脚本
             command_script = " && ".join(commands)
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", command_script])
+            result = self.main_instance.execute_generic_command("bash", ["-c", command_script])
             
             if result.get("success", False):
                 # 检查远程命令的实际执行结果
@@ -4973,7 +4973,7 @@ fi
             
             # 生成删除环境的远程命令，添加执行状态提示
             command = f"rm -rf {env_path}"
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", command])
             
             if result.get("success", False):
                 return {
@@ -5091,7 +5091,7 @@ fi
 '''
             
             # 执行单个远程命令
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", remote_command])
             
             # 处理不同的执行结果
             if result.get("success") or result.get("action") == "direct_feedback":
@@ -5263,7 +5263,7 @@ fi
 '''
             
             # 执行单个远程命令
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", remote_command])
             
             # 处理不同的执行结果
             if result.get("success") or result.get("action") == "direct_feedback":
@@ -5458,7 +5458,7 @@ fi
         full_command = f'{combined_command} && echo "Batch create completed: {len(valid_env_names)} environments created"'
         
         # 执行远程命令
-        result = self.main_instance.execute_generic_remote_command("bash", ["-c", full_command])
+        result = self.main_instance.execute_generic_command("bash", ["-c", full_command])
         
         if not result.get("success"):
             return {
@@ -5469,7 +5469,7 @@ fi
             }
         
         # 异步验证所有环境是否创建成功
-        print("⏳ Validating environment creation ...", end="", flush=True)
+        print(f"⏳ Validating environment creation ...", end="", flush=True)
         
         # 只在真正的调试模式下输出详细信息
         debug_mode = os.environ.get('GDS_DEBUG', '').lower() in ('1', 'true', 'yes')
@@ -5486,7 +5486,7 @@ fi
             # 检查每个环境是否存在
             try:
                 if debug_mode:
-                    debug_print("Using unified API manager to list environments...")
+                    debug_print(f"Using unified API manager to list environments...")
                 
                 # 使用统一的API管理器
                 api_manager = self._get_venv_api_manager()
@@ -5531,17 +5531,17 @@ fi
                 
                 # 如果还没全部验证，继续等待
                 if debug_mode:
-                    debug_print("Waiting 1 second before next attempt...")
+                    debug_print(f"Waiting 1 second before next attempt...")
                 time.sleep(1)
-                print(".", end="", flush=True)
+                print(f".", end="", flush=True)
                 
             except Exception as e:
                 debug_print(f"Exception during verification: {type(e).__name__}: {str(e)}")
-                print(f"\n⚠️ Error during verification: {str(e)[:50]}")
+                print(f"\nWarning: Error during verification: {str(e)[:50]}")
                 break
         
         # 超时处理
-        print(f"\n💡 Verification timeout after {max_attempts}s")
+        print(f"\nVerification timeout after {max_attempts}s")
         return {
             "success": len(verified_envs) > 0,
             "message": f"Created {len(verified_envs)}/{len(valid_env_names)} environments (verification timeout)",
@@ -5626,10 +5626,10 @@ fi
         
         # 执行单个远程命令
         if debug_mode:
-            debug_print("About to call execute_generic_remote_command for SMART_DELETE")
-        result = self.main_instance.execute_generic_remote_command("bash", ["-c", full_command])
+            debug_print(f"About to call execute_generic_command for SMART_DELETE")
+        result = self.main_instance.execute_generic_command("bash", ["-c", full_command])
         if debug_mode:
-            debug_print(f"execute_generic_remote_command for SMART_DELETE returned: success={result.get('success')}")
+            debug_print(f"execute_generic_command for SMART_DELETE returned: success={result.get('success')}")
         
         if result.get("success"):
             # 解析远程输出，统计删除结果
@@ -5885,7 +5885,7 @@ fi
             if len(remote_packages) < 2:
                 return {"use_smart_install": False}
             
-            print("Activating smart package management system...")
+            print(f"Activating smart package management system...")
             print(f"Analyzing {len(remote_packages)} packages for dependency optimization")
             
             # 检测当前虚拟环境中已有的包
@@ -5908,7 +5908,7 @@ fi
             )
             
             if install_plan['optimizations_found']:
-                print("Smart optimizations found:")
+                print(f"Smart optimizations found:")
                 for optimization in install_plan['optimizations']:
                     print(f"  - {optimization}")
                 
@@ -5918,19 +5918,19 @@ fi
                 
                 # 显示警告
                 if install_plan.get('warnings'):
-                    print("Warnings:")
+                    print(f"Warnings:")
                     for warning in install_plan['warnings']:
                         print(f"  - {warning}")
                 
                 # 执行优化的安装计划
                 return self._execute_smart_install_plan(install_plan)
             else:
-                print("No significant optimizations found, using standard installation")
+                print(f"No significant optimizations found, using standard installation")
                 return {"use_smart_install": False}
                 
         except Exception as e:
             print(f"Smart install system error: {str(e)}")
-            print("Falling back to standard pip install")
+            print(f"Falling back to standard pip install")
             return {"use_smart_install": False}
     
     def _ensure_pipdeptree_available(self):
@@ -5949,7 +5949,7 @@ fi
                 return False
         except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as e:
             # pipdeptree command not found
-            print("💡 Please install pipdeptree with: pip install pipdeptree")
+            print(f"Please install pipdeptree with: pip install pipdeptree")
             return False
 
     def _get_package_dependencies_with_pipdeptree(self, package_name, installed_packages=None):
@@ -6026,7 +6026,7 @@ fi
             
             # 构建远程pip show命令
             pip_show_cmd = f"pip show {package_name}"
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", pip_show_cmd])
+            result = self.main_instance.execute_generic_command("bash", ["-c", pip_show_cmd])
             
             if not result.get("success"):
                 # Remote pip show failed
@@ -6260,7 +6260,7 @@ fi
 
     def _fallback_dependency_analysis(self, packages):
         """回退的依赖分析（当pipdeptree不可用时）"""
-        print("Using fallback dependency analysis")
+        print(f"Using fallback dependency analysis")
         dependencies = {}
         dependencies_by_level = {}
         
@@ -6458,9 +6458,9 @@ fi
                                 ellipsis_prefix = "              " if is_last_direct else "   │          "
                                 print(f"{ellipsis_prefix}└─ ... ({len(sub_deps) - 4} more)")
             else:
-                print("   └─ No dependencies")
+                print(f"   └─ No dependencies")
         else:
-            print("   └─ Package not in known dependencies database")
+            print(f"   └─ Package not in known dependencies database")
     
     def _display_simple_level_summary(self, dependency_analysis, packages):
         """
@@ -6506,8 +6506,8 @@ fi
             dependency_analysis: 依赖分析结果
             packages: 包列表
         """
-        print("📊 Dependency Analysis Summary")
-        print("-" * 40)
+        print(f"Dependency Analysis Summary")
+        print(f"-" * 40)
         
         shared_deps = dependency_analysis.get("shared_dependencies", [])
         total_deps = dependency_analysis.get("total_unique_deps", 0)
@@ -6518,7 +6518,7 @@ fi
         print(f"Shared dependencies: {len(shared_deps)}")
         
         if shared_deps:
-            print("\nMost frequently used dependencies:")
+            print(f"\nMost frequently used dependencies:")
             for dep, count in shared_deps[:10]:  # 显示前10个
                 print(f"  • {dep}: used by {count} package(s)")
         
@@ -6574,7 +6574,7 @@ fi
             
             if is_remote:
                 # 使用远程命令读取
-                result = self.main_instance.execute_generic_remote_command("cat", [json_path])
+                result = self.main_instance.execute_generic_command("cat", [json_path])
                 if result.get("success"):
                     json_content = result.get("output", "{}")
                     return json.loads(json_content)
@@ -6614,7 +6614,7 @@ fi
                     f.write(json_content)
                 
                 # 上传到远程
-                result = self.main_instance.execute_generic_remote_command("bash", [
+                result = self.main_instance.execute_generic_command("bash", [
                     "-c", f"mkdir -p $(dirname '{json_path}') && cat > '{json_path}' << 'EOF'\n{json_content}\nEOF"
                 ])
                 
@@ -6686,10 +6686,10 @@ fi
     def _scan_environment_via_api(self, env_name):
         """使用Google Drive API直接扫描虚拟环境目录"""
         try:
-            print(f"🔍 使用API扫描虚拟环境 '{env_name}'...")
+            print(f"使用API扫描虚拟环境 '{env_name}'...")
             
             if not self.drive_service:
-                print("Error:  Google Drive API服务未初始化")
+                print(f"Error:  Google Drive API服务未初始化")
                 return {}
             
             # 找到REMOTE_ENV文件夹
@@ -6699,7 +6699,7 @@ fi
             )
             
             if not env_files_result['success']:
-                print("Error:  无法列出REMOTE_ENV目录内容")
+                print(f"Error:  无法列出REMOTE_ENV目录内容")
                 return {}
             
             # 寻找venv文件夹
@@ -6710,7 +6710,7 @@ fi
                     break
             
             if not venv_folder_id:
-                print("Error:  venv文件夹不存在")
+                print(f"Error:  venv文件夹不存在")
                 return {}
             
             # 在venv文件夹中寻找指定的环境文件夹
@@ -6720,7 +6720,7 @@ fi
             )
             
             if not venv_files_result['success']:
-                print("Error:  无法列出venv目录内容")
+                print(f"Error:  无法列出venv目录内容")
                 return {}
             
             env_folder_id = None
@@ -6831,7 +6831,7 @@ fi
             if packages_from_json and api_scan_result:
                 # 比较JSON和API扫描结果
                 if self._packages_differ(packages_from_json, api_scan_result):
-                    print("🔄 Venv package state changes detected, updating the json file ...")
+                    print(f"Venv package state changes detected, updating the json file ...")
                     self._update_environment_packages_in_json(env_name, api_scan_result)
                     return api_scan_result
                 else:
@@ -6843,11 +6843,11 @@ fi
             elif api_scan_result:
                 print(f"API扫描发现 {len(api_scan_result)} 个包")
                 # 更新JSON文件，因为之前没有数据
-                print("🔄 Venv package state changes detected, updating the json file ...")
+                print(f"Venv package state changes detected, updating the json file ...")
                 self._update_environment_packages_in_json(env_name, api_scan_result)
                 return api_scan_result
             
-            print("No JSON data found, falling back to directory scanning...")
+            print(f"No JSON data found, falling back to directory scanning...")
             
             # 更全面的扫描命令 - 包含.dist-info和.egg-info文件
             combined_command = f"""
@@ -6868,8 +6868,8 @@ fi
 """.strip()
             
             # 执行远程命令
-            print("Executing directory-based package scan...")
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", combined_command])
+            print(f"Executing directory-based package scan...")
+            result = self.main_instance.execute_generic_command("bash", ["-c", combined_command])
             
             detected_packages = {}
             
@@ -6882,7 +6882,7 @@ fi
                 
                 # 如果扫描到了包，将其保存到JSON中
                 if detected_packages and len(detected_packages) > 2:  # 超过基础包数量
-                    print("Venv package state changes detected, updating the json file ...")
+                    print(f"Venv package state changes detected, updating the json file ...")
                     self._update_environment_packages_in_json(env_name, detected_packages)
             else:
                 print(f"Package scan failed: {result.get('error', 'Unknown error')}")
@@ -6974,7 +6974,7 @@ import json
 import sys
 from datetime import datetime
 
-print("Starting pip {pip_command}...")
+print(f"Starting pip {pip_command}...")
 
 # 执行pip命令并捕获所有输出
 try:
@@ -6986,10 +6986,10 @@ try:
     
     # 显示pip的完整输出
     if result.stdout:
-        print("STDOUT:")
+        print(f"STDOUT:")
         print(result.stdout)
     if result.stderr:
-        print("STDERR:")
+        print(f"STDERR:")
         print(result.stderr)
     
     # 检查是否有严重ERROR关键字（排除依赖冲突警告）
@@ -6999,7 +6999,7 @@ try:
     
     print(f"Pip command completed with exit code: {{result.returncode}}")
     if has_error:
-        print("⚠️  Detected ERROR messages in pip output")
+        print(f" Detected ERROR messages in pip output")
     
     # 生成结果JSON
     result_data = {{
@@ -7018,12 +7018,12 @@ try:
     
     # 显示最终状态
     if result.returncode == 0 and not has_error:
-        print("pip command completed successfully")
+        print(f"pip command completed successfully")
     else:
         print(f"pip command failed (exit_code: {{result.returncode}}, has_error: {{has_error}})")
 
 except subprocess.TimeoutExpired:
-    print("Error:  Pip command timed out after 5 minutes")
+    print(f"Error:  Pip command timed out after 5 minutes")
     result_data = {{
         "success": False,
         "pip_command": "{pip_command}",
@@ -7092,7 +7092,7 @@ except Exception as e:
             # 等待并检测结果文件
             remote_file_path = f"~/tmp/{result_filename}"
             
-            print("⏳ Validating results ...", end="", flush=True)
+            print(f"⏳ Validating results ...", end="", flush=True)
             max_attempts = 60
             
             for attempt in range(max_attempts):
@@ -7102,7 +7102,7 @@ except Exception as e:
                     
                     if check_result.get("exists"):
                         # 文件存在，读取内容
-                        print("√")  # 成功标记
+                        print(f"√")  # 成功标记
                         read_result = self.main_instance.remote_commands._read_result_file_via_gds(result_filename)
                         
                         if read_result.get("success"):
@@ -7156,12 +7156,12 @@ except Exception as e:
                     # 文件不存在，等待一下再检查
                     if attempt < max_attempts - 1:
                         time.sleep(1)
-                        print(".", end="", flush=True)
+                        print(f".", end="", flush=True)
                     
                 except Exception as e:
                     if attempt < max_attempts - 1:
                         time.sleep(1)
-                        print(".", end="", flush=True)
+                        print(f".", end="", flush=True)
                     else:
                         return {
                             "success": False,

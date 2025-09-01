@@ -314,12 +314,12 @@ class TestRUN(unittest.TestCase):
         print(f"\nRUN Tool Test Results:")
         print(f"  Passed: {len(passed_tools)} tools")
         for tool in passed_tools:
-            print(f"    ✅ {tool}")
+            print(f"    {tool}")
         
         if failed_tools:
             print(f"  Failed: {len(failed_tools)} tools")
             for failure in failed_tools:
-                print(f"    ❌ {failure}")
+                print(f"    {failure}")
         
         print(f"  Total tested: {len(run_tools)} tools")
         

@@ -3,7 +3,7 @@
 """
 
 def hello_world():
-    print("Hello, World!")
+    print(f"Hello, World!")
     return True
 
 def calculate_sum(a, b):

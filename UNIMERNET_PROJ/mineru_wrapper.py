@@ -37,7 +37,7 @@ except ImportError:
             sys.path.insert(0, str(extract_img_proj))
         from cache_system import ImageCacheSystem
     except ImportError:
-        print("Warning: Could not import centralized cache system", file=sys.stderr)
+        print(f"Warning: Could not import centralized cache system", file=sys.stderr)
         ImageCacheSystem = None
 
 class MinerUWrapper:
@@ -111,7 +111,7 @@ class MinerUWrapper:
                 # Async mode: disable image/formula/table analysis initially
                 cmd.extend(["-f", "false"])  # Disable formula parsing
                 cmd.extend(["-t", "false"])  # Disable table parsing
-                print("🔄 异步模式：初次处理时禁用图片、公式、表格分析", file=sys.stderr)
+                print(f"异步模式：初次处理时禁用图片、公式、表格分析", file=sys.stderr)
             else:
                 # Normal mode: smart formula parsing with fallback
                 cmd.extend(["-f", "true"])   # Enable formula parsing (will handle tokenizer errors gracefully)
@@ -150,24 +150,24 @@ class MinerUWrapper:
             if "Exception:" in result.stdout or "Error:" in result.stdout or "Traceback" in result.stdout:
                 # Check for specific tokenizer errors
                 if "tokenizer" in result.stdout.lower() or "unimernet" in result.stdout.lower():
-                    # print("⚠️  Warning: UnimerNet tokenizer failed - trying without formula recognition", file=sys.stderr)  # Silenced per user request
+                    # print(f" Warning: UnimerNet tokenizer failed - trying without formula recognition", file=sys.stderr)  # Silenced per user request
                     
                     # Try again without formula recognition
                     retry_result = self._retry_without_formulas(pdf_path, page_range, debug)
                     if retry_result:
-                        # print("Successfully processed without formula recognition", file=sys.stderr)  # Silenced per user request
+                        # print(f"Successfully processed without formula recognition", file=sys.stderr)  # Silenced per user request
                         return retry_result
                     
                     # If retry also fails, create basic output
-                    print("MinerU: Retry without formulas also failed", file=sys.stderr)
+                    print(f"MinerU: Retry without formulas also failed", file=sys.stderr)
                     basic_output = self._create_basic_output_after_tokenizer_error(pdf_path)
                     if basic_output:
-                        print("MinerU: Created basic output despite tokenizer error", file=sys.stderr)
+                        print(f"MinerU: Created basic output despite tokenizer error", file=sys.stderr)
                         return basic_output
                     
                     return self._fallback_to_original(pdf_path, layout_mode, mode, call_api, call_api_force, page_range, debug)
                 else:
-                    print("MinerU: Runtime error detected in output", file=sys.stderr)
+                    print(f"MinerU: Runtime error detected in output", file=sys.stderr)
                     if debug:
                         print(f"MinerU: Error details in stdout", file=sys.stderr)
                     return self._fallback_to_original(pdf_path, layout_mode, mode, call_api, call_api_force, page_range, debug)
@@ -184,7 +184,7 @@ class MinerUWrapper:
                 
                 return target_file
             else:
-                print("MinerU: No output file found", file=sys.stderr)
+                print(f"MinerU: No output file found", file=sys.stderr)
                 print(f"MinerU: Searched in directory: {self.temp_dir}", file=sys.stderr)
                 # List directory contents for debugging
                 try:
@@ -195,11 +195,11 @@ class MinerUWrapper:
                 return self._fallback_to_original(pdf_path, layout_mode, mode, call_api, call_api_force, page_range, debug)
                 
         except subprocess.TimeoutExpired:
-            print(f"⏰ MinerU: Process timed out after {timeout}s", file=sys.stderr)
-            print("💡 Tip: Processing large PDFs may take longer. Consider processing fewer pages or using --debug for more info.", file=sys.stderr)
+            print(f"MinerU: Process timed out after {timeout}s", file=sys.stderr)
+            print(f"Tip: Processing large PDFs may take longer. Consider processing fewer pages or using --debug for more info.", file=sys.stderr)
             return self._fallback_to_original(pdf_path, layout_mode, mode, call_api, call_api_force, page_range, debug)
         except KeyboardInterrupt:
-            print("⚠️  MinerU: Process interrupted by user", file=sys.stderr)
+            print(f" MinerU: Process interrupted by user", file=sys.stderr)
             if hasattr(self, 'temp_dir') and self.temp_dir and os.path.exists(self.temp_dir):
                 shutil.rmtree(self.temp_dir)
             return self._fallback_to_original(pdf_path, layout_mode, mode, call_api, call_api_force, page_range, debug)
@@ -284,9 +284,9 @@ class MinerUWrapper:
                     print(line.rstrip())
                 # Check for tokenizer warnings in real-time
                 if "tokenizer" in line.lower() and ("error" in line.lower() or "warning" in line.lower()):
-                    print("⚠️  Warning: UnimerNet tokenizer issue detected during processing", file=sys.stderr)
+                    print(f" Warning: UnimerNet tokenizer issue detected during processing", file=sys.stderr)
                 elif "unimernet" in line.lower() and ("error" in line.lower() or "fail" in line.lower()):
-                    print("⚠️  Warning: UnimerNet formula recognition failed for some content", file=sys.stderr)
+                    print(f" Warning: UnimerNet formula recognition failed for some content", file=sys.stderr)
         
         # Start output reading thread
         output_thread = threading.Thread(target=read_output)
@@ -298,7 +298,7 @@ class MinerUWrapper:
             while process.poll() is None:
                 time.sleep(1)
         except KeyboardInterrupt:
-            print("\n⚠️  User interrupted process", file=sys.stderr)
+            print(f"\nWarning: User interrupted process", file=sys.stderr)
             process.terminate()
             process.wait()
             raise KeyboardInterrupt("User interrupted MinerU process")
@@ -606,7 +606,7 @@ class MinerUWrapper:
             Path to output file if successful, None otherwise
         """
         try:
-            # print("🔄 Retrying MinerU without formula recognition...", file=sys.stderr)  # Silenced per user request
+            # print(f"Retrying MinerU without formula recognition...", file=sys.stderr)  # Silenced per user request
             
             # Create new temporary directory for retry
             retry_temp_dir = tempfile.mkdtemp(prefix="mineru_retry_")
@@ -656,7 +656,7 @@ class MinerUWrapper:
                     self.temp_dir = retry_temp_dir
                     return self._move_to_data_directory(output_file, pdf_path, False, False, page_range)
                 else:
-                    print("MinerU retry: No output file found", file=sys.stderr)
+                    print(f"MinerU retry: No output file found", file=sys.stderr)
                     return None
             else:
                 print(f"MinerU retry failed: return code {result.returncode}", file=sys.stderr)
@@ -750,7 +750,7 @@ Formula recognition is currently unavailable.
             # Find middle.json file for image information
             middle_file = self._find_middle_file(self.temp_dir) if hasattr(self, 'temp_dir') else None
             if not middle_file:
-                print("⚠️  No middle file found for image API processing", file=sys.stderr)
+                print(f" No middle file found for image API processing", file=sys.stderr)
                 return
             
             # Load middle.json to get image information
@@ -771,7 +771,7 @@ Formula recognition is currently unavailable.
                         })
             
             if not image_blocks:
-                print("ℹ️  No images found for API processing", file=sys.stderr)
+                print(f"No images found for API processing", file=sys.stderr)
                 return
             
             # Read current markdown content
@@ -779,7 +779,7 @@ Formula recognition is currently unavailable.
                 content = f.read()
             
             # Process each image with API
-            print(f"🔄 Processing {len(image_blocks)} images with API...", file=sys.stderr)
+            print(f"Processing {len(image_blocks)} images with API...", file=sys.stderr)
             
             # Here we would call the image analysis API
             # For now, just add placeholder descriptions
@@ -814,7 +814,7 @@ Formula recognition is currently unavailable.
             # Find the middle.json file for image/formula/table information
             middle_file = self._find_middle_file(self.temp_dir)
             if not middle_file:
-                print("⚠️  No middle file found for async placeholder processing", file=sys.stderr)
+                print(f" No middle file found for async placeholder processing", file=sys.stderr)
                 return
             
             # Load middle.json to get block information
@@ -845,7 +845,7 @@ Formula recognition is currently unavailable.
 
             
             if not blocks_to_process:
-                print("ℹ️  No images/formulas/tables found for async processing", file=sys.stderr)
+                print(f"No images/formulas/tables found for async processing", file=sys.stderr)
                 return
             
             # Read current markdown content
@@ -894,7 +894,7 @@ Formula recognition is currently unavailable.
                     print(f"添加异步处理标签: {image_count}图片, {formula_count}公式, {table_count}表格", file=sys.stderr)
                     print(f"后处理状态保存至: {Path(status_file).name}", file=sys.stderr)
                 else:
-                    print("⚠️  Failed to create status file", file=sys.stderr)
+                    print(f" Failed to create status file", file=sys.stderr)
             
         except Exception as e:
             print(f"Warning:  Error adding async placeholders: {e}", file=sys.stderr)
@@ -1032,7 +1032,7 @@ Formula recognition is currently unavailable.
     def _fallback_to_original(self, pdf_path: str, layout_mode: str, mode: str, 
                              call_api: bool, call_api_force: bool, page_range: Optional[str], debug: bool) -> str:
         """Fallback to original pdf_extractor when MinerU fails."""
-        print("⚠️  MinerU failed, falling back to original PDF extractor", file=sys.stderr)
+        print(f" MinerU failed, falling back to original PDF extractor", file=sys.stderr)
         
         # Import original extractor
         from pdf_extractor import extract_and_analyze_pdf
@@ -1224,7 +1224,7 @@ Formula recognition is currently unavailable.
                             'processed': True,
                             'processed_at': processed_item.get('processed_at', '')
                         })
-                        print(f"🔄 Re-add processed item: {hash_id}")
+                        print(f"Re-add processed item: {hash_id}")
             
             if blocks_to_process:
                 # Create status file
@@ -1253,7 +1253,7 @@ Formula recognition is currently unavailable.
                 print(f"Regenerate status file from Markdown: {len(blocks_to_process)} items")
                 return status_file
             else:
-                print("ℹ️  No valid placeholder found in Markdown")
+                print(f"No valid placeholder found in Markdown")
                 return None
                 
         except Exception as e:
@@ -1426,7 +1426,7 @@ Formula recognition is currently unavailable.
                             
                             if image_hash in hash_ids:
                                 # Skip the placeholder line
-                                print(f"🗑️  Remove placeholder: {image_hash}")
+                                print(f"Remove placeholder: {image_hash}")
                                 i += 1  # Skip placeholder line
                                 continue
                 
@@ -1467,7 +1467,7 @@ Formula recognition is currently unavailable.
                 print(f"Error: No specified hash ID found")
                 return False
             
-            print(f"🔄 Start processing {len(selected_items)} specified items...")
+            print(f"Start processing {len(selected_items)} specified items...")
             
             # Find markdown file
             markdown_file = pdf_directory / f"{pdf_stem}.md"
@@ -1491,7 +1491,7 @@ Formula recognition is currently unavailable.
                     elif processing_type == 'table' and item_type != 'table':
                         continue
                 
-                print(f"🔄 Process {item_type}: {item_id}")
+                print(f"Process {item_type}: {item_id}")
                 
                 # Find the actual image file
                 image_file_path = self._find_image_file(pdf_directory, image_path)
@@ -1548,7 +1548,7 @@ Formula recognition is currently unavailable.
     def _process_image_content(self, image_file_path: str, custom_prompt: str = None) -> Optional[str]:
         """Process image content using IMG2TEXT tool."""
         try:
-            print(f"🔄 Call IMG2TEXT tool...")
+            print(f"Call IMG2TEXT tool...")
             
             # Call IMG2TEXT tool with academic mode for papers
             import subprocess
@@ -1597,7 +1597,7 @@ Formula recognition is currently unavailable.
                 return f"\n\n**图片分析结果:**\n{formatted_error}\n"
             
         except subprocess.TimeoutExpired:
-            print(f"⏰ IMG2TEXT processing timeout")
+            print(f"IMG2TEXT processing timeout")
             fallback_description = f"**[IMG2TEXT处理超时]** 图片文件: `{Path(image_file_path).name}`"
             return f"\n\n**图片分析结果:**\n{fallback_description}\n"
         except Exception as e:
@@ -1649,7 +1649,7 @@ Formula recognition is currently unavailable.
     def _process_formula_content(self, image_file_path: str) -> Optional[str]:
         """Process formula content using MinerU's embedded UnimerNet."""
         try:
-            print(f"🔄 Call UnimerNet to process formula...")
+            print(f"Call UnimerNet to process formula...")
             
             # Import UnimerNet directly
             current_dir = Path(__file__).parent
@@ -1660,7 +1660,7 @@ Formula recognition is currently unavailable.
             # Load model if not already loaded
             if not hasattr(self, '_unimernet_model') or self._unimernet_model is None:
                 self._unimernet_model, self._unimernet_tokenizer = load_unimernet_model()
-                print(f"📱 UnimerNet model loaded successfully")
+                print(f"UnimerNet model loaded successfully")
             
             # Process the image (recognize_image expects file path, not PIL Image)
             result = recognize_image(image_file_path, self._unimernet_model, self._unimernet_tokenizer)
@@ -1679,7 +1679,7 @@ Formula recognition is currently unavailable.
     def _process_table_content(self, image_file_path: str) -> Optional[str]:
         """Process table content using MinerU's embedded UnimerNet."""
         try:
-            print(f"🔄 Call UnimerNet to process table...")
+            print(f"Call UnimerNet to process table...")
             
             # Import UnimerNet directly
             current_dir = Path(__file__).parent
@@ -1690,7 +1690,7 @@ Formula recognition is currently unavailable.
             # Load model if not already loaded
             if not hasattr(self, '_unimernet_model') or self._unimernet_model is None:
                 self._unimernet_model, self._unimernet_tokenizer = load_unimernet_model()
-                print(f"📱 UnimerNet model loaded successfully")
+                print(f"UnimerNet model loaded successfully")
             
             # Process the image (recognize_image expects file path, not PIL Image)
             result = recognize_image(image_file_path, self._unimernet_model, self._unimernet_tokenizer)
@@ -1745,7 +1745,7 @@ Formula recognition is currently unavailable.
                                     # Original behavior: replace placeholder completely
                                     updated_lines.append(content)
                                     updated_lines.append(next_line)  # Keep the original image reference
-                                print(f"🔄 Replace placeholder: {hash_id}")
+                                print(f"Replace placeholder: {hash_id}")
                                 replaced = True
                                 i += 2  # Skip both placeholder and image lines
                                 continue
@@ -1896,7 +1896,7 @@ Formula recognition is currently unavailable.
                 print(f"Updated {updated_count} cache entry types")
                 return True
             else:
-                print("ℹ️  No cache entries need to be updated")
+                print(f"No cache entries need to be updated")
                 return True
                 
         except Exception as e:
@@ -1916,7 +1916,7 @@ Formula recognition is currently unavailable.
             # Then check if markdown and JSON are aligned
             markdown_file = pdf_directory / f"{pdf_stem}.md"
             if markdown_file.exists():
-                print("🔄 Check MD and JSON alignment status...")
+                print(f"Check MD and JSON alignment status...")
                 
                 # Read markdown to count current placeholders
                 with open(markdown_file, 'r', encoding='utf-8') as f:
@@ -1936,15 +1936,15 @@ Formula recognition is currently unavailable.
                     json_items = status_data.get('items', [])
                     unprocessed_items = [item for item in json_items if not item.get('processed', False)]
                     
-                    print(f"📊 Check alignment:")
+                    print(f"Check alignment:")
                     print(f"MD中的placeholder: {len(md_placeholders)}")
                     print(f"JSON unprocessed items: {len(unprocessed_items)}")
                     
                     if len(md_placeholders) == len(unprocessed_items):
-                        print("MD and JSON are aligned, no need to update")
+                        print(f"MD and JSON are aligned, no need to update")
                         return True
                     else:
-                        print("⚠️  MD and JSON are not aligned, suggest regenerating the status file")
+                        print(f" MD and JSON are not aligned, suggest regenerating the status file")
                         return False
             
             return True

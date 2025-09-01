@@ -195,7 +195,7 @@ class PipOperations:
         try:
             # 如果强制刷新或JSON中没有数据，进行目录扫描
             if force_refresh:
-                print("Refreshing package list from directory scan...")
+                print(f"Refreshing package list from directory scan...")
                 scanned_packages = self._scan_environment_directory(venv_name)
                 if scanned_packages:
                     # 更新JSON文件
@@ -234,7 +234,7 @@ find '{env_path}' -maxdepth 1 -name '*.egg-info' -type d 2>/dev/null | sed 's|.*
 """.strip()
             
             # 执行远程命令
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", scan_command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", scan_command])
             
             if result.get("success"):
                 output = result.get("stdout", "")
@@ -443,7 +443,7 @@ import json
 import sys
 from datetime import datetime
 
-print("Starting pip {pip_command}...")
+print(f"Starting pip {pip_command}...")
 start_time = datetime.now()
 
 # 执行pip命令并捕获所有输出
@@ -465,10 +465,10 @@ try:
     
     # 显示pip的完整输出
     if result.stdout:
-        print("STDOUT:")
+        print(f"STDOUT:")
         print(result.stdout)
     if result.stderr:
-        print("STDERR:")
+        print(f"STDERR:")
         print(result.stderr)
     
     # 检查是否有严重ERROR关键字（排除依赖冲突警告）
@@ -482,7 +482,7 @@ try:
     
     print(f"Pip command completed with exit code: {{result.returncode}}")
     if has_error:
-        print("⚠️  Detected ERROR messages in pip output")
+        print(f" Detected ERROR messages in pip output")
     
     # 生成结果JSON
     result_data = {{
@@ -504,7 +504,7 @@ try:
     
     # 显示最终状态
     if result.returncode == 0 and not has_error:
-        print("pip command completed successfully")
+        print(f"pip command completed successfully")
         
         # 如果是install/uninstall命令且成功，更新JSON文件
         if ("{pip_command}".startswith("install") or "{pip_command}".startswith("uninstall")) and "{current_env}":
@@ -632,7 +632,7 @@ except Exception as e:
             full_command = " && ".join(commands)
             
             # 执行远程命令
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", full_command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", full_command])
             
             # Debug info removed - pip functionality working correctly
             
@@ -640,7 +640,7 @@ except Exception as e:
                 # 显示远程pip的完整输出
                 remote_output = result.get("stdout", "")
                 if remote_output:
-                    print("Remote pip output:")
+                    print(f"Remote pip output:")
                     print(remote_output)
                 
                 # JSON更新已合并到pip命令中，无需额外处理
@@ -653,7 +653,7 @@ except Exception as e:
             else:
                 error_output = result.get("stderr", "")
                 if error_output:
-                    print("Remote pip error:")
+                    print(f"Remote pip error:")
                     print(error_output)
                 
                 return {

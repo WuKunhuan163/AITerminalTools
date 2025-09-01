@@ -88,7 +88,7 @@ class PythonExecution:
             '''.strip()
             
             # 执行远程命令
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", command])
             
             if result.get("success"):
                 return {
@@ -96,7 +96,8 @@ class PythonExecution:
                     "stdout": result.get("stdout", ""),
                     "stderr": result.get("stderr", ""),
                     "return_code": result.get("exit_code", 0),
-                    "source": result.get("source", "")
+                    "source": result.get("source", ""),
+                    "output_displayed": result.get("output_displayed", False)  # 传递输出显示标记
                 }
             else:
                 return {
@@ -134,14 +135,15 @@ class PythonExecution:
             command = " && ".join(commands)
             
             # 执行远程命令
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", command])
             
             if result.get("success"):
                 return {
                     "success": True,
                     "stdout": result.get("stdout", ""),
                     "stderr": result.get("stderr", ""),
-                    "return_code": result.get("exit_code", 0)
+                    "return_code": result.get("exit_code", 0),
+                    "output_displayed": result.get("output_displayed", False)  # 传递输出显示标记
                 }
             else:
                 return {
@@ -153,139 +155,6 @@ class PythonExecution:
                 
         except Exception as e:
             return {"success": False, "error": f"远程Python文件执行时出错: {e}"}
-
-    def _execute_non_bash_safe_commands(self, commands, action_description, context_name=None, expected_pythonpath=None):
-        """
-        生成非bash-safe命令供用户在远端主shell中执行，并自动验证结果
-        """
-        try:
-            import time
-            import random
-            import json
-            import os
-            
-            # 生成唯一的结果文件名
-            timestamp = int(time.time())
-            random_id = f"{random.randint(1000, 9999):04x}"
-            result_filename = f"venv_result_{timestamp}_{random_id}.json"
-            # 生成远程和本地文件路径
-            import os
-            bin_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-            local_result_file = f"{bin_dir}/GOOGLE_DRIVE_DATA/remote_files/{result_filename}"
-            # 使用远程路径而不是本地路径
-            remote_result_file = f"/content/drive/MyDrive/REMOTE_ROOT/tmp/{result_filename}"
-            
-            # 生成包含验证的完整命令
-            original_command = " && ".join(commands)
-            full_commands = [
-                f"mkdir -p {self.main_instance.REMOTE_ROOT}/tmp",  # 确保远程tmp目录存在
-                original_command,
-                # 验证PYTHONPATH并输出到远程JSON文件
-                f'echo "{{" > {remote_result_file}',
-                f'echo "  \\"success\\": true," >> {remote_result_file}',
-                f'echo "  \\"action\\": \\"{action_description}\\"," >> {remote_result_file}',
-                f'echo "  \\"pythonpath\\": \\"$PYTHONPATH\\"," >> {remote_result_file}',
-                f'echo "  \\"timestamp\\": \\"$(date)\\"" >> {remote_result_file}',
-                f'echo "}}" >> {remote_result_file}'
-            ]
-            
-            full_command_with_verification = " && ".join(full_commands)
-            
-            # 使用统一的tkinter窗口界面
-            context_str = f" '{context_name}'" if context_name else ""
-            window_title = f"Execute command to {action_description}{context_str}"
-            
-            # 调用统一的远程命令窗口
-            try:
-                result = self.main_instance.remote_commands._show_command_window(
-                    action_description,  # cmd
-                    [context_name] if context_name else [],  # args
-                    full_command_with_verification,  # remote_command
-                    window_title  # debug_info
-                )
-                
-                if result.get("action") == "failed":
-                    return {
-                        "success": False, 
-                        "error": result.get("message", "User reported execution failed"),
-                        "source": "user_reported_failure"
-                    }
-                elif result.get("action") == "direct_feedback":
-                    # 用户提供了直接反馈，跳过文件检测
-                    print ()
-                    return {
-                        "success": True,
-                        "message": result.get("message", "Command executed successfully"),
-                        "source": "direct_feedback"
-                    }
-            except Exception as e:
-                # 如果tkinter窗口失败，回退到终端提示
-                print(f"\n🔧 Execute the following command in remote main shell to {action_description}{context_str}:")
-                print(f"Command: {full_command_with_verification}")
-                print("💡 Copy and execute the above command, then press Ctrl+D")
-            
-            # 如果使用了tkinter窗口，等待文件检测
-            remote_file_path = f"~/tmp/{result_filename}"
-            
-            # 等待并检测结果文件
-            print("⏳ Validating results ...", end="", flush=True)
-            max_attempts = 60
-            
-            for attempt in range(max_attempts):
-                try:
-                    # 检查远程文件是否存在
-                    check_result = self.main_instance.remote_commands._check_remote_file_exists(remote_result_file)
-                    
-                    if check_result.get("exists"):
-                        # 文件存在，读取内容
-                        print("√")  # 成功标记
-                        read_result = self.main_instance.remote_commands._read_result_file_via_gds(result_filename)
-                        
-                        if read_result.get("success"):
-                            result_data = read_result.get("data", {})
-                            
-                            # 验证结果（PYTHONPATH验证或其他验证）
-                            if expected_pythonpath:
-                                # PYTHONPATH验证模式（用于虚拟环境）
-                                actual_pythonpath = result_data.get("pythonpath", "")
-                                
-                                if expected_pythonpath in actual_pythonpath:
-                                    return {
-                                        "success": True,
-                                        "message": f"{action_description.capitalize()}{context_str} completed and verified",
-                                        "pythonpath": actual_pythonpath,
-                                        "result_data": result_data
-                                    }
-                                else:
-                                    return {
-                                        "success": False,
-                                        "error": f"PYTHONPATH verification failed: expected {expected_pythonpath}, got {actual_pythonpath}",
-                                        "result_data": result_data
-                                    }
-                            else:
-                                # 通用验证模式（用于pip等命令）
-                                return {
-                                    "success": True,
-                                    "message": f"{action_description.capitalize()}{context_str} completed successfully",
-                                    "result_data": result_data
-                                }
-                        else:
-                            return {"success": False, "error": f"Error reading result: {read_result.get('error')}"}
-                    
-                    # 文件不存在，等待1秒并输出进度点
-                    time.sleep(1)
-                    print(".", end="", flush=True)
-                    
-                except Exception as e:
-                    print(f"\nError: Error checking result file: {str(e)[:100]}")
-                    return {"success": False, "error": f"Error checking result: {e}"}
-            
-            print(f"\nError: Timeout: No result file found after {max_attempts} seconds")
-            return {"success": False, "error": "Execution timeout - no result file found"}
-            
-        except Exception as e:
-            print(f"Error: {e}")
-            return {"success": False, "error": f"Error generating command: {e}"}
 
     def _execute_python_code_remote(self, code, venv_name, save_output=False, filename=None):
         """在远程虚拟环境中执行Python代码"""
@@ -308,7 +177,7 @@ class PythonExecution:
             command = " && ".join(commands)
             
             # 执行远程命令
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", command])
             
             if result.get("success"):
                 return {

@@ -36,7 +36,7 @@ class TestPyPITool(unittest.TestCase):
     
     def test_01_pypi_tool_exists(self):
         """Test that PYPI tool exists and is accessible"""
-        print("\n🧪 Test 01: PYPI tool existence and accessibility")
+        print(f"\nTest 01: PYPI tool existence and accessibility")
         
         self.assertTrue(os.path.exists(self.pypi_path), "PYPI tool should exist")
         # For .py files, we check readability instead of executability
@@ -44,7 +44,7 @@ class TestPyPITool(unittest.TestCase):
     
     def test_02_test_command(self):
         """Test the test command"""
-        print("\n🧪 Test 02: PYPI test command")
+        print(f"\nTest 02: PYPI test command")
         
         result = self._run_pypi_command('test')
         
@@ -58,7 +58,7 @@ class TestPyPITool(unittest.TestCase):
     
     def test_03_info_command(self):
         """Test getting package information"""
-        print("\n🧪 Test 03: PYPI info command")
+        print(f"\nTest 03: PYPI info command")
         
         result = self._run_pypi_command('info', 'requests')
         
@@ -69,7 +69,7 @@ class TestPyPITool(unittest.TestCase):
     
     def test_04_info_command_json(self):
         """Test getting package information in JSON format"""
-        print("\n🧪 Test 04: PYPI info command with JSON output")
+        print(f"\nTest 04: PYPI info command with JSON output")
         
         result = self._run_pypi_command('info', 'requests', '--json')
         
@@ -86,7 +86,7 @@ class TestPyPITool(unittest.TestCase):
     
     def test_05_deps_command(self):
         """Test getting package dependencies"""
-        print("\n🧪 Test 05: PYPI deps command")
+        print(f"\nTest 05: PYPI deps command")
         
         result = self._run_pypi_command('deps', 'requests')
         
@@ -100,7 +100,7 @@ class TestPyPITool(unittest.TestCase):
     
     def test_06_deps_command_json(self):
         """Test getting package dependencies in JSON format"""
-        print("\n🧪 Test 06: PYPI deps command with JSON output")
+        print(f"\nTest 06: PYPI deps command with JSON output")
         
         result = self._run_pypi_command('deps', 'requests', '--json')
         
@@ -119,7 +119,7 @@ class TestPyPITool(unittest.TestCase):
     
     def test_07_size_command(self):
         """Test getting package size"""
-        print("\n🧪 Test 07: PYPI size command")
+        print(f"\nTest 07: PYPI size command")
         
         result = self._run_pypi_command('size', 'requests')
         
@@ -129,7 +129,7 @@ class TestPyPITool(unittest.TestCase):
     
     def test_08_size_command_json(self):
         """Test getting package size in JSON format"""
-        print("\n🧪 Test 08: PYPI size command with JSON output")
+        print(f"\nTest 08: PYPI size command with JSON output")
         
         result = self._run_pypi_command('size', 'requests', '--json')
         
@@ -149,7 +149,7 @@ class TestPyPITool(unittest.TestCase):
     
     def test_09_metadata_command(self):
         """Test getting comprehensive package metadata"""
-        print("\n🧪 Test 09: PYPI metadata command")
+        print(f"\nTest 09: PYPI metadata command")
         
         result = self._run_pypi_command('metadata', 'requests')
         
@@ -162,7 +162,7 @@ class TestPyPITool(unittest.TestCase):
     
     def test_10_metadata_command_json(self):
         """Test getting metadata in JSON format"""
-        print("\n🧪 Test 10: PYPI metadata command with JSON output")
+        print(f"\nTest 10: PYPI metadata command with JSON output")
         
         result = self._run_pypi_command('metadata', 'requests', '--json')
         
@@ -183,7 +183,7 @@ class TestPyPITool(unittest.TestCase):
     
     def test_11_batch_command(self):
         """Test batch processing of multiple packages"""
-        print("\n🧪 Test 11: PYPI batch command")
+        print(f"\nTest 11: PYPI batch command")
         
         result = self._run_pypi_command('batch', '--packages', 'requests', 'numpy')
         
@@ -194,7 +194,7 @@ class TestPyPITool(unittest.TestCase):
     
     def test_12_batch_command_json(self):
         """Test batch processing with JSON output"""
-        print("\n🧪 Test 12: PYPI batch command with JSON output")
+        print(f"\nTest 12: PYPI batch command with JSON output")
         
         result = self._run_pypi_command('batch', '--packages', 'requests', 'numpy', '--json')
         
@@ -227,7 +227,7 @@ class TestPyPITool(unittest.TestCase):
     
     def test_13_nonexistent_package(self):
         """Test handling of non-existent packages"""
-        print("\n🧪 Test 13: Non-existent package handling")
+        print(f"\nTest 13: Non-existent package handling")
         
         fake_package = 'this-package-definitely-does-not-exist-12345'
         result = self._run_pypi_command('info', fake_package)
@@ -242,7 +242,7 @@ class TestPyPITool(unittest.TestCase):
     
     def test_14_timeout_parameter(self):
         """Test custom timeout parameter"""
-        print("\n🧪 Test 14: Custom timeout parameter")
+        print(f"\nTest 14: Custom timeout parameter")
         
         result = self._run_pypi_command('info', 'requests', '--timeout', '5')
         
@@ -251,7 +251,7 @@ class TestPyPITool(unittest.TestCase):
     
     def test_15_workers_parameter(self):
         """Test custom workers parameter for batch operations"""
-        print("\n🧪 Test 15: Custom workers parameter")
+        print(f"\nTest 15: Custom workers parameter")
         
         result = self._run_pypi_command('batch', '--packages', 'requests', 'numpy', '--workers', '2')
         
@@ -270,7 +270,7 @@ class TestPyPIClient(unittest.TestCase):
     
     def test_01_client_initialization(self):
         """Test client initialization"""
-        print("\n🧪 Test 01: PyPIClient initialization")
+        print(f"\nTest 01: PyPIClient initialization")
         
         self.assertIsNotNone(self.client)
         self.assertEqual(self.client.timeout, 10)
@@ -278,7 +278,7 @@ class TestPyPIClient(unittest.TestCase):
     
     def test_02_get_package_info(self):
         """Test getting package information"""
-        print("\n🧪 Test 02: Get package info")
+        print(f"\nTest 02: Get package info")
         
         info = self.client.get_package_info('requests')
         
@@ -288,7 +288,7 @@ class TestPyPIClient(unittest.TestCase):
     
     def test_03_get_package_dependencies(self):
         """Test getting package dependencies"""
-        print("\n🧪 Test 03: Get package dependencies")
+        print(f"\nTest 03: Get package dependencies")
         
         deps = self.client.get_package_dependencies('requests')
         
@@ -303,7 +303,7 @@ class TestPyPIClient(unittest.TestCase):
     
     def test_04_get_package_size(self):
         """Test getting package size"""
-        print("\n🧪 Test 04: Get package size")
+        print(f"\nTest 04: Get package size")
         
         size = self.client.get_package_size('requests')
         
@@ -312,7 +312,7 @@ class TestPyPIClient(unittest.TestCase):
     
     def test_05_get_package_dependencies_with_size(self):
         """Test getting both dependencies and size"""
-        print("\n🧪 Test 05: Get dependencies with size")
+        print(f"\nTest 05: Get dependencies with size")
         
         deps, size = self.client.get_package_dependencies_with_size('requests')
         
@@ -324,7 +324,7 @@ class TestPyPIClient(unittest.TestCase):
     
     def test_06_get_package_metadata(self):
         """Test getting comprehensive metadata"""
-        print("\n🧪 Test 06: Get package metadata")
+        print(f"\nTest 06: Get package metadata")
         
         metadata = self.client.get_package_metadata('requests')
         
@@ -339,7 +339,7 @@ class TestPyPIClient(unittest.TestCase):
     
     def test_07_batch_get_dependencies_with_sizes(self):
         """Test batch operations"""
-        print("\n🧪 Test 07: Batch get dependencies with sizes")
+        print(f"\nTest 07: Batch get dependencies with sizes")
         
         packages = ['requests', 'numpy']
         results = self.client.batch_get_dependencies_with_sizes(packages)
@@ -353,7 +353,7 @@ class TestPyPIClient(unittest.TestCase):
     
     def test_08_nonexistent_package(self):
         """Test handling of non-existent packages"""
-        print("\n🧪 Test 08: Non-existent package handling in client")
+        print(f"\nTest 08: Non-existent package handling in client")
         
         fake_package = 'this-package-definitely-does-not-exist-12345'
         

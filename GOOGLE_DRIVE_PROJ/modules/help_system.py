@@ -41,7 +41,7 @@ def get_unified_help_data():
         "shell_commands": {
             "navigation": {
                 "pwd": "show current directory path",
-                "ls [path] [--detailed] [-R]": "list directory contents (recursive with -R)",
+                "ls [path] [--detailed] [-R] [-f] [-d]": "list directory contents (-R: recursive, -f: force mode, -d: directory mode)",
                 "cd <path>": "change directory (supports ~, .., relative paths)"
             },
             "file_operations": {

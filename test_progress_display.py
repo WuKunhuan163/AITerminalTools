@@ -15,7 +15,7 @@ def test_progress_display():
     """测试进度显示功能"""
     
     # (1) 输出模拟指令
-    print("$ echo 'Hello World'")
+    print(f"$ echo 'Hello World'")
     
     # (2) 输出进度信息，然后每秒添加一个点
     progress_message = "⏳ Waiting for result ..."
@@ -31,7 +31,7 @@ def test_progress_display():
     print('\r\033[K', end='', flush=True)
     
     # (4) 输出最终结果
-    print("Execution ends")
+    print(f"Execution ends")
 
 if __name__ == "__main__":
     test_progress_display()

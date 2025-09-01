@@ -38,7 +38,7 @@ try:
     from EXTRACT_IMG_PROJ.cache_system import ImageCacheSystem
     CACHE_AVAILABLE = True
 except ImportError:
-    print("Warning: Centralized cache system not available", file=sys.stderr)
+    print(f"Warning: Centralized cache system not available", file=sys.stderr)
     CACHE_AVAILABLE = False
 
 # Lazy import for UnimerNet model components
@@ -54,7 +54,7 @@ def _lazy_import_unimernet():
             from test_simple_unimernet import load_unimernet_model, recognize_image as simple_recognize
             UNIMERNET_AVAILABLE = True
         except ImportError:
-            print("Warning: UnimerNet model components not available", file=sys.stderr)
+            print(f"Warning: UnimerNet model components not available", file=sys.stderr)
             UNIMERNET_AVAILABLE = False
     return UNIMERNET_AVAILABLE
 
@@ -78,7 +78,7 @@ class UnimerNetProcessor:
     def _init_unimernet_model(self):
         """Initialize UnimerNet model using simplified interface"""
         if not _lazy_import_unimernet():
-            print("Warning: UnimerNet components not available", file=sys.stderr)
+            print(f"Warning: UnimerNet components not available", file=sys.stderr)
             return
         
         try:
@@ -250,17 +250,17 @@ def main():
     if args.check:
         # Check if components can be imported
         if _lazy_import_unimernet():
-            print("Local UnimerNet components loaded successfully")
+            print(f"Local UnimerNet components loaded successfully")
             # Try to initialize model to check full availability
             try:
                 processor._init_unimernet_model()
                 processor._model_loaded = True
                 if processor.is_available():
-                    print("UnimerNet is available and ready")
+                    print(f"UnimerNet is available and ready")
                 else:
-                    print("Error: UnimerNet model initialization failed")
+                    print(f"Error: UnimerNet model initialization failed")
             except Exception as e:
-                print("Error: UnimerNet model initialization failed")
+                print(f"Error: UnimerNet model initialization failed")
                 print(f"Error: {e}")
             
             if processor.cache_system:
@@ -268,8 +268,8 @@ def main():
                 if stats.get("cache_available"):
                     print(f"Cache: {stats.get('total_cached_images', 0)} images cached")
         else:
-            print("Error: UnimerNet is not available")
-            print("Please ensure MinerU dependencies are installed")
+            print(f"Error: UnimerNet is not available")
+            print(f"Please ensure MinerU dependencies are installed")
         return
     
     # Handle stats command
@@ -279,11 +279,11 @@ def main():
             print(json.dumps(stats, indent=2))
         else:
             if stats.get("cache_available"):
-                print("Cache Statistics:")
+                print(f"Cache Statistics:")
                 print(f"  Total cached images: {stats.get('total_cached_images', 0)}")
                 print(f"  Cache directory: {stats.get('cache_dir', 'N/A')}")
             else:
-                print("Cache system not available")
+                print(f"Cache system not available")
         return
     
     # Check if image path is provided

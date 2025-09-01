@@ -71,7 +71,7 @@ def select_tex_file():
         else:
             return None
     except ImportError:
-        print("Error: tkinter is not available. Please provide a file path as argument.")
+        print(f"Error: tkinter is not available. Please provide a file path as argument.")
         return None
 
 def write_to_json_output(data, command_identifier=None):
@@ -254,7 +254,7 @@ def compile_latex(tex_file, command_identifier=None, output_dir=None, latex_opti
     # 显示编译开始信息
     if not is_run_environment(command_identifier):
         print(f"Starting LaTeX compilation for: {tex_path.name}")
-        print("Compiling...")
+        print(f"Compiling...")
     
     # 在RUN环境下，使用/tmp目录作为工作目录
     if is_run_environment(command_identifier):
@@ -380,9 +380,9 @@ def compile_latex(tex_file, command_identifier=None, output_dir=None, latex_opti
                 if is_run_environment(command_identifier):
                     write_to_json_output(error_data, command_identifier)
                 else:
-                    print("Error: PDF not generated")
+                    print(f"Error: PDF not generated")
                     print(f"Input file: {tex_path}")
-                    print("\n=== Compilation Log ===")
+                    print(f"\n=== Compilation Log ===")
                     print(log_content)
                 return 1
         else:
@@ -400,25 +400,25 @@ def compile_latex(tex_file, command_identifier=None, output_dir=None, latex_opti
                 }
                 write_to_json_output(error_data, command_identifier)
             else:
-                print(f"✗ LaTeX compilation failed! (Exit code: {result.returncode})")
-                print(f"✗ Input file: {tex_path.name}")
+                print(f"Error: LaTeX compilation failed! (Exit code: {result.returncode})")
+                print(f"Error: Input file: {tex_path.name}")
                 
                 if errors:
-                    print("\n=== Key Error Messages ===")
+                    print(f"\n=== Key Error Messages ===")
                     for i, error in enumerate(errors[:5], 1):  # Show up to 5 errors
                         print(f"Error {i}:")
                         print(error)
-                        print("-" * 50)
+                        print(f"-" * 50)
                 else:
-                    print("\n=== No specific errors found, showing last part of log ===")
+                    print(f"\n=== No specific errors found, showing last part of log ===")
                     log_lines = log_content.split('\n')
                     print('\n'.join(log_lines[-20:]))
                 
                 # 复制完整日志到剪切板
                 if copy_to_clipboard(log_content):
-                    print("\n✓ Full compilation log copied to clipboard")
+                    print(f"\n✓ Full compilation log copied to clipboard")
                 else:
-                    print("\n✗ Failed to copy log to clipboard")
+                    print(f"\n✗ Failed to copy log to clipboard")
                     
             return result.returncode
     
@@ -508,7 +508,7 @@ def main():
             if is_run_environment(command_identifier):
                 write_to_json_output(list_data, command_identifier)
             else:
-                print("Available templates:")
+                print(f"Available templates:")
                 for template in templates:
                     print(f"  - {template}")
         else:
@@ -521,7 +521,7 @@ def main():
             if is_run_environment(command_identifier):
                 write_to_json_output(error_data, command_identifier)
             else:
-                print("No templates found")
+                print(f"No templates found")
         return 0
     
     # 处理模板复制选项
@@ -545,7 +545,7 @@ def main():
             if is_run_environment(command_identifier):
                 write_to_json_output(error_data, command_identifier)
             else:
-                print("Error: No file selected")
+                print(f"Error: No file selected")
             return 1
     else:
         # 有参数时，直接编译指定文件

@@ -229,7 +229,7 @@ class FileOperations:
                 return True
             
             # Try to start
-            print("🚀 Starting Google Drive Desktop...")
+            print(f"Starting Google Drive Desktop...")
             if platform.system() == "Darwin":
                 subprocess.run(['open', '-a', 'Google Drive'], check=False)
             elif platform.system() == "Linux":
@@ -243,10 +243,10 @@ class FileOperations:
                 result = subprocess.run(['pgrep', '-f', 'Google Drive'], 
                                       capture_output=True, text=True)
                 if result.returncode == 0 and bool(result.stdout.strip()):
-                    print("Google Drive Desktop started successfully")
+                    print(f"Google Drive Desktop started successfully")
                     return True
             
-            print("⚠️ Could not confirm Google Drive Desktop startup")
+            print(f"Could not confirm Google Drive Desktop startup")
             return False
             
         except Exception as e:

@@ -85,7 +85,7 @@ When working with the user, you have access to the following custom binary tools
   - `GOOGLE_DRIVE --shell upload --target-dir docs file.txt`
   - `GOOGLE_DRIVE --shell rm -rf old_folder`
   - `GOOGLE_DRIVE --shell edit file.py '[["old_code", "new_code"]]'`
-  - `GOOGLE_DRIVE --shell python -c 'print("Hello World")'`
+  - `GOOGLE_DRIVE --shell python -c 'print(f"Hello World")'`
   - `GOOGLE_DRIVE --upload file.txt remote/path`
   - `GDS pwd`
   - `GDS ls --detailed`

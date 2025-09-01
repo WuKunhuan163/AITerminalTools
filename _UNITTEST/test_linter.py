@@ -75,7 +75,7 @@ import unused_module
 def bad_function(x,y):
     result=x+y
     if result>10:
-        print("big")
+        print(f"big")
     return result
 
 unused_var = "never used"
@@ -217,7 +217,7 @@ int main() {
         """Test JSON output format"""
         # Create a temporary file with errors
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-            f.write('import os\nimport sys\nprint("hello")')
+            f.write('import os\nimport sys\nprint(f"hello")')
             temp_file = f.name
         
         try:
@@ -242,7 +242,7 @@ int main() {
         """Test manual language specification via CLI"""
         # Create a file without extension
         with tempfile.NamedTemporaryFile(mode='w', suffix='', delete=False) as f:
-            f.write('print("hello world")')
+            f.write('print(f"hello world")')
             temp_file = f.name
         
         try:
@@ -298,7 +298,7 @@ test()
         """Test file reading with different encodings"""
         # Test with a simple ASCII file
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False, encoding='utf-8') as f:
-            f.write('print("hello")\n')
+            f.write('print(f"hello")\n')
             temp_file = f.name
         
         try:
@@ -376,10 +376,10 @@ greet("Perl");'''
     
     def test_22_lua_language_detection(self):
         """Test Lua language detection and basic linting"""
-        lua_code = '''print("Hello, World!")
+        lua_code = '''print(f"Hello, World!")
 
 function greet(name)
-    print("Hello, " .. name .. "!")
+    print(f"Hello, " .. name .. "!")
 end
 
 greet("Lua")'''
@@ -405,10 +405,10 @@ fun greet(name: String) {
         """Test Swift language detection and basic linting"""
         swift_code = '''import Foundation
 
-print("Hello, World!")
+print(f"Hello, World!")
 
 func greet(name: String) {
-    print("Hello, \\(name)!")
+    print(f"Hello, \\(name)!")
 }
 
 greet(name: "Swift")'''
@@ -497,19 +497,19 @@ def run_comprehensive_tests():
 
 
 if __name__ == "__main__":
-    print("🧪 Running LINTER comprehensive tests...")
-    print("=" * 60)
+    print(f"Running LINTER comprehensive tests...")
+    print(f"=" * 60)
     
     results = run_comprehensive_tests()
     
-    print("\n" + "=" * 60)
-    print("📊 TEST SUMMARY")
-    print("=" * 60)
+    print(f"\n" + "=" * 60)
+    print(f"TEST SUMMARY")
+    print(f"=" * 60)
     print(f"Tests run: {results['tests_run']}")
     print(f"Failures: {results['failures']}")
     print(f"Errors: {results['errors']}")
     print(f"Success rate: {results['success_rate']:.1f}%")
-    print(f"Overall result: {'✅ PASS' if results['success'] else '❌ FAIL'}")
+    print(f"Overall result: {'PASS' if results['success'] else 'FAIL'}")
     
     # Exit with appropriate code
     sys.exit(0 if results['success'] else 1)

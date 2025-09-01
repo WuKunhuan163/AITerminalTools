@@ -183,9 +183,9 @@ class TestLearnContentQuality(LongRunningTest):
         
         with tempfile.TemporaryDirectory(dir=temp_base) as temp_dir:
             # 运行LEARN生成教程
-            print("📝 命令:", [sys.executable, str(self.learn_py), "-o", temp_dir, "-m", "Intermediate", "-s", "RichExamples", "--file", str(self.test_md), "3D Gaussian Splatting Basics Tutorial"])
+            print(f"命令:", [sys.executable, str(self.learn_py), "-o", temp_dir, "-m", "Intermediate", "-s", "RichExamples", "--file", str(self.test_md), "3D Gaussian Splatting Basics Tutorial"])
             
-            print("\n🔄 开始执行LEARN命令，显示实时进度...")
+            print(f"\n开始执行LEARN命令，显示实时进度...")
             result = self.assertCommandSuccess([
                 sys.executable, str(self.learn_py),
                 "-o", temp_dir, "-m", "Intermediate", "-s", "RichExamples",
@@ -211,7 +211,7 @@ class TestLearnContentQuality(LongRunningTest):
             
             # 示例检查改为警告，不作为失败条件
             if not tutorial_validation['has_examples']:
-                print("⚠️  Warning: Tutorial may lack examples")
+                print(f" Warning: Tutorial may lack examples")
             
             # 检查关键词覆盖
             found_keywords, missing_keywords = self._extract_keywords_from_content(
@@ -220,9 +220,9 @@ class TestLearnContentQuality(LongRunningTest):
             coverage_ratio = len(found_keywords) / len(expected_keywords)
             
             # 输出详细的关键词分析
-            print(f"🔍 关键词分析:")
-            print(f"   ✅ 找到的关键词 ({len(found_keywords)}/{len(expected_keywords)}): {found_keywords}")
-            print(f"   ❌ 缺失的关键词: {missing_keywords}")
+            print(f"关键词分析:")
+            print(f"   找到的关键词 ({len(found_keywords)}/{len(expected_keywords)}): {found_keywords}")
+            print(f"   缺失的关键词: {missing_keywords}")
             
             self.assertGreaterEqual(coverage_ratio, 0.75,  # 要求至少12/16 = 75%
                              f"Low keyword coverage: {coverage_ratio:.2f} ({len(found_keywords)}/{len(expected_keywords)})")
@@ -272,9 +272,9 @@ class TestLearnContentQuality(LongRunningTest):
         
         with tempfile.TemporaryDirectory(dir=temp_base) as temp_dir:
             # 运行LEARN生成教程（使用PDF输入）
-            print("📝 命令:", [sys.executable, str(self.learn_py), "-o", temp_dir, "-m", "Beginner", "-s", "Detailed", "--file", str(self.test_pdf), "PDF Paper Learning Tutorial"])
+            print(f"命令:", [sys.executable, str(self.learn_py), "-o", temp_dir, "-m", "Beginner", "-s", "Detailed", "--file", str(self.test_pdf), "PDF Paper Learning Tutorial"])
             
-            print("\n🔄 开始执行LEARN命令，显示实时进度...")
+            print(f"\n开始执行LEARN命令，显示实时进度...")
             result = self.assertCommandSuccess([
                 sys.executable, str(self.learn_py),
                 "-o", temp_dir, "-m", "Beginner", "-s", "Detailed",
@@ -304,9 +304,9 @@ class TestLearnContentQuality(LongRunningTest):
             coverage_ratio = len(found_keywords) / len(expected_keywords)
             
             # 输出详细的关键词分析
-            print(f"🔍 关键词分析:")
-            print(f"   ✅ 找到的关键词 ({len(found_keywords)}/{len(expected_keywords)}): {found_keywords}")
-            print(f"   ❌ 缺失的关键词: {missing_keywords}")
+            print(f"关键词分析:")
+            print(f"   找到的关键词 ({len(found_keywords)}/{len(expected_keywords)}): {found_keywords}")
+            print(f"   缺失的关键词: {missing_keywords}")
             
             self.assertGreaterEqual(coverage_ratio, 0.75,  # 要求至少12/16 = 75%
                              f"Low keyword coverage: {coverage_ratio:.2f} ({len(found_keywords)}/{len(expected_keywords)})")
@@ -344,9 +344,9 @@ class TestLearnContentQuality(LongRunningTest):
         with tempfile.TemporaryDirectory(dir=temp_base) as temp_dir:
             # 运行LEARN生成教程（使用URL输入）
             # 预期：下载+extract=3分钟，3次OpenRouter调用=3分钟，总计6分钟
-            print("📝 命令:", [sys.executable, str(self.learn_py), "-o", temp_dir, "-m", "Intermediate", "-s", "Concise", "--url", test_url, "Deep Convolutional Networks Tutorial"])
+            print(f"命令:", [sys.executable, str(self.learn_py), "-o", temp_dir, "-m", "Intermediate", "-s", "Concise", "--url", test_url, "Deep Convolutional Networks Tutorial"])
             
-            print("\n🔄 开始执行LEARN命令，显示实时进度...")
+            print(f"\n开始执行LEARN命令，显示实时进度...")
             result = self.assertCommandSuccess([
                 sys.executable, str(self.learn_py),
                 "-o", temp_dir, "-m", "Intermediate", "-s", "Concise",
@@ -376,9 +376,9 @@ class TestLearnContentQuality(LongRunningTest):
             coverage_ratio = len(found_keywords) / len(expected_keywords)
             
             # 输出详细的关键词分析
-            print(f"🔍 关键词分析:")
-            print(f"   ✅ 找到的关键词 ({len(found_keywords)}/{len(expected_keywords)}): {found_keywords}")
-            print(f"   ❌ 缺失的关键词: {missing_keywords}")
+            print(f"关键词分析:")
+            print(f"   找到的关键词 ({len(found_keywords)}/{len(expected_keywords)}): {found_keywords}")
+            print(f"   缺失的关键词: {missing_keywords}")
             
             self.assertGreaterEqual(coverage_ratio, 0.75,  # 要求至少12/16 = 75%
                              f"Low keyword coverage: {coverage_ratio:.2f} ({len(found_keywords)}/{len(expected_keywords)})")
@@ -409,9 +409,9 @@ class TestLearnContentQuality(LongRunningTest):
         with tempfile.TemporaryDirectory(dir=temp_base) as temp_dir:
             # 运行LEARN生成教程（使用描述搜索）
             # 预期：1次指令生成+search+1次结果验证=3分钟，3次OpenRouter调用=6分钟，总计9分钟
-            print("📝 命令:", [sys.executable, str(self.learn_py), "-o", temp_dir, "-m", "Expert", "-s", "TheoryOriented", "--description", description[:50] + "...", "--negative", "Medical", "Stereo Vision Depth Estimation Professional Tutorial"])
+            print(f"命令:", [sys.executable, str(self.learn_py), "-o", temp_dir, "-m", "Expert", "-s", "TheoryOriented", "--description", description[:50] + "...", "--negative", "Medical", "Stereo Vision Depth Estimation Professional Tutorial"])
             
-            print("\n🔄 开始执行LEARN命令，显示实时进度...")
+            print(f"\n开始执行LEARN命令，显示实时进度...")
             result = self.assertCommandSuccess([
                 sys.executable, str(self.learn_py),
                 "-o", temp_dir, "-m", "Expert", "-s", "TheoryOriented",
@@ -442,9 +442,9 @@ class TestLearnContentQuality(LongRunningTest):
             coverage_ratio = len(found_keywords) / len(expected_keywords)
             
             # 输出详细的关键词分析
-            print(f"🔍 关键词分析:")
-            print(f"   ✅ 找到的关键词 ({len(found_keywords)}/{len(expected_keywords)}): {found_keywords}")
-            print(f"   ❌ 缺失的关键词: {missing_keywords}")
+            print(f"关键词分析:")
+            print(f"   找到的关键词 ({len(found_keywords)}/{len(expected_keywords)}): {found_keywords}")
+            print(f"   缺失的关键词: {missing_keywords}")
             
             self.assertGreaterEqual(coverage_ratio, 0.44,  # 要求至少4/9 = 44%，体现指向性
                              f"Low keyword coverage: {coverage_ratio:.2f} ({len(found_keywords)}/{len(expected_keywords)})")
@@ -479,9 +479,9 @@ class TestLearnContentQuality(LongRunningTest):
         
         with tempfile.TemporaryDirectory(dir=temp_base) as temp_dir:
             # 运行LEARN brainstorm-only模式
-            print("📝 命令:", [sys.executable, str(self.learn_py), "-o", temp_dir, "-m", "Intermediate", "-s", "RichExamples", "--brainstorm-only", topic])
+            print(f"命令:", [sys.executable, str(self.learn_py), "-o", temp_dir, "-m", "Intermediate", "-s", "RichExamples", "--brainstorm-only", topic])
             
-            print("\n🔄 开始执行LEARN命令，显示实时进度...")
+            print(f"\n开始执行LEARN命令，显示实时进度...")
             result = self.assertCommandSuccess([
                 sys.executable, str(self.learn_py),
                 "-o", temp_dir, "-m", "Intermediate", "-s", "RichExamples",
@@ -502,9 +502,9 @@ class TestLearnContentQuality(LongRunningTest):
             coverage_ratio = len(found_keywords) / len(expected_keywords)
             
             # 输出详细的关键词分析
-            print(f"🔍 关键词分析:")
-            print(f"   ✅ 找到的关键词 ({len(found_keywords)}/{len(expected_keywords)}): {found_keywords}")
-            print(f"   ❌ 缺失的关键词: {missing_keywords}")
+            print(f"关键词分析:")
+            print(f"   找到的关键词 ({len(found_keywords)}/{len(expected_keywords)}): {found_keywords}")
+            print(f"   缺失的关键词: {missing_keywords}")
             
             self.assertGreaterEqual(coverage_ratio, 0.68,  # 要求至少11/16 = 68%，实际表现良好
                              f"Low keyword coverage in brainstorm: {coverage_ratio:.2f} ({len(found_keywords)}/{len(expected_keywords)})")
@@ -539,9 +539,9 @@ class TestLearnContentQuality(LongRunningTest):
         temp_base.mkdir(exist_ok=True)
         
         with tempfile.TemporaryDirectory(dir=temp_base) as temp_dir:
-            print("📝 命令:", [sys.executable, str(self.learn_py), "-o", temp_dir, "-m", "Intermediate", "-s", "RichExamples", "--description", description[:50] + "...", "Machine Learning Supervised Algorithm Tutorial"])
+            print(f"命令:", [sys.executable, str(self.learn_py), "-o", temp_dir, "-m", "Intermediate", "-s", "RichExamples", "--description", description[:50] + "...", "Machine Learning Supervised Algorithm Tutorial"])
             
-            print("\n🔄 开始执行LEARN命令，显示实时进度...")
+            print(f"\n开始执行LEARN命令，显示实时进度...")
             result = self.assertCommandSuccess([
                 sys.executable, str(self.learn_py),
                 "-o", temp_dir, "-m", "Intermediate", "-s", "RichExamples",
@@ -570,9 +570,9 @@ class TestLearnContentQuality(LongRunningTest):
             
             coverage_ratio = len(found_keywords) / len(expected_keywords)
             
-            print(f"🔍 关键词分析:")
-            print(f"   ✅ 找到的关键词 ({len(found_keywords)}/{len(expected_keywords)}): {found_keywords}")
-            print(f"   ❌ 缺失的关键词: {missing_keywords}")
+            print(f"关键词分析:")
+            print(f"   找到的关键词 ({len(found_keywords)}/{len(expected_keywords)}): {found_keywords}")
+            print(f"   缺失的关键词: {missing_keywords}")
             
             self.assertGreaterEqual(coverage_ratio, 0.5,  # 通用主题要求8/16 = 50%
                              f"Low keyword coverage: {coverage_ratio:.2f} ({len(found_keywords)}/{len(expected_keywords)})")
@@ -650,11 +650,11 @@ class TestLearnContentQuality(LongRunningTest):
             # 使用@符号引用文件内容（绝对路径）
             description = f'深入学习GaussianObject的3D重建技术原理和方法 @"{paper1_path.absolute()}"'
             
-            print(f"\n🧪 测试@符号引用单论文（绝对路径），输出目录: {temp_dir}")
-            print("📝 命令:", [sys.executable, str(self.learn_py), "-o", temp_dir, "-m", "Intermediate", "-s", "Detailed", "--context", "--description", description[:50] + "...", "Learning 3D Reconstruction from GaussianObject Paper"])
+            print(f"\n测试@符号引用单论文（绝对路径），输出目录: {temp_dir}")
+            print(f"命令:", [sys.executable, str(self.learn_py), "-o", temp_dir, "-m", "Intermediate", "-s", "Detailed", "--context", "--description", description[:50] + "...", "Learning 3D Reconstruction from GaussianObject Paper"])
             
             # 运行LEARN命令显示实时进度
-            print("\n🔄 开始执行LEARN命令，显示实时进度...")
+            print(f"\n开始执行LEARN命令，显示实时进度...")
             result = subprocess.run([
                 sys.executable, str(self.learn_py),
                 "-o", temp_dir, "-m", "Intermediate", "-s", "Detailed",
@@ -689,9 +689,9 @@ class TestLearnContentQuality(LongRunningTest):
             
             coverage_ratio = len(found_keywords) / len(expected_keywords)
             
-            print(f"🔍 关键词分析:")
-            print(f"   ✅ 找到的关键词 ({len(found_keywords)}/{len(expected_keywords)}): {found_keywords}")
-            print(f"   ❌ 缺失的关键词: {missing_keywords}")
+            print(f"关键词分析:")
+            print(f"   找到的关键词 ({len(found_keywords)}/{len(expected_keywords)}): {found_keywords}")
+            print(f"   缺失的关键词: {missing_keywords}")
             
             # 要求至少75%的关键词覆盖
             self.assertGreaterEqual(coverage_ratio, 0.75,
@@ -717,9 +717,9 @@ class TestLearnContentQuality(LongRunningTest):
             # 使用@符号引用文件内容（绝对路径，但测试相对路径功能）
             description = f'学习AutoPartGen的自回归3D部件生成技术 @"{paper1_file}"'
             
-            print("📝 命令:", [sys.executable, str(self.learn_py), "-o", temp_dir, "-m", "Intermediate", "-s", "Detailed", "--context", "--description", description[:50] + "...", "Learning AutoPartGen Paper's 3D Part Generation"])
+            print(f"命令:", [sys.executable, str(self.learn_py), "-o", temp_dir, "-m", "Intermediate", "-s", "Detailed", "--context", "--description", description[:50] + "...", "Learning AutoPartGen Paper's 3D Part Generation"])
             
-            print("\n🔄 开始执行LEARN命令，显示实时进度...")
+            print(f"\n开始执行LEARN命令，显示实时进度...")
             result = self.assertCommandSuccess([
                 sys.executable, str(self.learn_py),
                 "-o", temp_dir, "-m", "Intermediate", "-s", "Detailed", 
@@ -745,7 +745,7 @@ class TestLearnContentQuality(LongRunningTest):
             has_part = "部件" in result.stdout or "part" in result.stdout
             self.assertTrue(has_part, "应该包含'部件'或'part'相关概念")
             
-            print("@符号引用单论文（相对路径）测试通过")
+            print(f"@符号引用单论文（相对路径）测试通过")
 
     def test_07d_at_reference_double_papers_comparison(self):
         """测试@符号引用双论文比较"""
@@ -762,9 +762,9 @@ class TestLearnContentQuality(LongRunningTest):
             # 使用@符号引用两个文件进行比较
             description = f'比较分析GaussianObject和AutoPartGen两种3D生成技术的异同点，重点关注它们的方法论、应用场景和技术优势 @"{paper1_path}" @"{paper2_path}"'
             
-            print("📝 命令:", [sys.executable, str(self.learn_py), "-o", temp_dir, "-m", "Expert", "-s", "TheoryOriented", "--context", "--description", description[:50] + "...", "GaussianObject vs AutoPartGen Technology Comparison Analysis"])
+            print(f"命令:", [sys.executable, str(self.learn_py), "-o", temp_dir, "-m", "Expert", "-s", "TheoryOriented", "--context", "--description", description[:50] + "...", "GaussianObject vs AutoPartGen Technology Comparison Analysis"])
             
-            print("\n🔄 开始执行LEARN命令，显示实时进度...")
+            print(f"\n开始执行LEARN命令，显示实时进度...")
             result = self.assertCommandSuccess([
                 sys.executable, str(self.learn_py),
                 "-o", temp_dir, "-m", "Expert", "-s", "TheoryOriented",
@@ -810,15 +810,15 @@ class TestLearnContentQuality(LongRunningTest):
                                       if indicator in result.stdout]
             quality_ratio = len(found_quality_indicators) / len(quality_indicators)
             
-            print(f"🔍 双论文比较质量分析:")
-            print(f"   ✅ 找到的质量指标 ({len(found_quality_indicators)}/{len(quality_indicators)}): {found_quality_indicators}")
+            print(f"双论文比较质量分析:")
+            print(f"   找到的质量指标 ({len(found_quality_indicators)}/{len(quality_indicators)}): {found_quality_indicators}")
             print(f"   质量比例: {quality_ratio:.1%}")
             
             # 要求至少包含39%的质量指标 (约11/28个)
             self.assertGreaterEqual(quality_ratio, 0.39, 
                              f"双论文比较质量不足: {quality_ratio:.2f}")
             
-            print("@符号引用双论文比较测试通过")
+            print(f"@符号引用双论文比较测试通过")
 
     def test_07h_context_option(self):
         """测试--context选项功能"""
@@ -867,11 +867,11 @@ class TestLearnContentQuality(LongRunningTest):
         
         with tempfile.TemporaryDirectory(dir=temp_base) as temp_dir:
             # 测试--context选项
-            print(f"\n🧪 测试--context选项功能，输出目录: {temp_dir}")
-            print("📝 命令:", [sys.executable, str(self.learn_py), "-o", temp_dir, "-m", "Advanced", "-s", "TheoryOriented", "--context", "--description", test_context[:100] + "...", "Deep Reinforcement Learning Game AI Professional Tutorial"])
+            print(f"\n测试--context选项功能，输出目录: {temp_dir}")
+            print(f"命令:", [sys.executable, str(self.learn_py), "-o", temp_dir, "-m", "Advanced", "-s", "TheoryOriented", "--context", "--description", test_context[:100] + "...", "Deep Reinforcement Learning Game AI Professional Tutorial"])
             
             # 运行LEARN命令显示实时进度
-            print("\n🔄 开始执行LEARN命令，显示实时进度...")
+            print(f"\n开始执行LEARN命令，显示实时进度...")
             result = subprocess.run([
                 sys.executable, str(self.learn_py),
                 "-o", temp_dir, "-m", "Advanced", "-s", "TheoryOriented",
@@ -906,9 +906,9 @@ class TestLearnContentQuality(LongRunningTest):
             
             coverage_ratio = len(found_keywords) / len(expected_keywords)
             
-            print(f"🔍 关键词分析:")
-            print(f"   ✅ 找到的关键词 ({len(found_keywords)}/{len(expected_keywords)}): {found_keywords}")
-            print(f"   ❌ 缺失的关键词: {missing_keywords}")
+            print(f"关键词分析:")
+            print(f"   找到的关键词 ({len(found_keywords)}/{len(expected_keywords)}): {found_keywords}")
+            print(f"   缺失的关键词: {missing_keywords}")
 
             self.assertGreaterEqual(coverage_ratio, 0.75, f"关键词覆盖率不足: {coverage_ratio:.2f} ({len(found_keywords)}/{len(expected_keywords)})")
             
@@ -947,7 +947,7 @@ class TestLearnContentQuality(LongRunningTest):
                 f"未找到预期的互斥错误信息，stderr: {result.stderr}, stdout: {result.stdout}"
             )
             
-            print("--context和--brainstorm-only互斥性测试通过")
+            print(f"--context和--brainstorm-only互斥性测试通过")
 
     def test_07e_at_reference_prompt_cleaning(self):
         """测试@符号引用文件时发给OpenRouter的prompt不包含placeholder和图片id"""
@@ -1019,7 +1019,7 @@ abcd1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab
                 self.assertIn("正常内容", output)
                 self.assertIn("测试论文", output)
                 
-                print("@符号引用prompt清理测试通过 - 所有placeholder和图片id已被清理")
+                print(f"@符号引用prompt清理测试通过 - 所有placeholder和图片id已被清理")
                 
         finally:
             # 清理测试文件
@@ -1075,9 +1075,9 @@ abcd1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab
             
             coverage_ratio = len(found_keywords) / len(expected_keywords)
             
-            print(f"🔍 关键词分析:")
-            print(f"   ✅ 找到的关键词 ({len(found_keywords)}/{len(expected_keywords)}): {found_keywords}")
-            print(f"   ❌ 缺失的关键词: {missing_keywords}")
+            print(f"关键词分析:")
+            print(f"   找到的关键词 ({len(found_keywords)}/{len(expected_keywords)}): {found_keywords}")
+            print(f"   缺失的关键词: {missing_keywords}")
             
             # 要求至少30%的关键词覆盖（PDF处理可能有损失）
             self.assertGreaterEqual(coverage_ratio, 0.3,
@@ -1143,11 +1143,11 @@ abcd1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab
                 # 使用@符号引用TXT文件
                 description = f'基于这个教程内容进行深入学习 @"{test_file}"'
                 
-                print(f"\n🧪 测试TXT文件@引用功能，输出目录: {temp_dir}")
-                print("📝 命令:", [sys.executable, str(self.learn_py), "-o", temp_dir, "-m", "Intermediate", "-s", "Detailed", "--context", "--description", description[:50] + "...", "Learning based on TXT file"])
+                print(f"\n测试TXT文件@引用功能，输出目录: {temp_dir}")
+                print(f"命令:", [sys.executable, str(self.learn_py), "-o", temp_dir, "-m", "Intermediate", "-s", "Detailed", "--context", "--description", description[:50] + "...", "Learning based on TXT file"])
                 
                 # 运行LEARN命令显示实时进度
-                print("\n🔄 开始执行LEARN命令，显示实时进度...")
+                print(f"\n开始执行LEARN命令，显示实时进度...")
                 result = subprocess.run([
                     sys.executable, str(self.learn_py),
                     "-o", temp_dir, "-m", "Intermediate", "-s", "Detailed",
@@ -1182,9 +1182,9 @@ abcd1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab
                 
                 coverage_ratio = len(found_keywords) / len(expected_keywords)
                 
-                print(f"🔍 关键词分析:")
-                print(f"   ✅ 找到的关键词 ({len(found_keywords)}/{len(expected_keywords)}): {found_keywords}")
-                print(f"   ❌ 缺失的关键词: {missing_keywords}")
+                print(f"关键词分析:")
+                print(f"   找到的关键词 ({len(found_keywords)}/{len(expected_keywords)}): {found_keywords}")
+                print(f"   缺失的关键词: {missing_keywords}")
                 
                 # 要求至少90%的关键词覆盖（TXT内容应该很准确）
                 self.assertGreaterEqual(coverage_ratio, 0.9,
@@ -1201,7 +1201,7 @@ abcd1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab
             if test_file.exists():
                 test_file.unlink()
             
-            print("@符号引用双论文比较测试通过")
+            print(f"@符号引用双论文比较测试通过")
 
     def test_08_file_override_handling(self):
         """测试文件覆盖处理的不同模式"""
@@ -1226,7 +1226,7 @@ abcd1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab
             
             self.assertIn("头脑风暴", result.stdout)
             self.assertIn("默认模式", result.stdout)
-            print("默认模式测试通过")
+            print(f"默认模式测试通过")
             
             # 测试2：no-override-material模式（应该自动重命名）
             target_dir2 = base_output / "test_no_override"
@@ -1271,11 +1271,11 @@ class TestLearnAPI(APITest):
 
     def test_learn_direct_mode_with_output_dir(self):
         """Test LEARN direct mode with output directory"""
-        print("\n🧪 开始测试LEARN直接模式（带输出目录）...")
-        print("📝 命令:", [sys.executable, str(self.learn_py), "Python编程", "--mode", "Advanced", "--style", "Detailed", "--output-dir", "/tmp/test-learn"])
+        print(f"\n开始测试LEARN直接模式（带输出目录）...")
+        print(f"命令:", [sys.executable, str(self.learn_py), "Python编程", "--mode", "Advanced", "--style", "Detailed", "--output-dir", "/tmp/test-learn"])
         
         # 运行LEARN命令显示实时进度
-        print("\n🔄 开始执行LEARN命令，显示实时进度...")
+        print(f"\n开始执行LEARN命令，显示实时进度...")
         result = subprocess.run([
             sys.executable, str(self.learn_py), 
             "Python编程", "--mode", "Advanced", "--style", "Detailed", 
@@ -1296,12 +1296,12 @@ class TestLearnAPI(APITest):
         self.assertGreater(tutorial_file.stat().st_size, 100, "tutorial.md文件内容太少")
         self.assertGreater(question_file.stat().st_size, 100, "question.md文件内容太少")
         
-        print("LEARN直接模式测试通过")
+        print(f"LEARN直接模式测试通过")
 
     def test_learn_basic_functionality(self):
         """Test basic LEARN functionality"""
-        print("\n🧪 开始测试LEARN基本功能...")
-        print("📝 命令:", [sys.executable, str(self.learn_py), "测试主题", "--mode", "Beginner", "--output-dir", "/tmp/test"])
+        print(f"\n开始测试LEARN基本功能...")
+        print(f"命令:", [sys.executable, str(self.learn_py), "测试主题", "--mode", "Beginner", "--output-dir", "/tmp/test"])
         
         # 不捕获输出，这样可以看到实时进度
         result = subprocess.run([
@@ -1323,20 +1323,20 @@ class TestLearnAPI(APITest):
         self.assertGreater(tutorial_file.stat().st_size, 0, "tutorial.md文件为空")
         self.assertGreater(question_file.stat().st_size, 0, "question.md文件为空")
         
-        print("LEARN基本功能测试通过")
+        print(f"LEARN基本功能测试通过")
 
     def test_learn_paper_mode(self):
         """Test LEARN file mode"""
-        print("\n🧪 测试LEARN文件模式...")
+        print(f"\n测试LEARN文件模式...")
         
         # Use real test PDF file instead of dummy
         test_pdf = self.test_data_dir / "test_extract_paper2.pdf"  # 277KB, suitable for testing
         
-        print("📝 命令:", [sys.executable, str(self.learn_py), "--file", str(test_pdf), "--mode", "Beginner", "--output-dir", "/tmp/test"])
+        print(f"命令:", [sys.executable, str(self.learn_py), "--file", str(test_pdf), "--mode", "Beginner", "--output-dir", "/tmp/test"])
         
         try:
             # 运行LEARN命令显示实时进度
-            print("\n🔄 开始执行LEARN命令，显示实时进度...")
+            print(f"\n开始执行LEARN命令，显示实时进度...")
             result = subprocess.run([
                 sys.executable, str(self.learn_py),
                 "--file", str(test_pdf), "--mode", "Beginner", "--output-dir", "/tmp/test"
@@ -1356,7 +1356,7 @@ class TestLearnAPI(APITest):
             self.assertGreater(tutorial_file.stat().st_size, 100, "tutorial.md文件内容太少")
             self.assertGreater(question_file.stat().st_size, 100, "question.md文件内容太少")
             
-            print("LEARN论文模式测试通过")
+            print(f"LEARN论文模式测试通过")
             
         finally:
             # No cleanup needed since we're using existing test PDF
@@ -1364,21 +1364,21 @@ class TestLearnAPI(APITest):
 
     def test_learn_file_mode(self):
         """Test LEARN --file mode with PDF"""
-        print("\n🧪 测试LEARN --file模式（PDF文件）...")
+        print(f"\n测试LEARN --file模式（PDF文件）...")
         
         # Use existing test PDF instead of dummy file
-        print("📝 命令:", [sys.executable, str(self.learn_py), "--file", str(self.test_pdf), "--output-dir", "/tmp/test", "Test PDF processing"])
+        print(f"命令:", [sys.executable, str(self.learn_py), "--file", str(self.test_pdf), "--output-dir", "/tmp/test", "Test PDF processing"])
         
         try:
             # 运行LEARN命令显示实时进度
-            print("\n🔄 开始执行LEARN命令，显示实时进度...")
+            print(f"\n开始执行LEARN命令，显示实时进度...")
             result = subprocess.run([
                 sys.executable, str(self.learn_py),
                 "--file", str(self.test_pdf), "--output-dir", "/tmp/test", "Test PDF processing"
             ], text=True, timeout=3600, capture_output=False)  # 5分钟超时
             
             # 由于是dummy PDF，可能会失败，但我们检查是否尝试了处理
-            print(f"📊 命令返回码: {result.returncode}")
+            print(f"命令返回码: {result.returncode}")
             
             if result.returncode == 0:
                 # 如果成功，验证生成的文件
@@ -1386,11 +1386,11 @@ class TestLearnAPI(APITest):
                 question_file = Path("/tmp/test/question.md")
                 
                 if tutorial_file.exists() and question_file.exists():
-                    print("LEARN --file模式测试通过 - 成功生成文件")
+                    print(f"LEARN --file模式测试通过 - 成功生成文件")
                 else:
-                    print("⚠️  LEARN --file模式部分成功 - 命令执行但文件生成不完整")
+                    print(f" LEARN --file模式部分成功 - 命令执行但文件生成不完整")
             else:
-                print("⚠️  LEARN --file模式测试 - PDF处理失败（可能需要更长时间）")
+                print(f" LEARN --file模式测试 - PDF处理失败（可能需要更长时间）")
                 # 对于dummy PDF，失败是可以接受的
                 
         finally:

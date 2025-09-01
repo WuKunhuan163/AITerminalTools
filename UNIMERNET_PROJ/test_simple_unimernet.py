@@ -21,7 +21,7 @@ if str(current_dir) not in sys.path:
 try:
     from Unimernet import UnimernetModel, MathDataset
     UNIMERNET_AVAILABLE = True
-    print("Local UnimerNet components loaded successfully")
+    print(f"Local UnimerNet components loaded successfully")
 except ImportError as e:
     UNIMERNET_AVAILABLE = False
     print(f"Warning:  Local UnimerNet model components not available: {e}")
@@ -38,7 +38,7 @@ def load_unimernet_model(model_path: str = None, device: str = "cpu") -> Tuple[O
         Tuple of (model, tokenizer) or (None, None) if failed
     """
     if not UNIMERNET_AVAILABLE:
-        print("Error:  UnimerNet model components not available")
+        print(f"Error:  UnimerNet model components not available")
         return None, None
     
     # Default model path - use local model first, then download if needed
@@ -61,7 +61,7 @@ def load_unimernet_model(model_path: str = None, device: str = "cpu") -> Tuple[O
                 repo_id = "opendatalab/PDF-Extract-Kit-1.0"
                 model_subpath = "models/MFR/unimernet_hf_small_2503"
                 
-                print(f"📥 Downloading model from {repo_id}...")
+                print(f"Downloading model from {repo_id}...")
                 cache_dir = snapshot_download(
                     repo_id=repo_id,
                     allow_patterns=[f"{model_subpath}/*"]
@@ -85,7 +85,7 @@ def load_unimernet_model(model_path: str = None, device: str = "cpu") -> Tuple[O
         return None, None
     
     try:
-        print(f"🔄 Loading UnimerNet model from {model_path}")
+        print(f"Loading UnimerNet model from {model_path}")
         print(f"📱 Using device: {device}")
         
         # Apply CPU optimizations if using CPU
@@ -93,7 +93,7 @@ def load_unimernet_model(model_path: str = None, device: str = "cpu") -> Tuple[O
             try:
                 from mineru_config import config
                 config.apply_cpu_optimizations()
-                print("🚀 Applied CPU optimizations for better performance")
+                print(f"Applied CPU optimizations for better performance")
             except Exception as e:
                 print(f"Warning:  Failed to apply CPU optimizations: {e}")
         
@@ -103,7 +103,7 @@ def load_unimernet_model(model_path: str = None, device: str = "cpu") -> Tuple[O
         # The tokenizer is embedded in the model for UnimerNet
         tokenizer = model.model.tokenizer if hasattr(model.model, 'tokenizer') else None
         
-        print("UnimerNet model loaded successfully")
+        print(f"UnimerNet model loaded successfully")
         return model, tokenizer
         
     except Exception as e:
@@ -123,7 +123,7 @@ def recognize_image(image_path: str, model: object, tokenizer: object = None) ->
         Recognition result as string, or None if failed
     """
     if model is None:
-        print("Error:  Model not loaded")
+        print(f"Error:  Model not loaded")
         return None
     
     image_path = Path(image_path)
@@ -161,7 +161,7 @@ def recognize_image(image_path: str, model: object, tokenizer: object = None) ->
                 print(f"Recognition successful: {result[:50]}...")
                 return result
             else:
-                print("⚠️  No recognition result")
+                print(f" No recognition result")
                 return None
                 
     except Exception as e:
@@ -170,13 +170,13 @@ def recognize_image(image_path: str, model: object, tokenizer: object = None) ->
 
 def test_unimernet_recognition():
     """Test function for UnimerNet recognition."""
-    print("🧪 Testing UnimerNet recognition")
+    print(f"Testing UnimerNet recognition")
     
     # Load model
     model, tokenizer = load_unimernet_model()
     
     if model is None:
-        print("Error:  Cannot test without model")
+        print(f"Error:  Cannot test without model")
         return False
     
     # Test with a sample image (if available)
@@ -185,14 +185,14 @@ def test_unimernet_recognition():
     if test_image_path.exists():
         result = recognize_image(str(test_image_path), model, tokenizer)
         if result:
-            print(f"🎉 Test successful: {result}")
+            print(f"Test successful: {result}")
             return True
         else:
-            print("Error:  Test failed: No recognition result")
+            print(f"Error:  Test failed: No recognition result")
             return False
     else:
         print(f"Warning:  Test image not found: {test_image_path}")
-        print("ℹ️  Model loaded successfully but cannot test without sample image")
+        print(f"Model loaded successfully but cannot test without sample image")
         return True
 
 if __name__ == "__main__":

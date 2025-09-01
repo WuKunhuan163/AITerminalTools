@@ -420,21 +420,21 @@ def main():
     else:
         # Text format
         print(f"Language: {result['language']}")
-        print(f"Status: {'✅ PASS' if result['success'] else '❌ FAIL'}")
+        print(f"Status: {'PASS' if result['success'] else 'FAIL'}")
         print(f"Message: {result['message']}")
         
         if result['errors']:
-            print("\n🚫 Errors:")
+            print(f"\nErrors:")
             for error in result['errors']:
                 print(f"  • {error}")
         
         if result['warnings']:
-            print("\n⚠️  Warnings:")
+            print(f"\nWarning: Warnings:")
             for warning in result['warnings']:
                 print(f"  • {warning}")
         
         if result['info']:
-            print("\nℹ️  Info:")
+            print(f"\nInfo:")
             for info in result['info']:
                 print(f"  • {info}")
 

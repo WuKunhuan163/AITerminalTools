@@ -72,10 +72,10 @@ def update_shell_configs():
             print(f"Error: Error updating {config_file}: {e}")
     
     if success_count > 0:
-        print(f"🎉 Successfully updated {success_count} configuration files!")
-        print("💡 Changes should now be active in your current shell.")
+        print(f"Successfully updated {success_count} configuration files!")
+        print(f"Changes should now be active in your current shell.")
     else:
-        print("Error:  Failed to update any configuration files.")
+        print(f"Error:  Failed to update any configuration files.")
     
     return success_count > 0
 
@@ -245,11 +245,11 @@ def create_alias(alias_name: str, alias_command: str, command_identifier=None) -
         
         print()
         if success_count > 0:
-            print("🎉 Alias created successfully!")
-            print("🔄 Alias will be available in new terminal sessions")
-            print("💡 Note: Current session may need manual source or restart for aliases")
+            print(f"Alias created successfully!")
+            print(f"Alias will be available in new terminal sessions")
+            print(f"Note: Current session may need manual source or restart for aliases")
         else:
-            print("Error:  Failed to create alias in any configuration file")
+            print(f"Error:  Failed to create alias in any configuration file")
     
     return 0 if success_count > 0 else 1
 
@@ -294,9 +294,9 @@ def remove_alias_from_all_files(alias_name: str, command_identifier=None) -> int
                 print(f"Error: Failed to remove alias '{alias_name}' from {result['file']}: {result['error']}")
         print()
         if removed_count > 0:
-            print("🎉 Alias removed successfully!")
+            print(f"Alias removed successfully!")
         else:
-            print("Error:  Alias not found in any configuration file.")
+            print(f"Error:  Alias not found in any configuration file.")
     
     return 0 if removed_count > 0 else 1
 
@@ -359,9 +359,9 @@ def main():
             }
             write_to_json_output(error_data, command_identifier)
         else:
-            print("Error: No arguments provided")
-            print("Usage: ALIAS <alias_name> <alias_command>")
-            print("Use --help for more information")
+            print(f"Error: No arguments provided")
+            print(f"Usage: ALIAS <alias_name> <alias_command>")
+            print(f"Use --help for more information")
         return 1
     
     if args[0] in ['--help', '-h']:
@@ -385,8 +385,8 @@ def main():
                 write_to_json_output(error_data, command_identifier)
             else:
                 print(f"Error: {error_msg}")
-                print("Usage: ALIAS --remove <alias_name>")
-                print("       ALIAS --undo <alias_name>")
+                print(f"Usage: ALIAS --remove <alias_name>")
+                print(f"       ALIAS --undo <alias_name>")
             return 1
         
         alias_name = args[1]
@@ -401,7 +401,7 @@ def main():
                 write_to_json_output(error_data, command_identifier)
             else:
                 print(f"Error: {error_msg}")
-                print("Usage: ALIAS --update")
+                print(f"Usage: ALIAS --update")
             return 1
         
         if is_run_environment(command_identifier):
@@ -413,7 +413,7 @@ def main():
             write_to_json_output(output_data, command_identifier)
             return 0 if success else 1
         else:
-            print("Updating shell configuration files...")
+            print(f"Updating shell configuration files...")
             success = update_shell_configs()
             return 0 if success else 1
     
@@ -424,8 +424,8 @@ def main():
             write_to_json_output(error_data, command_identifier)
         else:
             print(f"Error: {error_msg}")
-            print("Usage: ALIAS <alias_name> <alias_command>")
-            print("Use --help for more information")
+            print(f"Usage: ALIAS <alias_name> <alias_command>")
+            print(f"Use --help for more information")
         return 1
     
     alias_name = args[0]

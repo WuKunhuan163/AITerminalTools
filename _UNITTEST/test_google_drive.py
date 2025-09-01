@@ -105,7 +105,7 @@ def run_tool(args, timeout=10, allow_user_interaction=False):
 
 def test_bash_syntax_validation():
     """Test bash syntax validation functionality"""
-    print("测试bash语法验证功能")
+    print(f"测试bash语法验证功能")
     
     # Test valid commands
     valid_commands = [
@@ -129,7 +129,7 @@ def test_bash_syntax_validation():
         validation = validate_bash_syntax_fast(cmd)
         assert not validation['success'], f"Invalid command should fail validation: {cmd}"
     
-    print("test_bash_syntax_validation passed")
+    print(f"test_bash_syntax_validation passed")
 
 def test_return_command_no_output():
     """Test --return-command does not produce terminal print output
@@ -138,10 +138,10 @@ def test_return_command_no_output():
     而不是混合的终端输出。目的是确保生成的输出可以被程序解析。
     """
     if not GOOGLE_DRIVE_AVAILABLE:
-        print("⏭️  test_return_command_no_output skipped - GOOGLE_DRIVE module not available")
+        print(f"test_return_command_no_output skipped - GOOGLE_DRIVE module not available")
         return
     
-    print("测试--shell --return不会产生混合的终端输出")
+    print(f"测试--shell --return不会产生混合的终端输出")
     
     parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     google_drive_path = os.path.join(parent_dir, 'GOOGLE_DRIVE.py')
@@ -166,15 +166,15 @@ def test_return_command_no_output():
     except Exception as e:
         raise AssertionError(f"测试执行出错: {e}")
     
-    print("test_return_command_no_output passed")
+    print(f"test_return_command_no_output passed")
 
 def test_error_handling():
     """Test error handling"""
     if not GOOGLE_DRIVE_AVAILABLE:
-        print("⏭️  test_error_handling skipped - GOOGLE_DRIVE module not available")
+        print(f"test_error_handling skipped - GOOGLE_DRIVE module not available")
         return
     
-    print("测试错误处理")
+    print(f"测试错误处理")
     
     # Test with invalid command
     parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -192,15 +192,15 @@ def test_error_handling():
     except Exception as e:
         raise AssertionError(f"测试执行出错: {e}")
     
-    print("test_error_handling passed")
+    print(f"test_error_handling passed")
 
 def test_gds_read_command():
     """Test read command various usage patterns"""
     if not GOOGLE_DRIVE_AVAILABLE:
-        print("⏭️  test_gds_read_command skipped - GOOGLE_DRIVE module not available")
+        print(f"test_gds_read_command skipped - GOOGLE_DRIVE module not available")
         return
     
-    print("测试read命令的各种用法")
+    print(f"测试read命令的各种用法")
     
     # Test basic read functionality (this would require actual files to exist)
     # For now, just test that the command is recognized
@@ -220,20 +220,20 @@ def test_gds_read_command():
     except Exception as e:
         raise AssertionError(f"测试执行出错: {e}")
     
-    print("test_gds_read_command passed")
+    print(f"test_gds_read_command passed")
 
 def test_python_command_parsing():
     """Test python -c command parsing with different quote styles"""
-    print("Test python -c command parsing with different quote styles")
+    print(f"Test python -c command parsing with different quote styles")
     
     # Test different python command styles
     test_commands = [
         'python -c "print(\"hello world\")"',
         "python -c 'print(\"hello world\")'",
-        'python -c """print("hello world")"""',
+        'python -c """print(f"hello world")"""',
         '''python -c """
-print("multiline")
-print("test")
+print(f"multiline")
+print(f"test")
 """''',
     ]
     
@@ -242,15 +242,15 @@ print("test")
         validation = validate_bash_syntax_fast(cmd)
         print(f"Command: {cmd[:50]}... - Validation: {validation['success']}")
     
-    print("test_python_command_parsing passed")
+    print(f"test_python_command_parsing passed")
 
 def test_path_conversion():
     """Test path conversion functionality"""
     if not GOOGLE_DRIVE_AVAILABLE:
-        print("⏭️  test_path_conversion skipped - GOOGLE_DRIVE module not available")
+        print(f"test_path_conversion skipped - GOOGLE_DRIVE module not available")
         return
     
-    print("测试路径转换功能")
+    print(f"测试路径转换功能")
     
     # Test basic path operations
     parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -268,15 +268,15 @@ def test_path_conversion():
     except Exception as e:
         raise AssertionError(f"测试执行出错: {e}")
     
-    print("test_path_conversion passed")
+    print(f"test_path_conversion passed")
 
 def test_bash_command_generation():
     """Test bash command generation for various GDS commands"""
     if not GOOGLE_DRIVE_AVAILABLE:
-        print("⏭️  test_bash_command_generation skipped - GOOGLE_DRIVE module not available")
+        print(f"test_bash_command_generation skipped - GOOGLE_DRIVE module not available")
         return
     
-    print("运行GDS bash命令生成测试")
+    print(f"运行GDS bash命令生成测试")
     
     # Test that shell commands work with various commands
     test_commands = get_test_commands()[:5]  # Test first 5 commands
@@ -297,7 +297,7 @@ def test_bash_command_generation():
         except Exception as e:
             print(f"Warning:  Command failed: {cmd_parts} - {e}")
     
-    print("test_bash_command_generation passed")
+    print(f"test_bash_command_generation passed")
 
 def test_google_drive_help_command():
     """Test Google Drive help functionality"""
@@ -318,12 +318,12 @@ def test_google_drive_help_command():
     except Exception as e:
         raise AssertionError(f"Help command failed: {e}")
     
-    print("test_google_drive_help_command passed")
+    print(f"test_google_drive_help_command passed")
 
 def test_google_drive_shell_command():
     """Test Google Drive shell command"""
     if not GOOGLE_DRIVE_AVAILABLE:
-        print("⏭️  test_google_drive_shell_command skipped - GOOGLE_DRIVE module not available")
+        print(f"test_google_drive_shell_command skipped - GOOGLE_DRIVE module not available")
         return
     
     parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -342,7 +342,7 @@ def test_google_drive_shell_command():
     except Exception as e:
         raise AssertionError(f"Shell help command failed: {e}")
     
-    print("test_google_drive_shell_command passed")
+    print(f"test_google_drive_shell_command passed")
 
 def test_google_drive_desktop_status():
     """Test Google Drive desktop status option"""
@@ -362,7 +362,7 @@ def test_google_drive_desktop_status():
     except Exception as e:
         raise AssertionError(f"Desktop status command failed: {e}")
     
-    print("test_google_drive_desktop_status passed")
+    print(f"test_google_drive_desktop_status passed")
 
 # Converted unittest tests to standalone functions
 
@@ -380,7 +380,7 @@ def test_help_option():
     assert "gds" in output, "Help should mention GDS (Google Drive Shell)"
     assert "shell" in output, "Help should mention shell functionality"
     
-    print("test_help_option passed")
+    print(f"test_help_option passed")
 
 def test_help_short_option():
     """Test -h option displays help information"""
@@ -394,7 +394,7 @@ def test_help_short_option():
     assert "google drive" in output, "Help should mention Google Drive"
     assert "usage" in output, "Help should show usage information"
     
-    print("test_help_short_option passed")
+    print(f"test_help_short_option passed")
 
 def test_invalid_arguments():
     """Test handling of invalid arguments"""
@@ -405,7 +405,7 @@ def test_invalid_arguments():
     # The important thing is that it doesn't crash
     assert result.returncode in [0, 1], "Tool should handle invalid arguments gracefully"
     
-    print("test_invalid_arguments passed")
+    print(f"test_invalid_arguments passed")
 
 def test_shell_help_command():
     """Test shell help command"""
@@ -420,7 +420,7 @@ def test_shell_help_command():
     for cmd in expected_commands:
         assert cmd in output, f"Help should mention {cmd} command"
     
-    print("test_shell_help_command passed")
+    print(f"test_shell_help_command passed")
 
 def test_my_drive_option():
     """Test -my option (should attempt to open My Drive)"""
@@ -432,7 +432,7 @@ def test_my_drive_option():
     # The important thing is that the option is recognized
     assert result.returncode in [0, 1], "My Drive option should be recognized"
     
-    print("test_my_drive_option passed")
+    print(f"test_my_drive_option passed")
 
 def test_desktop_status_option():
     """Test --desktop --status option"""
@@ -445,7 +445,7 @@ def test_desktop_status_option():
     output = result.stdout + result.stderr
     assert len(output.strip()) > 0, "Desktop status should provide some output"
     
-    print("test_desktop_status_option passed")
+    print(f"test_desktop_status_option passed")
 
 def test_list_shell():
     """Test --list-remote-shell option"""
@@ -458,7 +458,7 @@ def test_list_shell():
     output = result.stdout.lower()
     assert "shell" in output or "没有" in output or "not found" in output, "Should provide information about shell status"
     
-    print("test_list_shell passed")
+    print(f"test_list_shell passed")
 
 def test_tool_structure():
     """Test that the tool has proper structure"""
@@ -472,7 +472,7 @@ def test_tool_structure():
         content = f.read()
         assert 'if __name__ == "__main__"' in content or 'def main(' in content, "Tool should have main function or __main__ block"
     
-    print("test_tool_structure passed")
+    print(f"test_tool_structure passed")
 
 def test_run_environment_compatibility():
     """Test compatibility with RUN environment"""
@@ -512,7 +512,7 @@ def test_run_environment_compatibility():
         except json.JSONDecodeError:
             raise AssertionError("Output file should contain valid JSON")
     
-    print("test_run_environment_compatibility passed")
+    print(f"test_run_environment_compatibility passed")
 
 # Test management and execution
 
@@ -525,7 +525,7 @@ def test_shell_echo():
     assert result.returncode == 0, "Shell echo should return exit code 0"
     assert "Hello World" in result.stdout, "Echo should output the text"
     
-    print("test_shell_echo passed")
+    print(f"test_shell_echo passed")
 
 def test_shell_ls():
     """Test shell ls command"""
@@ -534,7 +534,7 @@ def test_shell_ls():
     assert result.returncode == 0, "Shell ls should return exit code 0"
     # ls should return some output (files or empty)
     
-    print("test_shell_ls passed")
+    print(f"test_shell_ls passed")
 
 def test_shell_pwd():
     """Test shell pwd command"""
@@ -543,7 +543,7 @@ def test_shell_pwd():
     assert result.returncode == 0, "Shell pwd should return exit code 0"
     assert "~" in result.stdout, "pwd should show current path"
     
-    print("test_shell_pwd passed")
+    print(f"test_shell_pwd passed")
 
 def test_shell_mkdir():
     """Test shell mkdir command"""
@@ -555,7 +555,7 @@ def test_shell_mkdir():
     # Should show success message
     assert ("创建" in result.stdout or "created" in result.stdout.lower()), "mkdir should show success message"
     
-    print("test_shell_mkdir passed")
+    print(f"test_shell_mkdir passed")
 
 def test_shell_cd():
     """Test shell cd command"""
@@ -564,7 +564,7 @@ def test_shell_cd():
     assert result.returncode == 0, "Shell cd should return exit code 0"
     assert ("切换" in result.stdout or "switched" in result.stdout.lower()), "cd should show success message"
     
-    print("test_shell_cd passed")
+    print(f"test_shell_cd passed")
 
 def test_shell_cd_parent():
     """Test shell cd .. command"""
@@ -573,7 +573,7 @@ def test_shell_cd_parent():
     assert result.returncode == 0, "Shell cd .. should return exit code 0"
     assert ("切换" in result.stdout or "switched" in result.stdout.lower()), "cd .. should show success message"
     
-    print("test_shell_cd_parent passed")
+    print(f"test_shell_cd_parent passed")
 
 def test_shell_rm():
     """Test shell rm command with nonexistent file"""
@@ -582,7 +582,7 @@ def test_shell_rm():
     assert result.returncode == 0, "Shell rm should return exit code 0"
     assert ("not exist" in result.stdout.lower() or "不存在" in result.stdout), "rm should handle nonexistent files"
     
-    print("test_shell_rm passed")
+    print(f"test_shell_rm passed")
 
 def test_desktop_launch():
     """Test desktop launch command"""
@@ -593,7 +593,7 @@ def test_desktop_launch():
     output_lower = result.stdout.lower()
     assert ("launched" in output_lower or "already" in output_lower or "启动" in result.stdout), "Launch should show appropriate message"
     
-    print("test_desktop_launch passed")
+    print(f"test_desktop_launch passed")
 
 def test_desktop_shutdown():
     """Test desktop shutdown command"""
@@ -604,7 +604,7 @@ def test_desktop_shutdown():
     output_lower = result.stdout.lower()
     assert ("closed" in output_lower or "stopped" in output_lower or "关闭" in result.stdout), "Shutdown should show appropriate message"
     
-    print("test_desktop_shutdown passed")
+    print(f"test_desktop_shutdown passed")
 
 def test_desktop_restart():
     """Test desktop restart command"""
@@ -613,7 +613,7 @@ def test_desktop_restart():
     assert result.returncode == 0, "Desktop restart should return exit code 0"
     assert ("restarted" in result.stdout.lower() or "重启" in result.stdout), "Restart should show success message"
     
-    print("test_desktop_restart passed")
+    print(f"test_desktop_restart passed")
 
 def test_create_shell():
     """Test creating remote shell"""
@@ -624,7 +624,7 @@ def test_create_shell():
     output_lower = result.stdout.lower()
     assert ("shell" in output_lower or "created" in output_lower or "创建" in result.stdout), "Should show shell creation message"
     
-    print("test_create_shell passed")
+    print(f"test_create_shell passed")
 
 def test_checkout_shell():
     """Test checkout remote shell"""
@@ -633,7 +633,7 @@ def test_checkout_shell():
     assert result.returncode == 0, "Checkout remote shell should return exit code 0"
     # Should handle checkout (success or not found)
     
-    print("test_checkout_shell passed")
+    print(f"test_checkout_shell passed")
 
 def test_terminate_shell():
     """Test terminate remote shell with nonexistent shell"""
@@ -642,7 +642,7 @@ def test_terminate_shell():
     assert result.returncode == 0, "Terminate should return exit code 0"
     assert ("not found" in result.stdout.lower() or "找不到" in result.stdout), "Should handle nonexistent shell"
     
-    print("test_terminate_shell passed")
+    print(f"test_terminate_shell passed")
 
 def test_shell_invalid_command():
     """Test shell with invalid command"""
@@ -651,7 +651,7 @@ def test_shell_invalid_command():
     assert result.returncode == 0, "Shell should handle invalid commands gracefully"
     assert ("未知命令" in result.stdout or "unknown" in result.stdout.lower()), "Should show unknown command message"
     
-    print("test_shell_invalid_command passed")
+    print(f"test_shell_invalid_command passed")
 
 def test_cd_without_argument():
     """Test cd command without argument"""
@@ -660,7 +660,7 @@ def test_cd_without_argument():
     assert result.returncode == 0, "Shell should handle cd without argument"
     assert ("需要指定路径" in result.stdout or "需要" in result.stdout), "Should show error for cd without argument"
     
-    print("test_cd_without_argument passed")
+    print(f"test_cd_without_argument passed")
 
 def test_mkdir_without_argument():
     """Test mkdir command without argument"""
@@ -669,7 +669,7 @@ def test_mkdir_without_argument():
     assert result.returncode == 0, "Shell should handle mkdir without argument"
     assert ("需要指定" in result.stdout or "需要" in result.stdout), "Should show error for mkdir without argument"
     
-    print("test_mkdir_without_argument passed")
+    print(f"test_mkdir_without_argument passed")
 
 def test_rm_without_argument():
     """Test rm command without argument"""
@@ -678,7 +678,7 @@ def test_rm_without_argument():
     assert result.returncode == 0, "Shell should handle rm without argument"
     assert ("需要指定" in result.stdout or "需要" in result.stdout), "Should show error for rm without argument"
     
-    print("test_rm_without_argument passed")
+    print(f"test_rm_without_argument passed")
 
 def test_echo_with_quotes():
     """Test echo command with quotes"""
@@ -687,7 +687,7 @@ def test_echo_with_quotes():
     assert result.returncode == 0, "Echo with quotes should work"
     assert "Hello World" in result.stdout, "Echo should output quoted text"
     
-    print("test_echo_with_quotes passed")
+    print(f"test_echo_with_quotes passed")
 
 def test_echo_empty():
     """Test echo command without arguments"""
@@ -696,7 +696,7 @@ def test_echo_empty():
     assert result.returncode == 0, "Empty echo should work"
     # Empty echo should just return success
     
-    print("test_echo_empty passed")
+    print(f"test_echo_empty passed")
 
 def test_upload_nonexistent_file():
     """Test upload nonexistent file"""
@@ -705,7 +705,7 @@ def test_upload_nonexistent_file():
     assert result.returncode == 0, "Upload should handle nonexistent files gracefully"
     # Should show some error indication in output
     
-    print("test_upload_nonexistent_file passed")
+    print(f"test_upload_nonexistent_file passed")
 
 def test_upload_with_test_file():
     """Test upload with actual test file"""
@@ -721,7 +721,7 @@ def test_upload_with_test_file():
         result = run_tool(["--upload", temp_file])
         assert result.returncode == 0, "Upload with valid file should work"
         
-        print("test_upload_with_test_file passed")
+        print(f"test_upload_with_test_file passed")
     finally:
         # Clean up
         if os.path.exists(temp_file):
@@ -790,109 +790,109 @@ class GoogleDriveUploadImprovementsTest(unittest.TestCase):
         print(f"Tool: Setting up upload test folder: ~/tmp/{cls.test_folder_name}")
         
         # Clean up any existing tmp folders
-        print("🧹 Cleaning up existing tmp folders...")
+        print(f"Cleaning up existing tmp folders...")
         cmd = ["python3", str(cls.GOOGLE_DRIVE_PY), "--shell", "rm", "-rf", "~/tmp"]
-        print(f"🗑️  Cleaning tmp directory: {' '.join(cmd)}")
-        print("👤 Please complete the tmp cleanup in the UI...")
+        print(f"Cleaning tmp directory: {' '.join(cmd)}")
+        print(f"👤 Please complete the tmp cleanup in the UI...")
         
         result = subprocess.run(cmd, cwd=cls.BIN_DIR)
         
         # Create fresh tmp structure
         cmd = ["python3", str(cls.GOOGLE_DRIVE_PY), "--shell", "mkdir", "-p", "~/tmp"]
         print(f"Creating ~/tmp: {' '.join(cmd)}")
-        print("👤 Please complete the tmp folder creation in the UI...")
+        print(f"👤 Please complete the tmp folder creation in the UI...")
         
         result = subprocess.run(cmd, cwd=cls.BIN_DIR)
         
         # Create the test folder
         cmd = ["python3", str(cls.GOOGLE_DRIVE_PY), "--shell", "mkdir", "-p", f"~/tmp/{cls.test_folder_name}"]
         print(f"Creating upload test folder: {' '.join(cmd)}")
-        print("👤 Please complete the test folder creation in the UI...")
+        print(f"👤 Please complete the test folder creation in the UI...")
         
         result = subprocess.run(cmd, cwd=cls.BIN_DIR)
         
         # Change to the test folder
         cmd = ["python3", str(cls.GOOGLE_DRIVE_PY), "--shell", "cd", f"~/tmp/{cls.test_folder_name}"]
-        print(f"📂 Changing to upload test folder: {' '.join(cmd)}")
-        print("👤 Please complete the directory change in the UI...")
+        print(f"Changing to upload test folder: {' '.join(cmd)}")
+        print(f"👤 Please complete the directory change in the UI...")
         
         result = subprocess.run(cmd, cwd=cls.BIN_DIR)
         
-        print("Upload test folder setup completed")
+        print(f"Upload test folder setup completed")
     
     @classmethod
     def tearDownClass(cls):
         """Clean up test environment"""
-        print(f"🧹 Cleaning up upload test environment...")
+        print(f"Cleaning up upload test environment...")
         
         # Clean up entire tmp folder
         cmd = ["python3", str(cls.GOOGLE_DRIVE_PY), "--shell", "rm", "-rf", "~/tmp"]
-        print(f"🗑️  Removing tmp directory: {' '.join(cmd)}")
-        print("👤 Please complete the cleanup in the UI...")
+        print(f"Removing tmp directory: {' '.join(cmd)}")
+        print(f"👤 Please complete the cleanup in the UI...")
         
         result = subprocess.run(cmd, cwd=cls.BIN_DIR)
-        print("Upload test environment cleanup completed")
+        print(f"Upload test environment cleanup completed")
     
     def test_01_basic_upload(self):
         """Test basic single file upload functionality"""
-        print("\n🧪 Testing basic upload functionality...")
-        print("📝 This test requires user interaction - please follow the prompts")
-        print("⏰ No timeout restrictions - take your time to complete the UI interactions")
+        print(f"\nTesting basic upload functionality...")
+        print(f"This test requires user interaction - please follow the prompts")
+        print(f"No timeout restrictions - take your time to complete the UI interactions")
         
         # Upload a single test file (no timeout)
         cmd = ["python3", str(self.GOOGLE_DRIVE_PY), "--shell", "upload", str(self.test_files[0])]
         print(f"Running: {' '.join(cmd)}")
-        print("👆 Please complete the upload process in the UI")
+        print(f"Please complete the upload process in the UI")
         
         result = subprocess.run(cmd, cwd=self.BIN_DIR)
         
         # Check if upload was successful by verifying the file exists remotely
-        print("🔍 Verifying upload result...")
+        print(f"Verifying upload result...")
         ls_cmd = ["python3", str(self.GOOGLE_DRIVE_PY), "--shell", "ls"]
         ls_result = subprocess.run(ls_cmd, cwd=self.BIN_DIR, capture_output=True, text=True)
         
         # Should find the uploaded file in the listing
         self.assertIn("test_upload_1.txt", ls_result.stdout)
-        print("Basic upload verified - file found in remote directory")
+        print(f"Basic upload verified - file found in remote directory")
     
     def test_02_multi_file_upload(self):
         """Test multi-file upload functionality"""
-        print("\n🧪 Testing multi-file upload...")
-        print("📝 This test requires user interaction - please follow the prompts")
-        print("⏰ No timeout restrictions - take your time to complete the UI interactions")
+        print(f"\nTesting multi-file upload...")
+        print(f"This test requires user interaction - please follow the prompts")
+        print(f"No timeout restrictions - take your time to complete the UI interactions")
         
         # Upload multiple test files (no timeout)
         cmd = ["python3", str(self.GOOGLE_DRIVE_PY), "--shell", "upload"] + [str(f) for f in self.test_files[1:3]]  # Upload files 2 and 3
         print(f"Running: {' '.join(cmd)}")
-        print("👆 Please complete the multi-file upload process in the UI")
+        print(f"Please complete the multi-file upload process in the UI")
         
         result = subprocess.run(cmd, cwd=self.BIN_DIR)
         
         # Check if all files were uploaded successfully
-        print("🔍 Verifying multi-file upload results...")
+        print(f"Verifying multi-file upload results...")
         ls_cmd = ["python3", str(self.GOOGLE_DRIVE_PY), "--shell", "ls"]
         ls_result = subprocess.run(ls_cmd, cwd=self.BIN_DIR, capture_output=True, text=True)
         
         # Should find both uploaded files
         self.assertIn("test_upload_2.txt", ls_result.stdout)
         self.assertIn("test_upload_3.txt", ls_result.stdout)
-        print("Multi-file upload verified - both files found in remote directory")
+        print(f"Multi-file upload verified - both files found in remote directory")
     
     def test_03_upload_folder_functionality(self):
         """Test upload-folder functionality"""
-        print("\n🧪 Testing upload-folder functionality...")
-        print("📝 This test requires user interaction - please follow the prompts")
-        print("⏰ No timeout restrictions - take your time to complete the UI interactions")
+        print(f"\nTesting upload-folder functionality...")
+        print(f"This test requires user interaction - please follow the prompts")
+        print(f"No timeout restrictions - take your time to complete the UI interactions")
         
         # Upload test folder (no timeout)
         cmd = ["python3", str(self.GOOGLE_DRIVE_PY), "--shell", "upload-folder", str(self.test_folder)]
         print(f"Running: {' '.join(cmd)}")
-        print("👆 Please complete the folder upload process in the UI")
+        print(f"Please complete the folder upload process in the UI")
         
         result = subprocess.run(cmd, cwd=self.BIN_DIR)
         
         # Check if folder was uploaded and extracted successfully
-        print("🔍 Verifying folder upload results...")
+        print(f"Verifying folder upload results...")
         # First check if the folder exists
         ls_root_cmd = ["python3", str(self.GOOGLE_DRIVE_PY), "--shell", "ls"]
         ls_root_result = subprocess.run(ls_root_cmd, cwd=self.BIN_DIR, capture_output=True, text=True)
@@ -905,43 +905,43 @@ class GoogleDriveUploadImprovementsTest(unittest.TestCase):
         # Should find the folder contents
         self.assertIn("folder_file1.txt", ls_result.stdout)
         self.assertIn("folder_file2.txt", ls_result.stdout)
-        print("Folder upload verified - folder contents found in remote directory")
+        print(f"Folder upload verified - folder contents found in remote directory")
     
     def test_04_upload_with_options(self):
         """Test upload with various options like --target-dir, --force"""
-        print("\n🧪 Testing upload with options...")
-        print("📝 This test requires user interaction - please follow the prompts")
-        print("⏰ No timeout restrictions - take your time to complete the UI interactions")
+        print(f"\nTesting upload with options...")
+        print(f"This test requires user interaction - please follow the prompts")
+        print(f"No timeout restrictions - take your time to complete the UI interactions")
         
         # Test --target-dir option (no timeout)
         cmd = ["python3", str(self.GOOGLE_DRIVE_PY), "--shell", "upload", "--target-dir", "test_target_dir", str(self.test_files[0])]
         print(f"Running: {' '.join(cmd)}")
-        print("👆 Please complete the upload with target directory")
+        print(f"Please complete the upload with target directory")
         
         result = subprocess.run(cmd, cwd=self.BIN_DIR)
         
         # Check if file was uploaded to the correct target directory
-        print("🔍 Verifying target directory upload...")
+        print(f"Verifying target directory upload...")
         ls_cmd = ["python3", str(self.GOOGLE_DRIVE_PY), "--shell", "ls", "test_target_dir"]
         ls_result = subprocess.run(ls_cmd, cwd=self.BIN_DIR, capture_output=True, text=True)
         
         # Should find the file in the target directory
         self.assertIn("test_upload_1.txt", ls_result.stdout)
-        print("Target directory upload verified - file found in specified directory")
+        print(f"Target directory upload verified - file found in specified directory")
         
         # Test file content integrity
-        print("🔍 Verifying file content integrity...")
+        print(f"Verifying file content integrity...")
         cat_cmd = ["python3", str(self.GOOGLE_DRIVE_PY), "--shell", "cat", "test_target_dir/test_upload_1.txt"]
         cat_result = subprocess.run(cat_cmd, cwd=self.BIN_DIR, capture_output=True, text=True)
         
         # Should contain the expected content
         self.assertIn("Test file 1 content", cat_result.stdout)
-        print("File content integrity verified")
+        print(f"File content integrity verified")
 
 
 def run_upload_improvements_tests():
     """Run only the upload improvements tests"""
-    print("🧪 Running Google Drive Upload Improvements tests...")
+    print(f"Running Google Drive Upload Improvements tests...")
     suite = unittest.TestLoader().loadTestsFromTestCase(GoogleDriveUploadImprovementsTest)
     runner = unittest.TextTestRunner(verbosity=2, stream=sys.stdout, buffer=False)
     result = runner.run(suite)
@@ -996,7 +996,7 @@ ALL_GOOGLE_DRIVE_TESTS = [
 
 def run_all_tests():
     """Run all Google Drive tests"""
-    print("🧪 Running all Google Drive tests...")
+    print(f"Running all Google Drive tests...")
     passed = 0
     failed = 0
     
@@ -1008,14 +1008,14 @@ def run_all_tests():
             print(f"Error: {test_func.__name__} failed: {e}")
             failed += 1
     
-    print(f"\n📊 Test Results: {passed} passed, {failed} failed")
+    print(f"\nTest Results: {passed} passed, {failed} failed")
     return failed == 0
 
 def run_specific_test(test_name: str):
     """Run a specific test by name"""
     for test_func in ALL_GOOGLE_DRIVE_TESTS:
         if test_func.__name__ == test_name:
-            print(f"🧪 Running {test_name}...")
+            print(f"Running {test_name}...")
             try:
                 test_func()
                 print(f"{test_name} passed")
@@ -1029,7 +1029,7 @@ def run_specific_test(test_name: str):
 
 def list_all_tests():
     """List all available tests"""
-    print("📋 Available Google Drive test functions:")
+    print(f"Available Google Drive test functions:")
     for i, test_func in enumerate(ALL_GOOGLE_DRIVE_TESTS, 1):
         print(f"  {i:2d}. {test_func.__name__}")
 
@@ -1077,15 +1077,15 @@ if __name__ == '__main__':
     elif args.upload_improvements:
         success = run_upload_improvements_tests()
     elif args.comprehensive:
-        print("🧪 Running comprehensive GDS tests...")
+        print(f"Running comprehensive GDS tests...")
         try:
             from test_gds_comprehensive import run_comprehensive_tests
             success = run_comprehensive_tests()
         except ImportError:
-            print("Error:  Comprehensive tests not available - test_gds_comprehensive.py not found")
+            print(f"Error:  Comprehensive tests not available - test_gds_comprehensive.py not found")
             success = False
     elif args.integration_only:
-        print("🧪 Running Google Drive integration test only...")
+        print(f"Running Google Drive integration test only...")
         if INTEGRATION_TEST_AVAILABLE:
             suite = unittest.TestSuite()
             suite.addTest(BinToolsIntegrationTest('test_07_google_drive'))
@@ -1093,7 +1093,7 @@ if __name__ == '__main__':
             result = runner.run(suite)
             success = result.wasSuccessful()
         else:
-            print("Error:  Integration tests not available - _TEST.py not found")
+            print(f"Error:  Integration tests not available - _TEST.py not found")
             success = False
     else:
         # Default: Run all tests

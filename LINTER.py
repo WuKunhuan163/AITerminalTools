@@ -850,7 +850,7 @@ def main():
                 print(f"WARNING: {warning}")
         
         if result['info']:
-            print("\nInfo:")
+            print(f"\nInfo:")
             for info in result['info']:
                 print(f"• {info}")
     

@@ -263,7 +263,7 @@ def main():
                 write_to_json_output(error_data, command_identifier)
             else:
                 print(f"Error: {error_msg}")
-                print("Use --help for usage information")
+                print(f"Use --help for usage information")
             return 1
     
     # 验证初始目录
@@ -293,7 +293,7 @@ def main():
                 }
                 write_to_json_output(result_data, command_identifier)
             else:
-                print("Error:  File selection cancelled")
+                print(f"Error:  File selection cancelled")
             return 1
         
         # 处理选择结果
@@ -308,7 +308,7 @@ def main():
                     }
                     write_to_json_output(result_data, command_identifier)
                 else:
-                    print("Error:  No files selected")
+                    print(f"Error:  No files selected")
                 return 1
             else:
                 # 选择了多个文件

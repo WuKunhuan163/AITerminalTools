@@ -32,9 +32,9 @@ class FileOperationsBase:
         """Check network connection - placeholder"""
         return True
         
-    def generate_remote_commands(self, *args, **kwargs):
+    def generate_commands(self, *args, **kwargs):
         """Generate remote commands - placeholder"""
-        return self.main_instance.generate_remote_commands(*args, **kwargs) if self.main_instance else None
+        return self.main_instance.generate_commands(*args, **kwargs) if self.main_instance else None
 
 class VenvApiManager:
     """虚拟环境API管理器 - 统一处理所有虚拟环境相关的API操作"""
@@ -280,10 +280,10 @@ mkdir -p "{self._get_venv_base_path()}" && {{
 }}
 '''
             
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", remote_command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", remote_command])
             
             if result.get("success"):
-                print("Venv states saved successfully")
+                print(f"Venv states saved successfully")
                 return True
             else:
                 print(f"Failed to save venv states: {result.get('error', 'Unknown error')}")
@@ -315,7 +315,7 @@ mkdir -p "{self._get_venv_base_path()}" && {{
             # 回退到远程命令
             state_file = self._get_venv_state_file_path()
             check_command = f'cat "{{state_file}}" 2>/dev/null || echo "{{}}"'
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", check_command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", check_command])
             if result.get("success") and result.get("stdout"):
                 stdout_content = result["stdout"].strip()
                 try:
@@ -348,13 +348,13 @@ mkdir -p "{self._get_venv_base_path()}" && {{
             # 确保目录存在
             venv_dir = f"{self._get_venv_base_path()}"
             mkdir_command = f'mkdir -p "{venv_dir}"'
-            mkdir_result = self.main_instance.execute_generic_remote_command("bash", ["-c", mkdir_command])
+            mkdir_result = self.main_instance.execute_generic_command("bash", ["-c", mkdir_command])
             print(f"创建目录结果: {mkdir_result}")
             
             # 写入初始JSON文件
             json_content = json.dumps(initial_structure, indent=2, ensure_ascii=False)
             create_command = f'cat > "{state_file}" << \'EOF\'\n{json_content}\nEOF'
-            create_result = self.main_instance.execute_generic_remote_command("bash", ["-c", create_command])
+            create_result = self.main_instance.execute_generic_command("bash", ["-c", create_command])
             print(f"Create JSON file result: {create_result}")
             
             if create_result.get("success"):
@@ -418,7 +418,7 @@ mkdir -p "{self._get_venv_base_path()}" && {{
             ]
             
             command_script = " && ".join(commands)
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", command_script])
+            result = self.main_instance.execute_generic_command("bash", ["-c", command_script])
             
             return result.get("success", False)
             
@@ -447,7 +447,7 @@ mkdir -p "{self._get_venv_base_path()}" && {{
             
             # 通过远程命令检查虚拟环境状态文件
             check_command = f'cat "{current_venv_file}" 2>/dev/null || echo "none"'
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", check_command])
+            result = self.main_instance.execute_generic_command("bash", ["-c", check_command])
             
             if result.get("success") and result.get("stdout"):
                 venv_name = result["stdout"].strip()

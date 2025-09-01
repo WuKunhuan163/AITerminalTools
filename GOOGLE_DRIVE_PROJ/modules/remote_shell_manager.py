@@ -24,7 +24,7 @@ except ImportError:
     except ImportError:
         # 如果导入失败，定义简单的fallback函数
         def shell_pwd():
-            print("~/")
+            print(f"~/")
         def shell_rm(path, recursive=False):
             print(f"rm: {path}")
 
@@ -101,7 +101,7 @@ def get_multiline_input_safe(prompt, single_line=False):
             
     except KeyboardInterrupt:
         # Ctrl+C被按下
-        print("\n输入已取消")
+        print(f"\n输入已取消")
         return None
     except Exception as e:
         print(f"\n输入错误: {e}")
@@ -312,7 +312,7 @@ def checkout_shell(shell_id, command_identifier=None):
         #     if result["success"]:
         #         print(result["message"])
         #         if "current_path" in result:
-        #             print(f"📍 当前路径: {result['current_path']}")
+        #             print(f"当前路径: {result['current_path']}")
         #     else:
         #         print(f"Error: {result['error']}")
         
@@ -500,7 +500,7 @@ def enter_shell_mode(command_identifier=None):
         
         if not current_shell:
             # 如果没有活跃shell，创建一个默认的
-            print("🚀 No active remote shell, creating default shell...")
+            print(f"No active remote shell, creating default shell...")
             create_result = create_shell("default_shell", None, None)
             if create_result != 0:
                 error_msg = "❌ Failed to create default shell"
@@ -524,7 +524,7 @@ def enter_shell_mode(command_identifier=None):
             return 0
         else:
             # 在直接执行模式下，启动交互式shell
-            print("Enter 'help' to view available commands, enter 'exit' to exit")
+            print(f"Enter 'help' to view available commands, enter 'exit' to exit")
             
             while True:
                 try:
@@ -573,7 +573,7 @@ def enter_shell_mode(command_identifier=None):
                     cmd = parts[0].lower()
                     
                     if cmd == "exit":
-                        # print("👋 Exit Google Drive Shell")
+                        # print(f"👋 Exit Google Drive Shell")
                         break
                     else:
                         # 使用GoogleDriveShell的execute_shell_command方法处理所有命令
@@ -589,16 +589,16 @@ def enter_shell_mode(command_identifier=None):
                             
                             # 如果命令执行失败，显示帮助提示
                             if result_code != 0:
-                                print("💡 Enter 'help' to view available commands")
+                                print(f"Enter 'help' to view available commands")
                         except Exception as e:
                             print(f"Error executing command '{cmd}': {e}")
-                            print("💡 Enter 'help' to view available commands")
+                            print(f"Enter 'help' to view available commands")
                     
                 except KeyboardInterrupt:
-                    print("\n👋 Exited Google Drive Shell")
+                    print(f"\n👋 Exited Google Drive Shell")
                     break
                 except EOFError:
-                    print("\n👋 Exited Google Drive Shell")
+                    print(f"\n👋 Exited Google Drive Shell")
                     break
             
             return 0

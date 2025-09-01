@@ -81,74 +81,6 @@ def test_drive_folder_access(folder_id):
         print(f"Test folder access failed: {e}")
         return False
 
-def test_upload_workflow(drive_equivalent_path, drive_equivalent_folder_id, command_identifier=None):
-    """测试上传工作流程"""
-    try:
-        print("🧪 测试上传工作流程...")
-        
-        # 创建测试文件
-        import tempfile
-        test_content = f"Upload test at {time.strftime('%Y-%m-%d %H:%M:%S')}\nDrive equivalent: {drive_equivalent_path}"
-        
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt', prefix='upload_test_') as f:
-            f.write(test_content)
-            test_file_path = f.name
-        
-        test_filename = os.path.basename(test_file_path)
-        
-        try:
-            # 临时更新shell配置
-            shell = GoogleDriveShell()
-            original_drive_equivalent = shell.DRIVE_EQUIVALENT
-            original_drive_equivalent_folder_id = shell.DRIVE_EQUIVALENT_FOLDER_ID
-            
-            # 更新配置
-            shell.DRIVE_EQUIVALENT = drive_equivalent_path
-            shell.DRIVE_EQUIVALENT_FOLDER_ID = drive_equivalent_folder_id
-            
-            print(f"📤 上传测试文件: {test_filename}")
-            
-            # 使用shell的upload命令测试上传到.upload-test目录
-            upload_result = shell.cmd_upload([test_file_path], ".upload-test")
-            
-            # 恢复原配置
-            shell.DRIVE_EQUIVALENT = original_drive_equivalent
-            shell.DRIVE_EQUIVALENT_FOLDER_ID = original_drive_equivalent_folder_id
-            
-            # 清理本地测试文件
-            if os.path.exists(test_file_path):
-                os.unlink(test_file_path)
-            
-            if upload_result.get("success", False):
-                print("Upload test successful")
-                return {
-                    "success": True,
-                    "message": "Upload workflow test passed",
-                    "test_file": test_filename,
-                    "upload_details": upload_result
-                }
-            else:
-                print(f"Error: Upload test failed: {upload_result.get('error', 'Unknown error')}")
-                return {
-                    "success": False,
-                    "error": f"Upload test failed: {upload_result.get('error', 'Unknown error')}",
-                    "upload_details": upload_result
-                }
-                
-        except Exception as e:
-            if os.path.exists(test_file_path):
-                os.unlink(test_file_path)
-            return {
-                "success": False,
-                "error": f"Upload test error: {e}"
-            }
-            
-    except Exception as e:
-        return {
-            "success": False,
-            "error": f"Error preparing upload test: {e}"
-        }
-
 def open_google_drive(url=None, command_identifier=None):
     """打开Google Drive"""
     
@@ -170,9 +102,6 @@ def open_google_drive(url=None, command_identifier=None):
             
             if is_run_environment(command_identifier):
                 write_to_json_output(success_data, command_identifier)
-            else:
-                print(f"Opening Google Drive: {url}")
-                print("Google Drive opened successfully in browser")
             return 0
         else:
             error_data = {
@@ -203,7 +132,7 @@ def open_google_drive(url=None, command_identifier=None):
 def test_drive_service():
     """测试Google Drive服务"""
     try:
-        print("🧪 正在测试Google Drive API连接...")
+        print(f"Testing Google Drive API连接...")
         
         # 创建服务实例
         drive_service = GoogleDriveService()
@@ -212,12 +141,12 @@ def test_drive_service():
         result = drive_service.test_connection()
         
         if result['success']:
-            print("API connection test successful")
-            print(f"📧 Service account email: {result.get('user_email', 'Unknown')}")
-            print(f"👤 User name: {result.get('user_name', 'Unknown')}")
+            print(f"API connection test successful")
+            print(f"Service account email: {result.get('user_email', 'Unknown')}")
+            print(f"User name: {result.get('user_name', 'Unknown')}")
             
             # 测试列出文件
-            print("\n📂 Testing file list function...")
+            print(f"\nTesting file list function...")
             files_result = drive_service.list_files(max_results=5)
             
             if files_result['success']:
@@ -400,8 +329,8 @@ def list_drive_files(command_identifier=None, max_results=10):
                     "count": result['count']
                 }, command_identifier)
             else:
-                print(f"📂 Google Drive file list (first {max_results} files):")
-                print("-" * 50)
+                print(f"Google Drive file list (first {max_results} files):")
+                print(f"-" * 50)
                 for file in result['files']:
                     file_type = "📁" if file['mimeType'] == 'application/vnd.google-apps.folder' else "📄"
                     print(f"{file_type} {file['name']}")
@@ -524,7 +453,7 @@ def delete_drive_file(file_id, command_identifier=None):
                 }, command_identifier)
             else:
                 print(success_msg)
-                print(f"🗑️ Deleted file ID: {file_id}")
+                print(f"Deleted file ID: {file_id}")
             return 0
         else:
             error_msg = f"❌ File delete failed: {result['error']}"

@@ -36,20 +36,20 @@ class TestNetworkTool(unittest.TestCase):
 
     def test_01_network_tool_exists(self):
         """Test that NETWORK tool exists and is accessible"""
-        print("🧪 Test 01: NETWORK tool existence and accessibility")
+        print(f"Test 01: NETWORK tool existence and accessibility")
         self.assertTrue(os.path.exists(self.network_path), "NETWORK tool should exist")
         self.assertTrue(os.access(self.network_path, os.R_OK), "NETWORK tool should be readable")
 
     def test_02_test_command(self):
         """Test the test command"""
-        print("🧪 Test 02: NETWORK test command")
+        print(f"Test 02: NETWORK test command")
         result = self.run_network_command(['--test'])
         self.assertEqual(result.returncode, 0, f"Test command failed: {result.stderr}")
         self.assertIn("Network Test Results", result.stdout)
 
     def test_03_test_command_output_format(self):
         """Test that test command produces expected output format"""
-        print("🧪 Test 03: NETWORK test command output format")
+        print(f"Test 03: NETWORK test command output format")
         result = self.run_network_command(['--test'], timeout=60)
         self.assertEqual(result.returncode, 0, f"Test command failed: {result.stderr}")
         
@@ -64,7 +64,7 @@ class TestNetworkTool(unittest.TestCase):
 
     def test_04_network_data_file_creation(self):
         """Test that network test creates data file"""
-        print("🧪 Test 04: Network data file creation")
+        print(f"Test 04: Network data file creation")
         
         # Run test
         result = self.run_network_command(['--test'], timeout=60)
@@ -95,7 +95,7 @@ class TestNetworkTool(unittest.TestCase):
 
     def test_05_invalid_command(self):
         """Test handling of invalid commands"""
-        print("🧪 Test 05: Invalid command handling")
+        print(f"Test 05: Invalid command handling")
         result = self.run_network_command(['invalid_command_xyz'])
         self.assertNotEqual(result.returncode, 0, "Invalid command should fail")
         # Should contain error message
@@ -106,7 +106,7 @@ class TestNetworkTool(unittest.TestCase):
 
     def test_06_no_arguments(self):
         """Test behavior when no arguments are provided"""
-        print("🧪 Test 06: No arguments handling")
+        print(f"Test 06: No arguments handling")
         result = self.run_network_command([])
         self.assertNotEqual(result.returncode, 0, "Command without arguments should show usage and fail")
         # Should contain usage information
@@ -117,7 +117,7 @@ class TestNetworkTool(unittest.TestCase):
 
     def test_07_network_tester_class_interface(self):
         """Test NetworkTester class can be imported and used"""
-        print("🧪 Test 07: NetworkTester class interface")
+        print(f"Test 07: NetworkTester class interface")
         
         # Test that we can import and use the NetworkTester class
         import sys

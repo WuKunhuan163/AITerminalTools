@@ -335,7 +335,7 @@ def main():
             else:
                 if processes:
                     print(f"\nActive processes ({len(processes)}):")
-                    print("-" * 80)
+                    print(f"-" * 80)
                     for proc in processes:
                         print(f"PID: {proc['pid']:<8} | "
                               f"Status: {proc['status']:<10} | "
@@ -344,9 +344,9 @@ def main():
                               f"Runtime: {proc['runtime']}")
                         print(f"Command: {proc['command']}")
                         print(f"Log: {proc['log_file']}")
-                        print("-" * 80)
+                        print(f"-" * 80)
                 else:
-                    print("No active processes")
+                    print(f"No active processes")
         
         elif args.kill is not None:
             success = manager.kill_process(args.kill)
@@ -390,7 +390,7 @@ def main():
             parser.print_help()
     
     except KeyboardInterrupt:
-        print("\nOperation interrupted by user")
+        print(f"\nOperation interrupted by user")
         sys.exit(1)
     except Exception as e:
         if args.json:

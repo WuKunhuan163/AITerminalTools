@@ -439,7 +439,7 @@ def main():
         if args.json:
             print(json.dumps(stats, indent=2))
         else:
-            print("API Rate Limiting Statistics:")
+            print(f"API Rate Limiting Statistics:")
             print(f"  Total API calls: {stats['total_calls']}")
             print(f"  Delayed calls: {stats['delayed_calls']}")
             print(f"  Currently queued: {stats['queued_calls']}")
@@ -453,7 +453,7 @@ def main():
     
     if args.command == "test":
         # Test connection and basic functionality
-        print("Testing PyPI API connection...")
+        print(f"Testing PyPI API connection...")
         test_packages = ["requests", "numpy", "pandas"]
         
         for pkg in test_packages:
@@ -464,11 +464,11 @@ def main():
             else:
                 print(f"Error: Package not found")
         
-        print("\nTest completed.")
+        print(f"\nTest completed.")
         return
     
     if not args.package and not args.packages:
-        print("Error: Package name required for this command")
+        print(f"Error: Package name required for this command")
         return
     
     if args.command == "info":
@@ -523,7 +523,7 @@ def main():
     
     elif args.command == "batch":
         if not args.packages:
-            print("Error: --packages required for batch command")
+            print(f"Error: --packages required for batch command")
             return
         
         print(f"Processing {len(args.packages)} packages...")

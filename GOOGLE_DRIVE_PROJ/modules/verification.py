@@ -39,45 +39,33 @@ class Verification:
     
     def _verify_creation_with_ls(self, path, current_shell, max_attempts=60, creation_type="file"):
         """使用GDS ls统一验证文件或目录创建"""
-        import time
         
         try:
-            # 输出验证进度提示
-            if creation_type == "dir":
-                print("⏳ Validating dir creation ...", end="", flush=True)
-            else:
-                print("⏳ Validating file creation ...", end="", flush=True)
-            
-            # 简化验证逻辑：直接使用FileCore的cmd_ls验证路径是否存在
-            for attempt in range(max_attempts):
-                if attempt > 0:
-                    time.sleep(1)
-                    print(".", end="", flush=True)
-                
-                # 使用FileCore的cmd_ls直接检查路径是否存在
-                # cmd_ls有统一的路径解析功能，不需要手动解析
+            # 定义验证函数
+            def validate():
                 ls_result = self.main_instance.cmd_ls(path, detailed=False, recursive=False)
-                
-                if ls_result["success"]:
-                    # 如果ls成功，说明路径存在
-                    print("√")  # 成功标记
-                    return {
-                        "success": True,
-                        "message": f"Creation verified: {path}",
-                        "attempts": attempt + 1
-                    }
-                # 如果ls失败，继续重试
+                return ls_result["success"]
             
-            # 所有重试都失败了
-            print("✗")  # 失败标记
-            return {
-                "success": False,
-                "error": f"Path '{path}' not found after {max_attempts} verification attempts",
-                "attempts": max_attempts
-            }
+            # 使用统一的验证接口
+            from .progress_manager import validate_creation
+            result = validate_creation(validate, path, max_attempts, creation_type)
+            
+            # 转换返回格式以保持兼容性
+            if result["success"]:
+                return {
+                    "success": True,
+                    "message": f"Creation verified: {path}",
+                    "attempts": result["attempts"]
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": f"Path '{path}' not found after {max_attempts} verification attempts",
+                    "attempts": result["attempts"]
+                }
             
         except Exception as e:
-            print("✗")  # 失败标记
+            print(f"Error:")  # 失败标记
             return {
                 "success": False,
                 "error": f"Verification process error: {e}"
@@ -97,7 +85,7 @@ class Verification:
                 
                 if target_folder_id:
                     # 路径解析成功，说明目录存在
-                    print("√")
+                    print(f"√")
                     return {
                         "success": True,
                         "message": f"Validation successful, directory created: {path}",
@@ -106,20 +94,20 @@ class Verification:
                         "attempts": 1
                     }
                 else:
-                    print("✗")
+                    print(f"Error:")
                     return {
                         "success": False,
                         "error": f"Validation failed, directory not found: {path}"
                     }
             except Exception as resolve_error:
-                print("✗")
+                print(f"Error:")
                 return {
                     "success": False,
                     "error": f"Validation failed, path resolution error: {resolve_error}"
                 }
                 
         except Exception as e:
-            print("✗")
+            print(f"Error:")
             return {
                 "success": False,
                 "error": f"Recursive verification error: {e}"

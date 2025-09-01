@@ -131,7 +131,7 @@ def show_prompt_header(project_name):
     print(f"{separator}")
     print(f"{title}")
     print(f"{separator}")
-    print("\nEnter your next prompt. Press Ctrl+D (EOF) when done.")
+    print(f"\nEnter your next prompt. Press Ctrl+D (EOF) when done.")
 
 def show_tkinter_window_in_subprocess(project_name, timeout_seconds):
     """在子进程中显示tkinter窗口，抑制所有stdout/stderr输出"""
@@ -297,10 +297,10 @@ try:
     root.mainloop()
     
     # 输出结果（用户是否点击了按钮）
-    print("clicked")
+    print(f"clicked")
     
 except Exception as e:
-    print("error")
+    print(f"error")
 '''
     
     try:
@@ -513,7 +513,7 @@ def get_user_input_via_terminal(project_name):
     
     # 清理屏幕
     if not is_run_environment():
-        print("\n" + "="*50)
+        print(f"\n" + "="*50)
     return full_input or "stop"  # 空输入转为stop
 
 def write_to_json_output(user_input, command_identifier=None):
@@ -552,7 +552,7 @@ def write_to_json_output(user_input, command_identifier=None):
 
 def show_help():
     """显示帮助信息"""
-    print("""USERINPUT - User Input Script for Cursor AI
+    print(f"""USERINPUT - User Input Script for Cursor AI
 
 Usage:
   USERINPUT                    Get user input interactively (3-minute timeout)
@@ -619,10 +619,10 @@ def main():
                     timeout_override = int(args[i + 1])
                     i += 2  # Skip both --timeout and its value
                 except ValueError:
-                    print("Error: --timeout requires a numeric value")
+                    print(f"Error: --timeout requires a numeric value")
                     return
             else:
-                print("Error: --timeout requires a value")
+                print(f"Error: --timeout requires a value")
                 return
         else:
             remaining_args.append(args[i])
@@ -661,7 +661,7 @@ def main():
     
     if is_run_environment(command_identifier):
         if not write_to_json_output(user_input, command_identifier):
-            print("Failed to write user input to JSON file.")
+            print(f"Failed to write user input to JSON file.")
             print(user_input)
     else:
         # 不在 RUN 环境中，直接输出到 stdout（保持原有行为）

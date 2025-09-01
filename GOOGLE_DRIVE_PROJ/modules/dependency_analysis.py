@@ -163,7 +163,7 @@ class DependencyAnalysis:
                 from PYPI import PyPIClient
                 self._pypi_client = PyPIClient()
             except ImportError:
-                print("Warning: PYPI tool not available, falling back to direct API calls")
+                print(f"Warning: PYPI tool not available, falling back to direct API calls")
                 self._pypi_client = None
         return self._pypi_client
 
@@ -183,7 +183,7 @@ class DependencyAnalysis:
                 return False
         except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as e:
             # pipdeptree command not found
-            print("💡 Please install pipdeptree with: pip install pipdeptree")
+            print(f"Please install pipdeptree with: pip install pipdeptree")
             return False
 
     def _get_package_dependencies_with_pipdeptree(self, package_name, installed_packages=None):
@@ -260,7 +260,7 @@ class DependencyAnalysis:
             
             # 构建远程pip show命令
             pip_show_cmd = f"pip show {package_name}"
-            result = self.main_instance.execute_generic_remote_command("bash", ["-c", pip_show_cmd])
+            result = self.main_instance.execute_generic_command("bash", ["-c", pip_show_cmd])
             
             if not result.get("success"):
                 # Remote pip show failed
@@ -1029,7 +1029,7 @@ class DependencyAnalysis:
 
     def _fallback_dependency_analysis(self, packages):
         """回退的依赖分析（当pipdeptree不可用时）"""
-        print("Using fallback dependency analysis")
+        print(f"Using fallback dependency analysis")
         dependencies = {}
         dependencies_by_level = {}
         
@@ -1178,7 +1178,7 @@ class DependencyAnalysis:
             
             # 使用基于深度的依赖分析
             # 首先检查包是否存在
-            print("Checking package existence...")
+            print(f"Checking package existence...")
             nonexistent_packages = []
             for package in packages:
                 base_name = package.split('==')[0].split('>=')[0].split('<=')[0].split('>')[0].split('<')[0].split('!=')[0]
@@ -1414,6 +1414,6 @@ class DependencyAnalysis:
                                 ellipsis_prefix = "              " if is_last_direct else "   │          "
                                 print(f"{ellipsis_prefix}└─ ... ({len(sub_deps) - 4} more)")
             else:
-                print("   └─ No dependencies")
+                print(f"   └─ No dependencies")
         else:
-            print("   └─ Package not in known dependencies database")
+            print(f"   └─ Package not in known dependencies database")

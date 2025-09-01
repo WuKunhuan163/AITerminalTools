@@ -35,7 +35,7 @@ class NetworkTester:
             dict: Network test results in English
         """
         try:
-            print("Testing network connection...")
+            print(f"Testing network connection...")
             
             # Test latency (ping)
             latency_ms = self._test_latency()
@@ -209,9 +209,9 @@ def main():
     """Main function for NETWORK tool"""
     
     if len(sys.argv) < 2:
-        print("Usage: python NETWORK.py [--test]")
-        print("Options:")
-        print("  --test    Run network speed and latency test")
+        print(f"Usage: python NETWORK.py [--test]")
+        print(f"Options:")
+        print(f"  --test    Run network speed and latency test")
         sys.exit(1)
     
     tester = NetworkTester()

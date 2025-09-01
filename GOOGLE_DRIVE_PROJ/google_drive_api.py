@@ -403,7 +403,7 @@ class GoogleDriveService:
 def test_drive_service():
     """测试Google Drive服务"""
     try:
-        print("🧪 Testing Google Drive API connection...")
+        print(f"Testing Google Drive API connection...")
         
         # 创建服务实例
         drive_service = GoogleDriveService()
@@ -412,18 +412,18 @@ def test_drive_service():
         result = drive_service.test_connection()
         
         if result['success']:
-            print("API connection test successful!")
-            print(f"📧 Service account email: {result.get('user_email', 'Unknown')}")
-            print(f"👤 User name: {result.get('user_name', 'Unknown')}")
+            print(f"API connection test successful!")
+            print(f"Service account email: {result.get('user_email', 'Unknown')}")
+            print(f"User name: {result.get('user_name', 'Unknown')}")
             
             # 测试列出文件
-            print("\n📂 Testing file list...")
+            print(f"\nTesting file list...")
             files_result = drive_service.list_files(max_results=5)
             
             if files_result['success']:
                 print(f"File list retrieval successful! Found {files_result['count']} files")
                 for file in files_result['files'][:3]:  # 显示前3个文件
-                    print(f"   📄 {file['name']} ({file['mimeType']})")
+                    print(f"{file['name']} ({file['mimeType']})")
             else:
                 print(f"Error: File list retrieval failed: {files_result['error']}")
             

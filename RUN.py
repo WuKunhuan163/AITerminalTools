@@ -281,7 +281,7 @@ def parse_arguments(args_list):
 
 def show_help():
     """显示帮助信息"""
-    print("""
+    print(f"""
 RUN - Universal Command Wrapper
 
 Usage:
@@ -335,7 +335,7 @@ def main():
         return exit_code
         
     except KeyboardInterrupt:
-        print("\nOperation cancelled", file=sys.stderr)
+        print(f"\nOperation cancelled", file=sys.stderr)
         return 130
     except Exception as e:
         print(f"RUN error: {e}", file=sys.stderr)

@@ -753,12 +753,12 @@ def main():
             print(json.dumps(stats, indent=2))
         else:
             if stats.get('cache_available'):
-                print("Cache Statistics:")
+                print(f"Cache Statistics:")
                 print(f"  Total cached images: {stats.get('total_cached_images', 0)}")
                 print(f"  Total size: {stats.get('total_size_mb', 0)} MB")
                 print(f"  Cache directory: {stats.get('cache_dir', 'N/A')}")
             else:
-                print("Cache system not available")
+                print(f"Cache system not available")
         return
     
     # Clear cache if requested
@@ -786,7 +786,7 @@ def main():
                 if args.json or is_run_environment(command_identifier):
                     print(json.dumps(result, indent=2))
                 else:
-                    print("Cache cleared successfully")
+                    print(f"Cache cleared successfully")
             except Exception as e:
                 result = {"success": False, "error": f"Failed to clear cache: {e}"}
                 if args.json or is_run_environment(command_identifier):
@@ -798,7 +798,7 @@ def main():
             if args.json or is_run_environment(command_identifier):
                 print(json.dumps(result, indent=2))
             else:
-                print("Error:  Cache system not available")
+                print(f"Error:  Cache system not available")
         return
     
     # Check for image path
@@ -840,7 +840,7 @@ def main():
                     f.write(output)
                 else:
                     json.dump(result, f, indent=2, ensure_ascii=False)
-            print(f"💾 Result saved to: {args.output}")
+            print(f"Result saved to: {args.output}")
         except Exception as e:
             print(f"Error: Failed to save file: {e}")
 

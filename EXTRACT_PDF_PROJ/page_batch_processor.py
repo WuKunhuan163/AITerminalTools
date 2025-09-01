@@ -156,7 +156,7 @@ class PageBatchProcessor:
             # 更新输出目录（可能有变化）
             batch_progress.output_dir = str(output_dir)
             batch_progress.updated_time = time.time()
-            print(f"📂 Found existing progress: {len([p for p in batch_progress.pages.values() if p.status == 'completed'])}/{batch_progress.total_pages} pages completed")
+            print(f"Found existing progress: {len([p for p in batch_progress.pages.values() if p.status == 'completed'])}/{batch_progress.total_pages} pages completed")
             return batch_progress
         
         # 创建新的批处理进度
@@ -371,7 +371,7 @@ class PageBatchProcessor:
         pending_pages = self.get_pending_pages(batch_progress)
         
         if not pending_pages:
-            print("All pages processed successfully")
+            print(f"All pages processed successfully")
             # 合并输出
             final_output = output_dir / f"{pdf_path.stem}_merged.md"
             if self.merge_page_outputs(batch_progress, final_output):
@@ -379,11 +379,11 @@ class PageBatchProcessor:
             else:
                 return True, "All pages processed, but merge outputs failed"
         
-        print(f"📋 Start processing {len(pending_pages)} pending pages...")
+        print(f"Start processing {len(pending_pages)} pending pages...")
         
         # 处理每个页面
         for i, page_num in enumerate(pending_pages, 1):
-            print(f"\n🔄 Process page {page_num} ({i}/{len(pending_pages)})")
+            print(f"\nProcess page {page_num} ({i}/{len(pending_pages)})")
             
             # 更新状态为处理中
             self.update_page_status(batch_progress, page_num, 'processing')
@@ -406,10 +406,10 @@ class PageBatchProcessor:
             completed_count = len([p for p in batch_progress.pages.values() if p.status == 'completed'])
             total_count = len(batch_progress.pages)
             progress_percent = (completed_count / total_count) * 100
-            print(f"📊 Total progress: {completed_count}/{total_count} ({progress_percent:.1f}%)")
+            print(f"Total progress: {completed_count}/{total_count} ({progress_percent:.1f}%)")
         
         # 最终合并
-        print(f"\n🔗 Merge all page outputs...")
+        print(f"\nMerge all page outputs...")
         final_output = output_dir / f"{pdf_path.stem}_merged.md"
         if self.merge_page_outputs(batch_progress, final_output):
             return True, f"Batch processing completed, output file: {final_output}"
@@ -453,7 +453,7 @@ class PageBatchProcessor:
         
         if cleaned_count > 0:
             self.save_progress(progress_dict)
-            print(f"🧹 Cleaned {cleaned_count} old batch records")
+            print(f"Cleaned {cleaned_count} old batch records")
 
 def main():
     """测试函数"""
@@ -467,7 +467,7 @@ def main():
         success, message = processor.process_pdf_batch(pdf_path, output_dir, page_range="1-5")
         print(f"Result: {success}, message: {message}")
     else:
-        print("Test PDF file does not exist")
+        print(f"Test PDF file does not exist")
 
 if __name__ == "__main__":
     main()

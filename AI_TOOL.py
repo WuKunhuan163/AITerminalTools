@@ -109,11 +109,11 @@ class BinManager:
         """List all tools"""
         
         if not self.tools:
-            print("No tools registered")
+            print(f"No tools registered")
             return
         
         print(f"Registered Tools ({len(self.tools)}):")
-        print("=" * 50)
+        print(f"=" * 50)
         
         for name, tool in self.tools.items():
             run_status = "RUN Compatible" if tool.get('run_compatible', True) else "Not RUN Compatible"
@@ -140,11 +140,11 @@ class BinManager:
         if 'tool_use_scenario' in tool:
             print(f"Use Scenario: {tool['tool_use_scenario']}")
         print()
-        print("Examples:")
+        print(f"Examples:")
         for example in tool['examples']:
             print(f"  {example}")
         print()
-        print("Files:")
+        print(f"Files:")
         for file_type, filename in tool['files'].items():
             print(f"  {file_type}: {filename}")
         
@@ -390,14 +390,14 @@ class BinManager:
             tools_to_test = list(changes.keys())
         
         if not tools_to_test:
-            print("No tools need testing")
+            print(f"No tools need testing")
             return True
         
-        print(f"🧪 Running automated tests for {len(tools_to_test)} tool(s)...")
+        print(f"Running automated tests for {len(tools_to_test)} tool(s)...")
         
         test_results = {}
         for tool in tools_to_test:
-            print(f"\n🔧 Testing {tool}...")
+            print(f"\nTesting {tool}...")
             
             # 检查工具文件是否存在
             files_exist = self.check_tool_files(tool)
@@ -525,8 +525,8 @@ class BinManager:
             'not_found': []
         }
         
-        print("🔧 Initializing tool permissions...")
-        print("=" * 40)
+        print(f"Initializing tool permissions...")
+        print(f"=" * 40)
         
         bin_dir = Path(__file__).parent
         
@@ -563,18 +563,18 @@ class BinManager:
                     results['failed'].append(f"{tool_name}.py: {e}")
                     print(f"Error: {tool_name}.py: Python file permissions set failed - {e}")
         
-        print("\n📊 Initialization results:")
+        print(f"\nInitialization results:")
         print(f"Success: {len(results['success'])} files")
         print(f"Error: Failed: {len(results['failed'])} files")
         print(f"Warning:  Not found: {len(results['not_found'])} files")
         
         if results['failed']:
-            print("\n❌ Failed details:")
+            print(f"\nError: Failed details:")
             for item in results['failed']:
                 print(f"  - {item}")
         
         if results['not_found']:
-            print("\n⚠️  Not found files:")
+            print(f"\nWarning: Not found files:")
             for item in results['not_found']:
                 print(f"  - {item}")
         
@@ -582,7 +582,7 @@ class BinManager:
 
 def show_help():
     """显示帮助信息"""
-    print("""AI_TOOL.py - Tool management system
+    print(f"""AI_TOOL.py - Tool management system
 
 Usage: python AI_TOOL.py <command> [options]
 
@@ -643,38 +643,38 @@ def main():
     
     elif command == '--update-hashes':
         tool_name = sys.argv[2] if len(sys.argv) > 2 else None
-        print("🔄 Updating file hashes...")
+        print(f"Updating file hashes...")
         manager.update_tool_hashes(tool_name)
         return 0
     
     elif command == '--detect-changes':
         tool_name = sys.argv[2] if len(sys.argv) > 2 else None
-        print("🔍 Detecting file changes...")
+        print(f"Detecting file changes...")
         changes = manager.detect_changes(tool_name)
         
         if not changes:
-            print("No changes detected")
+            print(f"No changes detected")
         else:
             print(f"Detected changes in {len(changes)} tool(s):")
             for tool, tool_changes in changes.items():
-                print(f"\n🔧 {tool}:")
+                print(f"\n{tool}:")
                 for file_type, change_info in tool_changes.items():
                     status = change_info['status']
                     old_hash = change_info['old_hash']
                     new_hash = change_info['new_hash']
                     
                     if status == 'new':
-                        print(f"  ✨ {file_type}: (new file) -> {new_hash[:8]}...")
+                        print(f"  {file_type}: (new file) -> {new_hash[:8]}...")
                     else:
-                        print(f"  📝 {file_type}: {old_hash[:8]}... -> {new_hash[:8]}...")
+                        print(f"  {file_type}: {old_hash[:8]}... -> {new_hash[:8]}...")
         
         return 0
     
     elif command == '--sync-docs':
         tool_name = sys.argv[2] if len(sys.argv) > 2 else None
-        print("📚 Syncing documentation with functionality...")
+        print(f"Syncing documentation with functionality...")
         # TODO: Implement documentation sync
-        print("⚠️  Documentation sync not yet implemented")
+        print(f"Documentation sync not yet implemented")
         return 0
     
     elif command == '--test':
@@ -684,8 +684,8 @@ def main():
     
     elif command == 'add':
         if len(sys.argv) < 7:
-            print("Error: Insufficient arguments")
-            print("Usage: python AI_TOOL.py add <name> <desc> <purpose> <usage> <examples> [scenario]")
+            print(f"Error: Insufficient arguments")
+            print(f"Usage: python AI_TOOL.py add <name> <desc> <purpose> <usage> <examples> [scenario]")
             return 1
         
         name = sys.argv[2]
@@ -705,7 +705,7 @@ def main():
     
     elif command == 'remove':
         if len(sys.argv) < 3:
-            print("Error: Tool name required")
+            print(f"Error: Tool name required")
             return 1
         
         tool_name = sys.argv[2]
@@ -714,7 +714,7 @@ def main():
     
     elif command == 'update':
         if len(sys.argv) < 4:
-            print("Error: Tool name and field=value pairs required")
+            print(f"Error: Tool name and field=value pairs required")
             return 1
         
         tool_name = sys.argv[2]
@@ -731,8 +731,8 @@ def main():
     elif command == 'check':
         results = manager.check_files_exist()
         
-        print("📁 File Existence Check:")
-        print("=" * 40)
+        print(f"File Existence Check:")
+        print(f"=" * 40)
         
         for tool_name, files in results.items():
             print(f"Tool: {tool_name}:")

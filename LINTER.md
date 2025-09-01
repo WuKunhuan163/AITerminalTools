@@ -180,7 +180,7 @@ linter = MultiLanguageLinter()
 result = linter.lint_file("script.py")
 
 if result['success']:
-    print("No issues found!")
+    print(f"No issues found!")
 else:
     for error in result['errors']:
         print(f"ERROR: {error}")

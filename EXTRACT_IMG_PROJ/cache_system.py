@@ -282,7 +282,7 @@ def main():
     
     if args.stats:
         stats = cache_system.get_cache_stats()
-        print("Cache Statistics:")
+        print(f"Cache Statistics:")
         print(f"  Total images: {stats['total_images']}")
         print(f"  Total size: {stats['total_size_mb']} MB")
         print(f"  Cache directory: {stats['cache_dir']}")

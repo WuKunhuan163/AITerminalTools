@@ -66,7 +66,7 @@ def get_multiline_input_safe(prompt, single_line=False):
         else:
             # 多行输入，直到Ctrl+D
             lines = []
-            print("(多行输入，按 Ctrl+D 结束):")
+            print(f"(多行输入，按 Ctrl+D 结束):")
             try:
                 while True:
                     line = input()
@@ -79,7 +79,7 @@ def get_multiline_input_safe(prompt, single_line=False):
             
     except KeyboardInterrupt:
         # Ctrl+C被按下
-        print("\n输入已取消")
+        print(f"\n输入已取消")
         return None
     except Exception as e:
         print(f"\n输入错误: {e}")
@@ -178,7 +178,7 @@ class FileUtils:
             dict: 解压结果
         """
         try:
-            print(f"📂 生成包含双重同步检测的远程解压命令: {zip_filename}")
+            print(f"生成包含双重同步检测的远程解压命令: {zip_filename}")
             
             # 构建远程路径
             if remote_path is None:
@@ -348,14 +348,14 @@ class FileUtils:
             if not large_files:
                 return {"success": True, "message": "没有大文件需要手动处理"}
             
-            print(f"\n📁 发现 {len(large_files)} 个大文件（>1GB），将逐一处理:")
+            print(f"\n发现 {len(large_files)} 个大文件（>1GB），将逐一处理:")
             
             successful_uploads = []
             failed_uploads = []
             
             for i, file_info in enumerate(large_files, 1):
                 print(f"\n{'='*60}")
-                print(f"🔄 处理第 {i}/{len(large_files)} 个大文件")
+                print(f"处理第 {i}/{len(large_files)} 个大文件")
                 print(f"文件: {file_info['original_path']} ({file_info['size_gb']:.2f} GB)")
                 print(f"{'='*60}")
                 
@@ -420,15 +420,15 @@ class FileUtils:
                     webbrowser.open(target_url)
                     
                     print(f"Opened local folder: {single_upload_dir}")
-                    print(f"🌐 Opened target Google Drive folder")
-                    print(f"📋 Please drag the file to the Google Drive target folder")
+                    print(f"Opened target Google Drive folder")
+                    print(f"Please drag the file to the Google Drive target folder")
                     
                 except Exception as e:
                     print(f"Warning: Open folder failed: {e}")
                 
                 # 等待用户确认
                 try:
-                    print(f"\n⏳ Please complete the file upload and press Enter to continue...")
+                    print(f"\nPlease complete the file upload and press Enter to continue...")
                     get_multiline_input_safe("按Enter键继续...", single_line=True)  # 等待用户确认
                     
                     # 清理临时目录
@@ -464,7 +464,7 @@ class FileUtils:
                     })
             
             print(f"\n{'='*60}")
-            print(f"📊 Large file processing completed:")
+            print(f"Large file processing completed:")
             print(f"Successful: {len(successful_uploads)} files")
             print(f"Error: Failed: {len(failed_uploads)} files")
             print(f"{'='*60}")

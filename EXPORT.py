@@ -73,10 +73,10 @@ def update_shell_configs():
             print(f"Error: Error updating {config_file}: {e}")
     
     if success_count > 0:
-        print(f"🎉 Successfully updated {success_count} configuration files!")
-        print("💡 Changes should now be active in your current shell.")
+        print(f"Successfully updated {success_count} configuration files!")
+        print(f"Changes should now be active in your current shell.")
     else:
-        print("Error:  Failed to update any configuration files.")
+        print(f"Error:  Failed to update any configuration files.")
     
     return success_count > 0
 
@@ -129,9 +129,9 @@ def copy_source_commands_to_clipboard(updated_files):
     
     # 尝试复制到剪贴板
     if copy_to_clipboard(source_command_line):
-        print(f"📋 Source command copied to clipboard:")
+        print(f"Source command copied to clipboard:")
         print(f"   {source_command_line}")
-        print("💡 Paste and execute to take effect immediately in the current session")
+        print(f"Paste and execute to take effect immediately in the current session")
     else:
         print(f"Warning: Cannot copy to clipboard, please execute manually:")
         print(f"   {source_command_line}")
@@ -304,11 +304,11 @@ def remove_variable(var_name: str, command_identifier=None):
         if len(failed_files) == 0:
             print(f"Successfully removed {var_name} from {len(updated_files)} configuration files!")
             for file in updated_files:
-                print(f"   📝 {file}")
+                print(f"- {file}")
         else:
             print(f"Warning: Partially successful: removed from {len(updated_files)} files, failed on {len(failed_files)} files")
             for file in failed_files:
-                print(f"   ❌ {file}")
+                print(f"- {file}")
     
     return 0 if len(failed_files) == 0 else 1
 
@@ -399,8 +399,8 @@ def export_variable(var_name: str, var_value: str, command_identifier=None):
             
             # 自动在当前shell中设置环境变量
             os.environ[var_name] = var_value
-            print("🔄 Environment variable set in current session")
-            print("💡 Note: Changes will persist in new terminal sessions")
+            print(f"Environment variable set in current session")
+            print(f"Note: Changes will persist in new terminal sessions")
             
             # 生成source命令并复制到剪贴板
             copy_source_commands_to_clipboard(updated_files)
@@ -474,9 +474,9 @@ def main():
             }
             write_to_json_output(error_data, command_identifier)
         else:
-            print("Error: No arguments provided")
-            print("Usage: EXPORT <variable_name> <value>")
-            print("Use --help for more information")
+            print(f"Error: No arguments provided")
+            print(f"Usage: EXPORT <variable_name> <value>")
+            print(f"Use --help for more information")
         return 1
     
     if len(args) == 1:
@@ -501,7 +501,7 @@ def main():
                 write_to_json_output(output_data, command_identifier)
                 return 0 if success else 1
             else:
-                print("Updating shell configuration files...")
+                print(f"Updating shell configuration files...")
                 success = update_shell_configs()
                 return 0 if success else 1
         else:
@@ -512,10 +512,10 @@ def main():
                 }
                 write_to_json_output(error_data, command_identifier)
             else:
-                print("Error: Missing value")
-                print("Usage: EXPORT <variable_name> <value>")
-                print("       EXPORT --remove <variable_name>")
-                print("       EXPORT --undo <variable_name>")
+                print(f"Error: Missing value")
+                print(f"Usage: EXPORT <variable_name> <value>")
+                print(f"       EXPORT --remove <variable_name>")
+                print(f"       EXPORT --undo <variable_name>")
             return 1
     
     if len(args) == 2:

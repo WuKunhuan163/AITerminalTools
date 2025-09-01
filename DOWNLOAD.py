@@ -117,12 +117,12 @@ def download_file(url: str, destination: str, command_identifier=None):
                     # 显示进度（仅在直接调用时）
                     if not is_run_environment(command_identifier) and total_size > 0:
                         progress = (downloaded_size / total_size) * 100
-                        print(f"\r📥 Progress: {progress:.1f}% ({downloaded_size}/{total_size} bytes)", end='', flush=True)
+                        print(f"Progress: {progress:.1f}% ({downloaded_size}/{total_size} bytes)", end='', flush=True)
         
         if not is_run_environment(command_identifier):
             print(f"Download completed successfully!")
             print(f"File saved to: {dest_path}")
-            print(f"📊 Size: {downloaded_size} bytes")
+            print(f"Size: {downloaded_size} bytes")
         
         success_data = {
             "success": True,
@@ -212,9 +212,9 @@ def main():
             }
             write_to_json_output(error_data, command_identifier)
         else:
-            print("Error: No URL provided")
-            print("Usage: DOWNLOAD <url> [destination]")
-            print("Use --help for more information")
+            print(f"Error: No URL provided")
+            print(f"Usage: DOWNLOAD <url> [destination]")
+            print(f"Use --help for more information")
         return 1
     
     if args[0] in ['--help', '-h']:

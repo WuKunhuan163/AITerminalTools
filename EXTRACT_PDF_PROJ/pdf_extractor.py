@@ -46,7 +46,7 @@ except ImportError:
 try:
     import fitz
 except ImportError:
-    print("Error: PyMuPDF library not installed.", file=sys.stderr); sys.exit(1)
+    print(f"Error: PyMuPDF library not installed.", file=sys.stderr); sys.exit(1)
 
 # --- Configuration using Absolute Paths ---
 SCRIPT_DIR = Path(__file__).parent.resolve()
@@ -107,7 +107,7 @@ def extract_and_analyze_pdf(path_str: str, layout_mode: str, mode: str, call_api
     processed_pages_str = page_range if page_range else f"All (1-{len(doc)})"
     
     markdown_content = [f"# Analysis Report for: {title}\n", "```yaml", f"Source PDF: {path.name}", f"Author(s): {author}", f"Analysis Mode: {mode}", f"Layout Mode: {layout_mode}", f"API Called: {call_api}", "```", "\n---\n"]
-    print(f"ℹ️ Starting semantic analysis...", file=sys.stderr)
+    print(f"Starting semantic analysis...", file=sys.stderr)
 
     for page_num in page_indices:
         page = doc[page_num]
@@ -169,7 +169,7 @@ def extract_and_analyze_pdf(path_str: str, layout_mode: str, mode: str, call_api
 
     doc.close()
     # Cache is automatically saved by the centralized cache system
-    print("ℹ️ Cache updated.", file=sys.stderr)
+    print(f"Cache updated.", file=sys.stderr)
 
     final_markdown_string = "\n".join(markdown_content)
     output_path = find_next_numeric_filename(MARKDOWN_DIR) 
@@ -198,24 +198,24 @@ if __name__ == "__main__":
     if args.clean:
         import shutil
         if DATA_DIR.exists():
-            print(f"🗑️ Cleaning {DATA_DIR}...", file=sys.stderr)
+            print(f"Cleaning {DATA_DIR}...", file=sys.stderr)
             print(f"Deleting folder: {DATA_DIR.absolute()}", file=sys.stderr)
             shutil.rmtree(DATA_DIR)
             print(f"Folder deleted successfully", file=sys.stderr)
         else:
-            print(f"ℹ️ Folder {DATA_DIR.absolute()} does not exist, nothing to clean", file=sys.stderr)
+            print(f"Folder {DATA_DIR.absolute()} does not exist, nothing to clean", file=sys.stderr)
         
         # If no PDF path provided with --clean, just clean and exit
         if not pdf_path:
-            print("🎯 Clean-only mode: folder cleaned, exiting.", file=sys.stderr)
+            print(f"Clean-only mode: folder cleaned, exiting.", file=sys.stderr)
             sys.exit(0)
     
     if not pdf_path:
-        if not TKINTER_AVAILABLE: print("Error: No path provided...", file=sys.stderr); sys.exit(1)
-        print("ℹ️ Opening file dialog...", file=sys.stderr)
+        if not TKINTER_AVAILABLE: print(f"Error: No path provided...", file=sys.stderr); sys.exit(1)
+        print(f"Opening file dialog...", file=sys.stderr)
         root = tk.Tk(); root.withdraw()
         pdf_path = filedialog.askopenfilename(title="Select a PDF to analyze", filetypes=[("PDF", "*.pdf")])
-        if not pdf_path: print("Error:  Operation cancelled.", file=sys.stderr); sys.exit(0)
+        if not pdf_path: print(f"Error:  Operation cancelled.", file=sys.stderr); sys.exit(0)
         
     # Try to use MinerU wrapper first, fallback to original if it fails
     try:
@@ -223,5 +223,5 @@ if __name__ == "__main__":
         extract_and_analyze_pdf_with_mineru(pdf_path, args.layout_mode, args.mode, args.call_api, args.call_api_force, args.page, args.debug)
     except Exception as e:
         print(f"Warning:  MinerU wrapper failed: {e}", file=sys.stderr)
-        print("🔄 Falling back to original PDF extractor...", file=sys.stderr)
+        print(f"Falling back to original PDF extractor...", file=sys.stderr)
         extract_and_analyze_pdf(pdf_path, args.layout_mode, args.mode, args.call_api, args.call_api_force, args.page, args.debug)

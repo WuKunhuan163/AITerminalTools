@@ -38,15 +38,15 @@ def get_pdf_path_interactive():
         return pdf_path
         
     except ImportError:
-        print("Error:  tkinter not available. Please provide PDF path as argument.")
+        print(f"Error:  tkinter not available. Please provide PDF path as argument.")
         return None
 
 
 def get_interactive_options():
     """Get processing options interactively."""
-    print("\n" + "="*22)
-    print("PDF EXTRACTION OPTIONS")
-    print("="*22)
+    print(f"\n" + "="*22)
+    print(f"PDF EXTRACTION OPTIONS")
+    print(f"="*22)
     
     # Get page range
     page_range = input("Enter page range (e.g., '1-5', '1,3,5', or press Enter for all pages): ").strip()
@@ -54,11 +54,11 @@ def get_interactive_options():
         page_range = None
     
     # Unified PDF Extraction Engine options
-    print("\nPDF Extraction Engine:")
-    print("1. MinerU-async (no image/formula/table analysis)")
-    print("2. MinerU (with image/formula/table analysis)")
-    print("3. Basic-async (no image analysis)")
-    print("4. Basic (with image analysis)")
+    print(f"\nPDF Extraction Engine:")
+    print(f"1. MinerU-async (no image/formula/table analysis)")
+    print(f"2. MinerU (with image/formula/table analysis)")
+    print(f"3. Basic-async (no image analysis)")
+    print(f"4. Basic (with image analysis)")
     
     engine_choice = input("Choose extraction engine (1-4, default: 1): ").strip()
     
@@ -178,27 +178,27 @@ def print_content_analysis(content_stats):
     if not content_stats:
         return
     
-    print("\n" + "="*24)
-    print("📊 CONTENT ANALYSIS RESULTS")
-    print("="*24)
+    print(f"\n" + "="*24)
+    print(f"CONTENT ANALYSIS RESULTS")
+    print(f"="*24)
     
-    print(f"\n🖼️  ACTUAL IMAGES: {len(content_stats['images'])} found")
+    print(f"\n  ACTUAL IMAGES: {len(content_stats['images'])} found")
     for i, img in enumerate(content_stats['images'], 1):
         print(f"  {i}. Page {img['page']}, Block {img['block_idx']}")
     
-    print(f"\n📋 TABLES: {len(content_stats['tables'])} found")
+    print(f"\nTABLES: {len(content_stats['tables'])} found")
     for i, table in enumerate(content_stats['tables'], 1):
         print(f"  {i}. Page {table['page']}, Block {table['block_idx']}")
     
-    print(f"\n🔢 INTERLINE EQUATIONS: {len(content_stats['interline_equations'])} found")
+    print(f"\nINTERLINE EQUATIONS: {len(content_stats['interline_equations'])} found")
     for i, eq in enumerate(content_stats['interline_equations'], 1):
         print(f"  {i}. Page {eq['page']}, Block {eq['block_idx']}")
     
-    print(f"\n🔢 INLINE EQUATIONS: {len(content_stats['inline_equations'])} found")
+    print(f"\nINLINE EQUATIONS: {len(content_stats['inline_equations'])} found")
     for i, eq in enumerate(content_stats['inline_equations'], 1):
         print(f"  {i}. Page {eq['page']}, Block {eq['block_idx']}")
     
-    print(f"\n📊 TOTAL BLOCKS ANALYZED: {content_stats['total_blocks']}")
+    print(f"\nTOTAL BLOCKS ANALYZED: {content_stats['total_blocks']}")
 
 
 def clean_data_directory():
@@ -210,7 +210,7 @@ def clean_data_directory():
         shutil.rmtree(data_dir)
         print(f"Cleaned data directory: {data_dir}")
     else:
-        print(f"ℹ️  Data directory doesn't exist: {data_dir}")
+        print(f"Data directory doesn't exist: {data_dir}")
 
 
 def check_and_show_post_processing_status(result_path: str):
@@ -248,7 +248,7 @@ def check_and_show_post_processing_status(result_path: str):
         if not status_file or not status_file.exists():
             # Try to regenerate status file from markdown if possible
             if result_path.endswith('.md') and result_path_obj.exists():
-                print("📄 Status file does not exist, trying to regenerate from Markdown...")
+                print(f"Status file does not exist, trying to regenerate from Markdown...")
                 
                 # Import MinerU wrapper to use regeneration function
                 from mineru_wrapper import mineru_wrapper
@@ -258,22 +258,22 @@ def check_and_show_post_processing_status(result_path: str):
                     if regenerated_status:
                         status_file = Path(regenerated_status)
                     else:
-                        print("ℹ️  No post-processing needed, no valid placeholders found")
+                        print(f"No post-processing needed, no valid placeholders found")
                         return
                 else:
-                    print("ℹ️  No corresponding PDF file found, cannot regenerate status")
+                    print(f"No corresponding PDF file found, cannot regenerate status")
                     return
             else:
-                print("ℹ️  No post-processing needed, no status file found")
+                print(f"No post-processing needed, no status file found")
                 return
         
         # Read and display status from JSON file
         with open(status_file, 'r', encoding='utf-8') as f:
             status_data = json.load(f)
         
-        print("\n" + "="*50)
-        print("🔄 Async processing status")
-        print("="*50)
+        print(f"\n" + "="*50)
+        print(f"Async processing status")
+        print(f"="*50)
         
         # Display basic info
         print(f"PDF file: {status_data.get('pdf_file', 'Unknown')}")
@@ -283,16 +283,16 @@ def check_and_show_post_processing_status(result_path: str):
         # Display counts
         counts = status_data.get('counts', {})
         if counts.get('images', 0) > 0:
-            print(f"- 🖼️  Images: {counts['images']} [need Google API processing]")
+            print(f"- Images: {counts['images']} [need Google API processing]")
         if counts.get('formulas', 0) > 0:
-            print(f"- 🧮 Formulas: {counts['formulas']} [need UnimerNet processing]")
+            print(f"- Formulas: {counts['formulas']} [need UnimerNet processing]")
         if counts.get('tables', 0) > 0:
-            print(f"- 📊 Tables: {counts['tables']} [need UnimerNet processing]")
+            print(f"- Tables: {counts['tables']} [need UnimerNet processing]")
         
         # Display processing commands
         commands = status_data.get('processing_commands', {})
         if commands:
-            print("\n**Post-processing commands:**")
+            print(f"\n**Post-processing commands:**")
             if counts.get('images', 0) > 0:
                 print(f"- Image analysis: `{commands.get('image_analysis', 'N/A')}`")
             if counts.get('formulas', 0) > 0:
@@ -304,10 +304,10 @@ def check_and_show_post_processing_status(result_path: str):
         # Display detailed item information if requested
         items = status_data.get('items', [])
         if items:
-            print(f"\n📋 Status file location: {status_file}")
-            print("💡 Hint: You can edit the placeholder markers in the Markdown file to control processing items")
-            print("   - Remove [placeholder: type] markers to skip processing for that item")
-            print("   - Re-add markers and run the command to regenerate the status file")
+            print(f"\nStatus file location: {status_file}")
+            print(f"Hint: You can edit the placeholder markers in the Markdown file to control processing items")
+            print(f"   - Remove [placeholder: type] markers to skip processing for that item")
+            print(f"   - Re-add markers and run the command to regenerate the status file")
         
     except json.JSONDecodeError as e:
         print(f"Error: Status file format error: {e}")
@@ -321,9 +321,9 @@ def check_and_show_post_processing_status(result_path: str):
                     content = f.read()
                 
                 if "## 📋 异步处理状态" in content:
-                    print("\n" + "="*50)
-                    print("🔄 Async processing status detection (from Markdown)")
-                    print("="*50)
+                    print(f"\n" + "="*50)
+                    print(f"Async processing status detection (from Markdown)")
+                    print(f"="*50)
                     
                     # Extract the async processing section
                     lines = content.split('\n')
@@ -344,7 +344,7 @@ def check_and_show_post_processing_status(result_path: str):
                         if line.strip():
                             print(line)
                     
-                    print("\n💡 Suggestion: JSON status file will be automatically created after running the processing command")
+                    print(f"\nSuggestion: JSON status file will be automatically created after running the processing command")
         except Exception as fallback_error:
             print(f"Warning:  Fallback processing also failed: {fallback_error}")
 
@@ -386,11 +386,11 @@ def list_processing_items(pdf_path: str, item_type: str = 'all', show_processed:
             filtered_items.append(item)
         
         if not filtered_items:
-            print(f"ℹ️  No items found matching criteria (type: {item_type}, show processed: {show_processed})")
+            print(f"No items found matching criteria (type: {item_type}, show processed: {show_processed})")
             return True
         
-        print(f"\n📋 {item_type.upper() if item_type != 'all' else 'ALL'} item list:")
-        print("=" * 40)
+        print(f"\n{item_type.upper() if item_type != 'all' else 'ALL'} item list:")
+        print(f"=" * 40)
         
         for i, item in enumerate(filtered_items, 1):
             status_icon = "✅" if item.get('processed', False) else "⏳"
@@ -416,8 +416,8 @@ def process_by_hash_ids(pdf_path: str, hash_ids: list, processing_type: str = 'a
         result = mineru_wrapper.process_items_by_hash_ids(pdf_path, hash_ids, processing_type)
         
         if result:
-            print(f"\n🎉 Batch processing completed!")
-            print("📊 Updated status:")
+            print(f"\nBatch processing completed!")
+            print(f"Updated status:")
             check_and_show_post_processing_status(pdf_path)
         
         return result
@@ -437,11 +437,11 @@ def main():
     
     # Check if PDF path is provided
     if len(sys.argv) < 2:
-        print("🔍 No PDF path provided. Opening file selector...")
+        print(f"No PDF path provided. Opening file selector...")
         pdf_path = get_pdf_path_interactive()
         
         if not pdf_path:
-            print("Error:  No PDF selected. Exiting.")
+            print(f"Error:  No PDF selected. Exiting.")
             sys.exit(1)
         
         print(f"Selected PDF: {pdf_path}")
@@ -453,10 +453,10 @@ def main():
         same_name_md_file = pdf_directory / f"{pdf_stem}.md"
         
         if same_name_md_file.exists():
-            print(f"\n⚠️  File {same_name_md_file} already exists.")
+            print(f"\nWarning:  File {same_name_md_file} already exists.")
             overwrite = input("Do you want to overwrite it? (y/N): ").strip().lower()
             if overwrite != 'y':
-                print("Operation cancelled.")
+                print(f"Operation cancelled.")
                 sys.exit(0)
         
         # Get options interactively
@@ -507,7 +507,7 @@ def main():
             elif arg == "--async-mode":
                 async_mode = True
                 use_mineru = True  # Async mode requires MinerU
-                print(f"🔄 Async mode enabled via CLI", file=sys.stderr)
+                print(f"Async mode enabled via CLI", file=sys.stderr)
             
             i += 1
 
@@ -518,9 +518,9 @@ def main():
         
         if use_mineru or async_mode:
             if async_mode:
-                print("🔄 Using MinerU-async for PDF extraction...")
+                print(f"Using MinerU-async for PDF extraction...")
             else:
-                print("🔄 Using MinerU for PDF extraction...")
+                print(f"Using MinerU for PDF extraction...")
             
             # Use the wrapper function with proper error handling
             result_path = extract_and_analyze_pdf_with_mineru(
@@ -539,12 +539,12 @@ def main():
                 
                 # Content analysis removed per user request
             else:
-                print("ℹ️  MinerU likely fell back to original extractor, no content analysis available")
+                print(f"MinerU likely fell back to original extractor, no content analysis available")
         else:
             if call_api:
-                print("🔄 Using Basic PDF extractor with image analysis...")
+                print(f"Using Basic PDF extractor with image analysis...")
             else:
-                print("🔄 Using Basic-async PDF extractor (no image analysis)...")
+                print(f"Using Basic-async PDF extractor (no image analysis)...")
             result_path = extract_and_analyze_pdf(
                 pdf_path, layout_mode, mode, call_api, call_api_force, page_range, debug
             )
@@ -553,7 +553,7 @@ def main():
         processing_time = end_time - start_time
         
         print(f"\nSUCCESS: PDF extracted to {result_path}")
-        print(f"⏱️  Total processing time: {processing_time:.2f} seconds")
+        print(f" Total processing time: {processing_time:.2f} seconds")
         
         # Check if post-processing is needed
         if async_mode:

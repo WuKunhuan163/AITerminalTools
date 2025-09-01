@@ -1,8 +1,8 @@
 def hello_world():
-    print("Hello World")
+    print(f"Hello World")
     
 def goodbye_world():
-    print("Goodbye World")
+    print(f"Goodbye World")
     
 class TestClass:
     def __init__(self):

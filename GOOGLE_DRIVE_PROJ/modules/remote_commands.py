@@ -98,7 +98,7 @@ class RemoteCommands:
     
 
     
-    def generate_remote_commands(self, file_moves, target_path, folder_upload_info=None):
+    def generate_commands(self, file_moves, target_path, folder_upload_info=None):
         """
         生成远程命令
         
@@ -122,7 +122,7 @@ class RemoteCommands:
                 })
             
             # 调用多文件远程命令生成方法
-            base_command = self._generate_multi_file_remote_commands(all_file_moves)
+            base_command = self._generate_multi_file_commands(all_file_moves)
             
             # 如果是文件夹上传，需要添加解压和清理命令
             if folder_upload_info and folder_upload_info.get("is_folder_upload", False):
@@ -288,31 +288,24 @@ class RemoteCommands:
                     # 文件存在，读取内容
                     file_result = self._read_result_file_via_gds(result_filename)
                     
-                    # 先在进度行显示√标记
-                    from .progress_manager import add_success_mark, result_print
+                    # 先在进度行显示√标记，然后清除进度显示
+                    from .progress_manager import add_success_mark, clear_progress
                     add_success_mark()
+                    clear_progress()
                     
-                    # 显示最终结果（会擦除进度行包括√）
-                    if file_result and file_result.get("success"):
-                        data = file_result.get("data", {})
-                        stdout_content = data.get("stdout", "").strip()
-                        if stdout_content:
-                            result_print(stdout_content)
-                        else:
-                            result_print("Command completed successfully")
-                    else:
-                        result_print("Command failed")
+                    # _wait_and_read_result_file专一地等待结果，不处理输出显示
+                    # 输出显示由上层统一处理
                     
                     return file_result
                 
                 # 文件不存在，等待1秒并输出进度点
                 time.sleep(1)
                 from .progress_manager import progress_print
-                progress_print(".")
+                progress_print(f".")
             
             # 超时，检查是否在后台模式
             print()  # 换行
-            print(f"⏰ Waiting for result file: {remote_file_path} timed out")
+            print(f"Waiting for result file: {remote_file_path} timed out")
             
             # 检查是否在后台模式或无交互环境
             import sys
@@ -325,7 +318,7 @@ class RemoteCommands:
             )
             
             if is_background_mode:
-                print("🤖 后台模式检测：自动返回超时错误")
+                print(f"🤖 后台模式检测：自动返回超时错误")
                 return {
                     "success": False,
                     "error": f"Result file timeout after 60 seconds: {remote_file_path}",
@@ -333,15 +326,15 @@ class RemoteCommands:
                     "background_mode": True
                 }
             
-            print("This may be because:")
-            print("  1. The command is running in the background (e.g. http-server service)")
-            print("  2. The command execution time exceeds 60 seconds")
-            print("  3. The remote encountered an unexpected error")
+            print(f"This may be because:")
+            print(f"  1. The command is running in the background (e.g. http-server service)")
+            print(f"  2. The command execution time exceeds 60 seconds")
+            print(f"  3. The remote encountered an unexpected error")
             print()
-            print("Please provide the execution result:")
-            print("- Enter multiple lines to describe the command execution")
-            print("- Press Ctrl+D to end input")
-            print("- Or press Enter directly to skip")
+            print(f"Please provide the execution result:")
+            print(f"- Enter multiple lines to describe the command execution")
+            print(f"- Press Ctrl+D to end input")
+            print(f"- Or press Enter directly to skip")
             print()
             
             # 获取用户手动输入
@@ -422,17 +415,17 @@ class RemoteCommands:
                             lines.append(current_line.strip())
                     except:
                         pass  # 如果无法获取缓冲区内容，忽略错误
-                    print(f"\n[TIMEOUT] 输入超时 ({timeout_seconds}秒)")
+                    print(f"\n[TIMEOUT] Input timeout ({timeout_seconds} seconds)")
                     break
         except KeyboardInterrupt:
             # Ctrl+C，询问是否取消
-            print("\n是否取消输入？(y/N): ", end="", flush=True)
+            print(f"\nCancel input? (y/N): ", end="", flush=True)
             try:
                 response = input().strip().lower()
                 if response in ['y', 'yes']:
                     return ""
                 else:
-                    print("继续输入 (按 Ctrl+D 结束):")
+                    print(f"Continue input (press Ctrl+D to end):")
                     # 重新开始输入循环
                     return self._get_multiline_user_input()
             except (EOFError, KeyboardInterrupt):
@@ -465,7 +458,7 @@ class RemoteCommands:
             if not check_result.get("exists"):
                 return {
                     "success": False,
-                    "error": f"远端结果文件不存在: {remote_file_path}"
+                    "error": f"Remote result file does not exist: {remote_file_path}"
                 }
             
             # 使用cat命令读取文件内容
@@ -474,7 +467,7 @@ class RemoteCommands:
             if not cat_result.get("success"):
                 return {
                     "success": False,
-                    "error": f"读取文件内容失败: {cat_result.get('error', 'unknown error')}"
+                    "error": f"Read file content failed: {cat_result.get('error', 'unknown error')}"
                 }
             
             # 获取文件内容
@@ -498,7 +491,7 @@ class RemoteCommands:
                     "data": {
                         "exit_code": -1,
                         "stdout": content,
-                        "stderr": f"JSON解析失败: {str(e)}",
+                        "stderr": f"JSON parse failed: {str(e)}",
                         "raw_content": content
                     }
                 }
@@ -506,7 +499,7 @@ class RemoteCommands:
         except Exception as e:
             return {
                 "success": False,
-                "error": f"读取结果文件时出错: {str(e)}"
+                "error": f"Read result file failed: {str(e)}"
             }
 
     def _check_remote_file_exists(self, file_path):
@@ -531,7 +524,7 @@ class RemoteCommands:
             ls_result = self.main_instance.cmd_ls(dir_path)
             
             if not ls_result.get("success"):
-                return {"exists": False, "error": f"无法访问目录: {dir_path}"}
+                return {"exists": False, "error": f"Cannot access directory: {dir_path}"}
             
             # 检查文件和文件夹是否在列表中
             files = ls_result.get("files", [])
@@ -544,7 +537,7 @@ class RemoteCommands:
             return {"exists": file_exists}
                 
         except Exception as e:
-            return {"exists": False, "error": f"检查文件存在性时出错: {str(e)}"}
+            return {"exists": False, "error": f"Check file existence failed: {str(e)}"}
 
     def _preprocess_json_content(self, content):
         """
@@ -576,82 +569,7 @@ class RemoteCommands:
             # 如果预处理失败，返回包装的原始内容
             return f'{{"exit_code": -1, "stdout": "{content}", "stderr": "preprocess failed: {str(e)}"}}'
 
-    def show_remote_command_window(self, remote_command, command_type="upload", debug_info=None):
-        """
-        显示远端命令的 tkinter 窗口（统一版本，使用_show_command_window）
-        
-        Args:
-            remote_command (str): 要显示的远端命令
-            command_type (str): 命令类型，默认为 "upload"
-            debug_info (str): debug信息，仅在直接反馈时输出
-            
-        Returns:
-            dict: 用户操作结果，包含 action 和相关信息
-        """
-        try:
-            # 调用统一的通用窗口
-            debug_info = debug_capture.get_debug_info()
-            window_result = self._show_command_window(command_type, [], remote_command, debug_info)
-            
-            # 适配返回格式以保持向后兼容
-            if window_result.get("action") == "success":
-                return {"success": True, "action": "success", "error_info": None}
-            elif window_result.get("action") == "direct_feedback":
-                # 处理直接反馈，保持direct_feedback action类型，跳过验证
-                data = window_result.get("data", {})
-                exit_code = data.get("exit_code", 0)
-                return {
-                    "success": exit_code == 0, 
-                    "action": "direct_feedback", 
-                    "exit_code": exit_code,
-                    "stdout": data.get("stdout", ""),
-                    "stderr": data.get("stderr", ""),
-                    "source": "direct_feedback"
-                }
-            else:
-                return {"success": False, "action": "cancel", "error_info": "Operation cancelled"}
-            
-        except ImportError:
-            # tkinter 不可用，回退到终端显示
-            print("=" * 80)
-            print("🚀 Google Drive Upload - Remote Terminal Command")
-            print("=" * 80)
-            print()
-            print("请在远端终端执行以下命令：")
-            print()
-            print(remote_command)
-            print()
-            print("=" * 80)
-            
-            try:
-                while True:
-                    user_choice = self.get_multiline_input_safe("命令执行结果 [s=成功/f=失败/c=取消]: ", single_line=True)
-                    if user_choice is None:
-                        return {"success": False, "action": "cancelled", "error_info": "用户取消操作"}
-                    user_choice = user_choice.lower()
-                    if user_choice in ['s', 'success', '成功']:
-                        return {"success": True, "action": "success", "error_info": None}
-                    elif user_choice in ['f', 'failed', '失败']:
-                        error_info = self.get_multiline_input_safe("请描述失败的原因: ", single_line=False)
-                        return {
-                            "success": False, 
-                            "action": "failed", 
-                            "error_info": error_info or "用户未提供具体错误信息"
-                        }
-                    elif user_choice in ['c', 'cancel', '取消']:
-                        return {"success": False, "action": "cancelled", "error_info": "用户取消操作"}
-                    else:
-                        print("Error:  Invalid choice, please enter s/f/c")
-                        
-            except KeyboardInterrupt:
-                print("Error:  Upload cancelled")
-                return {"success": False, "action": "cancelled", "error_info": "User interrupted operation"}
-                
-        except Exception as e:
-            print(f"Error: Display remote command window failed: {e}")
-            return {"success": False, "action": "error", "error_info": f"窗口显示错误: {e}"}
-
-    def _generate_multi_file_remote_commands(self, all_file_moves):
+    def _generate_multi_file_commands(self, all_file_moves):
         """生成简化的多文件上传远端命令，只显示关键状态信息"""
         try:
             # 生成文件信息数组 - 保留原有的路径解析逻辑
@@ -737,7 +655,7 @@ for attempt in $(seq 1 60); do
     if {cmd} 2>/dev/null; then
         break
     elif [ "$attempt" -eq 60 ]; then
-        echo "❌ 错误：{filename} 移动失败，重试60次后仍然失败" >&2
+        echo "❌ Error: {filename} move failed, still failed after 60 retries" >&2
         exit 1
     else
         sleep 1
@@ -777,40 +695,35 @@ echo "✅ 执行完成"'''
                 first_three = ", ".join(expected_files[:3])
                 file_display = f"{first_three}, ... ({len(expected_files)} files)"
             
-            from .progress_manager import start_progress_buffering
-            start_progress_buffering(f"⏳ Validating {file_display} ...")
+            # 定义验证函数
+            def validate_all_files():
+                validation_result = self.main_instance.validation.verify_upload_success_by_ls(
+                    expected_files=expected_files,
+                    target_path=target_path,
+                    current_shell=current_shell
+                )
+                found_count = len(validation_result.get("found_files", []))
+                return found_count == len(expected_files)
             
-            found_files = []
-            missing_files = []
+            # 使用统一的验证接口
+            from .progress_manager import validate_creation
+            result = validate_creation(validate_all_files, file_display, 60, "upload")
             
-            # 序列化验证每个文件
-            for i, expected_file in enumerate(expected_files):
-
-                # 对每个文件最多重试60次
-                for attempt in range(1, 61):
-                    # 使用ls命令检查文件是否存在
-                    validation_result = self.main_instance.validation.verify_upload_success_by_ls(
-                        expected_files=[expected_file],
-                        target_path=target_path,
-                        current_shell=current_shell
-                    )
-                    
-                    if validation_result["success"] and len(validation_result.get("found_files", [])) > 0:
-                        from .progress_manager import result_print
-                        result_print("√")
-                        found_files.append(expected_file)
-                        break
-                    elif attempt == 60:
-                        print("✗", end="", flush=True)
-                        missing_files.append(expected_file)
-                        break
-                    else:
-                        print(".", end="", flush=True)
-                        time.sleep(1)
-            print()
+            # 转换返回格式
+            all_found = result["success"]
+            if all_found:
+                found_files = expected_files
+                missing_files = []
+            else:
+                # 如果验证失败，需要重新检查哪些文件缺失
+                final_validation = self.main_instance.validation.verify_upload_success_by_ls(
+                    expected_files=expected_files,
+                    target_path=target_path,
+                    current_shell=current_shell
+                )
+                found_files = final_validation.get("found_files", [])
+                missing_files = [f for f in expected_files if f not in found_files]
             
-            # 输出最终结果
-            all_found = len(missing_files) == 0
             return {
                 "success": all_found,
                 "found_files": found_files,
@@ -821,7 +734,6 @@ echo "✅ 执行完成"'''
             }
             
         except Exception as e:
-            print(" ❌")
             debug_print(f"Validation error: {e}")
             return {
                 "success": False,
@@ -832,7 +744,7 @@ echo "✅ 执行完成"'''
                 "total_expected": len(expected_files)
             }
 
-    def _generate_multi_mv_remote_commands(self, file_pairs, current_shell):
+    def _generate_multi_mv_commands(self, file_pairs, current_shell):
         """生成多文件mv的分布式远端命令，每个文件独立重试60次"""
         try:
             # 生成文件信息数组
@@ -992,7 +904,7 @@ fi
             else:
                 # 多行输入，直到Ctrl+D
                 lines = []
-                print("(多行输入，按 Ctrl+D 结束):")
+                print(f"(多行输入，按 Ctrl+D 结束):")
                 try:
                     while True:
                         line = input()
@@ -1005,7 +917,7 @@ fi
                 
         except KeyboardInterrupt:
             # Ctrl+C被按下
-            print("\nInput cancelled")
+            print(f"\nInput cancelled")
             return None
         except Exception as e:
             print(f"\nInput error: {e}")
@@ -1026,7 +938,43 @@ fi
             if command_type == "upload":
                 return self._handle_upload_success(context_info)
             elif command_type == "mkdir":
-                return self._handle_mkdir_success(context_info)
+                # 使用统一的验证接口
+                target_path = context_info.get("target_path", "")
+                absolute_path = context_info.get("absolute_path", "")
+                
+                if not target_path:
+                    return {
+                        "success": True,
+                        "user_confirmed": True,
+                        "command_type": "mkdir",
+                        "message": "Mkdir command executed successfully"
+                    }
+                
+                def validate_mkdir():
+                    check_result = self._check_remote_file_exists(absolute_path)
+                    return check_result.get("exists")
+                
+                from .progress_manager import validate_creation
+                validation_result = validate_creation(validate_mkdir, target_path, 60, "dir")
+                
+                if validation_result["success"]:
+                    return {
+                        "success": True,
+                        "user_confirmed": True,
+                        "command_type": "mkdir",
+                        "message": f"Directory '{target_path}' created and verified successfully",
+                        "path": target_path,
+                        "absolute_path": absolute_path
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "user_confirmed": False,
+                        "command_type": "mkdir",
+                        "message": validation_result["message"],
+                        "path": target_path,
+                        "absolute_path": absolute_path
+                    }
             elif command_type == "touch":
                 return self._handle_touch_success(context_info)
             elif command_type == "move":
@@ -1064,53 +1012,38 @@ fi
                     "message": "Touch command executed successfully"
                 }
             
-            # 添加延迟检测机制，参考mkdir的检测逻辑
-            progress_print("⏳ Validating touch file creation", end="", flush=True)
+            # 使用统一的验证接口
+            def validate_touch():
+                check_result = self._check_remote_file_exists(absolute_path)
+                return check_result.get("exists")
             
-            max_attempts = 60
-            for attempt in range(max_attempts):
-                try:
-                    # 检查文件是否存在
-                    check_result = self._check_remote_file_exists(absolute_path)
-                    
-                    if check_result.get("exists"):
-                        from .progress_manager import result_print
-                        result_print("√")  # 成功标记
-                        return {
-                            "success": True,
-                            "user_confirmed": True,
-                            "command_type": "touch",
-                            "message": f"File '{filename}' created and verified successfully",
-                            "filename": filename,
-                            "absolute_path": absolute_path
-                        }
-                    
-                    # 文件不存在，等待1秒并输出进度点
-                    time.sleep(1)
-                    print(".", end="", flush=True)
-                    
-                except Exception as e:
-                    print(f"\n⚠️ Error checking file: {str(e)[:50]}")
-                    # 检测失败，但不影响整体结果
-                    break
+            from .progress_manager import validate_creation
+            validation_result = validate_creation(validate_touch, filename, 60, "file")
             
-            # 超时或检测失败，但仍然返回成功（用户已确认执行）
-            print(f"\n💡 File creation completed (validation timeout after {max_attempts}s)")
-            return {
-                "success": True,
-                "user_confirmed": True,
-                "command_type": "touch",
-                "message": f"File '{filename}' creation completed",
-                "filename": filename,
-                "absolute_path": absolute_path,
-                "validation_timeout": True
-            }
-            
+            if validation_result["success"]:
+                return {
+                    "success": True,
+                    "user_confirmed": True,
+                    "command_type": "touch",
+                    "message": f"File '{filename}' created and verified successfully",
+                    "filename": filename,
+                    "absolute_path": absolute_path
+                }
+            else:
+                return {
+                    "success": False,
+                    "user_confirmed": False,
+                    "command_type": "touch",
+                    "message": validation_result["message"],
+                    "filename": filename,
+                    "absolute_path": absolute_path
+                }
+
         except Exception as e:
-            # 验证过程出错，但不影响touch的成功状态
+            # 验证过程出错，返回失败
             return {
-                "success": True,
-                "user_confirmed": True,
+                "success": False,
+                "user_confirmed": False,
                 "command_type": "touch",
                 "message": f"File created successfully (validation error: {str(e)[:50]})",
                 "validation_error": str(e)
@@ -1206,75 +1139,9 @@ fi
                 "verification_error": str(e)
             }
 
-    def _handle_mkdir_success(self, context_info):
-        """处理mkdir命令成功后的逻辑，包含延迟检测机制"""
-        try:
-            import time
-            
-            target_path = context_info.get("target_path", "")
-            absolute_path = context_info.get("absolute_path", "")
-            
-            if not target_path:
-                return {
-                    "success": True,
-                    "user_confirmed": True,
-                    "command_type": "mkdir",
-                    "message": "Mkdir command executed successfully"
-                }
-            
-            # 添加延迟检测机制，参考echo > file的检测逻辑
-            progress_print("⏳ Validating directory creation", end="", flush=True)
-            
-            max_attempts = 60
-            for attempt in range(max_attempts):
-                try:
-                    # 检查目录是否存在
-                    check_result = self._check_remote_file_exists(absolute_path)
-                    
-                    if check_result.get("exists"):
-                        from .progress_manager import result_print
-                        result_print("√")  # 成功标记
-                        return {
-                            "success": True,
-                            "user_confirmed": True,
-                            "command_type": "mkdir",
-                            "message": f"Directory '{target_path}' created and verified successfully",
-                            "path": target_path,
-                            "absolute_path": absolute_path
-                        }
-                    
-                    # 目录不存在，等待1秒并输出进度点
-                    time.sleep(1)
-                    print(".", end="", flush=True)
-                    
-                except Exception as e:
-                    print(f"\n⚠️ Error checking directory: {str(e)[:50]}")
-                    # 检测失败，但不影响整体结果
-                    break
-            
-            # 超时或检测失败，但仍然返回成功（用户已确认执行）
-            print(f"\n💡 Directory creation completed (validation timeout after {max_attempts}s)")
-            return {
-                "success": True,
-                "user_confirmed": True,
-                "command_type": "mkdir",
-                "message": f"Directory '{target_path}' creation completed",
-                "path": target_path,
-                "absolute_path": absolute_path,
-                "validation_timeout": True
-            }
-            
-        except Exception as e:
-            # 验证过程出错，但不影响mkdir的成功状态
-            return {
-                "success": True,
-                "user_confirmed": True,
-                "command_type": "mkdir",
-                "message": f"Directory created successfully (validation error: {str(e)[:50]})",
-                "validation_error": str(e)
-            }
 
-    def execute_generic_remote_command(self, cmd, args):
+
+    def execute_generic_command(self, cmd, args):
         """
         统一远端命令执行接口 - 处理除特殊命令外的所有命令
         
@@ -1290,7 +1157,7 @@ fi
             from .improved_file_queue import get_improved_file_queue
             queue_manager = get_improved_file_queue()
         except ImportError:
-            print("⚠️ Warning: Failed to import improved file queue manager, will execute directly")
+            print(f"Warning: Failed to import improved file queue manager, will execute directly")
             queue_manager = None
         
         import threading
@@ -1325,7 +1192,7 @@ fi
         
         # 请求窗口槽位
         if queue_manager:
-            debug_log(f"🔒 DEBUG: [{get_relative_timestamp()}] [ENTRY] execute_generic_remote_command - 请求窗口槽位 - window_id: {window_id}, cmd: {cmd}, thread: {threading.get_ident()}")
+            debug_log(f"🔒 DEBUG: [{get_relative_timestamp()}] [ENTRY] execute_generic_command - 请求窗口槽位 - window_id: {window_id}, cmd: {cmd}, thread: {threading.get_ident()}")
             slot_status = queue_manager.request_window_slot(window_id)
             debug_log(f"📋 DEBUG: [{get_relative_timestamp()}] [SLOT_STATUS] 槽位状态: {slot_status} - window_id: {window_id}")
             
@@ -1397,7 +1264,7 @@ fi
             
             # 生成远端命令（包含语法检查）
             try:
-                remote_command_info = self._generate_remote_command(cmd, args, current_shell)
+                remote_command_info = self._generate_command(cmd, args, current_shell)
                 remote_command, result_filename = remote_command_info
             except Exception as e:
                 # 如果语法检查失败，直接返回错误，不弹出窗口
@@ -1460,7 +1327,7 @@ fi
         except (ValueError, IndexError):
             return None
 
-    def _generate_remote_command(self, cmd, args, current_shell):
+    def _generate_command(self, cmd, args, current_shell):
         """
         生成远端执行命令
         
@@ -1608,10 +1475,8 @@ fi
                 f'    echo "$EXIT_CODE" > "$EXITCODE_FILE"\n'
                 f'    set -e\n'
                 f'    \n'
-                f'    # 显示stdout内容\n'
-                f'    if [ -s "$OUTPUT_FILE" ]; then\n'
-                f'        cat "$OUTPUT_FILE"\n'
-                f'    fi\n'
+                f'    # stdout内容将通过JSON结果文件传递，不在这里显示\n'
+                f'    # 这样避免重复输出问题\n'
                 f'    \n'
                 f'    # 显示stderr内容（如果有）\n'
                 f'    if [ -s "$ERROR_FILE" ]; then\n'
@@ -1657,7 +1522,7 @@ fi
                 # f'    print(f"DEBUG: stdout文件大小: {{stdout_size}} bytes", file=sys.stderr)\n'
                 f'else:\n'
                 f'    pass\n'
-                # f'    print("DEBUG: stdout文件不存在！", file=sys.stderr)\n'
+                # f'    print(f"DEBUG: stdout文件不存在！", file=sys.stderr)\n'
                 f'\n'
                 # f'print(f"DEBUG: 检查stderr文件: {{stderr_file}}", file=sys.stderr)\n'
                 # f'print(f"DEBUG: stderr文件存在: {{os.path.exists(stderr_file)}}", file=sys.stderr)\n'
@@ -1666,7 +1531,7 @@ fi
                 # f'    print(f"DEBUG: stderr文件大小: {{stderr_size}} bytes", file=sys.stderr)\n'
                 f'else:\n'
                 f'    pass\n'
-                # f'    print("DEBUG: stderr文件不存在！", file=sys.stderr)\n'
+                # f'    print(f"DEBUG: stderr文件不存在！", file=sys.stderr)\n'
                 f'\n'
                 f'# 读取stdout文件\n'
                 f'if os.path.exists(stdout_file):\n'
@@ -1682,7 +1547,7 @@ fi
                 f'else:\n'
                 f'    raw_stdout = "ERROR: stdout文件不存在"\n'
                 f'    stdout_content = ""\n'
-                # f'    print("DEBUG: stdout文件不存在，无法读取内容", file=sys.stderr)\n'
+                # f'    print(f"DEBUG: stdout文件不存在，无法读取内容", file=sys.stderr)\n'
                 f'\n'
                 f'# 读取stderr文件\n'
                 f'if os.path.exists(stderr_file):\n'
@@ -1698,7 +1563,7 @@ fi
                 f'else:\n'
                 f'    raw_stderr = ""\n'
                 f'    stderr_content = ""\n'
-                # f'    print("DEBUG: stderr文件不存在（正常情况）", file=sys.stderr)\n'
+                # f'    print(f"DEBUG: stderr文件不存在（正常情况）", file=sys.stderr)\n'
                 f'\n'
                 f'# 读取退出码\n'
                 f'exit_code = 0\n'
@@ -1739,9 +1604,9 @@ fi
             )
             
             # 在返回前进行语法检查
-            # print(f"🔍 [DEBUG] 开始语法检查，命令长度: {len(remote_command)} 字符")
+            # print(f"[DEBUG] 开始语法检查，命令长度: {len(remote_command)} 字符")
             syntax_check = self.validate_bash_syntax_fast(remote_command)
-            # print(f"🔍 [DEBUG] 语法检查结果: {syntax_check}")
+            # print(f"[DEBUG] 语法检查结果: {syntax_check}")
             if not syntax_check["success"]:
                 print(f"Error: Failed syntax check, throw exception")
                 raise Exception(f"Generated bash command syntax error: {syntax_check['error']}")
@@ -1771,7 +1636,7 @@ fi
             dict: 执行结果
         """
         debug_log_func(f"🎯 DEBUG: [{get_timestamp_func()}] [CAPTURE_START] _execute_with_result_capture 开始 - window_id: {window_id}, cmd: {cmd}")
-        # print(f"🔧 DEBUG: [{get_timestamp_func()}] [CAPTURE_ENTRY] _execute_with_result_capture 开始 - window_id: {window_id}, cmd: {cmd}")
+        # print(f"DEBUG: [{get_timestamp_func()}] [CAPTURE_ENTRY] _execute_with_result_capture 开始 - window_id: {window_id}, cmd: {cmd}")
         
         # 开始进度缓冲
         from .progress_manager import start_progress_buffering, stop_progress_buffering
@@ -1809,19 +1674,19 @@ fi
             
             debug_info = debug_capture.get_debug_info()
             debug_capture.start_capture()  # 启动debug捕获，避免窗口期间的debug输出
-            debug_print("_execute_with_result_capture: 即将调用_show_command_window")
+            debug_print(f"_execute_with_result_capture: 即将调用_show_command_window")
             debug_print(f"cmd: {cmd}, args: {args}")
             debug_log_func(f"🪟 DEBUG: [{get_timestamp_func()}] [WINDOW_CALL] 即将调用_show_command_window - window_id: {window_id}")
             window_result = self._show_command_window(cmd, args, remote_command, debug_info)
             debug_print(f"_show_command_window返回结果: {window_result}")
-            # print(f"📋 DEBUG: [{get_timestamp_func()}] [WINDOW_RESULT] 窗口操作完成 - window_id: {window_id}, action: {window_result.get('action', 'unknown')}")
+            # print(f"DEBUG: [{get_timestamp_func()}] [WINDOW_RESULT] 窗口操作完成 - window_id: {window_id}, action: {window_result.get('action', 'unknown')}")
             
             # 检查用户窗口操作结果，并在适当时机释放槽位
             user_completed_window = False
             
             if window_result.get("action") == "direct_feedback":
                 # 直接反馈已经在_show_command_window中处理完毕，直接返回结果
-                debug_print("_execute_with_result_capture: 检测到direct_feedback，直接返回window_result")
+                debug_print(f"_execute_with_result_capture: 检测到direct_feedback，直接返回window_result")
                 debug_print(f"window_result: {window_result}")
                 user_completed_window = True  # 用户完成了窗口操作
                 debug_log_func(f"👤 DEBUG: [{get_timestamp_func()}] [USER_COMPLETED] 设置user_completed_window=True (direct_feedback) - window_id: {window_id}")
@@ -1841,9 +1706,9 @@ fi
                 # 用户确认执行完成
                 user_completed_window = True
                 debug_log_func(f"👤 DEBUG: [{get_timestamp_func()}] [USER_COMPLETED] 设置user_completed_window=True (success) - window_id: {window_id}")
-                debug_print("_execute_with_result_capture: 用户确认执行完成")
+                debug_print(f"_execute_with_result_capture: 用户确认执行完成")
             elif window_result.get("action") != "success":
-                debug_print("_execute_with_result_capture: window_result.action != 'success'")
+                debug_print(f"_execute_with_result_capture: window_result.action != 'success'")
                 debug_print(f"实际的window_result.action: {window_result.get('action')}")
                 debug_print(f"完整window_result: {window_result}")
                 user_completed_window = True  # 用户取消或超时也算完成窗口操作
@@ -1867,7 +1732,7 @@ fi
             debug_capture.stop_capture()  # 成功路径的debug捕获停止
             
             # 等待远端文件出现，最多等待60秒
-            # print(f"⏳ DEBUG: [{get_timestamp_func()}] [WAIT_FILE] 等待结果文件 - window_id: {window_id}, filename: {result_filename}")
+            # print(f"DEBUG: [{get_timestamp_func()}] [WAIT_FILE] 等待结果文件 - window_id: {window_id}, filename: {result_filename}")
             result_data = self._wait_and_read_result_file(result_filename)
             # print(f"DEBUG: [{get_timestamp_func()}] [FILE_READ] 结果文件读取完成 - window_id: {window_id}, success: {result_data.get('success', False)}")
             
@@ -1900,7 +1765,7 @@ fi
                 "stderr": result_data["data"].get("stderr", "") + "\n" if result_data["data"].get("stderr", "").strip() else "",
                 "working_dir": result_data["data"].get("working_dir", ""),
                 "timestamp": result_data["data"].get("timestamp", ""),
-                "path": f"tmp/{result_filename}"  # 远端结果文件路径
+                "path": f"tmp/{result_filename}",  # 远端结果文件路径
             }
             
         except Exception as e:
@@ -1916,10 +1781,10 @@ fi
             # 停止心跳线程
             if heartbeat_stop_event:
                 heartbeat_stop_event.set()
-                # print(f"💓 DEBUG: [{get_timestamp_func()}] [HEARTBEAT_STOP] 心跳线程已停止 - window_id: {window_id}")
+                # print(f"DEBUG: [{get_timestamp_func()}] [HEARTBEAT_STOP] 心跳线程已停止 - window_id: {window_id}")
             
-            # print(f"🔧 DEBUG: [{get_timestamp_func()}] [CAPTURE_EXIT] _execute_with_result_capture 结束 - window_id: {window_id}")
-        # 注意：窗口槽位的释放由execute_generic_remote_command的finally块统一处理
+            # print(f"DEBUG: [{get_timestamp_func()}] [CAPTURE_EXIT] _execute_with_result_capture 结束 - window_id: {window_id}")
+        # 注意：窗口槽位的释放由execute_generic_command的finally块统一处理
 
     def _show_command_window(self, cmd, args, remote_command, debug_info=None):
         """
@@ -1963,7 +1828,7 @@ fi
             elif result["action"] == "direct_feedback":
                 # 处理直接反馈 - 调用原来的直接反馈逻辑
                 print () # shift a newline since ctrl+D
-                debug_print("检测到direct_feedback action，即将调用direct_feedback方法")
+                debug_print(f"检测到direct_feedback action，即将调用direct_feedback方法")
                 debug_print(f"remote_command存在: {remote_command is not None}")
                 debug_print(f"debug_info存在: {debug_info is not None}")
                 try:
@@ -2054,20 +1919,20 @@ fi
         直接反馈功能 - 粘贴远端命令和用户反馈，用=分割
         使用统一的_get_multiline_user_input方法
         """
-        debug_print("进入direct_feedback方法")
+        debug_print(f"进入direct_feedback方法")
         
         # 先输出debug信息（如果有的话）
         if debug_info:
-            print("Debug information:")
+            print(f"Debug information:")
             print(debug_info)
-            print("=" * 20)  # 20个等号分割线
+            print(f"=" * 20)  # 20个等号分割线
         
         # 然后粘贴生成的远端指令
-        print("Generated remote command:")
+        print(f"Generated remote command:")
         print(remote_command)
-        print("=" * 20)  # 50个等号分割线
+        print(f"=" * 20)  # 50个等号分割线
         
-        print("Please provide command execution result (multi-line input, press Ctrl+D to finish):")
+        print(f"Please provide command execution result (multi-line input, press Ctrl+D to finish):")
         print()
         
         # 使用统一的多行输入方法
@@ -2537,8 +2402,8 @@ def show_help():
             return show_unified_help(context="command_line")
         except ImportError:
             # Fallback to basic help if help_system is not available
-            print("GOOGLE_DRIVE - Google Drive access tool with GDS (Google Drive Shell)")
-            print("Use --shell for interactive mode. Type 'help' in shell for commands.")
+            print(f"GOOGLE_DRIVE - Google Drive access tool with GDS (Google Drive Shell)")
+            print(f"Use --shell for interactive mode. Type 'help' in shell for commands.")
             return 0
 
 def main():
@@ -2591,13 +2456,13 @@ def main():
         return list_shells(command_identifier) if list_shells else 1
     elif args[0] == '--checkout-remote-shell':
         if len(args) < 2:
-            print("Error:  错误: 需要指定shell ID")
+            print(f"Error:  错误: 需要指定shell ID")
             return 1
         shell_id = args[1]
         return checkout_shell(shell_id, command_identifier) if checkout_shell else 1
     elif args[0] == '--terminate-remote-shell':
         if len(args) < 2:
-            print("Error:  错误: 需要指定shell ID")
+            print(f"Error:  错误: 需要指定shell ID")
             return 1
         shell_id = args[1]
         return terminate_shell(shell_id, command_identifier) if terminate_shell else 1
@@ -2642,7 +2507,7 @@ def main():
                 if hasattr(shell, 'execute_shell_command'):
                     return shell.execute_shell_command(shell_cmd, command_identifier)
                 else:
-                    print("Error:  GoogleDriveShell missing execute_shell_command method")
+                    print(f"Error:  GoogleDriveShell missing execute_shell_command method")
                     return 1
             except Exception as e:
                 error_msg = f"❌ Execute shell command failed: {e}"
@@ -2650,7 +2515,7 @@ def main():
                 return 1
     elif args[0] == '--desktop':
         if len(args) < 2:
-            print("Error: --desktop needs to specify operation type")
+            print(f"Error: --desktop needs to specify operation type")
             return 1
         
         desktop_action = args[1]
@@ -2667,7 +2532,7 @@ def main():
                     if global_get_status:
                         return global_get_status(command_identifier)
                     else:
-                        print("Error:  Unable to find get_google_drive_status function")
+                        print(f"Error:  Unable to find get_google_drive_status function")
                         return 1
         elif desktop_action == '--shutdown':
             try:
@@ -2682,7 +2547,7 @@ def main():
                     if global_shutdown:
                         return global_shutdown(command_identifier)
                     else:
-                        print("Error:  Unable to find shutdown_google_drive function")
+                        print(f"Error:  Unable to find shutdown_google_drive function")
                         return 1
         elif desktop_action == '--launch':
             try:
@@ -2697,7 +2562,7 @@ def main():
                     if global_launch:
                         return global_launch(command_identifier)
                     else:
-                        print("Error:  Unable to find launch_google_drive function")
+                        print(f"Error:  Unable to find launch_google_drive function")
                         return 1
         elif desktop_action == '--restart':
             try:
@@ -2712,7 +2577,7 @@ def main():
                     if global_restart:
                         return global_restart(command_identifier)
                     else:
-                        print("Error:  Unable to find restart_google_drive function")
+                        print(f"Error:  Unable to find restart_google_drive function")
                         return 1
         elif desktop_action == '--set-local-sync-dir':
             return set_local_sync_dir(command_identifier) if set_local_sync_dir else 1
@@ -2724,7 +2589,7 @@ def main():
     elif args[0] == '--upload':
         # 上传文件：GOOGLE_DRIVE --upload file_path [remote_path] 或 GOOGLE_DRIVE --upload "[[src1, dst1], [src2, dst2], ...]"
         if len(args) < 2:
-            print("Error: Need to specify the file to upload")
+            print(f"Error: Need to specify the file to upload")
             return 1
             
         try:
