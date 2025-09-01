@@ -190,11 +190,11 @@ def check_and_confirm_overwrite(output_dir, not_default=False, no_override_mater
     
     # 默认模式（--not-default未指明）：直接覆盖
     if not not_default:
-        print(f"📝 Overwriting existing files in {output_dir}: {', '.join(existing_files)}")
+        print(f"Overwriting existing files in {output_dir}: {', '.join(existing_files)}")
         return True, output_dir
     
     # 交互模式：询问用户
-    print(f"\n⚠️  The following files already exist in {output_dir}:")
+    print(f"\nWarning: The following files already exist in {output_dir}:")
     for file in existing_files:
         print(f"  - {file}")
     
@@ -232,12 +232,12 @@ def handle_auto_rename(output_dir):
         if not new_path.exists() or (not tutorial_path.exists() and not question_path.exists()):
             # 创建新目录
             new_path.mkdir(parents=True, exist_ok=True)
-            print(f"📁 Auto-renamed output directory: {new_path}")
+            print(f"Auto-renamed output directory: {new_path}")
             return True, str(new_path)
         
         counter += 1
         if counter > 100:  # 防止无限循环
-            print("❌ Unable to find a suitable directory name, please manually clean up the output directory")
+            print("Error: Unable to find a suitable directory name, please manually clean up the output directory")
             return False, None
 
 
@@ -269,17 +269,17 @@ def get_output_directory_tkinter():
         root.destroy()
         
         if selected_dir:
-            print(f"✅ Selected directory: {selected_dir}")
+            print(f"Selected directory: {selected_dir}")
             return selected_dir
         else:
-            print("❌ No directory selected")
+            print("Error: No directory selected")
             return None
             
     except ImportError:
-        print("❌ tkinter is not available, please manually enter the directory path")
+        print("Error: tkinter is not available, please manually enter the directory path")
         return None
     except Exception as e:
-        print(f"❌ Directory selection failed: {e}")
+        print(f"Error: Directory selection failed: {e}")
         return None
 
 
@@ -289,7 +289,7 @@ def get_paper_file():
         import tkinter as tk
         from tkinter import filedialog
         
-        print("📄 Please select the paper file in the pop-up window...")
+        print("Please select the paper file in the pop-up window...")
         
         # 创建tkinter根窗口并隐藏
         root = tk.Tk()
@@ -311,17 +311,17 @@ def get_paper_file():
         root.destroy()
         
         if selected_file:
-            print(f"✅ Selected file: {selected_file}")
+            print(f"Selected file: {selected_file}")
             return selected_file
         else:
-            print("❌ No file selected")
+            print("Error: No file selected")
             return None
             
     except ImportError:
-        print("❌ tkinter is not available, please manually enter the file path")
+        print("Error: tkinter is not available, please manually enter the file path")
         return None
     except Exception as e:
-        print(f"❌ File selection failed: {e}")
+        print(f"Error: File selection failed: {e}")
         return None
 
 
@@ -347,7 +347,7 @@ def run_interactive_mode():
         params["type"] = "general"
         
         # Get topic
-        print("\n📝 Step 2: Input learning topic")
+        print("\nStep 2: Input learning topic")
         while True:
             topic = input("Please enter the learning topic (e.g., Python basics, machine learning, data structure): ").strip()
             if topic:
@@ -362,7 +362,7 @@ def run_interactive_mode():
                         print("📄 Detected @file reference, automatically enable --context mode")
                     break
                 except (FileNotFoundError, ValueError) as e:
-                    print(f"❌ Error: {e}")
+                    print(f"Error: {e}")
                     print("Please enter a valid topic or file path")
                     continue
             print("Please enter a valid topic")
@@ -391,9 +391,9 @@ def run_interactive_mode():
                 with open(paper_file, 'r', encoding='utf-8') as f:
                     content = f.read()
                 params["paper_content"] = content
-                print(f"✅ Read Markdown file: {len(content)} characters")
+                print(f"Read Markdown file: {len(content)} characters")
             except Exception as e:
-                print(f"❌ Read file failed: {e}")
+                print(f"Error: Read file failed: {e}")
                 return None
                 
         elif input_choice == 1:  # PDF file
@@ -536,7 +536,7 @@ def parse_direct_command(args):
     
     # 检查互斥参数
     if parsed_args.context and parsed_args.brainstorm_only:
-        print("❌ Error: --context and --brainstorm-only options are mutually exclusive, cannot be used together")
+        print("Error: --context and --brainstorm-only options are mutually exclusive, cannot be used together")
         print("   --context: Skip brainstorming, directly generate tutorial")
         print("   --brainstorm-only: Only perform brainstorming, do not generate tutorial")
         return None
@@ -582,7 +582,7 @@ def parse_direct_command(args):
                     params['paper_content'] = f.read()
                 params['paper_path'] = file_path
             except Exception as e:
-                print(f"❌ Read markdown file failed: {e}")
+                print(f"Error: Read markdown file failed: {e}")
                 return 1
         elif file_path.endswith('.txt'):
             params['input_type'] = 0  # Text file (treated as markdown)
@@ -592,7 +592,7 @@ def parse_direct_command(args):
                     params['paper_content'] = f.read()
                 params['paper_path'] = file_path
             except Exception as e:
-                print(f"❌ Read text file failed: {e}")
+                print(f"Error: Read text file failed: {e}")
                 return 1
         elif file_path.endswith('.pdf'):
             params['input_type'] = 1  # PDF file
@@ -619,7 +619,7 @@ def parse_direct_command(args):
                 params['context_mode'] = True
                 print("📄 Detected @file reference, automatically enable --context mode")
         except (FileNotFoundError, ValueError) as e:
-            print(f"❌ Error: {e}")
+            print(f"Error: {e}")
             return None
         params['negative_prompt'] = parsed_args.negative
         params['read_images'] = parsed_args.read_images
@@ -638,7 +638,7 @@ def parse_direct_command(args):
                     params['input_type'] = 1  # PDF file
                     params['paper_path'] = str(topic_path)
                     params['read_images'] = parsed_args.read_images
-                    print(f"📄 Detected PDF file path, switch to paper learning mode: {topic_path}")
+                    print(f"Detected PDF file path, switch to paper learning mode: {topic_path}")
                 elif file_ext in ['.md', '.txt']:
                     params['type'] = 'paper'
                     params['input_type'] = 0 if file_ext == '.md' else 4  # Markdown or direct file
@@ -678,7 +678,7 @@ def parse_direct_command(args):
                 params['context_mode'] = True
                 print("📄 Detected @file reference, automatically enable --context mode")
         except (FileNotFoundError, ValueError) as e:
-            print(f"❌ Error: {e}")
+            print(f"Error: {e}")
             return None
     else:
         print("Error: must specify learning topic or paper information")
@@ -733,7 +733,7 @@ def get_openrouter_models():
             ]
             return default_models, {}
     except Exception as e:
-        print(f"⚠️  Get model list failed: {e}")
+        print(f"Warning:  Get model list failed: {e}")
         # Return minimal fallback
         return ["deepseek/deepseek-r1:free"], {}
 
@@ -743,21 +743,21 @@ def select_openrouter_model(params):
     models, model_details = get_openrouter_models()
     
     if not models:
-        print("❌ No available models")
+        print("Error:  No available models")
         return None, None
     
     # Check if model is already specified
     if params.get("selected_model"):
         selected_model = params["selected_model"]
         max_tokens = params.get("max_tokens", 4000)
-        print(f"✅ Using specified model: {selected_model}")
+        print(f"Using specified model: {selected_model}")
         return selected_model, max_tokens
     
     # Auto-select for default mode (use "auto" for automatic model selection)
     if not params.get('not_default', False):
         selected_model = "auto"  # 使用auto模式自动选择
         max_tokens = 4000
-        print(f"🚀 Default mode: automatic model selection")
+        print(f"Default mode: automatic model selection")
         return selected_model, max_tokens
     
     # Interactive mode - let user choose
@@ -794,10 +794,10 @@ def select_openrouter_model(params):
                 selected_model = models[choice_num - 1]
                 break
             else:
-                print(f"❌ Please enter a number between 1 and {len(models)+1}")
+                print(f"Error: Please enter a number between 1 and {len(models)+1}")
                 
         except ValueError:
-            print("❌ Please enter a valid number")
+            print("Error:  Please enter a valid number")
         except KeyboardInterrupt:
             print("\n❌ User cancelled")
             return None, None
@@ -810,7 +810,7 @@ def select_openrouter_model(params):
         model_info = model_details.get(selected_model, {})
         context_length = model_info.get('context_length', 4000)
         max_tokens = context_length // 4  # Use 1/4 of context length
-        print(f"✅ Select model: {selected_model} (max_tokens: {max_tokens})")
+        print(f"Select model: {selected_model} (max_tokens: {max_tokens})")
     
     return selected_model, max_tokens
 
@@ -837,7 +837,7 @@ def generate_content_structure_prompt(params):
         if not params.get("selected_model"):
             selected_model, max_tokens = select_openrouter_model(params)
             if not selected_model:
-                print("❌ No model selected")
+                print("Error:  No model selected")
                 return None
             
             # Store selected model info in params
@@ -869,7 +869,7 @@ def generate_content_structure_prompt(params):
             content_threshold = dynamic_max_tokens
         
         if token_count > content_threshold:
-            print(f"⚠️  Paper content is too long ({token_count:,} tokens), exceeds recommended processing length ({content_threshold:,} tokens)")
+            print(f"Warning:  Paper content is too long ({token_count:,} tokens), exceeds recommended processing length ({content_threshold:,} tokens)")
             
             # 检查是否为默认模式
             if params.get("not_default", False):
@@ -915,13 +915,13 @@ The summary should be detailed but concise, suitable for subsequent tutorial cre
                 
                 if summary_response:
                     paper_content = summary_response
-                    print(f"✅ Summary generated ({count_tokens(paper_content)} tokens)")
+                    print(f"Summary generated ({count_tokens(paper_content)} tokens)")
                 else:
-                    print("❌ Summary generation failed, using original content")
+                    print("Error:  Summary generation failed, using original content")
                     
             elif approach_choice == 2:  # Manual truncate
                 paper_content = paper_content[:60000]  # Keep first 60k characters
-                print(f"✅ Truncated first part of content ({count_tokens(paper_content)} tokens)")
+                print(f"Truncated first part of content ({count_tokens(paper_content)} tokens)")
         
         # Update params with processed content
         params['paper_content'] = paper_content
@@ -1048,31 +1048,31 @@ def call_openrouter_for_structure(prompt, model=None, max_tokens=None, retry_cou
                                 'api_duration': api_duration
                             }
                             
-                            print(f"✅ OpenRouter API call successful (duration: {api_duration:.2f} seconds)", file=sys.stderr)
+                            print(f"OpenRouter API call successful (duration: {api_duration:.2f} seconds)", file=sys.stderr)
                             return content, usage_info
                         else:
                             error_msg = response_data.get('error', 'Unknown error')
-                            print(f"❌ OpenRouter API returned error: {error_msg}", file=sys.stderr)
+                            print(f"Error: OpenRouter API returned error: {error_msg}", file=sys.stderr)
                             return f"ERROR: {error_msg}", {"error": error_msg}
                             
                     except json.JSONDecodeError as e:
-                        print(f"❌ Parsing OpenRouter response failed: {e}", file=sys.stderr)
+                        print(f"Error: Parsing OpenRouter response failed: {e}", file=sys.stderr)
                         print(f"Original response: {result.stdout[:500]}...", file=sys.stderr)
                         return f"ERROR: JSON parsing failed: {e}", {"error": f"JSON parsing failed: {e}"}
                 else:
                     error_msg = result.stderr or "Command execution failed"
-                    print(f"❌ OpenRouter command execution failed: {error_msg}", file=sys.stderr)
+                    print(f"Error: OpenRouter command execution failed: {error_msg}", file=sys.stderr)
                     return f"ERROR: {error_msg}", {"error": error_msg}
                     
             except subprocess.TimeoutExpired:
-                print("❌ OpenRouter API call timed out", file=sys.stderr)
+                print("Error:  OpenRouter API call timed out", file=sys.stderr)
                 return "ERROR: API call timed out", {"error": "API call timed out"}
             except Exception as e:
-                print(f"❌ OpenRouter API call exception: {e}", file=sys.stderr)
+                print(f"Error: OpenRouter API call exception: {e}", file=sys.stderr)
                 return f"ERROR: {e}", {"error": str(e)}
         
     except Exception as e:
-        print(f"❌ call_openrouter_for_structure exception: {e}", file=sys.stderr)
+        print(f"Error: call_openrouter_for_structure exception: {e}", file=sys.stderr)
         return f"ERROR: {e}", {"error": str(e)}
 
 
@@ -1343,7 +1343,7 @@ def create_learning_files_from_responses(params, tutorial_response, question_res
         with open(tutorial_path, 'w', encoding='utf-8') as f:
             f.write(tutorial_response)
         log_progress(f"tutorial.md created successfully: {tutorial_path}", "FILE")
-        print(f"✅ Create file: {tutorial_path}")
+        print(f"Create file: {tutorial_path}")
         
         # 创建question.md
         log_progress("Create question.md file", "FILE")
@@ -1351,7 +1351,7 @@ def create_learning_files_from_responses(params, tutorial_response, question_res
         with open(question_path, 'w', encoding='utf-8') as f:
             f.write(question_response)
         log_progress(f"question.md created successfully: {question_path}", "FILE")
-        print(f"✅ Create file: {question_path}")
+        print(f"Create file: {question_path}")
         
         # 创建OPENROUTER_prompts文件夹并保存prompts和responses
         if prompts_and_responses:
@@ -1383,7 +1383,7 @@ def create_learning_files_from_responses(params, tutorial_response, question_res
                     f.write(f"cost: ${token_info.get('cost', 0):.6f}\n")
                     f.write(f"api_duration: {token_info.get('api_duration', 0):.2f} seconds\n")
                 
-                print(f"✅ Save prompt and response: {prompt_path.name}, {response_path.name}")
+                print(f"Save prompt and response: {prompt_path.name}, {response_path.name}")
                 model_used = token_info.get('model', 'unknown')
                 cost = token_info.get('cost', 0)
                 print(f"📊 Token usage: {token_info.get('total_tokens', 0)} tokens - Model: {model_used} - Cost: ${cost:.6f} - Duration: {token_info.get('api_duration', 0):.2f} seconds")
@@ -1398,7 +1398,7 @@ def create_learning_files_from_responses(params, tutorial_response, question_res
         return True
         
     except Exception as e:
-        print(f"❌ Error creating files: {e}")
+        print(f"Error: Error creating files: {e}")
         return False
 
 
@@ -1421,7 +1421,7 @@ def call_openrouter_with_retry(prompt, model, max_tokens, step_name, max_retries
             return response, token_info, current_model
         
         log_progress(f"{step_name} failed (Attempt {attempt + 1}) - Error: {str(response)[:100]}...", "ERROR")
-        print(f"❌ {step_name} failed (Attempt {attempt + 1})", file=sys.stderr)
+        print(f"Error: {step_name} failed (Attempt {attempt + 1})", file=sys.stderr)
         
         # 检查是否是429错误（速率限制）或其他错误需要切换模型
         if should_switch_model(response, attempt, max_retries):
@@ -1454,13 +1454,13 @@ def handle_model_switching(current_model, params, step_name):
     # 获取所有可用模型
     all_models, model_details = get_openrouter_models()
     if not all_models:
-        print("❌ Unable to get model list", file=sys.stderr)
+        print("Error:  Unable to get model list", file=sys.stderr)
         return None
     
     # 移除当前失败的模型
     available_models = [m for m in all_models if m != current_model]
     if not available_models:
-        print("❌ No other available models", file=sys.stderr)
+        print("Error:  No other available models", file=sys.stderr)
         return None
     
     # 分类模型
@@ -1508,7 +1508,7 @@ def interactive_model_selection(failed_model, free_models, paid_models, step_nam
             choice_idx = int(choice) - 1
             if 0 <= choice_idx < len(all_available):
                 new_model = all_available[choice_idx]
-                print(f"✅ Switch to model: {new_model}", file=sys.stderr)
+                print(f"Switch to model: {new_model}", file=sys.stderr)
                 return new_model
     except (KeyboardInterrupt, EOFError):
         print("\nUser cancelled operation", file=sys.stderr)
@@ -1529,14 +1529,14 @@ def generate_learning_content(params):
         selected_model = params["selected_model"]
         max_tokens = params["max_tokens"]
         log_progress(f"Using pre-selected model: {selected_model}", "MODEL")
-        print(f"✅ Using pre-selected model: {selected_model}")
+        print(f"Using pre-selected model: {selected_model}")
     else:
         # 让用户选择模型
         log_progress("Start model selection process", "MODEL")
         selected_model, max_tokens = select_openrouter_model(params)
         if not selected_model:
             log_progress("Model selection failed", "ERROR")
-            print("❌ No model selected")
+            print("Error:  No model selected")
             return None
         
         log_progress(f"Model selection completed: {selected_model}", "MODEL")
@@ -1556,7 +1556,7 @@ def generate_learning_content(params):
         if params["type"] == "paper":
             structure_prompt = generate_content_structure_prompt(params)
             if structure_prompt is None:
-                print("❌ Content preparation failed, cannot continue generating learning materials")
+                print("Error:  Content preparation failed, cannot continue generating learning materials")
                 return None
     else:
         print("\n📝 Step 1: Ask AI for brainstorming...")
@@ -1564,7 +1564,7 @@ def generate_learning_content(params):
         
         # Check if content preparation failed (e.g., PDF extraction failed)
         if structure_prompt is None and params["type"] == "paper":
-            print("❌ Content preparation failed, cannot continue generating learning materials")
+            print("Error:  Content preparation failed, cannot continue generating learning materials")
             return None
     
     if structure_prompt and not params.get("context_mode", False):  # Brainstorming was requested
@@ -1581,7 +1581,7 @@ def generate_learning_content(params):
         
         if brainstorming_response is None:
             log_progress("Brainstorming step failed", "ERROR")
-            print("❌ Brainstorming failed")
+            print("Error:  Brainstorming failed")
             return None
         
         log_progress("Brainstorming step completed", "STEP")
@@ -1625,7 +1625,7 @@ def generate_learning_content(params):
     
     if tutorial_response is None:
         log_progress("tutorial.md generation failed", "ERROR")
-        print("❌ tutorial.md generation failed")
+        print("Error:  tutorial.md generation failed")
         return None
     
     log_progress("tutorial.md generation completed", "STEP")
@@ -1648,7 +1648,7 @@ def generate_learning_content(params):
     
     if question_response is None:
         log_progress("question.md generation failed", "ERROR")
-        print("❌ question.md generation failed")
+        print("Error:  question.md generation failed")
         return None
     
     log_progress("question.md generation completed", "STEP")
@@ -1707,7 +1707,7 @@ def prepare_paper_content(params):
     if input_type == 0:  # Markdown file
         paper_content = params.get("paper_content")
         paper_path = params.get("paper_path")
-        print("✅ Using provided Markdown content")
+        print("Using provided Markdown content")
         
     elif input_type == 1:  # PDF file
         paper_path = params.get("paper_path")
@@ -1733,7 +1733,7 @@ def prepare_paper_content(params):
             if processed_path:
                 paper_path = processed_path
         else:
-            print("❌ Unable to download paper")
+            print("Error:  Unable to download paper")
             return None, None, 0
             
     elif input_type == 3:  # Description/Search
@@ -1747,20 +1747,20 @@ def prepare_paper_content(params):
             paper_path = "context_content"
             # 估算token数量
             token_count = len(paper_content) // 4  # 粗略估算
-            print(f"✅ Context content processed, content length: {token_count} tokens")
+            print(f"Context content processed, content length: {token_count} tokens")
         else:
             paper_content, downloaded_path, token_count = search_and_download_paper(paper_description, params)
             if paper_content:
-                print(f"✅ Paper processed, content length: {token_count} tokens")
+                print(f"Paper processed, content length: {token_count} tokens")
                 paper_path = downloaded_path  # PDF路径
             else:
-                print("❌ Unable to find or download paper")
+                print("Error:  Unable to find or download paper")
                 return None, None, 0
     
 
     
     if not paper_content:
-        print("❌ Unable to get paper content")
+        print("Error:  Unable to get paper content")
         return None, None, 0
     
     # Count tokens
@@ -1791,7 +1791,7 @@ def call_openrouter_with_auto_model(prompt, model="auto", max_retries=3):
             # 获取可用模型列表，按优先级排序
             useable_models = get_useable_models()
             if not useable_models:
-                print("❌ No useable models")
+                print("Error:  No useable models")
                 return {"success": False, "error": "No useable models available"}
             
             # 尝试按顺序调用模型
@@ -1801,16 +1801,16 @@ def call_openrouter_with_auto_model(prompt, model="auto", max_retries=3):
                 try:
                     result = call_openrouter_api(prompt, model=model_id)
                     if result['success']:
-                        print(f"✅ Model {model_id} call successful")
+                        print(f"Model {model_id} call successful")
                         return result
                     else:
-                        print(f"⚠️ Model {model_id} call failed: {result.get('error', 'Unknown error')}")
+                        print(f"Warning: Model {model_id} call failed: {result.get('error', 'Unknown error')}")
                         if i < len(useable_models) - 1:  # 不是最后一个模型
                             print(f"🔄 Try next model...")
                             continue
                         
                 except Exception as e:
-                    print(f"⚠️ Model {model_id} call exception: {e}")
+                    print(f"Warning: Model {model_id} call exception: {e}")
                     if i < len(useable_models) - 1:
                         print(f"🔄 Try next model...")
                         continue
@@ -1859,14 +1859,14 @@ Search keywords: """
         
         if result['success']:
             optimized_query = result['content'].strip()
-            print(f"✅ Optimized search keywords: {optimized_query}")
+            print(f"Optimized search keywords: {optimized_query}")
             return optimized_query
         else:
-            print(f"⚠️ AI optimization failed, using original description: {result['error']}")
+            print(f"Warning: AI optimization failed, using original description: {result['error']}")
             return user_description
             
     except Exception as e:
-        print(f"⚠️ AI optimization failed, using original description: {e}")
+        print(f"Warning: AI optimization failed, using original description: {e}")
         return user_description
 
 
@@ -1899,14 +1899,14 @@ Recommended search engines: """
         
         if result['success']:
             recommended_sources = result['content'].strip()
-            print(f"✅ Recommended search engines: {recommended_sources}")
+            print(f"Recommended search engines: {recommended_sources}")
             return recommended_sources
         else:
-            print(f"⚠️ Search engine recommendation failed, using default: arxiv,google_scholar")
+            print(f"Warning: Search engine recommendation failed, using default: arxiv,google_scholar")
             return "arxiv,google_scholar"
             
     except Exception as e:
-        print(f"⚠️ Search engine recommendation failed, using default: {e}")
+        print(f"Warning: Search engine recommendation failed, using default: {e}")
         return "arxiv,google_scholar"
 
 
@@ -1971,7 +1971,7 @@ Only return the numbers, no other explanation: """
         
         if result['success']:
             selected_indices = result['content'].strip()
-            print(f"✅ AI recommended papers: {selected_indices}")
+            print(f"AI recommended papers: {selected_indices}")
             
             # 检查是否AI认为没有相关论文 - 但如果用户明确要求基于论文学习，则放宽标准
             strict_no_relevant_keywords = ['no relevant paper', 'none of the provided']
@@ -1980,7 +1980,7 @@ Only return the numbers, no other explanation: """
                 if any(char.isdigit() for char in selected_indices):
                     print("⚠️ AI thinks the papers are not highly relevant, but still provides alternative recommendations, continue processing...")
                 else:
-                    print("❌ AI judgment: no relevant papers found")
+                    print("Error:  AI judgment: no relevant papers found")
                     return []  # 返回空列表表示没有相关论文
             
             # 解析选择的论文编号 - 改进的解析逻辑
@@ -2009,7 +2009,7 @@ Only return the numbers, no other explanation: """
                         indices = [int(x.strip()) - 1 for x in numbers_str.split(',') if x.strip().isdigit()]
                         if indices:
                             selected_papers = [search_results[i] for i in indices if 0 <= i < len(search_results)]
-                            print(f"✅ Extracted from detailed reply: {[i+1 for i in indices]}")
+                            print(f"Extracted from detailed reply: {[i+1 for i in indices]}")
                             return selected_papers[:max_papers]
                 
                 # 方法3: 查找所有数字模式（如 "8,6,9" 或 "8, 6, 9"）
@@ -2020,26 +2020,26 @@ Only return the numbers, no other explanation: """
                     indices = [int(x.strip()) - 1 for x in numbers_str.split(',') if x.strip().isdigit()]
                     if indices:
                         selected_papers = [search_results[i] for i in indices if 0 <= i < len(search_results)]
-                        print(f"✅ Extracted from text: {[i+1 for i in indices]}")
+                        print(f"Extracted from text: {[i+1 for i in indices]}")
                         return selected_papers[:max_papers]
                 
                 # 如果所有方法都失败，抛出异常进入fallback逻辑
                 raise ValueError("Failed to extract valid paper numbers from AI response")
                 
             except (ValueError, IndexError) as e:
-                print(f"⚠️  Failed to parse AI selection: {e}")
+                print(f"Warning:  Failed to parse AI selection: {e}")
                 # 如果解析失败且包含"无相关"等关键词，返回空列表
                 if any(keyword in selected_indices for keyword in ['no relevant paper', 'no relevant', 'no relevant']):
-                    print("❌ No relevant papers found")
+                    print("Error:  No relevant papers found")
                     return []
-                print(f"📄 Return the first {max_papers} papers as backup")
+                print(f"Return the first {max_papers} papers as backup")
                 return search_results[:max_papers]
         else:
-            print(f"⚠️  AI selection failed, return the first {max_papers} papers: {result['error']}")
+            print(f"Warning:  AI selection failed, return the first {max_papers} papers: {result['error']}")
             return search_results[:max_papers]
             
     except Exception as e:
-        print(f"⚠️  AI selection failed, return the first {max_papers} papers: {e}")
+        print(f"Warning:  AI selection failed, return the first {max_papers} papers: {e}")
         return search_results[:max_papers]
 
 
@@ -2051,13 +2051,13 @@ def process_paper_with_extract_pdf(paper_path, read_images=False):
         
         paper_path = Path(paper_path)
         if not paper_path.exists():
-            print(f"❌ PDF file does not exist: {paper_path}")
+            print(f"Error: PDF file does not exist: {paper_path}")
             return None, None
         
         # 使用EXTRACT_PDF处理PDF
         extract_pdf_path = Path(__file__).parent / "EXTRACT_PDF.py"
         if not extract_pdf_path.exists():
-            print("❌ EXTRACT_PDF.py does not exist")
+            print("Error:  EXTRACT_PDF.py does not exist")
             return None, None
         
         print(f"🔄 Using EXTRACT_PDF to process: {paper_path.name}")
@@ -2073,7 +2073,7 @@ def process_paper_with_extract_pdf(paper_path, read_images=False):
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
         
         if result.returncode != 0:
-            print(f"❌ EXTRACT_PDF processing failed: {result.stderr}")
+            print(f"Error: EXTRACT_PDF processing failed: {result.stderr}")
             return None, None
         
         # 查找生成的markdown文件
@@ -2081,14 +2081,14 @@ def process_paper_with_extract_pdf(paper_path, read_images=False):
         if md_path.exists():
             with open(md_path, 'r', encoding='utf-8') as f:
                 content = f.read()
-            print(f"✅ PDF processing completed: {md_path.name}")
+            print(f"PDF processing completed: {md_path.name}")
             return content, str(md_path)
         else:
-            print("❌ No generated markdown file found")
+            print("Error:  No generated markdown file found")
             return None, None
             
     except Exception as e:
-        print(f"❌ Error processing PDF: {e}")
+        print(f"Error: Error processing PDF: {e}")
         return None, None
 
 
@@ -2107,7 +2107,7 @@ def search_and_download_paper(paper_description, params=None):
         if not sources:
             sources = recommend_search_engines_with_ai(paper_description, optimized_query)
         else:
-            print(f"✅ Using user-specified search engines: {sources}")
+            print(f"Using user-specified search engines: {sources}")
         
         script_dir = Path(__file__).parent
         search_paper_path = script_dir / "SEARCH_PAPER"
@@ -2126,19 +2126,19 @@ def search_and_download_paper(paper_description, params=None):
         result = subprocess.run(cmd, capture_output=True, text=True)
         
         if result.returncode != 0:
-            print(f"❌ Search failed: {result.stderr}")
+            print(f"Error: Search failed: {result.stderr}")
             return None, None, 0
             
-        print("✅ SEARCH_PAPER search completed")
+        print("SEARCH_PAPER search completed")
         
         # 步骤4: 解析搜索结果
         print("📊 Step 4/10: Parse search results...")
         search_results = parse_search_results()
         if not search_results:
-            print("❌ No relevant papers found")
+            print("Error:  No relevant papers found")
             return None, None, 0
 
-        print(f"✅ Found {len(search_results)} relevant papers")
+        print(f"Found {len(search_results)} relevant papers")
         
         # 步骤5: 使用AI筛选最佳论文
         print("🤖 Step 5/10: Using AI to select the best papers...")
@@ -2150,11 +2150,11 @@ def search_and_download_paper(paper_description, params=None):
         )
         
         if not selected_papers:
-            print("❌ No relevant papers found, cannot continue")
+            print("Error:  No relevant papers found, cannot continue")
             return None, None, 0
         
         # 步骤6: 显示AI推荐的论文供用户选择
-        print("✅ AI selection completed")
+        print("AI selection completed")
         print(f"📋 Step 6/10: Display {len(selected_papers)} best papers recommended by AI:")
         for i, paper in enumerate(selected_papers):
             title = paper.get('title', 'Unknown')
@@ -2170,17 +2170,17 @@ def search_and_download_paper(paper_description, params=None):
         print("🎯 Step 7/10: Select papers...")
         if len(selected_papers) == 1:
             selected_paper = selected_papers[0]
-            print(f"✅ Automatically select the only recommended paper")
+            print(f"Automatically select the only recommended paper")
         else:
             # 简化选择：自动选择第一篇（AI推荐的最佳论文）
             selected_paper = selected_papers[0]
-            print(f"✅ Automatically select the best paper recommended by AI: {selected_paper.get('title', 'Unknown')}")
+            print(f"Automatically select the best paper recommended by AI: {selected_paper.get('title', 'Unknown')}")
 
         # 步骤8: 尝试下载论文
         print("📥 Step 8/10: Download papers...")
         pdf_url = selected_paper.get('pdf_url')
         if not pdf_url:
-            print("❌ No PDF download link found")
+            print("Error:  No PDF download link found")
             return None, None, 0
         
         print(f"📥 Downloading paper: {selected_paper.get('title', 'Unknown')}")
@@ -2201,7 +2201,7 @@ def search_and_download_paper(paper_description, params=None):
         )
         
         if not downloaded_path:
-            print("❌ Paper download failed")
+            print("Error:  Paper download failed")
             return None, None, 0
         
         # 步骤9: 使用AI给PDF重命名为简洁明了的名字
@@ -2214,17 +2214,17 @@ def search_and_download_paper(paper_description, params=None):
         
         try:
             downloaded_pdf_path.rename(new_pdf_path)
-            print(f"✅ PDF has been renamed: {new_pdf_path.name}")
+            print(f"PDF has been renamed: {new_pdf_path.name}")
             downloaded_path = str(new_pdf_path)
         except Exception as e:
-            print(f"⚠️  Renaming failed, using original filename: {e}")
+            print(f"Warning:  Renaming failed, using original filename: {e}")
         
         # 步骤10: 使用EXTRACT_PDF提取论文内容
         print("📄 Step 10/10: Extract PDF content...")
         markdown_path = extract_pdf_content(downloaded_path, params)
         
         if not markdown_path:
-            print("❌ PDF content extraction failed")
+            print("Error:  PDF content extraction failed")
             return None, None, 0
         
         # 步骤11: 读取提取的markdown内容
@@ -2233,24 +2233,24 @@ def search_and_download_paper(paper_description, params=None):
             with open(markdown_path, 'r', encoding='utf-8') as f:
                 paper_content = f.read()
             
-            print(f"✅ Paper content extraction completed: {markdown_path}")
+            print(f"Paper content extraction completed: {markdown_path}")
             token_count = len(paper_content.split())  # 简单的token估算
             print(f"📊 Extracted content length: {token_count} tokens")
             
             # 检查内容长度，如果太少就中断
             min_content_length = 1000  # 最少1000个字符
             if len(paper_content.strip()) < min_content_length:
-                print(f"❌ Paper content is too short ({len(paper_content)} characters < {min_content_length}), possibly extraction failed")
+                print(f"Error: Paper content is too short ({len(paper_content)} characters < {min_content_length}), possibly extraction failed")
                 raise Exception(f"Paper content extraction incomplete: only {len(paper_content)} characters, less than the minimum requirement of {min_content_length} characters")
             
             return paper_content, downloaded_path, token_count
             
         except Exception as e:
-            print(f"❌ Failed to read markdown file: {e}")
+            print(f"Error: Failed to read markdown file: {e}")
             return None, None, 0
             
     except Exception as e:
-        print(f"❌ Search process error: {e}")
+        print(f"Error: Search process error: {e}")
         return None, None, 0
 
 
@@ -2293,10 +2293,10 @@ Please only return the filename (without the .pdf extension), no other explanati
             if len(filename) > 50:
                 filename = filename[:50]
             
-            print(f"✅ AI generated filename: {filename}")
+            print(f"AI generated filename: {filename}")
             return filename
         else:
-            print(f"⚠️  AI generated filename failed: {result['error']}")
+            print(f"Warning:  AI generated filename failed: {result['error']}")
             # 使用简化的标题作为备选
             import re
             safe_title = re.sub(r'[^\w\s-]', '', title)
@@ -2304,7 +2304,7 @@ Please only return the filename (without the .pdf extension), no other explanati
             return safe_title[:30]
             
     except Exception as e:
-        print(f"⚠️  Error generating filename: {e}")
+        print(f"Warning:  Error generating filename: {e}")
         return "paper"
 
 
@@ -2336,10 +2336,10 @@ def extract_pdf_content(pdf_path, params=None):
             expected_md_path = pdf_path_obj.with_suffix('.md')
             
             if expected_md_path.exists():
-                print(f"✅ PDF content extraction successful: {expected_md_path}")
+                print(f"PDF content extraction successful: {expected_md_path}")
                 return str(expected_md_path)
             else:
-                print(f"❌ No expected markdown file found: {expected_md_path}")
+                print(f"Error: No expected markdown file found: {expected_md_path}")
                 # 尝试查找其他可能的markdown文件
                 possible_paths = [
                     pdf_path_obj.parent / f"{pdf_path_obj.stem}.md",
@@ -2347,21 +2347,21 @@ def extract_pdf_content(pdf_path, params=None):
                 ]
                 for path in possible_paths:
                     if path.exists():
-                        print(f"✅ Found markdown file: {path}")
+                        print(f"Found markdown file: {path}")
                         return str(path)
                 return None
         else:
-            print(f"❌ EXTRACT_PDF execution failed:")
+            print(f"Error: EXTRACT_PDF execution failed:")
             print(f"    Return code: {result.returncode}")
             print(f"    Standard output: {result.stdout}")
             print(f"    Error output: {result.stderr}")
             return None
             
     except subprocess.TimeoutExpired:
-        print("❌ PDF extraction timeout")
+        print("Error:  PDF extraction timeout")
         return None
     except Exception as e:
-        print(f"❌ PDF extraction error: {e}")
+        print(f"Error: PDF extraction error: {e}")
         return None
 
 
@@ -2403,7 +2403,7 @@ def parse_search_results():
             return None
             
     except Exception as e:
-        print(f"❌ Failed to parse search results: {e}")
+        print(f"Error: Failed to parse search results: {e}")
         return None
 
 
@@ -2430,7 +2430,7 @@ def download_paper(pdf_url, paper_title, output_dir=None):
         
         # Try to download
         print(f"📥 Downloading: {pdf_url}")
-        print(f"📁 Target directory: {download_dir}")
+        print(f"Target directory: {download_dir}")
         
         result = subprocess.run([
             str(download_path), pdf_url, str(target_path)
@@ -2438,18 +2438,18 @@ def download_paper(pdf_url, paper_title, output_dir=None):
         
         if result.returncode == 0:
             if target_path.exists():
-                print(f"✅ Download successful: {target_path}")
+                print(f"Download successful: {target_path}")
                 return str(target_path), paper_title
             else:
-                print("❌ Downloaded file does not exist")
+                print("Error:  Downloaded file does not exist")
                 return None, None
         else:
-            print(f"❌ Download failed: {result.stderr}")
+            print(f"Error: Download failed: {result.stderr}")
             print("🔄 Trying other download links...")
             return None, None
             
     except Exception as e:
-        print(f"❌ Download process error: {e}")
+        print(f"Error: Download process error: {e}")
         return None, None
 
 
@@ -2674,17 +2674,17 @@ Generated command: """
         
         if result['success']:
             command = result['content'].strip()
-            print(f"\n✅ Generated LEARN command:")
+            print(f"\nGenerated LEARN command:")
             print(f"```bash")
             print(f"{command}")
             print(f"```")
             return True
         else:
-            print(f"❌ Command generation failed: {result['error']}")
+            print(f"Error: Command generation failed: {result['error']}")
             return False
             
     except Exception as e:
-        print(f"❌ Error generating command: {e}")
+        print(f"Error: Error generating command: {e}")
         return False
 
 
@@ -2721,7 +2721,7 @@ def main():
         
         # 如果是brainstorm_only模式，不创建文件
         if params.get("brainstorm_only", False):
-            print("✅ Brainstorming completed!")
+            print("Brainstorming completed!")
             return 0
         
         # 创建文件
@@ -2734,10 +2734,10 @@ def main():
         )
         
         if success:
-            print("✅ File creation completed!")
+            print("File creation completed!")
             return 0
         else:
-            print("❌ File creation failed")
+            print("Error:  File creation failed")
             return 1
     
     # Parse direct command
@@ -2807,7 +2807,7 @@ def main():
         
         # 如果是brainstorm_only模式，不创建文件
         if params.get("brainstorm_only", False):
-            print("✅ Brainstorming completed!")
+            print("Brainstorming completed!")
             return 0
         
         # 创建文件
@@ -2820,14 +2820,14 @@ def main():
         )
         
         if success:
-            print("✅ File creation completed!")
+            print("File creation completed!")
             return 0
         else:
-            print("❌ File creation failed")
+            print("Error:  File creation failed")
             return 1
     
     except Exception as e:
-        print(f"❌ Error during runtime: {e}")
+        print(f"Error: Error during runtime: {e}")
         return 1
 
 

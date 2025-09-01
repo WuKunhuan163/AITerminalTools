@@ -23,7 +23,7 @@ try:
     # from google_drive_shell import GoogleDriveShell
     pass
 except ImportError as e:
-    print(f"❌ 导入Google Drive Shell失败: {e}")
+    print(f"Error: Import Google Drive Shell failed: {e}")
     GoogleDriveShell = None
 
 # 导入is_run_environment函数
@@ -62,7 +62,7 @@ def extract_folder_id_from_url(url):
         return None
         
     except Exception as e:
-        print(f"提取文件夹ID时出错: {e}")
+        print(f"Extract folder ID failed: {e}")
         return None
 
 def test_drive_folder_access(folder_id):
@@ -78,7 +78,7 @@ def test_drive_folder_access(folder_id):
         return result.get('success', False)
         
     except Exception as e:
-        print(f"测试文件夹访问时出错: {e}")
+        print(f"Test folder access failed: {e}")
         return False
 
 def test_upload_workflow(drive_equivalent_path, drive_equivalent_folder_id, command_identifier=None):
@@ -120,18 +120,18 @@ def test_upload_workflow(drive_equivalent_path, drive_equivalent_folder_id, comm
                 os.unlink(test_file_path)
             
             if upload_result.get("success", False):
-                print("✅ 上传测试成功")
+                print("Upload test successful")
                 return {
                     "success": True,
-                    "message": "上传工作流程测试通过",
+                    "message": "Upload workflow test passed",
                     "test_file": test_filename,
                     "upload_details": upload_result
                 }
             else:
-                print(f"❌ 上传测试失败: {upload_result.get('error', '未知错误')}")
+                print(f"Error: Upload test failed: {upload_result.get('error', 'Unknown error')}")
                 return {
                     "success": False,
-                    "error": f"上传测试失败: {upload_result.get('error', '未知错误')}",
+                    "error": f"Upload test failed: {upload_result.get('error', 'Unknown error')}",
                     "upload_details": upload_result
                 }
                 
@@ -140,13 +140,13 @@ def test_upload_workflow(drive_equivalent_path, drive_equivalent_folder_id, comm
                 os.unlink(test_file_path)
             return {
                 "success": False,
-                "error": f"上传测试出错: {e}"
+                "error": f"Upload test error: {e}"
             }
             
     except Exception as e:
         return {
             "success": False,
-            "error": f"准备上传测试时出错: {e}"
+            "error": f"Error preparing upload test: {e}"
         }
 
 def open_google_drive(url=None, command_identifier=None):
@@ -171,8 +171,8 @@ def open_google_drive(url=None, command_identifier=None):
             if is_run_environment(command_identifier):
                 write_to_json_output(success_data, command_identifier)
             else:
-                print(f"🚀 Opening Google Drive: {url}")
-                print("✅ Google Drive opened successfully in browser")
+                print(f"Opening Google Drive: {url}")
+                print("Google Drive opened successfully in browser")
             return 0
         else:
             error_data = {
@@ -184,7 +184,7 @@ def open_google_drive(url=None, command_identifier=None):
             if is_run_environment(command_identifier):
                 write_to_json_output(error_data, command_identifier)
             else:
-                print(f"❌ Error: Failed to open browser for {url}")
+                print(f"Error: Failed to open browser for {url}")
             return 1
     
     except Exception as e:
@@ -197,7 +197,7 @@ def open_google_drive(url=None, command_identifier=None):
         if is_run_environment(command_identifier):
             write_to_json_output(error_data, command_identifier)
         else:
-            print(f"❌ Error opening Google Drive: {e}")
+            print(f"Error: Error opening Google Drive: {e}")
         return 1
 
 def test_drive_service():
@@ -212,28 +212,28 @@ def test_drive_service():
         result = drive_service.test_connection()
         
         if result['success']:
-            print("✅ API连接测试成功！")
-            print(f"📧 服务账户邮箱: {result.get('user_email', 'Unknown')}")
-            print(f"👤 用户名: {result.get('user_name', 'Unknown')}")
+            print("API connection test successful")
+            print(f"📧 Service account email: {result.get('user_email', 'Unknown')}")
+            print(f"👤 User name: {result.get('user_name', 'Unknown')}")
             
             # 测试列出文件
-            print("\\n📂 正在测试文件列表功能...")
+            print("\n📂 Testing file list function...")
             files_result = drive_service.list_files(max_results=5)
             
             if files_result['success']:
-                print(f"✅ 文件列表获取成功！找到 {files_result['count']} 个文件")
+                print(f"File list get successful! Found {files_result['count']} files")
                 for file in files_result['files'][:3]:  # 显示前3个文件
-                    print(f"   📄 {file['name']} ({file['mimeType']})")
+                    print(f"{file['name']} ({file['mimeType']})")
             else:
-                print(f"❌ 文件列表获取失败: {files_result['error']}")
+                print(f"Error: File list get failed: {files_result['error']}")
             
             return True
         else:
-            print(f"❌ API连接测试失败: {result['error']}")
+            print(f"Error: API connection test failed: {result['error']}")
             return False
             
     except Exception as e:
-        print(f"❌ 测试过程中出错: {e}")
+        print(f"Error: Error during test: {e}")
         return False
 
 def get_folder_path_from_api(folder_id):
@@ -276,7 +276,7 @@ def get_folder_path_from_api(folder_id):
                     break
                     
             except Exception as e:
-                print(f"⚠️ 获取文件夹信息时出错: {e}")
+                print(f"Warning: Get folder info failed: {e}")
                 break
         
         if path_parts:
@@ -292,7 +292,7 @@ def get_folder_path_from_api(folder_id):
             return "~"
             
     except Exception as e:
-        print(f"❌ 获取文件夹路径时出错: {e}")
+        print(f"Error: Error getting folder path: {e}")
         return None
 
 def url_to_logical_path(url):
@@ -311,7 +311,7 @@ def url_to_logical_path(url):
         return get_folder_path_from_api(folder_id)
         
     except Exception as e:
-        print(f"❌ URL转换为路径时出错: {e}")
+        print(f"Error: Error converting URL to path: {e}")
         return None
 
 def test_api_connection(command_identifier=None):
@@ -320,7 +320,7 @@ def test_api_connection(command_identifier=None):
         # 导入API服务
         api_service_path = Path(__file__).parent.parent / "google_drive_api.py"
         if not api_service_path.exists():
-            error_msg = "❌ API服务文件不存在，请先运行 GOOGLE_DRIVE --console-setup"
+            error_msg = "❌ API service file not found, please run GOOGLE_DRIVE --console-setup"
             if is_run_environment(command_identifier):
                 write_to_json_output({"success": False, "error": error_msg}, command_identifier)
             else:
@@ -345,7 +345,7 @@ def test_api_connection(command_identifier=None):
                 print(result.stdout)
             return 0
         else:
-            error_msg = f"❌ API连接测试失败: {result.stderr}"
+            error_msg = f"❌ API connection test failed: {result.stderr}"
             if is_run_environment(command_identifier):
                 write_to_json_output({"success": False, "error": error_msg}, command_identifier)
             else:
@@ -353,14 +353,14 @@ def test_api_connection(command_identifier=None):
             return 1
             
     except subprocess.TimeoutExpired:
-        timeout_msg = "⚠️ API测试超时"
+        timeout_msg = "⚠️ API test timeout"
         if is_run_environment(command_identifier):
             write_to_json_output({"success": False, "error": timeout_msg}, command_identifier)
         else:
             print(timeout_msg)
         return 1
     except Exception as e:
-        error_msg = f"❌ 测试API连接时出错: {e}"
+        error_msg = f"❌ Error testing API connection: {e}"
         if is_run_environment(command_identifier):
             write_to_json_output({"success": False, "error": error_msg}, command_identifier)
         else:
@@ -374,7 +374,7 @@ def list_drive_files(command_identifier=None, max_results=10):
         import sys
         api_service_path = Path(__file__).parent.parent / "google_drive_api.py"
         if not api_service_path.exists():
-            error_msg = "❌ API服务文件不存在，请先运行 GOOGLE_DRIVE --console-setup"
+            error_msg = "❌ API service file not found, please run GOOGLE_DRIVE --console-setup"
             if is_run_environment(command_identifier):
                 write_to_json_output({"success": False, "error": error_msg}, command_identifier)
             else:
@@ -395,24 +395,24 @@ def list_drive_files(command_identifier=None, max_results=10):
             if is_run_environment(command_identifier):
                 write_to_json_output({
                     "success": True,
-                    "message": f"找到 {result['count']} 个文件",
+                    "message": f"Found {result['count']} files",
                     "files": result['files'],
                     "count": result['count']
                 }, command_identifier)
             else:
-                print(f"📂 Google Drive 文件列表 (前{max_results}个):")
+                print(f"📂 Google Drive file list (first {max_results} files):")
                 print("-" * 50)
                 for file in result['files']:
                     file_type = "📁" if file['mimeType'] == 'application/vnd.google-apps.folder' else "📄"
                     print(f"{file_type} {file['name']}")
-                    print(f"   ID: {file['id']}")
-                    print(f"   类型: {file['mimeType']}")
+                    print(f"ID: {file['id']}")
+                    print(f"Type: {file['mimeType']}")
                     if 'size' in file:
-                        print(f"   大小: {file['size']} bytes")
+                        print(f"Size: {file['size']} bytes")
                     print()
             return 0
         else:
-            error_msg = f"❌ 列出文件失败: {result['error']}"
+            error_msg = f"❌ Listing files failed: {result['error']}"
             if is_run_environment(command_identifier):
                 write_to_json_output({"success": False, "error": error_msg}, command_identifier)
             else:
@@ -420,7 +420,7 @@ def list_drive_files(command_identifier=None, max_results=10):
             return 1
             
     except Exception as e:
-        error_msg = f"❌ 列出Drive文件时出错: {e}"
+        error_msg = f"❌ Error listing Drive files: {e}"
         if is_run_environment(command_identifier):
             write_to_json_output({"success": False, "error": error_msg}, command_identifier)
         else:
@@ -434,7 +434,7 @@ def download_file_from_drive(file_id, command_identifier=None):
         import sys
         api_service_path = Path(__file__).parent.parent / "google_drive_api.py"
         if not api_service_path.exists():
-            error_msg = "❌ API服务文件不存在，请先运行 GOOGLE_DRIVE --console-setup"
+            error_msg = "❌ API service file not found, please run GOOGLE_DRIVE --console-setup"
             if is_run_environment(command_identifier):
                 write_to_json_output({"success": False, "error": error_msg}, command_identifier)
             else:
@@ -462,7 +462,7 @@ def download_file_from_drive(file_id, command_identifier=None):
         result = drive_service.download_file(file_id, download_path)
         
         if result['success']:
-            success_msg = f"✅ 文件下载成功: {result['local_path']}"
+            success_msg = f"File download successful: {result['local_path']}"
             if is_run_environment(command_identifier):
                 write_to_json_output({
                     "success": True,
@@ -472,10 +472,10 @@ def download_file_from_drive(file_id, command_identifier=None):
                 }, command_identifier)
             else:
                 print(success_msg)
-                print(f"📁 本地路径: {result['local_path']}")
+                print(f"Local path: {result['local_path']}")
             return 0
         else:
-            error_msg = f"❌ 文件下载失败: {result['error']}"
+            error_msg = f"❌ File download failed: {result['error']}"
             if is_run_environment(command_identifier):
                 write_to_json_output({"success": False, "error": error_msg}, command_identifier)
             else:
@@ -483,7 +483,7 @@ def download_file_from_drive(file_id, command_identifier=None):
             return 1
             
     except Exception as e:
-        error_msg = f"❌ 下载文件时出错: {e}"
+        error_msg = f"❌ Error downloading file: {e}"
         if is_run_environment(command_identifier):
             write_to_json_output({"success": False, "error": error_msg}, command_identifier)
         else:
@@ -497,7 +497,7 @@ def delete_drive_file(file_id, command_identifier=None):
         import sys
         api_service_path = Path(__file__).parent.parent / "google_drive_api.py"
         if not api_service_path.exists():
-            error_msg = "❌ API服务文件不存在，请先运行 GOOGLE_DRIVE --console-setup"
+            error_msg = "❌ API service file not found, please run GOOGLE_DRIVE --console-setup"
             if is_run_environment(command_identifier):
                 write_to_json_output({"success": False, "error": error_msg}, command_identifier)
             else:
@@ -515,7 +515,7 @@ def delete_drive_file(file_id, command_identifier=None):
         result = drive_service.delete_file(file_id)
         
         if result['success']:
-            success_msg = f"✅ 文件删除成功"
+            success_msg = f"File delete successful"
             if is_run_environment(command_identifier):
                 write_to_json_output({
                     "success": True,
@@ -524,10 +524,10 @@ def delete_drive_file(file_id, command_identifier=None):
                 }, command_identifier)
             else:
                 print(success_msg)
-                print(f"🗑️ 已删除文件ID: {file_id}")
+                print(f"🗑️ Deleted file ID: {file_id}")
             return 0
         else:
-            error_msg = f"❌ 文件删除失败: {result['error']}"
+            error_msg = f"❌ File delete failed: {result['error']}"
             if is_run_environment(command_identifier):
                 write_to_json_output({"success": False, "error": error_msg}, command_identifier)
             else:
@@ -535,7 +535,7 @@ def delete_drive_file(file_id, command_identifier=None):
             return 1
             
     except Exception as e:
-        error_msg = f"❌ 删除文件时出错: {e}"
+        error_msg = f"❌ Error deleting file: {e}"
         if is_run_environment(command_identifier):
             write_to_json_output({"success": False, "error": error_msg}, command_identifier)
         else:

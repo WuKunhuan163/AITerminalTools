@@ -218,7 +218,7 @@ class FileUtils:
             # 组合完整命令
             remote_command = f"""{sync_and_move_part} && ({unzip_part})"""
             
-            print(f"🔧 生成的远程命令（包含双重同步检测）: {remote_command}")
+            print(f"Tool: 生成的远程命令（包含双重同步检测）: {remote_command}")
             
             # 使用subprocess方法显示命令窗口
             try:
@@ -356,7 +356,7 @@ class FileUtils:
             for i, file_info in enumerate(large_files, 1):
                 print(f"\n{'='*60}")
                 print(f"🔄 处理第 {i}/{len(large_files)} 个大文件")
-                print(f"📄 文件: {file_info['original_path']} ({file_info['size_gb']:.2f} GB)")
+                print(f"文件: {file_info['original_path']} ({file_info['size_gb']:.2f} GB)")
                 print(f"{'='*60}")
                 
                 # 为单个文件创建临时上传目录
@@ -373,12 +373,12 @@ class FileUtils:
                 # 创建符号链接
                 try:
                     link_path.symlink_to(file_path)
-                    print(f"✅ 已准备文件: {file_path.name}")
+                    print(f"Prepared file: {file_path.name}")
                 except Exception as e:
-                    print(f"❌ 创建链接失败: {file_path.name} - {e}")
+                    print(f"Error: Create link failed: {file_path.name} - {e}")
                     failed_uploads.append({
                         "file": file_info["original_path"],
-                        "error": f"创建链接失败: {e}"
+                        "error": f"Create link failed: {e}"
                     })
                     continue
                 
@@ -419,16 +419,16 @@ class FileUtils:
                     # 打开目标Google Drive文件夹（不是DRIVE_EQUIVALENT）
                     webbrowser.open(target_url)
                     
-                    print(f"🚀 已打开本地文件夹: {single_upload_dir}")
-                    print(f"🌐 已打开目标Google Drive文件夹")
-                    print(f"📋 请将文件拖拽到Google Drive目标文件夹中")
+                    print(f"Opened local folder: {single_upload_dir}")
+                    print(f"🌐 Opened target Google Drive folder")
+                    print(f"📋 Please drag the file to the Google Drive target folder")
                     
                 except Exception as e:
-                    print(f"⚠️ 打开文件夹失败: {e}")
+                    print(f"Warning: Open folder failed: {e}")
                 
                 # 等待用户确认
                 try:
-                    print(f"\n⏳ 请完成文件上传后按回车继续...")
+                    print(f"\n⏳ Please complete the file upload and press Enter to continue...")
                     get_multiline_input_safe("按Enter键继续...", single_line=True)  # 等待用户确认
                     
                     # 清理临时目录
@@ -444,10 +444,10 @@ class FileUtils:
                         "size_gb": file_info["size_gb"]
                     })
                     
-                    print(f"✅ 文件 {i}/{len(large_files)} 处理完成")
+                    print(f"File {i}/{len(large_files)} processed")
                     
                 except KeyboardInterrupt:
-                    print(f"\n❌ 用户中断了大文件上传过程")
+                    print(f"\nError: User interrupted the large file upload process")
                     # 清理临时目录
                     try:
                         if link_path.exists():
@@ -457,16 +457,16 @@ class FileUtils:
                         pass
                     break
                 except Exception as e:
-                    print(f"❌ 处理文件时出错: {e}")
+                    print(f"Error: Error processing file: {e}")
                     failed_uploads.append({
                         "file": file_info["original_path"],
                         "error": str(e)
                     })
             
             print(f"\n{'='*60}")
-            print(f"📊 大文件处理完成:")
-            print(f"✅ 成功: {len(successful_uploads)} 个文件")
-            print(f"❌ 失败: {len(failed_uploads)} 个文件")
+            print(f"📊 Large file processing completed:")
+            print(f"Successful: {len(successful_uploads)} files")
+            print(f"Error: Failed: {len(failed_uploads)} files")
             print(f"{'='*60}")
             
             return {
@@ -474,11 +474,11 @@ class FileUtils:
                 "large_files_count": len(large_files),
                 "successful_uploads": successful_uploads,
                 "failed_uploads": failed_uploads,
-                "message": f"大文件处理完成: {len(successful_uploads)}/{len(large_files)} 个文件成功"
+                "message": f"Large file processing completed: {len(successful_uploads)}/{len(large_files)} files successful"
             }
             
         except Exception as e:
-            return {"success": False, "error": f"处理大文件时出错: {e}"}
+            return {"success": False, "error": f"Error processing large file: {e}"}
 
     def _check_target_file_conflicts_before_move(self, source_files, target_path):
         """在移动文件之前检查目标位置是否已存在同名文件，避免上传冲突"""
@@ -543,7 +543,7 @@ class FileUtils:
             
         except Exception as e:
             # 如果检查过程出错，为了安全起见，允许继续上传
-            print(f"⚠️ 文件冲突检查出错: {e}")
+            print(f"Warning: File conflict check error: {e}")
             return {"success": True}
 
     def _check_mv_destination_conflict(self, destination, current_shell):
@@ -592,7 +592,7 @@ class FileUtils:
             
         except Exception as e:
             # 如果检查过程出错，为了安全起见，允许继续操作
-            print(f"⚠️ mv目标冲突检查出错: {e}")
+            print(f"Warning: mv target conflict check error: {e}")
             return {"success": True}
 
     def _check_target_file_conflicts(self, file_moves, target_path):
@@ -642,128 +642,18 @@ class FileUtils:
             if conflicting_files:
                 return {
                     "success": False,
-                    "error": f"目标位置已存在文件: {', '.join(conflicting_files)}",
+                    "error": f"Target location already exists file: {', '.join(conflicting_files)}",
                     "conflicting_files": conflicting_files,
                     "target_path": target_path,
-                    "suggestion": "请使用不同的文件名或先删除现有文件"
+                    "suggestion": "Please use different file names or delete existing files first"
                 }
             
             return {"success": True}
             
         except Exception as e:
             # 如果检查过程出错，为了安全起见，允许继续上传
-            print(f"⚠️ 文件冲突检查出错: {e}")
+            print(f"Warning: File conflict check error: {e}")
             return {"success": True}
-
-    def _create_text_file(self, filename, content):
-        """创建文本文件"""
-        try:
-            if not self.drive_service:
-                return {"success": False, "error": "Google Drive API服务未初始化"}
-                
-            current_shell = self.main_instance.get_current_shell()
-            if not current_shell:
-                return {"success": False, "error": "没有活跃的远程shell"}
-            
-            # 尝试使用共享驱动器解决方案
-            try:
-                # 加载共享驱动器配置
-                data_dir = Path(__file__).parent.parent / "GOOGLE_DRIVE_DATA"
-                config_file = data_dir / "shared_drive_config.json"
-                
-                if config_file.exists():
-                    with open(config_file, 'r', encoding='utf-8') as f:
-                        config = json.load(f)
-                    
-                    drive_id = config["shared_drive_id"]
-                    
-                    # 在共享驱动器中创建文件
-                    result = self._create_file_in_shared_drive(content, filename, drive_id)
-                    if result["success"]:
-                        return result
-                    else:
-                        print(f"共享驱动器创建失败: {result['error']}")
-                
-            except Exception as e:
-                print(f"共享驱动器方法出错: {e}")
-            
-            # 服务账户无法创建文件，返回友好提示
-            return {
-                "success": False,
-                "error": "文件创建功能暂不可用",
-                "info": {
-                    "reason": "服务账户无法在Google Drive中创建文件（存储配额限制）",
-                    "setup_instructions": "运行: cd GOOGLE_DRIVE_PROJ && python setup_shared_drive.py",
-                    "alternatives": [
-                        "创建共享驱动器并与服务账户分享",
-                        "使用 python -c 'code' 直接执行Python代码",
-                        "手动在Google Drive中创建文件后使用 cat filename 查看"
-                    ],
-                    "working_features": [
-                        "✅ 读取现有文件 (cat)",
-                        "✅ 执行Python代码 (python -c)",
-                        "✅ 目录导航 (cd, ls, pwd)",
-                        "✅ 文本搜索 (grep)",
-                        "✅ 目录管理 (mkdir, rm)"
-                    ]
-                }
-            }
-                
-        except Exception as e:
-            return {"success": False, "error": f"创建文件时出错: {e}"}
-
-    def _create_file_in_shared_drive(self, content, filename, drive_id):
-        """在共享驱动器中创建文件"""
-        try:
-            import tempfile
-            import os
-            
-            # 创建临时文件
-            with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt', encoding='utf-8') as temp_file:
-                temp_file.write(content)
-                temp_file_path = temp_file.name
-            
-            try:
-                # 文件元数据
-                file_metadata = {
-                    'name': filename,
-                    'parents': [drive_id]  # 共享驱动器ID作为父级
-                }
-                
-                # 使用MediaFileUpload
-                from googleapiclient.http import MediaFileUpload
-                media = MediaFileUpload(temp_file_path, mimetype='text/plain')
-                
-                # 创建文件，使用supportsAllDrives=True
-                result = self.drive_service.service.files().create(
-                    body=file_metadata,
-                    media_body=media,
-                    supportsAllDrives=True,  # 关键：支持共享驱动器
-                    fields='id,name,size,webViewLink'
-                ).execute()
-                
-                # 清理临时文件
-                os.unlink(temp_file_path)
-                
-                return {
-                    "success": True,
-                    "file_id": result['id'],
-                    "file_name": result['name'],
-                    "file_size": result.get('size', 0),
-                    "web_link": result.get('webViewLink'),
-                    "message": f"✅ 文件创建成功: {filename}"
-                }
-                
-            except Exception as e:
-                # 确保清理临时文件
-                try:
-                    os.unlink(temp_file_path)
-                except:
-                    pass
-                return {"success": False, "error": f"共享驱动器文件创建失败: {e}"}
-                
-        except Exception as e:
-            return {"success": False, "error": f"准备共享驱动器文件时出错: {e}"}
 
     def _check_files_to_override(self, source_files, target_path):
         """

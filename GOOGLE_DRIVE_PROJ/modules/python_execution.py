@@ -277,10 +277,10 @@ class PythonExecution:
                     print(".", end="", flush=True)
                     
                 except Exception as e:
-                    print(f"\n❌ Error checking result file: {str(e)[:100]}")
+                    print(f"\nError: Error checking result file: {str(e)[:100]}")
                     return {"success": False, "error": f"Error checking result: {e}"}
             
-            print(f"\n❌ Timeout: No result file found after {max_attempts} seconds")
+            print(f"\nError: Timeout: No result file found after {max_attempts} seconds")
             return {"success": False, "error": "Execution timeout - no result file found"}
             
         except Exception as e:
@@ -328,71 +328,6 @@ class PythonExecution:
                 
         except Exception as e:
             return {"success": False, "error": f"远程Python执行时出错: {e}"}
-
-    def _execute_python_code_local(self, code, save_output=False, filename=None):
-        """在本地执行Python代码"""
-        try:
-            import subprocess
-            import tempfile
-            import os
-            
-            # 创建临时Python文件
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False, encoding='utf-8') as temp_file:
-                temp_file.write(code)
-                temp_file_path = temp_file.name
-            
-            try:
-                # 执行Python代码
-                result = subprocess.run(
-                    ['/usr/bin/python3', temp_file_path],
-                    capture_output=True,
-                    text=True,
-                    timeout=30  # 30秒超时
-                )
-                
-                # 清理临时文件
-                os.unlink(temp_file_path)
-                
-                # 准备结果
-                execution_result = {
-                    "success": True,
-                    "stdout": result.stdout,
-                    "stderr": result.stderr,
-                    "returncode": result.returncode,
-                    "filename": filename
-                }
-                
-                # 如果需要保存输出到Drive
-                if save_output and (result.stdout or result.stderr):
-                    output_filename = f"{filename}_output.txt" if filename else "python_output.txt"
-                    output_content = f"=== Python Execution Result ===\n"
-                    output_content += f"Return code: {result.returncode}\n\n"
-                    
-                    if result.stdout:
-                        output_content += f"=== STDOUT ===\n{result.stdout}\n"
-                    
-                    if result.stderr:
-                        output_content += f"=== STDERR ===\n{result.stderr}\n"
-                    
-                    # 尝试保存到Drive（如果失败也不影响主要功能）
-                    try:
-                        save_result = self._create_text_file(output_filename, output_content)
-                        if save_result["success"]:
-                            execution_result["output_saved"] = output_filename
-                    except:
-                        pass  # 保存失败不影响主要功能
-                
-                return execution_result
-                
-            except subprocess.TimeoutExpired:
-                os.unlink(temp_file_path)
-                return {"success": False, "error": "Python代码执行超时（30秒）"}
-            except Exception as e:
-                os.unlink(temp_file_path)
-                return {"success": False, "error": f"执行Python代码时出错: {e}"}
-                
-        except Exception as e:
-            return {"success": False, "error": f"准备Python执行环境时出错: {e}"}
 
     def _execute_individual_fallback(self, packages, base_command, options):
         """

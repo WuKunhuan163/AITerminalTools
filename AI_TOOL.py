@@ -74,7 +74,7 @@ class BinManager:
         }
         
         self.save_tools()
-        print(f"✅ Tool '{name}' added successfully")
+        print(f"Tool '{name}' added successfully")
         return True
     
     def remove_tool(self, name: str) -> bool:
@@ -86,7 +86,7 @@ class BinManager:
         
         del self.tools[name]
         self.save_tools()
-        print(f"✅ Tool '{name}' removed successfully")
+        print(f"Tool '{name}' removed successfully")
         return True
     
     def update_tool(self, name: str, **kwargs) -> bool:
@@ -102,7 +102,7 @@ class BinManager:
                 self.tools[name][key] = value
         
         self.save_tools()
-        print(f"✅ Tool '{name}' updated successfully")
+        print(f"Tool '{name}' updated successfully")
         return True
     
     def list_tools(self) -> None:
@@ -112,12 +112,12 @@ class BinManager:
             print("No tools registered")
             return
         
-        print(f"📋 Registered Tools ({len(self.tools)}):")
+        print(f"Registered Tools ({len(self.tools)}):")
         print("=" * 50)
         
         for name, tool in self.tools.items():
-            run_status = "✅ RUN Compatible" if tool.get('run_compatible', True) else "❌ Not RUN Compatible"
-            print(f"🔧 {name}")
+            run_status = "RUN Compatible" if tool.get('run_compatible', True) else "Not RUN Compatible"
+            print(f"Tool: {name}")
             print(f"   Description: {tool['description']}")
             print(f"   Purpose: {tool['purpose']}")
             print(f"   Usage: {tool['usage']}")
@@ -132,7 +132,7 @@ class BinManager:
             return None
         
         tool = self.tools[name]
-        print(f"🔧 {name}")
+        print(f"Tool: {name}")
         print(f"Description: {tool['description']}")
         print(f"Purpose: {tool['purpose']}")
         print(f"Usage: {tool['usage']}")
@@ -390,7 +390,7 @@ class BinManager:
             tools_to_test = list(changes.keys())
         
         if not tools_to_test:
-            print("✅ No tools need testing")
+            print("No tools need testing")
             return True
         
         print(f"🧪 Running automated tests for {len(tools_to_test)} tool(s)...")
@@ -402,7 +402,7 @@ class BinManager:
             # 检查工具文件是否存在
             files_exist = self.check_tool_files(tool)
             if not all(files_exist.values()):
-                print(f"❌ {tool}: Missing files")
+                print(f"Error: {tool}: Missing files")
                 test_results[tool] = False
                 continue
             
@@ -415,11 +415,11 @@ class BinManager:
             test_results[tool] = basic_test and doc_check
             
             if test_results[tool]:
-                print(f"✅ {tool}: All tests passed")
+                print(f"{tool}: All tests passed")
                 # 更新test_passed状态
                 self.tools[tool]['test_passed'] = True
             else:
-                print(f"❌ {tool}: Tests failed")
+                print(f"Error: {tool}: Tests failed")
                 self.tools[tool]['test_passed'] = False
         
         # 保存测试结果
@@ -428,7 +428,7 @@ class BinManager:
         # 更新哈希值（只有测试通过的工具）
         passed_tools = [tool for tool, passed in test_results.items() if passed]
         if passed_tools:
-            print(f"\n🔄 Updating hashes for {len(passed_tools)} passed tool(s)...")
+            print(f"\nUpdating hashes for {len(passed_tools)} passed tool(s)...")
             for tool in passed_tools:
                 self.update_tool_hashes(tool)
         
@@ -470,17 +470,17 @@ class BinManager:
             
             # 如果返回码是0或1（某些工具help返回1），且有输出，认为测试通过
             if result.returncode in [0, 1] and (result.stdout or result.stderr):
-                print(f"  ✅ Help test passed")
+                print(f"Help test passed")
                 return True
             else:
-                print(f"  ❌ Help test failed (return code: {result.returncode})")
+                print(f"Error: Help test failed (return code: {result.returncode})")
                 return False
                 
         except subprocess.TimeoutExpired:
-            print(f"  ❌ Help test timed out")
+            print(f"Error: Help test timed out")
             return False
         except Exception as e:
-            print(f"  ❌ Help test error: {e}")
+            print(f"Error: Help test error: {e}")
             return False
     
     def check_documentation_consistency(self, tool_name: str) -> bool:
@@ -489,7 +489,7 @@ class BinManager:
         md_file = bin_dir / f"{tool_name}.md"
         
         if not md_file.exists():
-            print(f"  ❌ Documentation file not found")
+            print(f"Error: Documentation file not found")
             return False
         
         try:
@@ -505,14 +505,14 @@ class BinManager:
                     missing_sections.append(section)
             
             if missing_sections:
-                print(f"  ❌ Missing documentation sections: {', '.join(missing_sections)}")
+                print(f"Error: Missing documentation sections: {', '.join(missing_sections)}")
                 return False
             
-            print(f"  ✅ Documentation consistency check passed")
+            print(f"Documentation consistency check passed")
             return True
             
         except Exception as e:
-            print(f"  ❌ Documentation check error: {e}")
+            print(f"Error: Documentation check error: {e}")
             return False
     
     def init_tools(self):
@@ -542,13 +542,13 @@ class BinManager:
                     new_mode = current_mode | stat.S_IEXEC | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
                     script_file.chmod(new_mode)
                     results['success'].append(f"{tool_name} (script)")
-                    print(f"✅ {tool_name}: Script permissions set")
+                    print(f"{tool_name}: Script permissions set")
                 except Exception as e:
                     results['failed'].append(f"{tool_name} (script): {e}")
-                    print(f"❌ {tool_name}: Script permissions set failed - {e}")
+                    print(f"Error: {tool_name}: Script permissions set failed - {e}")
             else:
                 results['not_found'].append(f"{tool_name} (script)")
-                print(f"⚠️  {tool_name}: Script file not found")
+                print(f"Warning:  {tool_name}: Script file not found")
             
             # 处理Python文件
             if py_file.exists():
@@ -558,15 +558,15 @@ class BinManager:
                     new_mode = current_mode | stat.S_IEXEC | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
                     py_file.chmod(new_mode)
                     results['success'].append(f"{tool_name}.py")
-                    print(f"✅ {tool_name}.py: Python file permissions set")
+                    print(f"{tool_name}.py: Python file permissions set")
                 except Exception as e:
                     results['failed'].append(f"{tool_name}.py: {e}")
-                    print(f"❌ {tool_name}.py: Python file permissions set failed - {e}")
+                    print(f"Error: {tool_name}.py: Python file permissions set failed - {e}")
         
         print("\n📊 Initialization results:")
-        print(f"✅ Success: {len(results['success'])} files")
-        print(f"❌ Failed: {len(results['failed'])} files")
-        print(f"⚠️  Not found: {len(results['not_found'])} files")
+        print(f"Success: {len(results['success'])} files")
+        print(f"Error: Failed: {len(results['failed'])} files")
+        print(f"Warning:  Not found: {len(results['not_found'])} files")
         
         if results['failed']:
             print("\n❌ Failed details:")
@@ -653,9 +653,9 @@ def main():
         changes = manager.detect_changes(tool_name)
         
         if not changes:
-            print("✅ No changes detected")
+            print("No changes detected")
         else:
-            print(f"📝 Detected changes in {len(changes)} tool(s):")
+            print(f"Detected changes in {len(changes)} tool(s):")
             for tool, tool_changes in changes.items():
                 print(f"\n🔧 {tool}:")
                 for file_type, change_info in tool_changes.items():
@@ -735,7 +735,7 @@ def main():
         print("=" * 40)
         
         for tool_name, files in results.items():
-            print(f"🔧 {tool_name}:")
+            print(f"Tool: {tool_name}:")
             for file_type, exists in files.items():
                 status = "✅" if exists else "❌"
                 print(f"  {file_type}: {status}")

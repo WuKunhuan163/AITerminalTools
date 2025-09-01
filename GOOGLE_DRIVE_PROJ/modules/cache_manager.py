@@ -104,7 +104,7 @@ class CacheManager:
             else:
                 return []
         except Exception as e:
-            print(f"⚠️ 加载删除缓存失败: {e}")
+            print(f"Warning: Load deletion cache failed: {e}")
             return []
 
     def save_deletion_cache(self, deletion_records):
@@ -122,7 +122,7 @@ class CacheManager:
             with open(self.main_instance.deletion_cache_file, 'w', encoding='utf-8') as f:
                 json.dump(cache_data, f, indent=2, ensure_ascii=False)
         except Exception as e:
-            print(f"⚠️ 保存删除缓存失败: {e}")
+            print(f"Warning: Save deletion cache failed: {e}")
     
     def should_rename_file(self, filename):
         """
@@ -157,7 +157,7 @@ class CacheManager:
             debug_print(f"🏷️  No need to rename {filename} (not in recent deletion cache)")
             return False
         except Exception as e:
-            print(f"⚠️ 检查文件重命名建议时出错: {e}")
+            print(f"Warning: Check file rename suggestion failed: {e}")
             return False
     
     def add_deletion_record(self, filename):
@@ -186,7 +186,7 @@ class CacheManager:
             # 保存更新的缓存
             self.save_deletion_cache(deletion_records)
         except Exception as e:
-            print(f"⚠️ 添加删除记录时出错: {e}")
+            print(f"Warning: Add deletion record failed: {e}")
 
     def load_cache_config(self):
         """加载缓存配置"""
@@ -199,7 +199,7 @@ class CacheManager:
                 self.cache_config = {}
                 self.cache_config_loaded = False
         except Exception as e:
-            print(f"⚠️ 加载缓存配置失败: {e}")
+            print(f"Warning: Load cache config failed: {e}")
             self.cache_config = {}
             self.cache_config_loaded = False
 
@@ -239,7 +239,7 @@ class CacheManager:
         except Exception as e:
             return {
                 "success": False,
-                "error": f"检查缓存时出错: {e}"
+                "error": f"Check cache failed: {e}"
             }
 
     def get_remote_file_modification_time(self, remote_path: str) -> Dict:
@@ -265,18 +265,18 @@ class CacheManager:
                             else:
                                 return {
                                     "success": False,
-                                    "error": "无法获取文件修改时间"
+                                    "error": "Unable to get file modification time"
                                 }
                     
                     # 文件未找到
                     return {
                         "success": False,
-                        "error": f"文件不存在或无法访问: {remote_path}"
+                        "error": f"File does not exist or cannot be accessed: {remote_path}"
                     }
                 else:
                     return {
                         "success": False,
-                        "error": f"无法列出目录内容: {result.get('error', 'unknown error')}"
+                        "error": f"Unable to list directory content: {result.get('error', 'unknown error')}"
                     }
             else:
                 # 原来的逻辑，处理路径格式的文件
@@ -295,18 +295,18 @@ class CacheManager:
                     else:
                         return {
                             "success": False,
-                            "error": "无法获取文件修改时间"
+                            "error": "Unable to get file modification time"
                         }
                 else:
                     return {
                         "success": False,
-                        "error": f"文件不存在或无法访问: {remote_path}"
+                        "error": f"File does not exist or cannot be accessed: {remote_path}"
                     }
                 
         except Exception as e:
             return {
                 "success": False,
-                "error": f"获取文件修改时间时出错: {e}"
+                "error": f"Get file modification time failed: {e}"
             }
 
     def is_cached_file_up_to_date(self, remote_path: str) -> Dict:
@@ -341,7 +341,7 @@ class CacheManager:
             if not remote_time_result["success"]:
                 return {
                     "success": False,
-                    "error": f"无法获取远端修改时间: {remote_time_result.get('error', '未知错误')}"
+                    "error": f"Unable to get remote modification time: {remote_time_result.get('error', 'unknown error')}"
                 }
             
             current_modified_time = remote_time_result["modified_time"]
@@ -358,7 +358,7 @@ class CacheManager:
         except Exception as e:
             return {
                 "success": False,
-                "error": f"检查缓存新旧时出错: {e}"
+                "error": f"Check cache new or old failed: {e}"
             }
 
     def _update_uploaded_files_cache(self, found_files, context_info):
@@ -424,12 +424,12 @@ class CacheManager:
                     if cache_manager.is_file_cached(remote_absolute_path):
                         # 更新现有缓存的远端修改时间
                         cache_manager._update_cached_file_modified_time(remote_absolute_path, remote_modified_time)
-                        print(f"✅ 已更新缓存文件时间: {file_name} -> {remote_modified_time}")
+                        print(f"Updated cached file time: {file_name} -> {remote_modified_time}")
                     else:
                         # 文件还没有缓存，存储修改时间以备后用
                         cache_manager.store_pending_modified_time(remote_absolute_path, remote_modified_time)
-                        print(f"📝 记录上传文件修改时间: {file_name} -> {remote_modified_time}")
+                        print(f"Record uploaded file modification time: {file_name} -> {remote_modified_time}")
                         
         except Exception as e:
             # 静默处理错误，不影响主流程
-            print(f"⚠️ 更新缓存时间时出错: {e}")
+            print(f"Warning: Update cache time failed: {e}")

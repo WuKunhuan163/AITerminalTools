@@ -27,13 +27,13 @@ try:
     sys.path.insert(0, str(current_dir.parent / "UNIMERNET_PROJ"))
     from test_simple_unimernet import load_unimernet_model, recognize_image
     UNIMERNET_AVAILABLE = True
-    print("✅ UnimerNet model components loaded successfully")
+    print("UnimerNet model components loaded successfully")
 except ImportError as e:
     try:
         # Fallback: try MinerU's internal UnimerNet
         from test_MinerU_formula.test_simple_unimernet import load_unimernet_model, recognize_image
         UNIMERNET_AVAILABLE = True
-        print("✅ UnimerNet model components loaded from MinerU")
+        print("UnimerNet model components loaded from MinerU")
     except ImportError:
         UNIMERNET_AVAILABLE = False
         print("⚠️  UnimerNet model not available. Formula/table recognition will be disabled.")
@@ -57,9 +57,9 @@ class AsyncUnimerNetProcessor:
         if UNIMERNET_AVAILABLE:
             try:
                 self.unimernet_model, self.unimernet_tokenizer = load_unimernet_model()
-                print("✅ UnimerNet model loaded successfully")
+                print("UnimerNet model loaded successfully")
             except Exception as e:
-                print(f"❌ Failed to load UnimerNet model: {e}")
+                print(f"Error: Failed to load UnimerNet model: {e}")
                 self.unimernet_model = None
                 self.unimernet_tokenizer = None
     
@@ -76,7 +76,7 @@ class AsyncUnimerNetProcessor:
         """
         md_path = Path(md_file_path)
         if not md_path.exists():
-            print(f"❌ Markdown file not found: {md_file_path}")
+            print(f"Error: Markdown file not found: {md_file_path}")
             return False
         
         # Find extract_data directory
@@ -84,11 +84,11 @@ class AsyncUnimerNetProcessor:
         images_dir = extract_data_dir / "images"
         
         if not images_dir.exists():
-            print(f"❌ Images directory not found: {images_dir}")
+            print(f"Error: Images directory not found: {images_dir}")
             return False
         
         print(f"🔄 Processing markdown file: {md_file_path}")
-        print(f"📁 Images directory: {images_dir}")
+        print(f"Images directory: {images_dir}")
         
         # Read current markdown content
         with open(md_path, 'r', encoding='utf-8') as f:
@@ -111,7 +111,7 @@ class AsyncUnimerNetProcessor:
             full_image_path = md_path.parent / image_path
             
             if not full_image_path.exists():
-                print(f"⚠️  Image not found: {full_image_path}")
+                print(f"Warning:  Image not found: {full_image_path}")
                 # Replace with error message
                 updated_content = updated_content.replace(
                     match.group(0),
@@ -136,7 +136,7 @@ class AsyncUnimerNetProcessor:
         with open(md_path, 'w', encoding='utf-8') as f:
             f.write(updated_content)
         
-        print(f"✅ Markdown file updated successfully")
+        print(f"Markdown file updated successfully")
         return True
     
     def _process_single_image(self, image_path: Path, call_image_api: bool) -> str:
@@ -249,7 +249,7 @@ class AsyncUnimerNetProcessor:
         """
         dir_path = Path(directory)
         if not dir_path.exists():
-            print(f"❌ Directory not found: {directory}")
+            print(f"Error: Directory not found: {directory}")
             return []
         
         # Find all markdown files
@@ -266,11 +266,11 @@ class AsyncUnimerNetProcessor:
             try:
                 if self.process_markdown_file(str(md_file), call_image_api):
                     processed_files.append(str(md_file))
-                    print(f"✅ Successfully processed: {md_file}")
+                    print(f"Successfully processed: {md_file}")
                 else:
-                    print(f"❌ Failed to process: {md_file}")
+                    print(f"Error: Failed to process: {md_file}")
             except Exception as e:
-                print(f"❌ Error processing {md_file}: {e}")
+                print(f"Error: Error processing {md_file}: {e}")
                 if self.debug:
                     import traceback
                     traceback.print_exc()
@@ -299,7 +299,7 @@ def main():
             if success:
                 print(f"\n🎉 Successfully processed: {target_path}")
             else:
-                print(f"\n❌ Failed to process: {target_path}")
+                print(f"\nError: Failed to process: {target_path}")
                 sys.exit(1)
         
         elif target_path.is_dir():
@@ -309,18 +309,18 @@ def main():
             if processed_files:
                 print(f"\n🎉 Successfully processed {len(processed_files)} files:")
                 for file in processed_files:
-                    print(f"  ✅ {file}")
+                    print(f"{file}")
             else:
-                print(f"\n❌ No files were processed successfully")
+                print(f"\nError: No files were processed successfully")
                 sys.exit(1)
         
         else:
-            print(f"❌ Invalid target: {target_path}")
+            print(f"Error: Invalid target: {target_path}")
             print("Target must be a markdown file (.md) or directory")
             sys.exit(1)
     
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"Error: {e}")
         if args.debug:
             import traceback
             traceback.print_exc()

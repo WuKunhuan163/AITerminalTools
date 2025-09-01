@@ -23,7 +23,7 @@ try:
     # from google_drive_shell import GoogleDriveShell
     pass
 except ImportError as e:
-    print(f"❌ 导入Google Drive Shell失败: {e}")
+    print(f"Error: Import Google Drive Shell failed: {e}")
     GoogleDriveShell = None
 
 def get_local_hf_token():
@@ -161,9 +161,9 @@ except Exception as e:
     # Check the exit code from Python script
     if [ $? -eq 0 ]; then
         clear
-        echo "✅ 设置完成"
+        echo "✅ Setup completed"
     else
-        echo "❌ 设置失败"
+        echo "❌ Setup failed"
         exit 1
     fi
 else
@@ -185,8 +185,8 @@ fi
             # 非RUN环境，使用subprocess方法显示窗口
             # show_command_window_subprocess现在在remote_commands中，需要通过main_instance访问
             
-            title = "🤗 HuggingFace 远程设置"
-            instruction = "请在远程环境中执行以下命令来设置HuggingFace凭据："
+            title = "🤗 HuggingFace remote setup"
+            instruction = "Please execute the following command in your remote environment to set up HuggingFace credentials:"
             
             # 使用subprocess方法显示窗口
             # 创建一个临时的remote_commands实例来调用方法
@@ -204,19 +204,19 @@ fi
                     "success": True,
                     "remote_command": remote_setup_commands.strip(),
                     "token_configured": True,
-                    "message": "HuggingFace凭据设置完成"
+                    "message": "HuggingFace credentials setup completed"
                 }
             elif result["action"] == "copy":
                 return {
                     "success": True,
                     "remote_command": remote_setup_commands.strip(),
                     "token_configured": True,
-                    "message": "命令已复制到剪切板，请手动执行"
+                    "message": "Command copied to clipboard, please manually execute"
                 }
             else:
                 return {
                     "success": False,
-                    "error": f"操作取消或失败: {result.get('error', 'Unknown error')}",
+                    "error": f"Operation cancelled or failed: {result.get('error', 'Unknown error')}",
                     "remote_command": remote_setup_commands.strip()
                 }
             

@@ -91,10 +91,10 @@ class Validation:
             for expected_file in expected_files:
                 if expected_file in file_names_in_dir:
                     found_files.append(expected_file)
-                    debug_print(f"✅ Found file: {expected_file}")
+                    debug_print(f"Found file: {expected_file}")
                 else:
                     missing_files.append(expected_file)
-                    debug_print(f"❌ Missing file: {expected_file}")
+                    debug_print(f"Error: Missing file: {expected_file}")
             
             success = len(found_files) == len(expected_files)
             debug_print(f"Validation result: {len(found_files)}/{len(expected_files)} files found")

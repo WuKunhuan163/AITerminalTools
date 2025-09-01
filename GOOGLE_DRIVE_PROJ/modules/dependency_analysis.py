@@ -1191,7 +1191,7 @@ class DependencyAnalysis:
             
             if nonexistent_packages:
                 error_msg = f"Package(s) not found on PyPI: {', '.join(nonexistent_packages)}"
-                print(f"❌ Error: {error_msg}")
+                print(f"Error: {error_msg}")
                 return {
                     "success": False,
                     "error": error_msg,

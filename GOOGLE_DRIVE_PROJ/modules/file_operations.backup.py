@@ -222,14 +222,14 @@ class FileOperations:
                 result = subprocess.run(['pgrep', '-f', 'Google Drive'], 
                                       capture_output=True, text=True)
                 if result.returncode == 0 and bool(result.stdout.strip()):
-                    print("✅ Google Drive Desktop started successfully")
+                    print("Google Drive Desktop started successfully")
                     return True
             
-            print("❌ Google Drive Desktop failed to start")
+            print("Error:  Google Drive Desktop failed to start")
             return False
             
         except Exception as e:
-            print(f"❌ Error checking/starting Google Drive Desktop: {e}")
+            print(f"Error: Error checking/starting Google Drive Desktop: {e}")
             return False
     
     def _check_large_files(self, source_files):
@@ -415,7 +415,7 @@ class FileOperations:
                             Path(zip_path).unlink()
                             print(f"Cleaned up local temporary file: {zip_filename}")
                     except Exception as e:
-                        print(f"⚠️ Failed to clean up temporary file: {e}")
+                        print(f"Warning: Failed to clean up temporary file: {e}")
                 else:
                     print(f"Saved local zip file: {zip_path}")
                     
@@ -530,7 +530,7 @@ class FileOperations:
                 if override_check_result["success"] and override_check_result.get("overridden_files"):
                     overridden_files = override_check_result["overridden_files"]
                     for file_path in overridden_files:
-                        print(f"⚠️ Warning: Overriding remote file {file_path}")
+                        print(f"Warning: Overriding remote file {file_path}")
             
             # 4. 检查是否有文件夹，提示正确语法
             for source_file in source_files:
@@ -545,9 +545,9 @@ class FileOperations:
             failed_moves = []
             
             for source_file in source_files:
-                debug_print(f"📁 Processing file: {source_file}")
+                debug_print(f"Processing file: {source_file}")
                 move_result = self.main_instance.sync_manager.move_to_local_equivalent(source_file)
-                debug_print(f"📁 Move result: {move_result}")
+                debug_print(f"Move result: {move_result}")
                 
                 if move_result["success"]:
                     file_moves.append({
@@ -562,7 +562,7 @@ class FileOperations:
                     if move_result["renamed"]:
                         debug_print(f"🏷️  File renamed: {move_result['original_filename']} -> {move_result['filename']}")
                     else:
-                        debug_print(f"📁 File processed without renaming: {move_result['filename']}")
+                        debug_print(f"File processed without renaming: {move_result['filename']}")
                 else:
                     failed_moves.append({
                         "file": source_file,
@@ -573,15 +573,15 @@ class FileOperations:
             if not file_moves:
                 return {
                     "success": False,
-                    "error": "所有文件移动失败",
+                    "error": "All file moves failed",
                     "failed_moves": failed_moves
                 }
             
             # 5. 检测网络连接
             network_result = self.check_network_connection()
             if not network_result["success"]:
-                print(f"⚠️ 网络连接检测: {network_result['error']}")
-                print("📱 将继续执行，但请确保网络连接正常")
+                print(f"Warning: Network connection check failed: {network_result['error']}")
+                print("📱 Will continue to execute, but please ensure network connection is normal")
             else:
                 # 静默处理网络检查
                 pass
@@ -594,7 +594,7 @@ class FileOperations:
             
             if not sync_result["success"]:
                 # 同步检测失败，但继续执行
-                print(f"⚠️ File sync check failed: {sync_result.get('error', 'Unknown error')}")
+                print(f"Warning: File sync check failed: {sync_result.get('error', 'Unknown error')}")
                 print("📱 Upload may have succeeded, please manually verify files have been uploaded")
                 print("💡 You can retry upload if needed")
                 
@@ -690,12 +690,12 @@ class FileOperations:
                     
                     # 记录原始文件名的使用
                     self.main_instance.cache_manager.add_deletion_record(original_filename)
-                    debug_print(f"📝 Added deletion record for original: {original_filename}")
+                    debug_print(f"Added deletion record for original: {original_filename}")
                     
                     # 如果文件被重命名，也记录临时文件名的使用
                     if file_info["renamed"] and temp_filename != original_filename:
                         self.main_instance.cache_manager.add_deletion_record(temp_filename)
-                        debug_print(f"📝 Added deletion record for temp: {temp_filename}")
+                        debug_print(f"Added deletion record for temp: {temp_filename}")
                 
                 # 如果指定了 --remove-local 选项，删除本地源文件
                 if remove_local:
@@ -1321,36 +1321,36 @@ class FileOperations:
                     return {
                         "success": True,
                         "filename": filename,
-                        "message": f"✅ 文件已创建: {filename}"
+                        "message": f"Created: {filename}"
                     }
                 else:
                     return {
                         "success": False,
-                        "error": f"文件创建命令成功但验证失败: {verification_result.get('error', 'Unknown verification error')}"
+                        "error": f"File create command succeeded but verification failed: {verification_result.get('error', 'Unknown verification error')}"
                     }
             else:
                 # 优先使用用户提供的错误信息
                 error_msg = result.get('error_info') or result.get('error') or 'Unknown error'
                 return {
                     "success": False,
-                    "error": f"创建文件失败: {error_msg}"
+                    "error": f"Create file failed: {error_msg}"
                 }
                 
         except Exception as e:
-            return {"success": False, "error": f"创建文件时出错: {e}"}
+            return {"success": False, "error": f"Create file failed: {e}"}
 
     def cmd_cat(self, filename):
         """cat命令 - 显示文件内容"""
         try:
             if not self.drive_service:
-                return {"success": False, "error": "Google Drive API服务未初始化"}
+                return {"success": False, "error": "Google Drive API service not initialized"}
                 
             current_shell = self.main_instance.get_current_shell()
             if not current_shell:
-                return {"success": False, "error": "没有活跃的远程shell，请先创建或切换到一个shell"}
+                return {"success": False, "error": "No active remote shell, please create or switch to a shell"}
             
             if not filename:
-                return {"success": False, "error": "请指定要查看的文件"}
+                return {"success": False, "error": "Please specify the file to view"}
             
             # 查找文件
             file_info = self._find_file(filename, current_shell)
@@ -1378,10 +1378,10 @@ class FileOperations:
                 return {"success": True, "output": content, "filename": filename}
                 
             except Exception as e:
-                return {"success": False, "error": f"无法读取文件内容: {e}"}
+                return {"success": False, "error": f"Cannot read file content: {e}"}
                 
         except Exception as e:
-            return {"success": False, "error": f"执行cat命令时出错: {e}"}
+            return {"success": False, "error": f"Execute cat command failed: {e}"}
 
     def cmd_grep(self, pattern, *filenames):
         """grep命令 - 在文件中搜索模式，支持多文件和regex"""
@@ -1389,16 +1389,16 @@ class FileOperations:
         
         try:
             if not pattern:
-                return {"success": False, "error": "请指定搜索模式"}
+                return {"success": False, "error": "Please specify the search pattern"}
             
             if not filenames:
-                return {"success": False, "error": "请指定要搜索的文件"}
+                return {"success": False, "error": "Please specify the file to search"}
             
             # 编译正则表达式
             try:
                 regex = re.compile(pattern)
             except re.error as e:
-                return {"success": False, "error": f"无效的正则表达式: {e}"}
+                return {"success": False, "error": f"Invalid regular expression: {e}"}
             
             result = {}
             
@@ -1454,7 +1454,7 @@ class FileOperations:
         try:
             # 0. 检查Google Drive Desktop是否运行
             if not self.ensure_google_drive_desktop_running():
-                return {"success": False, "error": "用户取消上传操作"}
+                return {"success": False, "error": "User cancelled upload operation"}
             
             if not file_pairs:
                 return {"success": False, "error": "Please specify file pairs to upload"}
@@ -1484,7 +1484,7 @@ class FileOperations:
             # 第一阶段：检查目标目录冲突和文件存在冲突
             current_shell = self.main_instance.get_current_shell()
             if not current_shell:
-                return {"success": False, "error": "No active remote shell, please create or switch to a shell first"}
+                return {"success": False, "error": "No active remote shell, please create or switch to a shell"}
             
             # 检查目标目录是否有重复
             target_paths = set()
@@ -1627,7 +1627,7 @@ class FileOperations:
                         existing_files = [f["name"] for f in ls_result["files"]]
                         if file_name in existing_files:
                             overridden_files.append(remote_file_path)
-                            print(f"⚠️ Warning: Overriding remote file {remote_file_path}")
+                            print(f"Warning: Overriding remote file {remote_file_path}")
             
             # 第二阶段：执行多文件上传
             all_file_moves = []
@@ -1706,7 +1706,7 @@ class FileOperations:
                 "failed_files": [fm["file"] for fm in failed_moves],
                 "total_attempted": len(validated_pairs),
                 "total_succeeded": len(all_file_moves),
-                "message": f"✅ 多文件上传完成: {len(all_file_moves)}/{len(validated_pairs)} 个文件成功",
+                "message": f"多文件上传完成: {len(all_file_moves)}/{len(validated_pairs)} 个文件成功",
                 "sync_time": sync_result.get("sync_time", 0),
                 "remote_command": remote_command
             }
@@ -2000,7 +2000,7 @@ class FileOperations:
                     "success": True,
                     "moved_files": [{"source": src, "destination": dst} for src, dst in validated_pairs],
                     "total_moved": len(validated_pairs),
-                    "message": f"✅ 多文件移动完成: {len(validated_pairs)} 个文件",
+                    "message": f"多文件移动完成: {len(validated_pairs)} 个文件",
                     "verification": "success"
                 }
             else:
@@ -2219,7 +2219,7 @@ class FileOperations:
             # 检查版本冲突
             conflict_result = self._check_pip_version_conflicts(new_packages)
             if conflict_result.get("has_conflicts"):
-                print(f"⚠️  {conflict_result['conflicts_summary']}")
+                print(f"Warning:  {conflict_result['conflicts_summary']}")
                 print(f"💡 建议: {conflict_result['suggestion']}")
             
             # 尝试智能安装（用于多包安装）
@@ -2593,7 +2593,7 @@ try:
         print(f"pip command failed (exit_code: {{result.returncode}}, has_error: {{has_error}})")
 
 except subprocess.TimeoutExpired:
-    print("❌ Pip command timed out after 5 minutes")
+    print("Error:  Pip command timed out after 5 minutes")
     result_data = {{
         "success": False,
         "pip_command": "{pip_command}",
@@ -2606,7 +2606,7 @@ except subprocess.TimeoutExpired:
         json.dump(result_data, f, indent=2)
 
 except Exception as e:
-    print(f"❌ Error executing pip command: {{e}}")
+    print(f"Error: Error executing pip command: {{e}}")
     result_data = {{
         "success": False,
         "pip_command": "{pip_command}",
@@ -2667,7 +2667,7 @@ except Exception as e:
             return {}
                 
         except Exception as e:
-            print(f"❌ Failed to get packages from JSON: {str(e)}")
+            print(f"Error: Failed to get packages from JSON: {str(e)}")
             import traceback
             traceback.print_exc()
             return {}
@@ -3189,10 +3189,10 @@ mkdir -p "{self._get_venv_base_path()}" && {{
                     print(".", end="", flush=True)
                     
                 except Exception as e:
-                    print(f"\n❌ Error checking result file: {str(e)[:100]}")
+                    print(f"\nError: Error checking result file: {str(e)[:100]}")
                     return {"success": False, "error": f"Error checking result: {e}"}
             
-            print(f"\n❌ Timeout: No result file found after {max_attempts} seconds")
+            print(f"\nError: Timeout: No result file found after {max_attempts} seconds")
             return {"success": False, "error": "Execution timeout - no result file found"}
             
         except Exception as e:
@@ -3227,7 +3227,7 @@ mkdir -p "{self._get_venv_base_path()}" && {{
             return env_names
                 
         except Exception as e:
-            print(f"⚠️ API列出虚拟环境异常: {e}，回退到远程命令")
+            print(f"Warning: API列出虚拟环境异常: {e}，回退到远程命令")
             return self._get_venv_environments_via_remote()
     
     def _get_venv_environments_via_remote(self):
@@ -3258,7 +3258,7 @@ fi
                 return []
                 
         except Exception as e:
-            print(f"⚠️ 远程命令列出虚拟环境失败: {e}")
+            print(f"Warning: 远程命令列出虚拟环境失败: {e}")
             return []
 
     
@@ -3312,23 +3312,23 @@ fi
             venv_dir = f"{self._get_venv_base_path()}"
             mkdir_command = f'mkdir -p "{venv_dir}"'
             mkdir_result = self.main_instance.execute_generic_remote_command("bash", ["-c", mkdir_command])
-            print(f"📁 创建目录结果: {mkdir_result}")
+            print(f"创建目录结果: {mkdir_result}")
             
             # 写入初始JSON文件
             json_content = json.dumps(initial_structure, indent=2, ensure_ascii=False)
             create_command = f'cat > "{state_file}" << \'EOF\'\n{json_content}\nEOF'
             create_result = self.main_instance.execute_generic_remote_command("bash", ["-c", create_command])
-            print(f"📄 创建JSON文件结果: {create_result}")
+            print(f"创建JSON文件结果: {create_result}")
             
             if create_result.get("success"):
-                print(f"✅ 成功创建初始状态文件: {state_file}")
+                print(f"成功创建初始状态文件: {state_file}")
                 return True
             else:
-                print(f"❌ 创建状态文件失败: {create_result.get('error')}")
+                print(f"Error: 创建状态文件失败: {create_result.get('error')}")
                 return False
             
         except Exception as e:
-            print(f"❌ 创建初始状态文件失败: {e}")
+            print(f"Error: 创建初始状态文件失败: {e}")
             return False
 
     def _packages_differ(self, json_packages, api_packages):
@@ -3369,7 +3369,7 @@ fi
             self._save_all_venv_states(all_states)
             
         except Exception as e:
-            print(f"❌ 更新环境包信息失败: {e}")
+            print(f"Error: 更新环境包信息失败: {e}")
     
     def _load_venv_state(self, shell_id):
         """从统一的JSON文件加载指定shell的虚拟环境状态"""
@@ -3378,7 +3378,7 @@ fi
             return all_states.get(shell_id)
             
         except Exception as e:
-            print(f"⚠️ 加载虚拟环境状态失败: {e}")
+            print(f"Warning: 加载虚拟环境状态失败: {e}")
             return None
     
     def _clear_venv_state(self, shell_id):
@@ -3407,7 +3407,7 @@ fi
             return result.get("success", False)
             
         except Exception as e:
-            print(f"⚠️ 清除虚拟环境状态失败: {e}")
+            print(f"Warning: 清除虚拟环境状态失败: {e}")
             return False
 
     def _get_venv_state_file_path(self):
@@ -3446,7 +3446,7 @@ fi
             return result.get("success", False)
             
         except Exception as e:
-            print(f"⚠️ 保存虚拟环境状态失败: {e}")
+            print(f"Warning: 保存虚拟环境状态失败: {e}")
             return False
 
     def _get_current_venv(self):
@@ -3479,7 +3479,7 @@ fi
             return None
             
         except Exception as e:
-            print(f"⚠️ 获取当前虚拟环境失败: {e}")
+            print(f"Warning: 获取当前虚拟环境失败: {e}")
             return None
 
     def _execute_python_code_remote(self, code, venv_name, save_output=False, filename=None):
@@ -3523,71 +3523,6 @@ fi
                 
         except Exception as e:
             return {"success": False, "error": f"远程Python执行时出错: {e}"}
-
-    def _execute_python_code_local(self, code, save_output=False, filename=None):
-        """在本地执行Python代码"""
-        try:
-            import subprocess
-            import tempfile
-            import os
-            
-            # 创建临时Python文件
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False, encoding='utf-8') as temp_file:
-                temp_file.write(code)
-                temp_file_path = temp_file.name
-            
-            try:
-                # 执行Python代码
-                result = subprocess.run(
-                    ['/usr/bin/python3', temp_file_path],
-                    capture_output=True,
-                    text=True,
-                    timeout=30  # 30秒超时
-                )
-                
-                # 清理临时文件
-                os.unlink(temp_file_path)
-                
-                # 准备结果
-                execution_result = {
-                    "success": True,
-                    "stdout": result.stdout,
-                    "stderr": result.stderr,
-                    "returncode": result.returncode,
-                    "filename": filename
-                }
-                
-                # 如果需要保存输出到Drive
-                if save_output and (result.stdout or result.stderr):
-                    output_filename = f"{filename}_output.txt" if filename else "python_output.txt"
-                    output_content = f"=== Python Execution Result ===\n"
-                    output_content += f"Return code: {result.returncode}\n\n"
-                    
-                    if result.stdout:
-                        output_content += f"=== STDOUT ===\n{result.stdout}\n"
-                    
-                    if result.stderr:
-                        output_content += f"=== STDERR ===\n{result.stderr}\n"
-                    
-                    # 尝试保存到Drive（如果失败也不影响主要功能）
-                    try:
-                        save_result = self._create_text_file(output_filename, output_content)
-                        if save_result["success"]:
-                            execution_result["output_saved"] = output_filename
-                    except:
-                        pass  # 保存失败不影响主要功能
-                
-                return execution_result
-                
-            except subprocess.TimeoutExpired:
-                os.unlink(temp_file_path)
-                return {"success": False, "error": "Python代码执行超时（30秒）"}
-            except Exception as e:
-                os.unlink(temp_file_path)
-                return {"success": False, "error": f"执行Python代码时出错: {e}"}
-                
-        except Exception as e:
-            return {"success": False, "error": f"准备Python执行环境时出错: {e}"}
 
     def cmd_mkdir_remote(self, target_path, recursive=False):
         """
@@ -5231,7 +5166,7 @@ fi
                     time.sleep(2)
                     
             except Exception as e:
-                print(f"⚠️ 验证尝试 {attempt + 1} 失败: {e}")
+                print(f"Warning: 验证尝试 {attempt + 1} 失败: {e}")
                 if attempt < max_retries - 1:
                     time.sleep(2)
         
@@ -5255,7 +5190,7 @@ fi
                     time.sleep(2)
                     
             except Exception as e:
-                print(f"⚠️ 验证尝试 {attempt + 1} 失败: {e}")
+                print(f"Warning: 验证尝试 {attempt + 1} 失败: {e}")
                 if attempt < max_retries - 1:
                     time.sleep(2)
         
@@ -5470,7 +5405,7 @@ fi
                 valid_env_names.append(env_name)
         
         if invalid_names:
-            print(f"⚠️  Skipped {len(invalid_names)} invalid environment name(s): {', '.join(invalid_names)} (cannot start with '.')")
+            print(f"Warning:  Skipped {len(invalid_names)} invalid environment name(s): {', '.join(invalid_names)} (cannot start with '.')")
         
         if not valid_env_names:
             return {
@@ -5496,7 +5431,7 @@ fi
                     new_env_names.append(env_name)
             
             if already_exist:
-                print(f"⚠️  Environments already exist: {', '.join(already_exist)}")
+                print(f"Warning:  Environments already exist: {', '.join(already_exist)}")
             
             if not new_env_names:
                 return {
@@ -5509,7 +5444,7 @@ fi
             # 更新要创建的环境列表
             valid_env_names = new_env_names
         except Exception as e:
-            print(f"⚠️ Could not check existing environments: {str(e)}")
+            print(f"Warning: Could not check existing environments: {str(e)}")
             # 继续执行，但可能会有重复创建
         
         # 生成单个远程命令来创建多个环境
@@ -5639,7 +5574,7 @@ fi
                 candidate_envs.append(env_name)
         
         if skipped_protected:
-            print(f"⚠️  Skipped {len(skipped_protected)} protected environment(s): {', '.join(skipped_protected)}")
+            print(f"Warning:  Skipped {len(skipped_protected)} protected environment(s): {', '.join(skipped_protected)}")
         
         if not candidate_envs:
             return {
@@ -6754,7 +6689,7 @@ fi
             print(f"🔍 使用API扫描虚拟环境 '{env_name}'...")
             
             if not self.drive_service:
-                print("❌ Google Drive API服务未初始化")
+                print("Error:  Google Drive API服务未初始化")
                 return {}
             
             # 找到REMOTE_ENV文件夹
@@ -6764,7 +6699,7 @@ fi
             )
             
             if not env_files_result['success']:
-                print("❌ 无法列出REMOTE_ENV目录内容")
+                print("Error:  无法列出REMOTE_ENV目录内容")
                 return {}
             
             # 寻找venv文件夹
@@ -6775,7 +6710,7 @@ fi
                     break
             
             if not venv_folder_id:
-                print("❌ venv文件夹不存在")
+                print("Error:  venv文件夹不存在")
                 return {}
             
             # 在venv文件夹中寻找指定的环境文件夹
@@ -6785,7 +6720,7 @@ fi
             )
             
             if not venv_files_result['success']:
-                print("❌ 无法列出venv目录内容")
+                print("Error:  无法列出venv目录内容")
                 return {}
             
             env_folder_id = None
@@ -6795,7 +6730,7 @@ fi
                     break
             
             if not env_folder_id:
-                print(f"❌ 环境文件夹 '{env_name}' 不存在")
+                print(f"Error: 环境文件夹 '{env_name}' 不存在")
                 return {}
             
             # 列出环境文件夹的内容
@@ -6805,10 +6740,10 @@ fi
             )
             
             if not env_contents_result['success']:
-                print(f"❌ 无法列出环境 '{env_name}' 的内容")
+                print(f"Error: 无法列出环境 '{env_name}' 的内容")
                 return {}
             
-            print(f"📁 环境 '{env_name}' 包含 {len(env_contents_result['files'])} 个文件/文件夹")
+            print(f"环境 '{env_name}' 包含 {len(env_contents_result['files'])} 个文件/文件夹")
             
             detected_packages = {}
             dist_info_files = []
@@ -6867,7 +6802,7 @@ fi
             return detected_packages
             
         except Exception as e:
-            print(f"❌ API扫描失败: {e}")
+            print(f"Error: API扫描失败: {e}")
             import traceback
             traceback.print_exc()
             return {}
@@ -6906,7 +6841,7 @@ fi
                 print(f"Successfully loaded {len(packages_from_json)} packages from JSON")
                 return packages_from_json
             elif api_scan_result:
-                print(f"✅ API扫描发现 {len(api_scan_result)} 个包")
+                print(f"API扫描发现 {len(api_scan_result)} 个包")
                 # 更新JSON文件，因为之前没有数据
                 print("🔄 Venv package state changes detected, updating the json file ...")
                 self._update_environment_packages_in_json(env_name, api_scan_result)
@@ -7088,7 +7023,7 @@ try:
         print(f"pip command failed (exit_code: {{result.returncode}}, has_error: {{has_error}})")
 
 except subprocess.TimeoutExpired:
-    print("❌ Pip command timed out after 5 minutes")
+    print("Error:  Pip command timed out after 5 minutes")
     result_data = {{
         "success": False,
         "pip_command": "{pip_command}",
@@ -7101,7 +7036,7 @@ except subprocess.TimeoutExpired:
         json.dump(result_data, f, indent=2)
 
 except Exception as e:
-    print(f"❌ Error executing pip command: {{e}}")
+    print(f"Error: Error executing pip command: {{e}}")
     result_data = {{
         "success": False,
         "pip_command": "{pip_command}",
@@ -7186,7 +7121,7 @@ except Exception as e:
                                     print(stdout.strip())
                                 
                                 if stderr.strip() and not command_success:
-                                    print(f"⚠️  {stderr.strip()}")
+                                    print(f"Warning:  {stderr.strip()}")
                                 
                                 if command_success:
                                     # 解析pip安装成功的包信息并更新JSON

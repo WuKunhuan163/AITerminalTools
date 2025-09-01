@@ -70,41 +70,41 @@ class TextOperations:
                     return {
                         "success": True,
                         "filename": filename,
-                        "message": f"✅ 文件已创建: {filename}"
+                        "message": f"File created: {filename}"
                     }
                 else:
                     return {
                         "success": False,
-                        "error": f"文件创建命令成功但验证失败: {verification_result.get('error', 'Unknown verification error')}"
+                        "error": f"File create command succeeded but verification failed: {verification_result.get('error', 'Unknown verification error')}"
                     }
             else:
                 # 优先使用用户提供的错误信息
                 error_msg = result.get('error_info') or result.get('error') or 'Unknown error'
                 return {
                     "success": False,
-                    "error": f"创建文件失败: {error_msg}"
+                    "error": f"Create file failed: {error_msg}"
                 }
                 
         except Exception as e:
-            return {"success": False, "error": f"创建文件时出错: {e}"}
+            return {"success": False, "error": f"Create file failed: {e}"}
 
     def cmd_cat(self, filename):
         """cat命令 - 显示文件内容"""
         try:
             if not self.drive_service:
-                return {"success": False, "error": "Google Drive API服务未初始化"}
+                return {"success": False, "error": "Google Drive API service not initialized"}
                 
             current_shell = self.main_instance.get_current_shell()
             if not current_shell:
-                return {"success": False, "error": "没有活跃的远程shell，请先创建或切换到一个shell"}
+                return {"success": False, "error": "No active remote shell, please create or switch to a shell"}
             
             if not filename:
-                return {"success": False, "error": "请指定要查看的文件"}
+                return {"success": False, "error": "Please specify the file to view"}
             
             # 查找文件
             file_info = self._find_file(filename, current_shell)
             if not file_info:
-                return {"success": False, "error": f"File or directory does not exist"}
+                return {"success": False, "error": f"File or directory does not exist: {filename}"}
             
             # 检查是否为文件
             if file_info['mimeType'] == 'application/vnd.google-apps.folder':

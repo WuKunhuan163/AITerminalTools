@@ -155,7 +155,7 @@ class MinerUWrapper:
                     # Try again without formula recognition
                     retry_result = self._retry_without_formulas(pdf_path, page_range, debug)
                     if retry_result:
-                        # print("✅ Successfully processed without formula recognition", file=sys.stderr)  # Silenced per user request
+                        # print("Successfully processed without formula recognition", file=sys.stderr)  # Silenced per user request
                         return retry_result
                     
                     # If retry also fails, create basic output
@@ -582,9 +582,9 @@ class MinerUWrapper:
                     target_file = data_folder / target_name
                     try:
                         shutil.copy2(source_file, target_file)
-                        # print(f"📄 Copied {file} -> {target_name}", file=sys.stderr)  # Silenced per user request
+                        # print(f"Copied {file} -> {target_name}", file=sys.stderr)  # Silenced per user request
                     except Exception as e:
-                        print(f"⚠️  Warning: Could not copy {file}: {e}", file=sys.stderr)
+                        print(f"Warning:  Warning: Could not copy {file}: {e}", file=sys.stderr)
         
         # Copy images folder if it exists
         for root, dirs, files in os.walk(temp_path):
@@ -597,10 +597,10 @@ class MinerUWrapper:
                     if target_images_dir.exists():
                         shutil.rmtree(target_images_dir)
                     shutil.copytree(source_images_dir, target_images_dir)
-                    # print(f"📁 Copied images folder to {target_images_dir}", file=sys.stderr)  # Silenced per user request
+                    # print(f"Copied images folder to {target_images_dir}", file=sys.stderr)  # Silenced per user request
                     break  # Only copy the first images folder found
         
-        # print(f"✅ Created intermediate data folder: {data_folder}", file=sys.stderr)  # Silenced per user request
+        # print(f"Created intermediate data folder: {data_folder}", file=sys.stderr)  # Silenced per user request
     
     def _retry_without_formulas(self, pdf_path: str, page_range: Optional[str], debug: bool) -> Optional[str]:
         """
@@ -812,10 +812,10 @@ Formula recognition is currently unavailable.
             with open(markdown_file, 'w', encoding='utf-8') as f:
                 f.write(updated_content)
             
-            print(f"✅ Added API descriptions for {len(image_blocks)} images", file=sys.stderr)
+            print(f"Added API descriptions for {len(image_blocks)} images", file=sys.stderr)
             
         except Exception as e:
-            print(f"⚠️  Error in image API post-processing: {e}", file=sys.stderr)
+            print(f"Warning:  Error in image API post-processing: {e}", file=sys.stderr)
     
     def _add_async_placeholders(self, target_file: str, original_output_file: str, pdf_path: str = None):
         """Add placeholders for async post-processing in markdown file and create JSON status file."""
@@ -906,10 +906,10 @@ Formula recognition is currently unavailable.
                         with open(same_name_md_file, 'w', encoding='utf-8') as f:
                             f.write(updated_same_name_content)
                         
-                        print(f"✅ Same-name file also updated: {same_name_md_file}", file=sys.stderr)
-                        print(f"📁 Images copied to: {pdf_images_dir}", file=sys.stderr)
+                        print(f"Same-name file also updated: {same_name_md_file}", file=sys.stderr)
+                        print(f"Images copied to: {pdf_images_dir}", file=sys.stderr)
                 except Exception as e:
-                    print(f"⚠️  Error updating same-name file: {e}", file=sys.stderr)
+                    print(f"Warning:  Error updating same-name file: {e}", file=sys.stderr)
             
             # Create JSON status file instead of adding to markdown
             if pdf_path:
@@ -919,13 +919,13 @@ Formula recognition is currently unavailable.
                     formula_count = sum(1 for b in blocks_to_process if b['type'] in ['formula', 'interline_equation'])
                     table_count = sum(1 for b in blocks_to_process if b['type'] == 'table')
                     
-                    print(f"✅ Added async processing tags: {image_count} images, {formula_count} formulas, {table_count} tables", file=sys.stderr)
-                    print(f"📄 Post-processing status saved to: {Path(status_file).name}", file=sys.stderr)
+                    print(f"Added async processing tags: {image_count} images, {formula_count} formulas, {table_count} tables", file=sys.stderr)
+                    print(f"Post-processing status saved to: {Path(status_file).name}", file=sys.stderr)
                 else:
                     print("⚠️  Failed to create status file", file=sys.stderr)
             
         except Exception as e:
-            print(f"⚠️  Error adding async placeholders: {e}", file=sys.stderr)
+            print(f"Warning:  Error adding async placeholders: {e}", file=sys.stderr)
     
     def _extract_image_path_from_block(self, block):
         """Extract image path from a block structure."""
@@ -954,7 +954,7 @@ Formula recognition is currently unavailable.
             
             return None
         except Exception as e:
-            print(f"⚠️  Error extracting image path: {e}", file=sys.stderr)
+            print(f"Warning:  Error extracting image path: {e}", file=sys.stderr)
             return None
     
     def _add_placeholders_to_content(self, content: str, image_path_to_type: dict):
@@ -1126,11 +1126,11 @@ Formula recognition is currently unavailable.
             # Update global hash mapping
             self._update_hash_mapping_from_items(status_data["items"])
             
-            print(f"✅ Created post-processing status file: {status_file}")
+            print(f"Created post-processing status file: {status_file}")
             return str(status_file)
             
         except Exception as e:
-            print(f"❌ Failed to create status file: {e}", file=sys.stderr)
+            print(f"Error: Failed to create status file: {e}", file=sys.stderr)
             return None
     
     def _get_processor_for_type(self, block_type: str) -> str:
@@ -1165,9 +1165,9 @@ Formula recognition is currently unavailable.
                         if item.get('processed', False):
                             existing_processed_items[item.get('id', '')] = item
                             
-                    print(f"📄 Kept {len(existing_processed_items)} processed items")
+                    print(f"Kept {len(existing_processed_items)} processed items")
                 except Exception as e:
-                    print(f"⚠️  Failed to read existing status file: {e}")
+                    print(f"Warning:  Failed to read existing status file: {e}")
             
             # If no markdown file specified, look for same-name file
             if not markdown_file:
@@ -1176,7 +1176,7 @@ Formula recognition is currently unavailable.
                 markdown_file = Path(markdown_file)
             
             if not markdown_file.exists():
-                print(f"❌ Markdown file does not exist: {markdown_file}")
+                print(f"Error: Markdown file does not exist: {markdown_file}")
                 return None
             
             # Read markdown content
@@ -1276,14 +1276,14 @@ Formula recognition is currently unavailable.
                     with open(status_file, 'w', encoding='utf-8') as f:
                         json.dump(status_data, f, ensure_ascii=False, indent=2)
                 
-                print(f"✅ Regenerated status file from Markdown: {len(blocks_to_process)} items")
+                print(f"Regenerated status file from Markdown: {len(blocks_to_process)} items")
                 return status_file
             else:
                 print("ℹ️  No valid placeholders found in Markdown")
                 return None
                 
         except Exception as e:
-            print(f"❌ Failed to regenerate status file: {e}", file=sys.stderr)
+            print(f"Error: Failed to regenerate status file: {e}", file=sys.stderr)
             return None
     
     def _check_or_create_status_file(self, pdf_path: str):
@@ -1295,7 +1295,7 @@ Formula recognition is currently unavailable.
         status_file = pdf_directory / f"{pdf_stem}_postprocess.json"
         
         if not status_file.exists():
-            print(f"📄 Status file does not exist, trying to regenerate from Markdown...")
+            print(f"Status file does not exist, trying to regenerate from Markdown...")
             return self._regenerate_status_from_markdown(pdf_path)
         else:
             return str(status_file)
@@ -1322,11 +1322,11 @@ Formula recognition is currently unavailable.
             with open(status_file, 'w', encoding='utf-8') as f:
                 json.dump(status_data, f, ensure_ascii=False, indent=2)
             
-            print(f"✅ Added hash ID to status file: {len(status_data.get('items', []))} items")
+            print(f"Added hash ID to status file: {len(status_data.get('items', []))} items")
             return True
             
         except Exception as e:
-            print(f"❌ Failed to add hash ID: {e}", file=sys.stderr)
+            print(f"Error: Failed to add hash ID: {e}", file=sys.stderr)
             return False
     
     def _get_items_by_hash_ids(self, status_file: str, hash_ids: list) -> list:
@@ -1368,7 +1368,7 @@ Formula recognition is currently unavailable.
             return selected_items
             
         except Exception as e:
-            print(f"❌ Failed to get items by hash IDs: {e}", file=sys.stderr)
+            print(f"Error: Failed to get items by hash IDs: {e}", file=sys.stderr)
             return []
     
     def _update_item_processing_status(self, status_file: str, hash_id: str, processed: bool = True):
@@ -1397,14 +1397,14 @@ Formula recognition is currently unavailable.
                 with open(status_file, 'w', encoding='utf-8') as f:
                     json.dump(status_data, f, ensure_ascii=False, indent=2)
                 
-                print(f"✅ Updated item status: {hash_id} -> {'processed' if processed else 'unprocessed'}")
+                print(f"Updated item status: {hash_id} -> {'processed' if processed else 'unprocessed'}")
                 return True
             else:
-                print(f"⚠️  ID not found: {hash_id}")
+                print(f"Warning:  ID not found: {hash_id}")
                 return False
                 
         except Exception as e:
-            print(f"❌ Failed to update status: {e}", file=sys.stderr)
+            print(f"Error: Failed to update status: {e}", file=sys.stderr)
             return False
     
     def _recalculate_counts(self, items: list) -> dict:
@@ -1464,11 +1464,11 @@ Formula recognition is currently unavailable.
             with open(markdown_file, 'w', encoding='utf-8') as f:
                 f.write(updated_content)
             
-            print(f"✅ Removed {len(hash_ids)} placeholders")
+            print(f"Removed {len(hash_ids)} placeholders")
             return True
             
         except Exception as e:
-            print(f"❌ Failed to remove placeholders: {e}", file=sys.stderr)
+            print(f"Error: Failed to remove placeholders: {e}", file=sys.stderr)
             return False
     
     def process_items_by_hash_ids(self, pdf_path: str, hash_ids: list, processing_type: str = 'all', custom_prompt: str = None):
@@ -1481,7 +1481,7 @@ Formula recognition is currently unavailable.
             # Find status file
             status_file = pdf_directory / f"{pdf_stem}_postprocess.json"
             if not status_file.exists():
-                print(f"❌ Status file does not exist: {status_file}")
+                print(f"Error: Status file does not exist: {status_file}")
                 return False
             
             # Add hash IDs if not present
@@ -1490,7 +1490,7 @@ Formula recognition is currently unavailable.
             # Get selected items
             selected_items = self._get_items_by_hash_ids(str(status_file), hash_ids)
             if not selected_items:
-                print(f"❌ No items found with specified hash IDs")
+                print(f"Error: No items found with specified hash IDs")
                 return False
             
             print(f"🔄 Starting to process {len(selected_items)} specified items...")
@@ -1498,7 +1498,7 @@ Formula recognition is currently unavailable.
             # Find markdown file
             markdown_file = pdf_directory / f"{pdf_stem}.md"
             if not markdown_file.exists():
-                print(f"❌ Markdown file does not exist: {markdown_file}")
+                print(f"Error: Markdown file does not exist: {markdown_file}")
                 return False
             
             # Clean up existing template placeholders first
@@ -1526,7 +1526,7 @@ Formula recognition is currently unavailable.
                 # Find the actual image file
                 image_file_path = self._find_image_file(pdf_directory, image_path)
                 if not image_file_path:
-                    print(f"⚠️  Image file not found: {image_path}")
+                    print(f"Warning:  Image file not found: {image_path}")
                     continue
                 
                 # Perform real processing based on type
@@ -1546,22 +1546,22 @@ Formula recognition is currently unavailable.
                             # Update status
                             if self._update_item_processing_status(str(status_file), item_id, True):
                                 processed_ids.append(item_id)
-                                print(f"✅ Successfully processed and replaced content: {item_id}")
+                                print(f"Successfully processed and replaced content: {item_id}")
                             else:
-                                print(f"⚠️  Status update failed: {item_id}")
+                                print(f"Warning:  Status update failed: {item_id}")
                         else:
-                            print(f"⚠️  Content replacement failed: {item_id}")
+                            print(f"Warning:  Content replacement failed: {item_id}")
                     else:
-                        print(f"⚠️  Invalid content, skipping replacement: {item_id}")
+                        print(f"Warning:  Invalid content, skipping replacement: {item_id}")
                         # Don't mark as processed if content is invalid
                 else:
-                    print(f"⚠️  Content processing failed: {item_id}")
+                    print(f"Warning:  Content processing failed: {item_id}")
             
-            print(f"✅ Completed processing {len(processed_ids)} items")
+            print(f"Completed processing {len(processed_ids)} items")
             return len(processed_ids) > 0
             
         except Exception as e:
-            print(f"❌ Batch processing failed: {e}", file=sys.stderr)
+            print(f"Error: Batch processing failed: {e}", file=sys.stderr)
             return False
     
     def _find_image_file(self, pdf_directory: Path, image_filename: str) -> Optional[str]:
@@ -1909,7 +1909,7 @@ Formula recognition is currently unavailable.
                 return data.get('mappings', {})
             return {}
         except Exception as e:
-            print(f"⚠️  Failed to load hash mapping: {e}", file=sys.stderr)
+            print(f"Warning:  Failed to load hash mapping: {e}", file=sys.stderr)
             return {}
     
     def _save_hash_mapping(self, mappings: dict):
@@ -1941,11 +1941,11 @@ Formula recognition is currently unavailable.
             with open(mapping_file, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
             
-            print(f"✅ Updated hash mapping: {len(mappings)} new mappings")
+            print(f"Updated hash mapping: {len(mappings)} new mappings")
             return True
             
         except Exception as e:
-            print(f"❌ Failed to save hash mapping: {e}", file=sys.stderr)
+            print(f"Error: Failed to save hash mapping: {e}", file=sys.stderr)
             return False
     
     def _update_hash_mapping_from_items(self, items: list):
@@ -1962,7 +1962,7 @@ Formula recognition is currently unavailable.
                 self._save_hash_mapping(new_mappings)
                 
         except Exception as e:
-            print(f"⚠️  Failed to update hash mapping: {e}", file=sys.stderr)
+            print(f"Warning:  Failed to update hash mapping: {e}", file=sys.stderr)
 
     def _update_image_cache_with_types(self, pdf_path: str):
         """Update EXTRACT_IMG_DATA/image_cache.json with type information from postprocess JSON."""
@@ -1974,7 +1974,7 @@ Formula recognition is currently unavailable.
             # Load postprocess JSON
             status_file = pdf_directory / f"{pdf_stem}_postprocess.json"
             if not status_file.exists():
-                print(f"⚠️  Post-processing status file does not exist: {status_file}")
+                print(f"Warning:  Post-processing status file does not exist: {status_file}")
                 return False
             
             with open(status_file, 'r', encoding='utf-8') as f:
@@ -1983,7 +1983,7 @@ Formula recognition is currently unavailable.
             # Load image cache
             cache_file = Path(__file__).parent.parent / "EXTRACT_IMG_DATA" / "image_cache.json"
             if not cache_file.exists():
-                print(f"⚠️  Image cache file does not exist: {cache_file}")
+                print(f"Warning:  Image cache file does not exist: {cache_file}")
                 return False
             
             with open(cache_file, 'r', encoding='utf-8') as f:
@@ -2024,14 +2024,14 @@ Formula recognition is currently unavailable.
                 with open(cache_file, 'w', encoding='utf-8') as f:
                     json.dump(cache_data, f, ensure_ascii=False, indent=2)
                 
-                print(f"✅ Updated {updated_count} cache entry types")
+                print(f"Updated {updated_count} cache entry types")
                 return True
             else:
                 print("ℹ️  No cache entries need updating")
                 return True
                 
         except Exception as e:
-            print(f"❌ Failed to update image cache types: {e}", file=sys.stderr)
+            print(f"Error: Failed to update image cache types: {e}", file=sys.stderr)
             return False
     
     def _sync_postprocess_with_cache(self, pdf_path: str):
@@ -2072,7 +2072,7 @@ Formula recognition is currently unavailable.
                     print(f"   Unprocessed items in JSON: {len(unprocessed_items)}")
                     
                     if len(md_placeholders) == len(unprocessed_items):
-                        print("✅ MD and JSON are aligned, no update needed")
+                        print("MD and JSON are aligned, no update needed")
                         return True
                     else:
                         print("⚠️  MD and JSON are not aligned, suggest regenerating status file")
@@ -2081,7 +2081,7 @@ Formula recognition is currently unavailable.
             return True
             
         except Exception as e:
-            print(f"❌ Synchronization processing failed: {e}", file=sys.stderr)
+            print(f"Error: Synchronization processing failed: {e}", file=sys.stderr)
             return False
 
 # Create a global instance
@@ -2107,7 +2107,7 @@ def extract_and_analyze_pdf_with_mineru(
             pdf_path, layout_mode, mode, call_api, call_api_force, page_range, debug, async_mode
         )
     except Exception as e:
-        print(f"⚠️  MinerU failed, falling back to original PDF extractor", file=sys.stderr)
+        print(f"Warning:  MinerU failed, falling back to original PDF extractor", file=sys.stderr)
         print(f"MinerU: Unexpected error: {e}", file=sys.stderr)
         
         # Fallback to original PDF extractor
@@ -2117,5 +2117,5 @@ def extract_and_analyze_pdf_with_mineru(
                 pdf_path, layout_mode, mode, call_api, call_api_force, page_range, debug
             )
         except Exception as fallback_error:
-            print(f"❌ Fallback also failed: {fallback_error}")
+            print(f"Error: Fallback also failed: {fallback_error}")
             raise fallback_error 

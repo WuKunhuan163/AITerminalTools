@@ -70,12 +70,12 @@ class GDSTest(unittest.TestCase):
         # 创建远端测试目录并切换到该目录
         cls._setup_remote_test_directory()
         
-        print("✅ 测试环境设置完成")
+        print("测试环境设置完成")
     
     @classmethod
     def _setup_remote_test_directory(cls):
         """设置远端测试目录"""
-        print(f"📁 远端测试目录: ~/tmp/{cls.test_folder}")
+        print(f"远端测试目录: ~/tmp/{cls.test_folder}")
         
         # 创建测试目录 (先切换到根目录确保正确的路径解析)
         mkdir_command = f"python3 {cls.GOOGLE_DRIVE_PY} --shell 'cd ~ && mkdir -p ~/tmp/{cls.test_folder}'"
@@ -89,7 +89,7 @@ class GDSTest(unittest.TestCase):
         
         if result.returncode != 0:
             error_msg = f"创建远端测试目录失败: 返回码={result.returncode}, stderr={result.stderr}, stdout={result.stdout}"
-            print(f"⚠️ {error_msg}")
+            print(f"Warning: {error_msg}")
             raise RuntimeError(error_msg)
         
         # 切换到测试目录
@@ -104,10 +104,10 @@ class GDSTest(unittest.TestCase):
         
         if result.returncode != 0:
             error_msg = f"切换到远端测试目录失败: 返回码={result.returncode}, stderr={result.stderr}, stdout={result.stdout}"
-            print(f"⚠️ {error_msg}")
+            print(f"Warning: {error_msg}")
             raise RuntimeError(error_msg)
         else:
-            print(f"✅ 已切换到远端测试目录: ~/tmp/{cls.test_folder}")
+            print(f"已切换到远端测试目录: ~/tmp/{cls.test_folder}")
             
         # 验证目录确实存在
         pwd_command = f"python3 {cls.GOOGLE_DRIVE_PY} --shell 'pwd'"
@@ -123,7 +123,7 @@ class GDSTest(unittest.TestCase):
         import tempfile
         import os
         cls.local_tmp_dir = tempfile.mkdtemp(prefix="gds_test_local_")
-        print(f"📁 本地临时目录: {cls.local_tmp_dir}")
+        print(f"本地临时目录: {cls.local_tmp_dir}")
         os.chdir(cls.local_tmp_dir)
     
     @classmethod
@@ -170,7 +170,7 @@ def main():
     # 执行核心逻辑
     from core import process_data
     result = process_data(config)
-    print(f"✅ 处理结果: {result}")
+    print(f"处理结果: {result}")
 
 if __name__ == "__main__":
     main()
@@ -309,9 +309,9 @@ Shell commands: ls -la && echo "done"
             
             print(f"📤 返回码: {result.returncode}")
             if result.stdout:
-                print(f"📝 输出: {result.stdout[:200]}...")  # 限制输出长度
+                print(f"输出: {result.stdout[:200]}...")  # 限制输出长度
             if result.stderr:
-                print(f"⚠️ 错误: {result.stderr[:200]}...")
+                print(f"Warning: 错误: {result.stderr[:200]}...")
             
             # 基于功能执行情况判断，而不是终端输出
             if check_function_result and expect_success:
@@ -372,7 +372,7 @@ Shell commands: ls -la && echo "done"
                 return result.returncode != 0, result
             
             if result.returncode != 0:
-                print(f"❌ 主命令失败，返回码: {result.returncode}")
+                print(f"Error: 主命令失败，返回码: {result.returncode}")
                 if attempt < max_retries - 1:
                     print("⏳ 等待1秒后重试...")
                     import time
@@ -384,26 +384,26 @@ Shell commands: ls -la && echo "done"
             # 执行验证命令
             all_verifications_passed = True
             for i, verify_cmd in enumerate(verification_commands):
-                print(f"  🔍 验证 {i+1}/{len(verification_commands)}: {verify_cmd}")
+                print(f"🔍 Verify {i+1}/{len(verification_commands)}: {verify_cmd}")
                 verify_result = self._run_gds_command(verify_cmd, expect_success=False, check_function_result=False)
                 
                 if verify_result.returncode != 0:
-                    print(f"  ❌ 验证失败，返回码: {verify_result.returncode}")
+                    print(f"Error: Verify failed, return code: {verify_result.returncode}")
                     all_verifications_passed = False
                     break
                 else:
-                    print(f"  ✅ 验证成功")
+                    print(f"Verify successful")
             
             if all_verifications_passed:
-                print(f"🎉 所有验证通过，命令成功执行")
+                print(f"🎉 All verifications passed, command executed successfully")
                 return True, result
             
             if attempt < max_retries - 1:
-                print("⏳ 验证失败，等待2秒后重试...")
+                print("⏳ Verify failed, waiting 2 seconds before retrying...")
                 import time
                 time.sleep(2)
         
-        print(f"💥 所有重试失败")
+        print(f"💥 All retries failed")
         return False, result
     
     # ==================== 基础功能测试 ====================
@@ -527,7 +527,7 @@ Shell commands: ls -la && echo "done"
             content = f.read().strip()
         
         # 验证文件包含正确的JSON内容（GDS应该处理并创建文件）
-        print(f"📝 文件内容: {content}")
+        print(f"文件内容: {content}")
         self.assertTrue(len(content) > 0, "文件不应该为空")
         
         # 验证远端没有这个文件（应该返回False）
@@ -538,7 +538,7 @@ Shell commands: ls -la && echo "done"
             actual_file.unlink()
             print(f"🗑️ 已清理文件: {actual_file}")
         except Exception as e:
-            print(f"⚠️ 清理文件失败: {e}")
+            print(f"Warning: 清理文件失败: {e}")
             pass
         
         # 创建简单的Python脚本
@@ -690,7 +690,7 @@ print(f"Current files: {len(os.listdir())}")'''
         self.assertEqual(result.returncode, 0)
         
         # 10. 测试不存在路径的错误处理
-        print("❌ 测试不存在路径的错误处理")
+        print("Error:  测试不存在路径的错误处理")
         result = self._run_gds_command('ls nonexistent_file.txt', expect_success=False)
         self.assertNotEqual(result.returncode, 0)
         
@@ -781,15 +781,15 @@ print(f"Current files: {len(os.listdir())}")'''
         print("🧹 清理测试目录")
         result = self._run_gds_command('rm -rf path_test')
         self.assertEqual(result.returncode, 0)
-        print("✅ 路径解析功能测试完成")
+        print("路径解析功能测试完成")
         
         # 25. 测试不存在的路径
-        print("❌ 测试不存在的路径")
+        print("Error:  测试不存在的路径")
         result = self._run_gds_command('ls nonexistent_path', expect_success=False, check_function_result=False)
         self.assertNotEqual(result.returncode, 0)  # 应该失败
         
         # 26. 测试cd到不存在的路径
-        print("❌ 测试cd到不存在的路径")
+        print("Error:  测试cd到不存在的路径")
         result = self._run_gds_command('cd nonexistent_path', expect_success=False, check_function_result=False)
         self.assertNotEqual(result.returncode, 0)  # 应该失败
         
@@ -940,7 +940,7 @@ print(f"Current files: {len(os.listdir())}")'''
         self.assertEqual(result.returncode, 0)
         
         # === 错误路径类型测试 ===
-        print("❌ 错误路径类型测试")
+        print("Error:  错误路径类型测试")
         
         # 测试不存在的目录
         result = self._run_gds_command('cd nonexistent_directory', expect_success=False, check_function_result=False)
@@ -961,7 +961,7 @@ print(f"Current files: {len(os.listdir())}")'''
         result = self._run_gds_command('cd ~/../..', expect_success=False, check_function_result=False)
         # 这个可能成功也可能失败，取决于GDS的安全限制
         
-        print("✅ 导航命令和路径测试完成")
+        print("导航命令和路径测试完成")
     
     # ==================== 文件上传测试 ====================
     
@@ -1320,7 +1320,7 @@ def main():
     result = process_data(sample_data)
     print(f"📊 处理结果: {result}")
     
-    print("✅ 应用完成")
+    print("应用完成")
 
 if __name__ == "__main__":
     main()
@@ -1387,7 +1387,7 @@ if __name__ == "__main__":
             result = self._run_gds_command('cat main.py')
             self.assertEqual(result.returncode, 0)
         else:
-            print("✅ grep命令成功")
+            print("grep命令成功")
         
         # 查看配置文件内容
         result = self._run_gds_command('cat config.json')
@@ -1406,7 +1406,7 @@ if __name__ == "__main__":
         self.assertTrue(success, f"代码编辑失败: {result.stderr if result else 'Unknown error'}")
         
         # === 阶段5: 验证测试 ===
-        print("✅ 阶段5: 验证测试")
+        print("阶段5: 验证测试")
         
         # 最终运行测试
         result = self._run_gds_command('python main.py')
@@ -1495,8 +1495,8 @@ def main():
         "sum": sum(data),
         "average": sum(data) / len(data)
     }
-    print(f"✅ Processing result: {result}")
-    print("✅ Test project completed")
+    print(f"Processing result: {result}")
+    print("Test project completed")
 
 if __name__ == "__main__":
     main()
@@ -1748,7 +1748,7 @@ if __name__ == "__main__":
         self.assertTrue(success, f"valid_config.json上传失败: {result.stderr if result else 'Unknown error'}")
         
         # 1. 测试语法正确的文件
-        print("✅ 测试语法正确的Python文件")
+        print("测试语法正确的Python文件")
         result = self._run_gds_command('linter valid_script.py')
         self.assertEqual(result.returncode, 0)
         
@@ -1826,7 +1826,7 @@ print(f"Sum: {result}")
         
         has_linter_output = any(indicator in output for indicator in linter_error_indicators)
         if has_linter_output:
-            print("✅ 检测到linter错误输出")
+            print("检测到linter错误输出")
             
             # 验证linter错误格式：应该在edit comparison下方，由======分割
             sections = output.split("========")
@@ -1852,9 +1852,9 @@ print(f"Sum: {result}")
                 error_lines = [line.strip() for line in linter_section.split('\n') 
                               if line.strip().startswith('ERROR:')]
                 self.assertGreater(len(error_lines), 0, "应该至少有一个ERROR:行")
-                print(f"✅ 找到 {len(error_lines)} 个linter错误")
+                print(f"找到 {len(error_lines)} 个linter错误")
                 for i, error_line in enumerate(error_lines[:3]):  # 只显示前3个
-                    print(f"   {i+1}. {error_line}")
+                    print(f"{i+1}. {error_line}")
                 
             else:
                 print("⚠️ 未找到格式化的linter错误section，但检测到linter输出")
@@ -1862,7 +1862,7 @@ print(f"Sum: {result}")
             print("⚠️ 未检测到linter错误输出，可能linter未运行或文件语法正确")
             # 这可能是正常的，如果linter没有检测到错误
         
-        print("✅ Edit与Linter集成测试完成")
+        print("Edit与Linter集成测试完成")
     
     def test_18_pipe(self):
         
@@ -1920,7 +1920,7 @@ print(f"Sum: {result}")
         self.assertIn("├─", output, "应该包含依赖树连接符")
         self.assertIn("Level 1:", output, "应该包含层级汇总")
         
-        print("✅ 简单包依赖分析测试通过")
+        print("简单包依赖分析测试通过")
         
         # 测试复杂包的依赖分析（depth=2）
         print("🔍 测试复杂包依赖分析（depth=2）")
@@ -1932,7 +1932,7 @@ print(f"Sum: {result}")
         self.assertIn("Analysis completed:", output, "应该包含分析完成信息")
         self.assertIn("numpy", output, "应该包含包名")
         
-        print("✅ 复杂包依赖分析测试通过")
+        print("复杂包依赖分析测试通过")
         
         # 测试不存在包的错误处理
         print("🚫 测试不存在包的错误处理")

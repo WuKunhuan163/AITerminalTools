@@ -44,7 +44,7 @@ class ShellManagement:
             else:
                 return {"shells": {}, "active_shell": None}
         except json.JSONDecodeError as e:
-            print(f"⚠️ Shell配置文件损坏，重新创建: {e}")
+            print(f"Warning: Shell config file corrupted, re-creating: {e}")
             # 备份损坏的文件并创建新的
             backup_file = self.main_instance.shells_file.with_suffix('.bak')
             if self.main_instance.shells_file.exists():
@@ -52,7 +52,7 @@ class ShellManagement:
             # 返回默认配置，下次保存时会创建新文件
             return {"shells": {}, "active_shell": None}
         except Exception as e:
-            print(f"❌ 加载shell配置失败: {e}")
+            print(f"Error: Load shell config failed: {e}")
             return {"shells": {}, "active_shell": None}
 
     def save_shells(self, shells_data):
@@ -62,7 +62,7 @@ class ShellManagement:
                 json.dump(shells_data, f, indent=2, ensure_ascii=False)
             return True
         except Exception as e:
-            print(f"❌ 保存shell配置失败: {e}")
+            print(f"Error: Save shell config failed: {e}")
             return False
 
     def generate_shell_id(self):
@@ -139,7 +139,7 @@ class ShellManagement:
             return shell_config
             
         except Exception as e:
-            print(f"创建默认shell时出错: {e}")
+            print(f"Create default shell failed: {e}")
             # 返回最基本的shell配置
             return {
                 "id": "emergency_shell",
@@ -180,7 +180,7 @@ class ShellManagement:
                 # Direct storage in REMOTE_ENV, no .tmp subdirectory needed
                 current_venv_file = f"{self.main_instance.REMOTE_ENV}/current_venv_{shell_id}.txt"
                 commands = [
-                    f"mkdir -p {tmp_dir}",
+                    f"mkdir -p {self.main_instance.REMOTE_ENV}",
                     f"rm -f {current_venv_file}",  # 清除虚拟环境状态
                     "export PYTHONPATH=/env/python",  # 重置为默认PYTHONPATH
                     f"echo 'Shell {shell_name} created with default environment'"
@@ -195,15 +195,15 @@ class ShellManagement:
                     "success": True,
                     "shell_id": shell_id,
                     "shell_name": shell_name,
-                    "message": f"✅ 创建远程shell成功: {shell_name}",
+                    "message": f"Create remote shell successfully: {shell_name}",
                     "remote_command": command,
                     "remote_result": result
                 }
             else:
-                return {"success": False, "error": "保存shell配置失败"}
+                return {"success": False, "error": "Save shell config failed"}
                 
         except Exception as e:
-            return {"success": False, "error": f"创建shell时出错: {e}"}
+            return {"success": False, "error": f"Create shell failed: {e}"}
 
     def list_shells(self):
         """列出所有shell"""
@@ -224,7 +224,7 @@ class ShellManagement:
             }
             
         except Exception as e:
-            return {"success": False, "error": f"列出shell时出错: {e}"}
+            return {"success": False, "error": f"List shells failed: {e}"}
 
     def checkout_shell(self, shell_id):
         """切换到指定shell"""
@@ -232,7 +232,7 @@ class ShellManagement:
             shells_data = self.load_shells()
             
             if shell_id not in shells_data["shells"]:
-                return {"success": False, "error": f"Shell不存在: {shell_id}"}
+                return {"success": False, "error": f"Shell not exists: {shell_id}"}
             
             shells_data["active_shell"] = shell_id
             shells_data["shells"][shell_id]["last_accessed"] = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -282,15 +282,15 @@ class ShellManagement:
                     "shell_id": shell_id,
                     "shell_name": shell_name,
                     "current_path": "~",
-                    "message": f"✅ 已切换到shell: {shell_name}，路径重置为根目录",
+                    "message": f"Switched to shell: {shell_name}, path reset to root directory",
                     "remote_command": command,
                     "remote_result": result
                 }
             else:
-                return {"success": False, "error": "保存shell状态失败"}
+                return {"success": False, "error": "Save shell state failed"}
                 
         except Exception as e:
-            return {"success": False, "error": f"切换shell时出错: {e}"}
+            return {"success": False, "error": f"Switch shell failed: {e}"}
 
     def terminate_shell(self, shell_id):
         """终止指定shell"""
@@ -298,7 +298,7 @@ class ShellManagement:
             shells_data = self.load_shells()
             
             if shell_id not in shells_data["shells"]:
-                return {"success": False, "error": f"Shell不存在: {shell_id}"}
+                return {"success": False, "error": f"Shell not exists: {shell_id}"}
             
             shell_name = shells_data["shells"][shell_id]["name"]
             
@@ -326,22 +326,22 @@ class ShellManagement:
                     "success": True,
                     "shell_id": shell_id,
                     "shell_name": shell_name,
-                    "message": f"✅ 已终止shell: {shell_name}",
+                    "message": f"Terminated shell: {shell_name}",
                     "remote_command": command,
                     "remote_result": result
                 }
             else:
-                return {"success": False, "error": "保存shell状态失败"}
+                return {"success": False, "error": "Save shell state failed"}
                 
         except Exception as e:
-            return {"success": False, "error": f"终止shell时出错: {e}"}
+            return {"success": False, "error": f"Terminate shell failed: {e}"}
 
     def exit_shell(self):
         """退出当前shell"""
         try:
             current_shell = self.main_instance.get_current_shell()
             if not current_shell:
-                return {"success": False, "error": "没有活跃的远程shell"}
+                return {"success": False, "error": "No active remote shell"}
             
             shells_data = self.load_shells()
             shells_data["active_shell"] = None
@@ -350,10 +350,10 @@ class ShellManagement:
                 return {
                     "success": True,
                     "shell_name": current_shell["name"],
-                    "message": f"✅ 已退出远程shell: {current_shell['name']}"
+                    "message": f"Exited remote shell: {current_shell['name']}"
                 }
             else:
-                return {"success": False, "error": "保存shell状态失败"}
+                return {"success": False, "error": "Save shell state failed"}
                 
         except Exception as e:
-            return {"success": False, "error": f"退出shell时出错: {e}"}
+            return {"success": False, "error": f"Exit shell failed: {e}"}

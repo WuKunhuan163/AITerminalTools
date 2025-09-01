@@ -70,12 +70,12 @@ class GDSTest(unittest.TestCase):
         # 创建远端测试目录并切换到该目录
         cls._setup_remote_test_directory()
         
-        print("✅ 测试环境设置完成")
+        print("测试环境设置完成")
     
     @classmethod
     def _setup_remote_test_directory(cls):
         """设置远端测试目录"""
-        print(f"📁 远端测试目录: ~/tmp/{cls.test_folder}")
+        print(f"远端测试目录: ~/tmp/{cls.test_folder}")
         
         # 创建测试目录 (先切换到根目录确保正确的路径解析)
         mkdir_command = f"python3 {cls.GOOGLE_DRIVE_PY} --shell 'cd ~ && mkdir -p ~/tmp/{cls.test_folder}'"
@@ -89,7 +89,7 @@ class GDSTest(unittest.TestCase):
         
         if result.returncode != 0:
             error_msg = f"创建远端测试目录失败: 返回码={result.returncode}, stderr={result.stderr}, stdout={result.stdout}"
-            print(f"⚠️ {error_msg}")
+            print(f"Warning: {error_msg}")
             raise RuntimeError(error_msg)
         
         # 切换到测试目录
@@ -104,10 +104,10 @@ class GDSTest(unittest.TestCase):
         
         if result.returncode != 0:
             error_msg = f"切换到远端测试目录失败: 返回码={result.returncode}, stderr={result.stderr}, stdout={result.stdout}"
-            print(f"⚠️ {error_msg}")
+            print(f"Warning: {error_msg}")
             raise RuntimeError(error_msg)
         else:
-            print(f"✅ 已切换到远端测试目录: ~/tmp/{cls.test_folder}")
+            print(f"已切换到远端测试目录: ~/tmp/{cls.test_folder}")
             
         # 验证目录确实存在
         pwd_command = f"python3 {cls.GOOGLE_DRIVE_PY} --shell 'pwd'"
@@ -123,7 +123,7 @@ class GDSTest(unittest.TestCase):
         import tempfile
         import os
         cls.local_tmp_dir = tempfile.mkdtemp(prefix="gds_test_local_")
-        print(f"📁 本地临时目录: {cls.local_tmp_dir}")
+        print(f"本地临时目录: {cls.local_tmp_dir}")
         os.chdir(cls.local_tmp_dir)
     
     @classmethod
@@ -170,7 +170,7 @@ def main():
     # 执行核心逻辑
     from core import process_data
     result = process_data(config)
-    print(f"✅ 处理结果: {result}")
+    print(f"处理结果: {result}")
 
 if __name__ == "__main__":
     main()
@@ -309,9 +309,9 @@ Shell commands: ls -la && echo "done"
             
             print(f"📤 返回码: {result.returncode}")
             if result.stdout:
-                print(f"📝 输出: {result.stdout[:200]}...")  # 限制输出长度
+                print(f"输出: {result.stdout[:200]}...")  # 限制输出长度
             if result.stderr:
-                print(f"⚠️ 错误: {result.stderr[:200]}...")
+                print(f"Warning: 错误: {result.stderr[:200]}...")
             
             # 基于功能执行情况判断，而不是终端输出
             if check_function_result and expect_success:
@@ -372,9 +372,9 @@ Shell commands: ls -la && echo "done"
                 return result.returncode != 0, result
             
             if result.returncode != 0:
-                print(f"❌ 主命令失败，返回码: {result.returncode}")
+                print(f"Error: Main command failed, return code: {result.returncode}")
                 if attempt < max_retries - 1:
-                    print("⏳ 等待1秒后重试...")
+                    print("⏳ Waiting 1 second before retrying...")
                     import time
                     time.sleep(1)
                     continue
@@ -384,26 +384,26 @@ Shell commands: ls -la && echo "done"
             # 执行验证命令
             all_verifications_passed = True
             for i, verify_cmd in enumerate(verification_commands):
-                print(f"  🔍 验证 {i+1}/{len(verification_commands)}: {verify_cmd}")
+                print(f"🔍 Verify {i+1}/{len(verification_commands)}: {verify_cmd}")
                 verify_result = self._run_gds_command(verify_cmd, expect_success=False, check_function_result=False)
                 
                 if verify_result.returncode != 0:
-                    print(f"  ❌ 验证失败，返回码: {verify_result.returncode}")
+                    print(f"Error: Verify failed, return code: {verify_result.returncode}")
                     all_verifications_passed = False
                     break
                 else:
-                    print(f"  ✅ 验证成功")
+                    print(f"Verify successful")
             
             if all_verifications_passed:
-                print(f"🎉 所有验证通过，命令成功执行")
+                print(f"🎉 All verifications passed, command executed successfully")
                 return True, result
             
             if attempt < max_retries - 1:
-                print("⏳ 验证失败，等待2秒后重试...")
+                print("⏳ Verify failed, waiting 2 seconds before retrying...")
                 import time
                 time.sleep(2)
         
-        print(f"💥 所有重试失败")
+        print(f"💥 All retries failed")
         return False, result
     
     def _run_command_with_input(self, command_list, input_text, timeout=60):
@@ -429,7 +429,7 @@ Shell commands: ls -la && echo "done"
             )
             return result
         except subprocess.TimeoutExpired:
-            print(f"⏰ 命令执行超时 ({timeout}s)")
+            print(f"⏰ Command execution timeout ({timeout}s)")
             # 创建一个模拟的失败结果
             class MockResult:
                 def __init__(self):
@@ -438,7 +438,7 @@ Shell commands: ls -la && echo "done"
                     self.stderr = f"Command timed out after {timeout} seconds"
             return MockResult()
         except Exception as e:
-            print(f"💥 命令执行异常: {e}")
+            print(f"💥 Command execution exception: {e}")
             class MockResult:
                 def __init__(self):
                     self.returncode = 1
@@ -567,7 +567,7 @@ Shell commands: ls -la && echo "done"
             content = f.read().strip()
         
         # 验证文件包含正确的JSON内容（GDS应该处理并创建文件）
-        print(f"📝 文件内容: {content}")
+        print(f"文件内容: {content}")
         self.assertTrue(len(content) > 0, "文件不应该为空")
         
         # 验证远端没有这个文件（应该返回False）
@@ -578,7 +578,7 @@ Shell commands: ls -la && echo "done"
             actual_file.unlink()
             print(f"🗑️ 已清理文件: {actual_file}")
         except Exception as e:
-            print(f"⚠️ 清理文件失败: {e}")
+            print(f"Warning: 清理文件失败: {e}")
             pass
         
         # 创建简单的Python脚本
@@ -730,7 +730,7 @@ print(f"Current files: {len(os.listdir())}")'''
         self.assertEqual(result.returncode, 0)
         
         # 10. 测试不存在路径的错误处理
-        print("❌ 测试不存在路径的错误处理")
+        print("Error:  测试不存在路径的错误处理")
         result = self._run_gds_command('ls nonexistent_file.txt', expect_success=False)
         self.assertNotEqual(result.returncode, 0)
         
@@ -821,15 +821,15 @@ print(f"Current files: {len(os.listdir())}")'''
         print("🧹 清理测试目录")
         result = self._run_gds_command('rm -rf path_test')
         self.assertEqual(result.returncode, 0)
-        print("✅ 路径解析功能测试完成")
+        print("路径解析功能测试完成")
         
         # 25. 测试不存在的路径
-        print("❌ 测试不存在的路径")
+        print("Error:  测试不存在的路径")
         result = self._run_gds_command('ls nonexistent_path', expect_success=False, check_function_result=False)
         self.assertNotEqual(result.returncode, 0)  # 应该失败
         
         # 26. 测试cd到不存在的路径
-        print("❌ 测试cd到不存在的路径")
+        print("Error:  测试cd到不存在的路径")
         result = self._run_gds_command('cd nonexistent_path', expect_success=False, check_function_result=False)
         self.assertNotEqual(result.returncode, 0)  # 应该失败
         
@@ -980,7 +980,7 @@ print(f"Current files: {len(os.listdir())}")'''
         self.assertEqual(result.returncode, 0)
         
         # === 错误路径类型测试 ===
-        print("❌ 错误路径类型测试")
+        print("Error:  错误路径类型测试")
         
         # 测试不存在的目录
         result = self._run_gds_command('cd nonexistent_directory', expect_success=False, check_function_result=False)
@@ -1001,7 +1001,7 @@ print(f"Current files: {len(os.listdir())}")'''
         result = self._run_gds_command('cd ~/../..', expect_success=False, check_function_result=False)
         # 这个可能成功也可能失败，取决于GDS的安全限制
         
-        print("✅ 导航命令和路径测试完成")
+        print("导航命令和路径测试完成")
     
     # ==================== 文件上传测试 ====================
     
@@ -1360,7 +1360,7 @@ def main():
     result = process_data(sample_data)
     print(f"📊 处理结果: {result}")
     
-    print("✅ 应用完成")
+    print("应用完成")
 
 if __name__ == "__main__":
     main()
@@ -1427,7 +1427,7 @@ if __name__ == "__main__":
             result = self._run_gds_command('cat main.py')
             self.assertEqual(result.returncode, 0)
         else:
-            print("✅ grep命令成功")
+            print("grep命令成功")
         
         # 查看配置文件内容
         result = self._run_gds_command('cat config.json')
@@ -1446,7 +1446,7 @@ if __name__ == "__main__":
         self.assertTrue(success, f"代码编辑失败: {result.stderr if result else 'Unknown error'}")
         
         # === 阶段5: 验证测试 ===
-        print("✅ 阶段5: 验证测试")
+        print("阶段5: 验证测试")
         
         # 最终运行测试
         result = self._run_gds_command('python main.py')
@@ -1535,8 +1535,8 @@ def main():
         "sum": sum(data),
         "average": sum(data) / len(data)
     }
-    print(f"✅ Processing result: {result}")
-    print("✅ Test project completed")
+    print(f"Processing result: {result}")
+    print("Test project completed")
 
 if __name__ == "__main__":
     main()
@@ -1788,7 +1788,7 @@ if __name__ == "__main__":
         self.assertTrue(success, f"valid_config.json上传失败: {result.stderr if result else 'Unknown error'}")
         
         # 1. 测试语法正确的文件
-        print("✅ 测试语法正确的Python文件")
+        print("测试语法正确的Python文件")
         result = self._run_gds_command('linter valid_script.py')
         self.assertEqual(result.returncode, 0)
         
@@ -1866,7 +1866,7 @@ print(f"Sum: {result}")
         
         has_linter_output = any(indicator in output for indicator in linter_error_indicators)
         if has_linter_output:
-            print("✅ 检测到linter错误输出")
+            print("检测到linter错误输出")
             
             # 验证linter错误格式：应该在edit comparison下方，由======分割
             sections = output.split("========")
@@ -1892,9 +1892,9 @@ print(f"Sum: {result}")
                 error_lines = [line.strip() for line in linter_section.split('\n') 
                               if line.strip().startswith('ERROR:')]
                 self.assertGreater(len(error_lines), 0, "应该至少有一个ERROR:行")
-                print(f"✅ 找到 {len(error_lines)} 个linter错误")
+                print(f"找到 {len(error_lines)} 个linter错误")
                 for i, error_line in enumerate(error_lines[:3]):  # 只显示前3个
-                    print(f"   {i+1}. {error_line}")
+                    print(f" {i+1}. {error_line}")
                 
             else:
                 print("⚠️ 未找到格式化的linter错误section，但检测到linter输出")
@@ -1902,7 +1902,7 @@ print(f"Sum: {result}")
             print("⚠️ 未检测到linter错误输出，可能linter未运行或文件语法正确")
             # 这可能是正常的，如果linter没有检测到错误
         
-        print("✅ Edit与Linter集成测试完成")
+        print("Edit与Linter集成测试完成")
     
     def test_18_pipe(self):
         
@@ -1960,7 +1960,7 @@ print(f"Sum: {result}")
         self.assertIn("├─", output, "应该包含依赖树连接符")
         self.assertIn("Level 1:", output, "应该包含层级汇总")
         
-        print("✅ 简单包依赖分析测试通过")
+        print("简单包依赖分析测试通过")
         
         # 测试复杂包的依赖分析（depth=2）
         print("🔍 测试复杂包依赖分析（depth=2）")
@@ -1972,7 +1972,7 @@ print(f"Sum: {result}")
         self.assertIn("Analysis completed:", output, "应该包含分析完成信息")
         self.assertIn("numpy", output, "应该包含包名")
         
-        print("✅ 复杂包依赖分析测试通过")
+        print("复杂包依赖分析测试通过")
         
         # 测试不存在包的错误处理
         print("🚫 测试不存在包的错误处理")
@@ -2039,7 +2039,7 @@ print(f"Sum: {result}")
         print("📋 验证层级汇总")
         self.assertRegex(output, r'Level \d+:', "应该包含层级汇总")
         
-        print("✅ 依赖分析功能测试完成")
+        print("依赖分析功能测试完成")
 
     def test_20_shell_mode_continuous_operations(self):
         """测试Shell模式下的连续操作"""
@@ -2084,7 +2084,7 @@ print(f"Sum: {result}")
         # 验证命令执行结果
         self.assertRegex(output, r"GDS:.*\$", "应该显示Shell提示符")
         
-        print("✅ Shell模式连续操作测试完成")
+        print("Shell模式连续操作测试完成")
 
     def test_21_shell_mode_vs_direct_consistency(self):
         """测试Shell模式与直接命令执行的输出一致性"""
@@ -2127,14 +2127,14 @@ print(f"Sum: {result}")
                 self.assertIn("pwd", shell_output, "Shell模式help应该包含pwd命令")
                 self.assertIn("ls", shell_output, "Shell模式help应该包含ls命令")
                 
-                print(f"✅ {cmd}命令在两种模式下都包含必要内容")
+                print(f"{cmd}命令在两种模式下都包含必要内容")
             else:
                 # 对于其他命令，验证命令执行成功（不要求非空输出，因为ls在空目录中可能无输出）
                 self.assertIn("GDS:", shell_output, f"Shell模式执行{cmd}应该包含提示符")
                 
-                print(f"✅ {cmd}命令在两种模式下都正常执行")
+                print(f"{cmd}命令在两种模式下都正常执行")
         
-        print("✅ Shell模式与直接命令一致性测试完成")
+        print("Shell模式与直接命令一致性测试完成")
 
     def test_22_shell_switching_and_state(self):
         """测试Shell切换和状态管理"""
@@ -2194,14 +2194,14 @@ print(f"Sum: {result}")
             cleanup_result = self._run_gds_command(f'--terminate-remote-shell {new_shell_id}')
             # 注意：cleanup可能失败，但不影响测试结果
             
-            print("✅ Shell切换和状态管理测试完成")
+            print("Shell切换和状态管理测试完成")
         else:
             print("⚠️ 无法从输出中提取Shell ID，跳过后续测试")
             self.skipTest("无法提取新创建的Shell ID")
 
     def test_23_shell_mode_error_handling(self):
         """测试Shell模式的错误处理"""
-        print("❌ 测试Shell模式错误处理")
+        print("Error:  测试Shell模式错误处理")
         
         # 测试无效命令
         error_commands = [
@@ -2229,7 +2229,7 @@ print(f"Sum: {result}")
             self.assertIn("GDS:", output, "即使命令失败，Shell模式也应该继续运行")
             self.assertIn("Exit Google Drive Shell", output, "Shell应该正常退出")
         
-        print("✅ Shell模式错误处理测试完成")
+        print("Shell模式错误处理测试完成")
 
     def test_24_shell_mode_performance(self):
         """测试Shell模式的性能表现"""
@@ -2260,7 +2260,7 @@ print(f"Sum: {result}")
         pwd_count = output.count("~")  # pwd命令通常返回包含~的路径
         self.assertGreaterEqual(pwd_count, 3, "应该执行了多个pwd命令")
         
-        print("✅ Shell模式性能测试完成")
+        print("Shell模式性能测试完成")
 
     def test_25_shell_prompt_improvements(self):
         """测试Shell提示符改进"""
@@ -2319,7 +2319,7 @@ print(f"Sum: {result}")
         
         self.assertTrue(found_test_dir, f"应该找到切换到测试目录的pwd输出，实际输出: {pwd_outputs}")
         
-        print("✅ Shell提示符改进测试完成")
+        print("Shell提示符改进测试完成")
 
     def test_26_shell_command_routing(self):
         """测试Shell命令路由改进"""
@@ -2353,9 +2353,9 @@ print(f"Sum: {result}")
             # 验证没有"Unknown command"错误
             self.assertNotIn("Unknown command", output, f"{cmd}命令不应该被认为是未知命令")
             
-            print(f"✅ {cmd}命令路由正常")
+            print(f"{cmd}命令路由正常")
         
-        print("✅ Shell命令路由改进测试完成")
+        print("Shell命令路由改进测试完成")
 
     def test_27_shell_state_persistence(self):
         """测试Shell状态持久性"""
@@ -2400,7 +2400,7 @@ print(f"Sum: {result}")
         path_changes = len(set(pwd_lines))
         self.assertGreaterEqual(path_changes, 2, "应该有路径变化")
         
-        print("✅ Shell状态持久性测试完成")
+        print("Shell状态持久性测试完成")
 
 class ParallelTestRunner:
     """并行测试运行器"""
@@ -2444,7 +2444,7 @@ class ParallelTestRunner:
         test_name = test_info['name']
         
         try:
-            print(f"🔧 Worker-{worker_id}: 开始执行 {test_name}")
+            print(f"Tool: Worker-{worker_id}: 开始执行 {test_name}")
             
             # 创建测试实例
             test_instance = GDSTest()
@@ -2466,7 +2466,7 @@ class ParallelTestRunner:
                 }
                 self.completed_gds_commands += test_info['gds_commands']
                 
-            print(f"✅ Worker-{worker_id}: {test_name} 成功 ({end_time - start_time:.1f}s)")
+            print(f"Worker-{worker_id}: {test_name} 成功 ({end_time - start_time:.1f}s)")
             return True
             
         except Exception as e:
@@ -2480,7 +2480,7 @@ class ParallelTestRunner:
                 # 即使失败也计入已完成的命令数
                 self.completed_gds_commands += test_info['gds_commands']
                 
-            print(f"❌ Worker-{worker_id}: {test_name} 失败 - {str(e)[:100]}")
+            print(f"Error: Worker-{worker_id}: {test_name} 失败 - {str(e)[:100]}")
             return False
     
     def display_progress(self):
@@ -2508,7 +2508,7 @@ class ParallelTestRunner:
     
     def run_parallel_tests(self):
         """并行运行所有测试"""
-        print(f"🚀 启动并行测试 (Workers: {self.num_workers})")
+        print(f"启动并行测试 (Workers: {self.num_workers})")
         print(f"📋 发现 {len(self.test_methods)} 个测试方法，共 {self.total_gds_commands} 个GDS命令")
         print("=" * 80)
         
@@ -2552,23 +2552,23 @@ class ParallelTestRunner:
         
         total_time = time.time() - self.start_time if self.start_time else 0
         
-        print(f"✅ 成功: {len(success_tests)}/{len(self.test_methods)} ({len(success_tests)/len(self.test_methods)*100:.1f}%)")
-        print(f"❌ 失败: {len(failed_tests)}/{len(self.test_methods)} ({len(failed_tests)/len(self.test_methods)*100:.1f}%)")
-        print(f"⏱️ 总用时: {total_time:.1f}s")
-        print(f"🔧 GDS命令: {self.completed_gds_commands}/{self.total_gds_commands}")
+        print(f"Successful: {len(success_tests)}/{len(self.test_methods)} ({len(success_tests)/len(self.test_methods)*100:.1f}%)")
+        print(f"Error: Failed: {len(failed_tests)}/{len(self.test_methods)} ({len(failed_tests)/len(self.test_methods)*100:.1f}%)")
+        print(f"⏱️ Total time: {total_time:.1f}s")
+        print(f"Tool: GDS commands: {self.completed_gds_commands}/{self.total_gds_commands}")
         
         if success_tests:
-            print(f"\n✅ 成功的测试 ({len(success_tests)}):")
+            print(f"\nSuccessful tests ({len(success_tests)}):")
             for test_name in success_tests:
                 result = self.results[test_name]
-                print(f"   • {test_name} (Worker-{result['worker']}, {result['duration']:.1f}s, {result['gds_commands']} GDS命令)")
+                print(f" • {test_name} (Worker-{result['worker']}, {result['duration']:.1f}s, {result['gds_commands']} GDS命令)")
         
         if failed_tests:
-            print(f"\n❌ 失败的测试 ({len(failed_tests)}):")
+            print(f"\nError: Failed tests ({len(failed_tests)}):")
             for test_name in failed_tests:
                 result = self.results[test_name]
-                print(f"   • {test_name} (Worker-{result['worker']})")
-                print(f"     错误: {result['error'][:150]}...")
+                print(f" • {test_name} (Worker-{result['worker']})")
+                print(f"Error: {result['error'][:150]}...")
         
         # 按Worker统计
         worker_stats = defaultdict(lambda: {'success': 0, 'failed': 0, 'time': 0})
@@ -2578,10 +2578,10 @@ class ParallelTestRunner:
             if 'duration' in result:
                 worker_stats[worker_id]['time'] += result['duration']
         
-        print(f"\n👥 Worker统计:")
+        print(f"\n👥 Worker statistics:")
         for worker_id in sorted(worker_stats.keys()):
             stats = worker_stats[worker_id]
-            print(f"   Worker-{worker_id}: {stats['success']}✅ {stats['failed']}❌ ({stats['time']:.1f}s)")
+            print(f"Worker-{worker_id}: {stats['success']}✅ {stats['failed']}❌ ({stats['time']:.1f}s)")
         
         print("=" * 80)
         
@@ -2589,13 +2589,13 @@ class ParallelTestRunner:
 
 def main():
     """主函数"""
-    print("🚀 启动GDS并行测试套件")
+    print("🚀 Launch GDS parallel test suite")
     print("=" * 60)
-    print("📋 测试特点:")
-    print("  • 远端窗口操作无timeout限制")
-    print("  • 结果判断基于功能执行情况")
-    print("  • 具有静态可重复性（使用--force等选项）")
-    print("  • 3个Worker并行执行")
+    print("Test features:")
+    print(f"• Remote window operation without timeout limit")
+    print(f"• Result judgment based on function execution")
+    print(f"• Static reproducibility (using --force options)")
+    print(f"• 3 workers parallel execution")
     print("=" * 60)
     
     # 创建并行测试运行器
@@ -2604,11 +2604,11 @@ def main():
     # 发现测试方法
     test_methods = runner.discover_test_methods(GDSTest)
     
-    print(f"📋 发现测试方法:")
+    print(f"Found test methods:")
     for i, method in enumerate(test_methods, 1):
-        print(f"  {i:2d}. {method['name']} ({method['gds_commands']} GDS命令)")
+        print(f"{i:2d}. {method['name']} ({method['gds_commands']} GDS commands)")
     
-    print(f"\n📊 总计: {len(test_methods)} 个测试，{runner.total_gds_commands} 个GDS命令")
+    print(f"📊 Total: {len(test_methods)} tests, {runner.total_gds_commands} GDS commands")
     
     # 运行并行测试
     success = runner.run_parallel_tests()

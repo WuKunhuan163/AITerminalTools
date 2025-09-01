@@ -139,7 +139,7 @@ class RemoteWindowQueue:
             with open(self.lock_file_path, 'w', encoding='utf-8') as f:
                 json.dump(queue_data, f, indent=2, ensure_ascii=False)
         except IOError as e:
-            print(f"⚠️ 警告：无法写入队列文件: {e}")
+            print(f"Warning: Failed to write queue file: {e}")
     
     def _is_thread_alive(self, thread_id):
         """检查线程是否还存活"""
@@ -183,13 +183,13 @@ class RemoteWindowQueue:
             
             # 检查超时
             if current_time - check_time > timeout_seconds:
-                print(f"🕐 {time_label}中超时请求，移除: {window_id}")
+                print(f"🕐 {time_label} timeout request, remove: {window_id}")
                 cleaned_any = True
                 continue
             
             # 检查线程是否还存活
             if thread_id and not self._is_thread_alive(thread_id):
-                print(f"💀 {time_label}中死线程，移除: {window_id} (thread_id: {thread_id})")
+                print(f"💀 {time_label} dead thread, remove: {window_id} (thread_id: {thread_id})")
                 cleaned_any = True
                 continue
                 
@@ -349,7 +349,7 @@ class RemoteWindowQueue:
                             return True
                     elif current_window.get("status") == "active":
                         # 已经是活跃状态，直接返回成功
-                        debug_log(f"✅ DEBUG: [{get_global_timestamp()}] [ALREADY_ACTIVE] 窗口已经是活跃状态: {window_id}")
+                        debug_log(f"DEBUG: [{get_global_timestamp()}] [ALREADY_ACTIVE] 窗口已经是活跃状态: {window_id}")
                         return True
                 
                 # 检查是否队列中第一个窗口是waiting状态但不是当前请求的窗口
@@ -463,7 +463,7 @@ class RemoteWindowQueue:
             # 检查是否是当前窗口（队列第一个元素）
             current_window = self._get_current_window(queue_data)
             if (current_window and current_window["id"] == window_id):
-                debug_log(f"✅ DEBUG: [{get_global_timestamp()}] [QUEUE_RELEASE] 释放当前窗口槽位: {window_id}, thread: {threading.get_ident()}")
+                debug_log(f"DEBUG: [{get_global_timestamp()}] [QUEUE_RELEASE] 释放当前窗口槽位: {window_id}, thread: {threading.get_ident()}")
                 
                 # 移除当前窗口
                 self._remove_current_window(queue_data)
@@ -500,10 +500,10 @@ class RemoteWindowQueue:
                     if w["id"] != window_id
                 ]
                 if len(queue_data["window_queue"]) < original_count:
-                    debug_log(f"🚫 DEBUG: [{get_global_timestamp()}] [QUEUE_REMOVE] 从队列移除: {window_id}, thread: {threading.get_ident()}")
+                    debug_log(f"🚫 DEBUG: [{get_global_timestamp()}] [QUEUE_REMOVE] Remove from queue: {window_id}, thread: {threading.get_ident()}")
                     self._write_queue_file(queue_data)
                 else:
-                    debug_log(f"⚠️ DEBUG: [{get_global_timestamp()}] [QUEUE_NOT_FOUND] 窗口未在队列中找到: {window_id}, thread: {threading.get_ident()}")
+                    debug_log(f"Warning: DEBUG: [{get_global_timestamp()}] [QUEUE_NOT_FOUND] Window not found in queue: {window_id}, thread: {threading.get_ident()}")
         finally:
             # 确保释放文件锁
             self._release_file_lock()
@@ -519,8 +519,8 @@ class RemoteWindowQueue:
             queue_data = self._read_queue_file()
             current_window = self._get_current_window(queue_data)
             
-            debug_log(f"✅ DEBUG: [{get_global_timestamp()}] [MARK_ATTEMPT] 尝试标记窗口完成: {window_id}")
-            debug_log(f"✅ DEBUG: [{get_global_timestamp()}] [MARK_CURRENT] 当前窗口: {current_window['id'] if current_window else 'None'}")
+            debug_log(f"DEBUG: [{get_global_timestamp()}] [MARK_ATTEMPT] 尝试标记窗口完成: {window_id}")
+            debug_log(f"DEBUG: [{get_global_timestamp()}] [MARK_CURRENT] 当前窗口: {current_window['id'] if current_window else 'None'}")
             
             # 检查是否是当前窗口（队列第一个元素）
             if (current_window and current_window["id"] == window_id):
@@ -532,14 +532,14 @@ class RemoteWindowQueue:
                 queue_data["completed_windows_count"] = queue_data.get("completed_windows_count", 0) + 1
                 
                 self._write_queue_file(queue_data)
-                debug_log(f"✅ DEBUG: [{get_global_timestamp()}] [MARK_COMPLETED] 窗口标记为已完成: {window_id} (状态: {old_status} -> completed), 完成计数: {queue_data['completed_windows_count']}")
+                debug_log(f"DEBUG: [{get_global_timestamp()}] [MARK_COMPLETED] 窗口标记为已完成: {window_id} (状态: {old_status} -> completed), 完成计数: {queue_data['completed_windows_count']}")
                 
                 # 自动处理队列进展
                 self._process_queue_progression(queue_data)
                 return True
             else:
                 current_id = current_window["id"] if current_window else "None"
-                debug_log(f"⚠️ DEBUG: [{get_global_timestamp()}] [MARK_FAILED] 无法标记窗口完成，非当前窗口: {window_id} (当前: {current_id})")
+                debug_log(f"Warning: DEBUG: [{get_global_timestamp()}] [MARK_FAILED] 无法标记窗口完成，非当前窗口: {window_id} (当前: {current_id})")
                 return False
     
     def _process_queue_progression(self, queue_data):
@@ -802,22 +802,22 @@ class RemoteWindowQueue:
                         "last_update": time.time(),
                         "completed_windows_count": 0,
                         "last_window_open_time": 0,
-                        "description": "远程窗口队列状态文件 - 统一队列设计"
+                        "description": "Remote window queue status file - unified queue design"
                     }
                     
                     self._write_queue_file(reset_data)
-                    print("🔄 队列已重置为默认状态")
+                    print("🔄 Queue reset to default state")
                     return True
                 except Exception as e:
-                    print(f"❌ 读取默认配置失败: {e}")
+                    print(f"Error: Read default config failed: {e}")
                     # 如果读取默认文件失败，直接重置
                     self._reset_queue_file()
-                    print("🔄 队列已强制重置")
+                    print("🔄 Queue force reset")
                     return True
             else:
                 # 如果没有默认文件，直接重置
                 self._reset_queue_file()
-                print("🔄 队列已重置（未找到默认配置文件）")
+                print("🔄 Queue reset (no default config file found)")
                 return True
 
 # 全局队列管理器实例

@@ -1,0 +1,25 @@
+{
+  "pdf_file": "/Users/wukunhuan/.local/bin/_UNITTEST/_DATA/extracted_paper_for_post.pdf",
+  "created_at": "2025-09-01T17:19:41.902381",
+  "page_range": null,
+  "total_items": 1,
+  "processed_items": 0,
+  "items": [
+    {
+      "id": "extracted_paper_img",
+      "type": "image",
+      "filename": "extracted_paper_img.png",
+      "image_path": "/Users/wukunhuan/.local/bin/_UNITTEST/_DATA/extracted_paper_img.png",
+      "processor": "unified_processor",
+      "processed": true,
+      "placeholder": "[placeholder: image]",
+      "bbox": [],
+      "page": 1
+    }
+  ],
+  "counts": {
+    "images": 0,
+    "formulas": 0,
+    "tables": 0
+  }
+}

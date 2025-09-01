@@ -58,7 +58,7 @@ class PathResolver:
             else:
                 self._setup_default_paths()
         except Exception as e:
-            print(f"⚠️ 加载同步配置失败，使用默认配置: {e}")
+            print(f"Warning: Load sync config failed, use default config: {e}")
             self._setup_default_paths()
         
         if platform.system() == "Darwin":  # macOS
@@ -93,7 +93,7 @@ class PathResolver:
             import os
             return os.path.expanduser(os.path.expandvars(path))
         except Exception as e:
-            print(f"路径展开失败: {e}")
+            print(f"Path expansion failed: {e}")
             return path
 
     def _resolve_target_path_for_upload(self, target_path, current_shell=None):
@@ -201,7 +201,7 @@ class PathResolver:
                 return self._resolve_relative_path(path, current_folder_id, current_path)
                 
         except Exception as e:
-            print(f"❌ 解析路径时出错: {e}")
+            print(f"Error: Resolve path failed: {e}")
             return None, None
 
     def _resolve_multi_level_parent_path(self, path, current_folder_id, current_path):
@@ -239,7 +239,7 @@ class PathResolver:
                 return current_id, current_logical_path
                 
         except Exception as e:
-            print(f"❌ 解析多级父目录路径时出错: {e}")
+            print(f"Error: Resolve multi-level parent path failed: {e}")
             return None, None
 
     def _resolve_relative_path(self, relative_path, base_folder_id, base_path):
@@ -278,7 +278,7 @@ class PathResolver:
             return current_id, current_logical_path
             
         except Exception as e:
-            print(f"❌ 解析相对路径时出错: {e}")
+            print(f"Error: Resolve relative path failed: {e}")
             return None, None
 
     def _resolve_parent_directory(self, folder_id, current_path):
@@ -306,7 +306,7 @@ class PathResolver:
             return parent_id, parent_path
             
         except Exception as e:
-            print(f"❌ 解析父目录时出错: {e}")
+            print(f"Error: Resolve parent directory failed: {e}")
             return None, None
     
     # Shell命令实现
@@ -346,7 +346,7 @@ class PathResolver:
                     return f"{abs_current}/{path}"
                     
         except Exception as e:
-            print(f"❌ 解析mkdir路径时出错: {e}")
+            print(f"Error: Resolve mkdir path failed: {e}")
             return None
 
     def _gds_path_to_absolute(self, gds_path):
@@ -359,7 +359,7 @@ class PathResolver:
             else:
                 return gds_path
         except Exception as e:
-            print(f"❌ 转换GDS路径时出错: {e}")
+            print(f"Error: Convert GDS path failed: {e}")
             return gds_path
 
     def _convert_local_path_to_remote(self, path):

@@ -248,7 +248,7 @@ class VenvOperations:
                 candidate_envs.append(env_name)
         
         if skipped_protected:
-            print(f"⚠️  Skipped {len(skipped_protected)} protected environment(s): {', '.join(skipped_protected)}")
+            print(f"Warning:  Skipped {len(skipped_protected)} protected environment(s): {', '.join(skipped_protected)}")
         
         if not candidate_envs:
             return {

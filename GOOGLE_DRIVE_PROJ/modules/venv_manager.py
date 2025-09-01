@@ -349,23 +349,23 @@ mkdir -p "{self._get_venv_base_path()}" && {{
             venv_dir = f"{self._get_venv_base_path()}"
             mkdir_command = f'mkdir -p "{venv_dir}"'
             mkdir_result = self.main_instance.execute_generic_remote_command("bash", ["-c", mkdir_command])
-            print(f"📁 创建目录结果: {mkdir_result}")
+            print(f"创建目录结果: {mkdir_result}")
             
             # 写入初始JSON文件
             json_content = json.dumps(initial_structure, indent=2, ensure_ascii=False)
             create_command = f'cat > "{state_file}" << \'EOF\'\n{json_content}\nEOF'
             create_result = self.main_instance.execute_generic_remote_command("bash", ["-c", create_command])
-            print(f"📄 创建JSON文件结果: {create_result}")
+            print(f"Create JSON file result: {create_result}")
             
             if create_result.get("success"):
-                print(f"✅ 成功创建初始状态文件: {state_file}")
+                print(f"Successfully created initial state file: {state_file}")
                 return True
             else:
-                print(f"❌ 创建状态文件失败: {create_result.get('error')}")
+                print(f"Error: Create state file failed: {create_result.get('error')}")
                 return False
             
         except Exception as e:
-            print(f"❌ 创建初始状态文件失败: {e}")
+            print(f"Error: Create initial state file failed: {e}")
             return False
 
     def _update_environment_packages_in_json(self, env_name, packages_dict):
@@ -395,7 +395,7 @@ mkdir -p "{self._get_venv_base_path()}" && {{
             self._save_all_venv_states(all_states)
             
         except Exception as e:
-            print(f"❌ 更新环境包信息失败: {e}")
+            print(f"Error: Update environment package info failed: {e}")
     
     def _clear_venv_state(self, shell_id):
         """清除指定shell的虚拟环境状态"""
@@ -423,7 +423,7 @@ mkdir -p "{self._get_venv_base_path()}" && {{
             return result.get("success", False)
             
         except Exception as e:
-            print(f"⚠️ 清除虚拟环境状态失败: {e}")
+            print(f"Warning: Clear virtual environment state failed: {e}")
             return False
 
     def _get_current_venv(self):
@@ -456,7 +456,7 @@ mkdir -p "{self._get_venv_base_path()}" && {{
             return None
             
         except Exception as e:
-            print(f"⚠️ 获取当前虚拟环境失败: {e}")
+            print(f"Warning: Get current virtual environment failed: {e}")
             return None
 
     def _get_environment_json_path(self, is_remote=True):

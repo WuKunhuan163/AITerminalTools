@@ -48,7 +48,7 @@ try:
         HfCredentialsManager,
     )
 except ImportError as e:
-    print(f"❌ Manager module import failed: {e}")
+    print(f"Error: Manager module import failed: {e}")
     print(f"Current working directory: {os.getcwd()}")
     print(f"Python path: {sys.path[:3]}...")
     sys.exit(1)

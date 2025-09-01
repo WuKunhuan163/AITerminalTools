@@ -60,12 +60,12 @@ def write_json_output(data: Dict[str, Any]):
     else:
         # 非RUN环境，使用友好的输出格式
         if data.get("success"):
-            print(f"✅ {data.get('message', 'Operation successful')}")
+            print(f"{data.get('message', 'Operation successful')}")
             if 'details' in data:
                 for key, value in data['details'].items():
                     print(f"   {key}: {value}")
         else:
-            print(f"❌ {data.get('error', 'Operation failed')}")
+            print(f"Error: {data.get('error', 'Operation failed')}")
 
 def login_interactive():
     """交互式登录HuggingFace"""

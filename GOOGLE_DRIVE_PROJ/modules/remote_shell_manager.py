@@ -168,7 +168,7 @@ def save_shells(shells_data):
             json.dump(shells_data, f, indent=2, ensure_ascii=False)
         return True
     except Exception as e:
-        print(f"⚠️ 保存远程shell配置失败: {e}")
+        print(f"Warning: Save remote shell config failed: {e}")
         return False
 
 def generate_shell_id():
@@ -218,7 +218,7 @@ def create_shell(name=None, folder_id=None, command_identifier=None):
         
         # 保存配置
         if save_shells(shells_data):
-            success_msg = f"✅ 远程shell创建成功"
+            success_msg = f"Remote shell created successfully"
             result_data = {
                 "success": True,
                 "message": success_msg,
@@ -233,12 +233,12 @@ def create_shell(name=None, folder_id=None, command_identifier=None):
             else:
                 print(success_msg)
                 print(f"🆔 Shell ID: {shell_id}")
-                print(f"📛 Shell名称: {name}")
-                print(f"📁 文件夹ID: {folder_id or 'root'}")
-                print(f"🕐 创建时间: {created_time}")
+                print(f"📛 Shell name: {name}")
+                print(f"Folder ID: {folder_id or 'root'}")
+                print(f"🕐 Created time: {created_time}")
             return 0
         else:
-            error_msg = "❌ 保存远程shell配置失败"
+            error_msg = "❌ Save remote shell config failed"
             if is_run_environment(command_identifier):
                 write_to_json_output({"success": False, "error": error_msg}, command_identifier)
             else:
@@ -246,7 +246,7 @@ def create_shell(name=None, folder_id=None, command_identifier=None):
             return 1
             
     except Exception as e:
-        error_msg = f"❌ 创建远程shell时出错: {e}"
+        error_msg = f"❌ Create remote shell failed: {e}"
         if is_run_environment(command_identifier):
             write_to_json_output({"success": False, "error": error_msg}, command_identifier)
         else:
@@ -261,7 +261,7 @@ def list_shells(command_identifier=None):
         active_shell = shells_data["active_shell"]
         
         if not shells:
-            no_shells_msg = "📭 没有找到远程shell"
+            no_shells_msg = "📭 No remote shells found"
             if is_run_environment(command_identifier):
                 write_to_json_output({
                     "success": True,
@@ -277,7 +277,7 @@ def list_shells(command_identifier=None):
         if is_run_environment(command_identifier):
             write_to_json_output({
                 "success": True,
-                "message": f"找到 {len(shells)} 个远程shell",
+                "message": f"Found {len(shells)} remote shells",
                 "shells": list(shells.values()),
                 "count": len(shells),
                 "active_shell": active_shell
@@ -314,13 +314,13 @@ def checkout_shell(shell_id, command_identifier=None):
         #         if "current_path" in result:
         #             print(f"📍 当前路径: {result['current_path']}")
         #     else:
-        #         print(f"❌ {result['error']}")
+        #         print(f"Error: {result['error']}")
         
         # return 0 if result["success"] else 1
         pass # Placeholder for actual shell checkout logic
             
     except Exception as e:
-        error_msg = f"❌ 切换远程shell时出错: {e}"
+        error_msg = f"❌ Switch remote shell failed: {e} (shell_id: {shell_id})"
         if is_run_environment(command_identifier):
             write_to_json_output({"success": False, "error": error_msg}, command_identifier)
         else:
@@ -393,7 +393,7 @@ def exit_shell(command_identifier=None):
         current_shell = get_current_shell()
         
         if not current_shell:
-            error_msg = "❌ 没有活跃的远程shell"
+            error_msg = "❌ No active remote shell"
             if is_run_environment(command_identifier):
                 write_to_json_output({"success": False, "error": error_msg}, command_identifier)
             else:
@@ -405,7 +405,7 @@ def exit_shell(command_identifier=None):
         shells_data["active_shell"] = None
         
         if save_shells(shells_data):
-            success_msg = f"✅ 已退出远程shell: {current_shell['name']}"
+            success_msg = f"Exited remote shell: {current_shell['name']}"
             result_data = {
                 "success": True,
                 "message": success_msg,
@@ -419,7 +419,7 @@ def exit_shell(command_identifier=None):
                 print(success_msg)
             return 0
         else:
-            error_msg = "❌ 保存shell状态失败"
+            error_msg = "❌ Save shell state failed"
             if is_run_environment(command_identifier):
                 write_to_json_output({"success": False, "error": error_msg}, command_identifier)
             else:
@@ -427,7 +427,7 @@ def exit_shell(command_identifier=None):
             return 1
             
     except Exception as e:
-        error_msg = f"❌ 执行exit-remote-shell命令时出错: {e}"
+        error_msg = f"❌ Execute exit-remote-shell command failed: {e}"
         if is_run_environment(command_identifier):
             write_to_json_output({"success": False, "error": error_msg}, command_identifier)
         else:

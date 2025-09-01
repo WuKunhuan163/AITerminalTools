@@ -75,7 +75,7 @@ def download_file(url: str, destination: str, command_identifier=None):
         if is_run_environment(command_identifier):
             write_to_json_output(error_data, command_identifier)
         else:
-            print(f"❌ Error: Invalid URL: {url}")
+            print(f"Error: Invalid URL: {url}")
         return 1
     
     # 处理目标路径
@@ -89,8 +89,8 @@ def download_file(url: str, destination: str, command_identifier=None):
     dest_path.parent.mkdir(parents=True, exist_ok=True)
     
     if not is_run_environment(command_identifier):
-        print(f"🚀 Downloading: {url}")
-        print(f"📁 Destination: {dest_path}")
+        print(f"Downloading: {url}")
+        print(f"Destination: {dest_path}")
     
     try:
         # 创建会话
@@ -121,7 +121,7 @@ def download_file(url: str, destination: str, command_identifier=None):
         
         if not is_run_environment(command_identifier):
             print(f"Download completed successfully!")
-            print(f"📄 File saved to: {dest_path}")
+            print(f"File saved to: {dest_path}")
             print(f"📊 Size: {downloaded_size} bytes")
         
         success_data = {
@@ -149,7 +149,7 @@ def download_file(url: str, destination: str, command_identifier=None):
         if is_run_environment(command_identifier):
             write_to_json_output(error_data, command_identifier)
         else:
-            print(f"\n❌ Download failed: {e}")
+            print(f"\nError: Download failed: {e}")
         return 1
     
     except Exception as e:
@@ -163,7 +163,7 @@ def download_file(url: str, destination: str, command_identifier=None):
         if is_run_environment(command_identifier):
             write_to_json_output(error_data, command_identifier)
         else:
-            print(f"\n❌ Unexpected error: {e}")
+            print(f"\nError: Unexpected error: {e}")
         return 1
 
 def show_help():
@@ -212,7 +212,7 @@ def main():
             }
             write_to_json_output(error_data, command_identifier)
         else:
-            print("❌ Error: No URL provided")
+            print("Error: No URL provided")
             print("Usage: DOWNLOAD <url> [destination]")
             print("Use --help for more information")
         return 1

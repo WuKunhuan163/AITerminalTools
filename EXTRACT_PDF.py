@@ -163,7 +163,7 @@ def create_postprocess_status_file(pdf_path: Path, page_spec: str = None, images
     with open(status_file, 'w', encoding='utf-8') as f:
         json.dump(status_data, f, ensure_ascii=False, indent=2)
     
-    print(f"📄 Post-processing status saved to: {status_file.name}")
+    print(f"Post-processing status saved to: {status_file.name}")
     return str(status_file)
 
 # 加载环境变量
@@ -303,7 +303,7 @@ class PDFExtractor:
                             if src_file.exists():
                                 shutil.copy2(src_file, dst_file)
                 
-                print(f"📁 Created extract_data folder: {extract_data_dir}")
+                print(f"Created extract_data folder: {extract_data_dir}")
             
             # 创建postprocess状态文件
             if images_data:
@@ -649,10 +649,10 @@ class PDFExtractor:
             end_time = time.time()
             processing_time = end_time - start_time
             
-            print(f"⏱️ Total processing time: {processing_time:.2f} seconds")
-            print(f"📄 Data saved to: {data_md_path}")
+            print(f"Total processing time: {processing_time:.2f} seconds")
+            print(f"Data saved to: {data_md_path}")
             if images_data:
-                print(f"🖼️ Extracted and merged {len(images_data)} images")
+                print(f"Extracted and merged {len(images_data)} images")
             
             return True, f"Basic extraction with images completed: {pdf_md_path}"
             
@@ -1471,7 +1471,7 @@ class PDFPostProcessor:
                 table_count = len(re.findall(r'\[placeholder: table\]', content))
                 total_count = image_count + formula_count + table_count
                 
-                status = f"({total_count} items to process: 🖼️{image_count} 🧮{formula_count} 📊{table_count})" if total_count > 0 else "(processed)"
+                status = f"({total_count} items to process: images:{image_count} formulas:{formula_count} tables:{table_count})" if total_count > 0 else "(processed)"
                 print(f"  {i}. {md_file.name} {status}")
                 print(f"     path: {md_file}")
                 
@@ -1563,7 +1563,7 @@ class PDFPostProcessor:
                     item = json_items[img_id]
                     old_type = item.get('type', 'unknown')
                     if old_type != placeholder_type:
-                        print(f"   🔄 Updating item {img_id[:8]}... type: {old_type} → {placeholder_type}")
+                        print(f"   Updating item {img_id[:8]}... type: {old_type} → {placeholder_type}")
                         item['type'] = placeholder_type
                         item['processed'] = False  # 重置处理状态
                         # 更新处理器
@@ -1602,7 +1602,7 @@ class PDFPostProcessor:
             if md_content_modified:
                 with open(md_file, 'w', encoding='utf-8') as f:
                     f.write(md_content)
-                print(f"   💾 Updated markdown file")
+                print(f"   Updated markdown file")
             
             # 4. 更新状态数据
             status_data['items'] = updated_items

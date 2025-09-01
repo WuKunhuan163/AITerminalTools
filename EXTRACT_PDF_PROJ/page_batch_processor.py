@@ -120,7 +120,7 @@ class PageBatchProcessor:
                 pass
             
             # 如果都失败了，返回默认值
-            print(f"⚠️ 无法获取PDF页数，假设为50页", file=sys.stderr)
+            print(f"Warning: Unable to get PDF page count, assuming 50 pages", file=sys.stderr)
             return 50
     
     def load_progress(self) -> Dict[str, BatchProgress]:
@@ -133,7 +133,7 @@ class PageBatchProcessor:
                 data = json.load(f)
             return {k: BatchProgress.from_dict(v) for k, v in data.items()}
         except Exception as e:
-            print(f"⚠️ 加载进度文件失败: {e}", file=sys.stderr)
+            print(f"Warning: Load progress file failed: {e}", file=sys.stderr)
             return {}
     
     def save_progress(self, progress_dict: Dict[str, BatchProgress]):
@@ -143,7 +143,7 @@ class PageBatchProcessor:
             with open(self.progress_file, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
         except Exception as e:
-            print(f"⚠️ 保存进度文件失败: {e}", file=sys.stderr)
+            print(f"Warning: Save progress file failed: {e}", file=sys.stderr)
     
     def get_or_create_batch_progress(self, pdf_path: Path, output_dir: Path, 
                                    page_range: Optional[str] = None) -> BatchProgress:
@@ -156,7 +156,7 @@ class PageBatchProcessor:
             # 更新输出目录（可能有变化）
             batch_progress.output_dir = str(output_dir)
             batch_progress.updated_time = time.time()
-            print(f"📂 找到现有进度: {len([p for p in batch_progress.pages.values() if p.status == 'completed'])}/{batch_progress.total_pages} 页已完成")
+            print(f"📂 Found existing progress: {len([p for p in batch_progress.pages.values() if p.status == 'completed'])}/{batch_progress.total_pages} pages completed")
             return batch_progress
         
         # 创建新的批处理进度
@@ -182,7 +182,7 @@ class PageBatchProcessor:
             output_dir=str(output_dir)
         )
         
-        print(f"📝 创建新的批处理进度: {batch_progress.total_pages} 页待处理")
+        print(f"Create new batch processing progress: {batch_progress.total_pages} pages to process")
         return batch_progress
     
     def parse_page_range(self, page_range: str, total_pages: int) -> List[int]:
@@ -249,13 +249,13 @@ class PageBatchProcessor:
                     return False, f"页面 {page_num} 处理完成但未找到输出文件", None
             else:
                 # MinerU失败，尝试回退方式
-                print(f"⚠️ MinerU处理页面{page_num}失败，尝试回退方式", file=sys.stderr)
+                print(f"Warning: MinerU process page {page_num} failed, try fallback", file=sys.stderr)
                 return self._process_single_page_fallback(pdf_path, page_num, page_output_dir)
                 
         except subprocess.TimeoutExpired:
-            return False, f"页面 {page_num} 处理超时", None
+            return False, f"Page {page_num} processing timeout", None
         except Exception as e:
-            return False, f"页面 {page_num} 处理异常: {str(e)}", None
+            return False, f"Page {page_num} processing exception: {str(e)}", None
     
     def _process_single_page_fallback(self, pdf_path: Path, page_num: int, output_dir: Path) -> Tuple[bool, str, Optional[str]]:
         """回退的单页处理方法 - 使用基础PDF提取"""
@@ -276,21 +276,21 @@ class PageBatchProcessor:
                             f.write(f"# 第 {page_num} 页\n\n")
                             f.write(text)
                         
-                        return True, f"页面 {page_num} 基础提取成功", str(output_file)
+                        return True, f"Page {page_num} basic extraction success", str(output_file)
                     else:
-                        return False, f"页面 {page_num} 超出范围", None
+                        return False, f"Page {page_num} out of range", None
                         
             except ImportError:
                 # PyPDF2也不可用，创建占位符
                 output_file = output_dir / f"page_{page_num:03d}.md"
                 with open(output_file, 'w', encoding='utf-8') as f:
                     f.write(f"# 第 {page_num} 页\n\n")
-                    f.write("*此页面需要手动处理 - 批处理器缺少必要的PDF处理库*\n")
+                    f.write("*This page needs manual processing - batch processor lacks necessary PDF processing libraries*\n")
                 
                 return True, f"页面 {page_num} 创建占位符", str(output_file)
                 
         except Exception as e:
-            return False, f"页面 {page_num} 回退处理失败: {str(e)}", None
+            return False, f"Page {page_num} fallback processing failed: {str(e)}", None
     
     def update_page_status(self, batch_progress: BatchProgress, page_num: int, 
                           status: str, output_file: Optional[str] = None, 
@@ -327,7 +327,7 @@ class PageBatchProcessor:
             
             # 合并markdown内容
             merged_content = []
-            merged_content.append(f"# PDF提取结果\n")
+            merged_content.append(f"# PDF extraction result\n")
             merged_content.append(f"**文件**: {batch_progress.pdf_path}\n")
             merged_content.append(f"**处理时间**: {datetime.fromtimestamp(batch_progress.updated_time).strftime('%Y-%m-%d %H:%M:%S')}\n")
             merged_content.append(f"**页面数**: {len(completed_pages)}/{batch_progress.total_pages}\n\n")
@@ -342,7 +342,7 @@ class PageBatchProcessor:
                         merged_content.append(content)
                         merged_content.append("\n\n---\n\n")
                 else:
-                    merged_content.append("*页面内容缺失*\n\n---\n\n")
+                    merged_content.append("*Page content missing*\n\n---\n\n")
             
             # 写入最终文件
             with open(final_output_path, 'w', encoding='utf-8') as f:
@@ -351,7 +351,7 @@ class PageBatchProcessor:
             return True
             
         except Exception as e:
-            print(f"⚠️ 合并输出失败: {e}", file=sys.stderr)
+            print(f"Warning: Merge outputs failed: {e}", file=sys.stderr)
             return False
     
     def process_pdf_batch(self, pdf_path: Path, output_dir: Path, 
@@ -371,19 +371,19 @@ class PageBatchProcessor:
         pending_pages = self.get_pending_pages(batch_progress)
         
         if not pending_pages:
-            print("✅ 所有页面已处理完成")
+            print("All pages processed successfully")
             # 合并输出
             final_output = output_dir / f"{pdf_path.stem}_merged.md"
             if self.merge_page_outputs(batch_progress, final_output):
-                return True, f"所有页面已完成，合并输出: {final_output}"
+                return True, f"All pages processed, merged output: {final_output}"
             else:
-                return True, "所有页面已完成，但合并输出失败"
+                return True, "All pages processed, but merge outputs failed"
         
-        print(f"📋 开始处理 {len(pending_pages)} 个待处理页面...")
+        print(f"📋 Start processing {len(pending_pages)} pending pages...")
         
         # 处理每个页面
         for i, page_num in enumerate(pending_pages, 1):
-            print(f"\n🔄 处理页面 {page_num} ({i}/{len(pending_pages)})")
+            print(f"\n🔄 Process page {page_num} ({i}/{len(pending_pages)})")
             
             # 更新状态为处理中
             self.update_page_status(batch_progress, page_num, 'processing')
@@ -393,10 +393,10 @@ class PageBatchProcessor:
             success, message, output_file = self.process_single_page(pdf_path, page_num, output_dir)
             
             if success:
-                print(f"✅ {message}")
+                print(f"{message}")
                 self.update_page_status(batch_progress, page_num, 'completed', output_file)
             else:
-                print(f"❌ {message}")
+                print(f"Error: {message}")
                 self.update_page_status(batch_progress, page_num, 'failed', error_message=message)
             
             # 保存进度
@@ -406,15 +406,15 @@ class PageBatchProcessor:
             completed_count = len([p for p in batch_progress.pages.values() if p.status == 'completed'])
             total_count = len(batch_progress.pages)
             progress_percent = (completed_count / total_count) * 100
-            print(f"📊 总进度: {completed_count}/{total_count} ({progress_percent:.1f}%)")
+            print(f"📊 Total progress: {completed_count}/{total_count} ({progress_percent:.1f}%)")
         
         # 最终合并
-        print(f"\n🔗 合并所有页面输出...")
+        print(f"\n🔗 Merge all page outputs...")
         final_output = output_dir / f"{pdf_path.stem}_merged.md"
         if self.merge_page_outputs(batch_progress, final_output):
-            return True, f"批处理完成，输出文件: {final_output}"
+            return True, f"Batch processing completed, output file: {final_output}"
         else:
-            return False, "页面处理完成，但合并输出失败"
+            return False, "Page processing completed, but merge outputs failed"
     
     def get_batch_status(self, pdf_path: Path) -> Optional[Dict]:
         """获取批处理状态"""
@@ -453,7 +453,7 @@ class PageBatchProcessor:
         
         if cleaned_count > 0:
             self.save_progress(progress_dict)
-            print(f"🧹 清理了 {cleaned_count} 个旧的批处理记录")
+            print(f"🧹 Cleaned {cleaned_count} old batch records")
 
 def main():
     """测试函数"""
@@ -465,9 +465,9 @@ def main():
     
     if pdf_path.exists():
         success, message = processor.process_pdf_batch(pdf_path, output_dir, page_range="1-5")
-        print(f"结果: {success}, 消息: {message}")
+        print(f"Result: {success}, message: {message}")
     else:
-        print("测试PDF文件不存在")
+        print("Test PDF file does not exist")
 
 if __name__ == "__main__":
     main()

@@ -117,7 +117,7 @@ class GoogleDriveShell:
             else:
                 return {"shells": {}, "active_shell": None}
         except Exception as e:
-            print(f"❌ Failed to load shell config: {e}")
+            print(f"Error: Failed to load shell config: {e}")
             return {"shells": {}, "active_shell": None}
 
     def _load_cache_config_direct(self):
@@ -131,7 +131,7 @@ class GoogleDriveShell:
                 self.cache_config = {}
                 self.cache_config_loaded = False
         except Exception as e:
-            print(f"⚠️ Failed to load cache config: {e}")
+            print(f"Warning: Failed to load cache config: {e}")
             self.cache_config = {}
             self.cache_config_loaded = False
 
@@ -145,7 +145,7 @@ class GoogleDriveShell:
             else:
                 return []
         except Exception as e:
-            print(f"⚠️ Failed to load deletion cache: {e}")
+            print(f"Warning: Failed to load deletion cache: {e}")
             return []
 
     def _load_drive_service_direct(self):
@@ -163,7 +163,7 @@ class GoogleDriveShell:
             else:
                 return None
         except Exception as e:
-            print(f"⚠️ Failed to load Google Drive API service: {e}")
+            print(f"Warning: Failed to load Google Drive API service: {e}")
             return None
 
     def _initialize_managers(self):
@@ -321,11 +321,11 @@ class GoogleDriveShell:
                         path_groups[path] = []
                     path_groups[path].append(item)
                 
-                # 按路径顺序显示
+                # Display paths in order
                 sorted_paths = sorted(path_groups.keys())
                 for i, path in enumerate(sorted_paths):
                     if i > 0:
-                        print()  # 空行分隔不同目录
+                        print()  # Empty line to separate different directories
                     
                     print(f"{path}:")
                     items = path_groups[path]
@@ -346,12 +346,12 @@ class GoogleDriveShell:
                             print(name)
             else:
                 # 其他模式的显示逻辑可以在这里添加
-                print("递归列表结果（详细模式）:")
-                print(f"路径: {result.get('path', 'unknown')}")
-                print(f"总计: {result.get('count', 0)} 项")
+                print("Recursive ls results (detailed mode):")
+                print(f"Path: {result.get('path', 'unknown')}")
+                print(f"Total: {result.get('count', 0)} items")
                 
         except Exception as e:
-            print(f"❌ 显示递归ls结果时出错: {e}")
+            print(f"Error: Error displaying recursive ls results: {e}")
     
 
     
@@ -403,7 +403,7 @@ class GoogleDriveShell:
                 if result.get("success", False):
                     return 0
                 else:
-                    error_msg = result.get("error", "文件创建失败")
+                    error_msg = result.get("error", "File creation failed")
                     print(error_msg)
                     return 1
         
@@ -411,13 +411,12 @@ class GoogleDriveShell:
         result = self.execute_generic_remote_command('echo', args)
         
         if result.get("success", False):
-            # 直接显示远程执行的输出
-            stdout = result.get("stdout", "").strip()
+            # result_print已经在remote_commands.py中处理了输出显示
+            # 这里只需要处理错误输出
             stderr = result.get("stderr", "").strip()
-            if stdout:
-                print(stdout)
             if stderr:
-                print(stderr, file=sys.stderr)
+                from GOOGLE_DRIVE_PROJ.modules.progress_manager import normal_print
+                normal_print(stderr)
             return 0
         else:
             error_msg = result.get("error", "Echo command failed")
@@ -435,10 +434,9 @@ class GoogleDriveShell:
             match = re.match(r'^echo\s+(["\'])(.*?)\1\s*>\s*(.+)$', shell_cmd_clean.strip(), re.DOTALL)
             
             if not match:
-                print("❌ 无法解析echo重定向命令格式")
+                print("Error: Unable to parse echo redirect command format")
                 return 1
             
-            quote_char = match.group(1)
             content = match.group(2)
             target_file = match.group(3).strip()
         
@@ -447,12 +445,12 @@ class GoogleDriveShell:
             if result.get("success", False):
                 return 0
             else:
-                error_msg = result.get("error", "文件创建失败")
+                error_msg = result.get("error", "File creation failed")
                 print(error_msg)
                 return 1
                 
         except Exception as e:
-            print(f"❌ 处理引号echo命令时出错: {e}")
+            print(f"Error: Error processing quoted echo command: {e}")
             return 1
     
     def _normalize_quotes_and_escapes(self, args):
@@ -663,9 +661,6 @@ class GoogleDriveShell:
     def execute_shell_command(self, shell_cmd, command_identifier=None):
         """执行shell命令 - 新的架构入口点"""
         try:
-            # 保存原始命令信息，用于检测引号包围的命令
-            original_shell_cmd = shell_cmd
-            
             # 检测引号命令标记
             is_quoted_command = shell_cmd.startswith("__QUOTED_COMMAND__")
             if is_quoted_command:
@@ -775,8 +770,8 @@ class GoogleDriveShell:
                         args = cmd_parts[1:] if len(cmd_parts) > 1 else []
                     except ValueError as e:
                         # 如果shlex解析失败，回退到简单分割
-                        print(f"⚠️ Shell command parsing failed with shlex: {e}")
-                        print("⚠️ Falling back to simple space splitting")
+                        print(f"Warning: Shell command parsing failed with shlex: {e}")
+                        print("Warning: Falling back to simple space splitting")
                         cmd_parts = shell_cmd_clean.split()
                         if not cmd_parts:
                             return 1
@@ -846,7 +841,7 @@ class GoogleDriveShell:
                     try:
                         current_shell = self.get_current_shell()
                         if not current_shell:
-                            print("❌ 没有活跃的shell会话")
+                            print("Error: 没有活跃的shell会话")
                             return 1
                         
                         # 生成远程命令
@@ -874,7 +869,7 @@ class GoogleDriveShell:
                                     print(stdout_content)
                                 return 0
                             else:
-                                print(result_data.get("error", "❌ 读取结果失败"))
+                                print(result_data.get("error", "Error: 读取结果失败"))
                                 return 1
                         elif result["action"] == "direct_feedback":
                             # 处理直接反馈
@@ -889,16 +884,16 @@ class GoogleDriveShell:
                                 if feedback_result.get("success", False):
                                     return 0
                                 else:
-                                    print(feedback_result.get("error", "❌ 处理直接反馈失败"))
+                                    print(feedback_result.get("error", "Error: 处理直接反馈失败"))
                                     return 1
                             except Exception as e:
-                                print(f"❌ 处理直接反馈时出错: {e}")
+                                print(f"Error: 处理直接反馈时出错: {e}")
                                 return 1
                         else:
-                            print(result.get("error", "❌ ls -R命令执行失败"))
+                            print(result.get("error", "Error: ls -R命令执行失败"))
                             return 1
                     except Exception as e:
-                        print(f"❌ ls -R命令执行失败: {e}")
+                        print(f"Error: ls -R命令执行失败: {e}")
                         import traceback
                         traceback.print_exc()
                         return 1
@@ -934,7 +929,7 @@ class GoogleDriveShell:
                         return 1
             elif cmd == 'cd':
                 if not args:
-                    print("❌ cd command needs a path")
+                    print("Error: cd command needs a path")
                     return 1
                 # 使用file_operations中的cmd_cd方法
                 path = args[0]
@@ -943,11 +938,11 @@ class GoogleDriveShell:
                     # cd命令成功时不显示输出（像bash一样）
                     return 0
                 else:
-                    print(result.get("error", "❌ cd命令执行失败"))
+                    print(result.get("error", "Error: cd命令执行失败"))
                     return 1
             elif cmd == 'mkdir':
                 if not args:
-                    print("❌ mkdir command needs a directory name")
+                    print("Error: mkdir command needs a directory name")
                     return 1
                 # 导入shell_commands模块中的具体函数
                 current_dir = os.path.dirname(__file__)
@@ -959,7 +954,7 @@ class GoogleDriveShell:
                 recursive = '-p' in args
                 dir_names = [arg for arg in args if arg != '-p']
                 if not dir_names:
-                    print("❌ mkdir command needs directory name(s)")
+                    print("Error: mkdir command needs directory name(s)")
                     return 1
                 
                 # 支持多个目录创建 - 使用单个远端命令提高效率
@@ -969,14 +964,14 @@ class GoogleDriveShell:
                     if result.get("success"):
                         return 0
                     else:
-                        error_msg = result.get("error", "❌ mkdir命令执行失败")
+                        error_msg = result.get("error", "Error: mkdir命令执行失败")
                         print(error_msg)
                         return 1
                 else:
                     # 多个目录，合并为单个远端命令
                     current_shell = self.get_current_shell()
                     if not current_shell:
-                        print("❌ 没有活跃的远程shell")
+                        print("Error: 没有活跃的远程shell")
                         return 1
                     
                     # 构建合并的mkdir命令
@@ -1000,17 +995,17 @@ class GoogleDriveShell:
                                 dir_name, current_shell, creation_type="dir", max_attempts=60
                             )
                             if not verification_result.get("success", False):
-                                print(f"❌ 目录 {dir_name} 验证失败")
+                                print(f"Error: 目录 {dir_name} 验证失败")
                                 all_verified = False
                         
                         return 0 if all_verified else 1
                     else:
                         error_msg = result.get("error", "多目录创建失败")
-                        print(f"❌ {error_msg}")
+                        print(f"Error: {error_msg}")
                         return 1
             elif cmd == 'touch':
                 if not args:
-                    print("❌ touch command needs a filename")
+                    print("Error: touch command needs a filename")
                     return 1
                 
                 filename = args[0]
@@ -1020,7 +1015,7 @@ class GoogleDriveShell:
                 if result.get("success"):
                     return 0
                 else:
-                    print(result.get("error", "❌ touch命令执行失败"))
+                    print(result.get("error", "Error: touch命令执行失败"))
                     return 1
 
             elif cmd == 'echo':
@@ -1049,7 +1044,7 @@ class GoogleDriveShell:
                     # 显示stderr如果存在
                     stderr = result.get("stderr", "")
                     if stderr.strip():
-                        print(f"\n❌ STDERR内容:\n{stderr.strip()}")
+                        print(f"\nError: STDERR内容:\n{stderr.strip()}")
                     
                     # 显示用户错误信息（如果有）
                     user_error = result.get("user_error_info", "")
@@ -1092,7 +1087,7 @@ class GoogleDriveShell:
             elif cmd == 'cat':
                 # 使用委托方法处理cat命令
                 if not args:
-                    print("❌ cat command needs a file name")
+                    print("Error: cat command needs a file name")
                     return 1
                 result = self.cmd_cat(args[0])
                 if result.get("success", False):
@@ -1105,7 +1100,7 @@ class GoogleDriveShell:
             elif cmd == 'edit':
                 # 使用委托方法处理edit命令
                 if len(args) < 2:
-                    print("❌ edit command needs a file name and edit specification")
+                    print("Error: edit command needs a file name and edit specification")
                     return 1
                 
                 # 解析选项参数
@@ -1122,7 +1117,7 @@ class GoogleDriveShell:
                         remaining_args.append(arg)
                 
                 if len(remaining_args) < 2:
-                    print("❌ edit command needs a file name and edit specification")
+                    print("Error: edit command needs a file name and edit specification")
                     return 1
                     
                 filename = remaining_args[0]
@@ -1208,7 +1203,7 @@ class GoogleDriveShell:
             elif cmd == 'read':
                 # 使用委托方法处理read命令
                 if not args:
-                    print("❌ read command needs a file name")
+                    print("Error: read command needs a file name")
                     return 1
                 
                 # 解析--force标志
@@ -1222,7 +1217,7 @@ class GoogleDriveShell:
                         remaining_args.append(arg)
                 
                 if not remaining_args:
-                    print("❌ read command needs a file name")
+                    print("Error: read command needs a file name")
                     return 1
                 
                 filename = remaining_args[0]
@@ -1239,12 +1234,12 @@ class GoogleDriveShell:
             elif cmd == 'python':
                 # 使用委托方法处理python命令
                 if not args:
-                    print("❌ python command needs a file name or code")
+                    print("Error: python command needs a file name or code")
                     return 1
                 if args[0] == '-c':
                     # 执行Python代码
                     if len(args) < 2:
-                        print("❌ python -c needs code")
+                        print("Error: python -c needs code")
                         return 1
                     # 过滤掉命令行选项参数，只保留Python代码
                     code_args = []
@@ -1287,7 +1282,7 @@ class GoogleDriveShell:
             elif cmd == 'upload':
                 # 使用委托方法处理upload命令
                 if not args:
-                    print("❌ upload command needs a file name")
+                    print("Error: upload command needs a file name")
                     return 1
                 
                 # 参数解析规则：
@@ -1306,7 +1301,7 @@ class GoogleDriveShell:
                             target_path = args[i + 1]
                             i += 2  # 跳过--target-dir和其值
                         else:
-                            print("❌ --target-dir option requires a directory path")
+                            print("Error: --target-dir option requires a directory path")
                             return 1
                     elif args[i] == '--force':
                         force = True
@@ -1319,7 +1314,7 @@ class GoogleDriveShell:
                         i += 1
                 
                 if not source_files:
-                    print("❌ No source files specified for upload")
+                    print("Error: No source files specified for upload")
                     return 1
                 
                 result = self.cmd_upload(source_files, target_path, force=force, remove_local=remove_local)
@@ -1332,7 +1327,7 @@ class GoogleDriveShell:
             elif cmd == 'upload-folder':
                 # 使用委托方法处理upload-folder命令
                 if not args:
-                    print("❌ upload-folder command needs a folder path")
+                    print("Error: upload-folder command needs a folder path")
                     return 1
                 
                 # 解析参数: upload-folder [--keep-zip] [--force] <folder> [target]
@@ -1358,7 +1353,7 @@ class GoogleDriveShell:
                         i += 1
                 
                 if folder_path is None:
-                    print("❌ upload-folder command needs a folder path")
+                    print("Error: upload-folder command needs a folder path")
                     return 1
                 
                 result = self.cmd_upload_folder(folder_path, target_path, keep_zip, force)
@@ -1371,7 +1366,7 @@ class GoogleDriveShell:
             elif cmd == 'download':
                 # 使用委托方法处理download命令
                 if not args:
-                    print("❌ download command needs a file name")
+                    print("Error: download command needs a file name")
                     return 1
                 result = self.cmd_download(*args)
                 if result.get("success", False):
@@ -1383,7 +1378,7 @@ class GoogleDriveShell:
             elif cmd == 'mv':
                 # 使用委托方法处理mv命令
                 if len(args) < 2:
-                    print("❌ mv command needs a source file and target file")
+                    print("Error: mv command needs a source file and target file")
                     return 1
                 result = self.cmd_mv(args[0], args[1])
                 if result.get("success", False):
@@ -1405,7 +1400,7 @@ class GoogleDriveShell:
             elif cmd == 'rm':
                 # 使用委托方法处理rm命令
                 if not args:
-                    print("❌ rm command needs a file or directory name")
+                    print("Error: rm command needs a file or directory name")
                     return 1
                 
                 # 解析rm选项
@@ -1424,7 +1419,7 @@ class GoogleDriveShell:
                         paths.append(arg)
                 
                 if not paths:
-                    print("❌ rm command needs at least one file or directory to delete")
+                    print("Error: rm command needs at least one file or directory to delete")
                     return 1
                 
                 # 处理每个路径
@@ -1441,7 +1436,7 @@ class GoogleDriveShell:
             elif cmd == 'grep':
                 # 使用委托方法处理grep命令
                 if len(args) < 1:
-                    print("❌ grep command needs at least a file name")
+                    print("Error: grep command needs at least a file name")
                     return 1
                 
                 # 处理参数解析
@@ -1477,7 +1472,7 @@ class GoogleDriveShell:
                             for i, line in enumerate(lines, 1):
                                 print(f"{i:3}: {line}")
                         else:
-                            print(f"❌ 无法读取文件: {filename}")
+                            print(f"Error: 无法读取文件: {filename}")
                     return 0
                 
                 # 有模式的grep，只显示匹配行
@@ -1489,7 +1484,7 @@ class GoogleDriveShell:
                     has_file_errors = False
                     for filename, file_result in result_data.items():
                         if "error" in file_result:
-                            print(f"❌ {filename}: {file_result['error']}")
+                            print(f"Error: {filename}: {file_result['error']}")
                             has_file_errors = True
                         else:
                             occurrences = file_result.get("occurrences", {})
@@ -1507,7 +1502,7 @@ class GoogleDriveShell:
                                             line_content = lines[line_index]
                                             print(f"{line_num:3}: {line_content}")
                                 else:
-                                    print(f"❌ 无法读取文件内容: {filename}")
+                                    print(f"Error: 无法读取文件内容: {filename}")
                     
                     # 按照bash grep的标准行为返回退出码
                     if has_file_errors:
@@ -1517,7 +1512,7 @@ class GoogleDriveShell:
                     else:
                         return 0  # 有匹配项
                 else:
-                    print(result.get("error", "❌ Grep命令执行失败"))
+                    print(result.get("error", "Error: Grep命令执行失败"))
                     return 1
             else:
                 # 尝试通过通用远程命令执行
@@ -1536,7 +1531,7 @@ class GoogleDriveShell:
                     return 1
                 
         except Exception as e:
-            error_msg = f"❌ Error executing shell command: {e}"
+            error_msg = f"Error: Error executing shell command: {e}"
             print(error_msg)
             return 1
     

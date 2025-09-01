@@ -71,7 +71,7 @@ class TestRunner:
             with open(self.bin_json_path, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except Exception as e:
-            print(f"❌ Error loading AI_TOOL.json: {e}")
+            print(f"Error: Error loading AI_TOOL.json: {e}")
             sys.exit(1)
     
     def save_bin_json(self) -> bool:
@@ -81,7 +81,7 @@ class TestRunner:
                 json.dump(self.bin_data, f, indent=2, ensure_ascii=False)
             return True
         except Exception as e:
-            print(f"❌ Error saving AI_TOOL.json: {e}")
+            print(f"Error: Error saving AI_TOOL.json: {e}")
             return False
     
     def discover_test_files(self) -> List[Path]:
@@ -121,7 +121,7 @@ class TestRunner:
                         mapping[tool_name] = []
                     mapping[tool_name].append(test_file)
                 else:
-                    print(f"⚠️  Warning: Test file {test_file.name} doesn't match any tool in AI_TOOL.json")
+                    print(f"Warning:  Warning: Test file {test_file.name} doesn't match any tool in AI_TOOL.json")
         
         return mapping
     
@@ -141,7 +141,7 @@ class TestRunner:
         if tool_name in self.bin_data["tools"]:
             self.bin_data["tools"][tool_name]["test_passed"] = passed
             status = "✅ true" if passed else "❌ false"
-            print(f"📝 Set {tool_name} test_passed to {status}")
+            print(f"Set {tool_name} test_passed to {status}")
     
     def run_test_file(self, test_file: Path) -> Tuple[bool, str, str]:
         """Run a single test file and return (success, stdout, stderr)"""
@@ -165,7 +165,7 @@ class TestRunner:
     def run_tool_tests(self, tool_name: str, verbose: bool = False) -> bool:
         """Run all tests for a specific tool"""
         if tool_name not in self.tool_test_mapping:
-            print(f"❌ No test files found for tool: {tool_name}")
+            print(f"Error: No test files found for tool: {tool_name}")
             return False
         
         test_files = self.tool_test_mapping[tool_name]
@@ -180,17 +180,17 @@ class TestRunner:
             success, stdout, stderr = self.run_test_file(test_file)
             
             if success:
-                print(f"✅ {test_file.name} PASSED")
+                print(f"{test_file.name} PASSED")
                 if verbose and stdout:
-                    print(f"📝 Output:\n{stdout}")
+                    print(f"Output:\n{stdout}")
             else:
-                print(f"❌ {test_file.name} FAILED")
+                print(f"Error: {test_file.name} FAILED")
                 all_passed = False
                 
                 if stderr:
                     print(f"💥 Error:\n{stderr}")
                 if stdout and verbose:
-                    print(f"📝 Output:\n{stdout}")
+                    print(f"Output:\n{stdout}")
         
         return all_passed
     
@@ -203,11 +203,11 @@ class TestRunner:
             available_tools = self.get_available_tools()
             invalid_tools = [t for t in tools if t not in available_tools]
             if invalid_tools:
-                print(f"❌ Invalid tool names: {', '.join(invalid_tools)}")
+                print(f"Error: Invalid tool names: {', '.join(invalid_tools)}")
                 print(f"Available tools: {', '.join(available_tools)}")
                 return {}
         
-        print(f"🚀 Starting test run for {len(tools)} tool(s)")
+        print(f"Starting test run for {len(tools)} tool(s)")
         print(f"Tools to test: {', '.join(tools)}")
         
         # Reset test status for all tools being tested
@@ -288,19 +288,19 @@ class TestRunner:
                     # Use --help as fallback
                     tool_data["test_command"] = ["--help"]
                 updated = True
-                print(f"📝 Added test_command for {tool_name}")
+                print(f"Added test_command for {tool_name}")
             
             # Ensure testable field exists
             if "testable" not in tool_data:
                 tool_data["testable"] = tool_name in self.tool_test_mapping
                 updated = True
-                print(f"📝 Set testable={tool_data['testable']} for {tool_name}")
+                print(f"Set testable={tool_data['testable']} for {tool_name}")
         
         if updated:
             self.save_bin_json()
-            print("✅ Updated AI_TOOL.json with test file fields")
+            print("Updated AI_TOOL.json with test file fields")
         else:
-            print("✅ All tools already have proper test file fields")
+            print("All tools already have proper test file fields")
 
 
 def main():

@@ -38,7 +38,7 @@ def get_pdf_path_interactive():
         return pdf_path
         
     except ImportError:
-        print("❌ tkinter not available. Please provide PDF path as argument.")
+        print("Error:  tkinter not available. Please provide PDF path as argument.")
         return None
 
 
@@ -118,7 +118,7 @@ def analyze_content_types(middle_file_path):
         with open(middle_file_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
     except Exception as e:
-        print(f"❌ Error reading middle file: {e}")
+        print(f"Error: Error reading middle file: {e}")
         return None
     
     # Initialize counters
@@ -208,7 +208,7 @@ def clean_data_directory():
     if data_dir.exists():
         import shutil
         shutil.rmtree(data_dir)
-        print(f"✅ Cleaned data directory: {data_dir}")
+        print(f"Cleaned data directory: {data_dir}")
     else:
         print(f"ℹ️  Data directory doesn't exist: {data_dir}")
 
@@ -310,9 +310,9 @@ def check_and_show_post_processing_status(result_path: str):
             print("   - Re-add markers and run the command to regenerate the status file")
         
     except json.JSONDecodeError as e:
-        print(f"❌ Status file format error: {e}")
+        print(f"Error: Status file format error: {e}")
     except Exception as e:
-        print(f"⚠️  Error checking post-processing status: {e}")
+        print(f"Warning:  Error checking post-processing status: {e}")
         
         # Fallback to old method if JSON method fails
         try:
@@ -346,7 +346,7 @@ def check_and_show_post_processing_status(result_path: str):
                     
                     print("\n💡 Suggestion: JSON status file will be automatically created after running the processing command")
         except Exception as fallback_error:
-            print(f"⚠️  Fallback processing also failed: {fallback_error}")
+            print(f"Warning:  Fallback processing also failed: {fallback_error}")
 
 
 def list_processing_items(pdf_path: str, item_type: str = 'all', show_processed: bool = False):
@@ -359,7 +359,7 @@ def list_processing_items(pdf_path: str, item_type: str = 'all', show_processed:
         # Find status file
         status_file = pdf_directory / f"{pdf_stem}_postprocess.json"
         if not status_file.exists():
-            print(f"❌ Status file does not exist: {status_file}")
+            print(f"Error: Status file does not exist: {status_file}")
             return False
         
         with open(status_file, 'r', encoding='utf-8') as f:
@@ -404,7 +404,7 @@ def list_processing_items(pdf_path: str, item_type: str = 'all', show_processed:
         return True
         
     except Exception as e:
-        print(f"❌ Failed to list items: {e}")
+        print(f"Error: Failed to list items: {e}")
         return False
 
 
@@ -423,7 +423,7 @@ def process_by_hash_ids(pdf_path: str, hash_ids: list, processing_type: str = 'a
         return result
         
     except Exception as e:
-        print(f"❌ Batch processing failed: {e}")
+        print(f"Error: Batch processing failed: {e}")
         return False
 
 
@@ -441,10 +441,10 @@ def main():
         pdf_path = get_pdf_path_interactive()
         
         if not pdf_path:
-            print("❌ No PDF selected. Exiting.")
+            print("Error:  No PDF selected. Exiting.")
             sys.exit(1)
         
-        print(f"📄 Selected PDF: {pdf_path}")
+        print(f"Selected PDF: {pdf_path}")
         
         # Check if same-name markdown file exists in PDF directory
         pdf_path_obj = Path(pdf_path)
@@ -552,7 +552,7 @@ def main():
         end_time = time.time()
         processing_time = end_time - start_time
         
-        print(f"\n✅ SUCCESS: PDF extracted to {result_path}")
+        print(f"\nSUCCESS: PDF extracted to {result_path}")
         print(f"⏱️  Total processing time: {processing_time:.2f} seconds")
         
         # Check if post-processing is needed
@@ -561,7 +561,7 @@ def main():
         
         return 0
     except Exception as e:
-        print(f"❌ ERROR: {str(e)}")
+        print(f"Error: {str(e)}")
         return 1
 
 

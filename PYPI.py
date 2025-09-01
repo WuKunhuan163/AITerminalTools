@@ -460,9 +460,9 @@ def main():
             print(f"\nTesting {pkg}:")
             deps, size = client.get_package_dependencies_with_size(pkg)
             if deps is not None:
-                print(f"  ✅ Found {len(deps)} dependencies, size: {format_size(size)}")
+                print(f"Found {len(deps)} dependencies, size: {format_size(size)}")
             else:
-                print(f"  ❌ Package not found")
+                print(f"Error: Package not found")
         
         print("\nTest completed.")
         return

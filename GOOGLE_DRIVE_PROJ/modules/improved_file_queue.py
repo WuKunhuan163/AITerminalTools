@@ -63,7 +63,7 @@ class ImprovedFileQueue:
         """调试日志输出"""
         timestamp = time.strftime("%H:%M:%S", time.localtime())
         elapsed = time.time() - (getattr(self, '_start_time', time.time()))
-        print(f"🔧 [{timestamp}] [PID:{os.getpid()}] [+{elapsed:.1f}s] {message}")
+        print(f"Tool: [{timestamp}] [PID:{os.getpid()}] [+{elapsed:.1f}s] {message}")
         
         # 同时写入调试文件
         try:

@@ -604,7 +604,7 @@ try:
 except Exception as e:
     end_time = datetime.now()
     duration = end_time - start_time
-    print(f"❌ Error executing pip command: {{e}}")
+    print(f"Error: Error executing pip command: {{e}}")
     result_data = {{
         "success": False,
         "pip_command": "{pip_command}",

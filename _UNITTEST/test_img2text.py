@@ -144,7 +144,7 @@ class TestImg2Text(unittest.TestCase):
             if missing_terms:
                 self.fail(f"Missing required terms in output: {missing_terms}. Output was: {result.stdout[:300]}...")
             else:
-                print(f"✅ General image test passed - found all required terms: {required_terms}")
+                print(f"General image test passed - found all required terms: {required_terms}")
         else:
             # API failure case - check error handling
             self.assertTrue(
@@ -188,7 +188,7 @@ class TestImg2Text(unittest.TestCase):
                 self.fail(f"Missing required LoRA training terms in output: {missing_terms}. Output was: {result.stdout[:500]}...")
             else:
                 found_terms = [name for name, check_func in required_checks if check_func(output)]
-                print(f"✅ Academic image test passed - found all required LoRA training terms: {found_terms}")
+                print(f"Academic image test passed - found all required LoRA training terms: {found_terms}")
         else:
             # API failure case - check error handling
             self.assertTrue(

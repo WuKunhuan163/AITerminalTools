@@ -22,7 +22,7 @@ def main():
     # 执行核心逻辑
     from core import process_data
     result = process_data(config)
-    print(f"✅ 处理结果: {result}")
+    print(f"处理结果: {result}")
 
 if __name__ == "__main__":
     main()

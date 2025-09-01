@@ -21,10 +21,10 @@ if str(current_dir) not in sys.path:
 try:
     from Unimernet import UnimernetModel, MathDataset
     UNIMERNET_AVAILABLE = True
-    print("✅ Local UnimerNet components loaded successfully")
+    print("Local UnimerNet components loaded successfully")
 except ImportError as e:
     UNIMERNET_AVAILABLE = False
-    print(f"⚠️  Local UnimerNet model components not available: {e}")
+    print(f"Warning:  Local UnimerNet model components not available: {e}")
 
 def load_unimernet_model(model_path: str = None, device: str = "cpu") -> Tuple[Optional[object], Optional[object]]:
     """
@@ -38,7 +38,7 @@ def load_unimernet_model(model_path: str = None, device: str = "cpu") -> Tuple[O
         Tuple of (model, tokenizer) or (None, None) if failed
     """
     if not UNIMERNET_AVAILABLE:
-        print("❌ UnimerNet model components not available")
+        print("Error:  UnimerNet model components not available")
         return None, None
     
     # Default model path - use local model first, then download if needed
@@ -48,7 +48,7 @@ def load_unimernet_model(model_path: str = None, device: str = "cpu") -> Tuple[O
         
         if local_model_path.exists():
             model_path = local_model_path
-            print(f"📁 Using local model path: {model_path}")
+            print(f"Using local model path: {model_path}")
         else:
             try:
                 # Download the model if local doesn't exist
@@ -68,20 +68,20 @@ def load_unimernet_model(model_path: str = None, device: str = "cpu") -> Tuple[O
                 )
                 
                 model_path = Path(cache_dir) / model_subpath
-                print(f"📁 Using downloaded model path: {model_path}")
+                print(f"Using downloaded model path: {model_path}")
                 
                 # Verify the model path exists
                 if not model_path.exists():
                     raise FileNotFoundError(f"Model path does not exist: {model_path}")
                     
             except Exception as e:
-                print(f"❌ Failed to download model: {e}")
+                print(f"Error: Failed to download model: {e}")
                 raise Exception("No valid UnimerNet model found")
     
     model_path = Path(model_path)
     
     if not model_path.exists():
-        print(f"❌ Model path not found: {model_path}")
+        print(f"Error: Model path not found: {model_path}")
         return None, None
     
     try:
@@ -95,7 +95,7 @@ def load_unimernet_model(model_path: str = None, device: str = "cpu") -> Tuple[O
                 config.apply_cpu_optimizations()
                 print("🚀 Applied CPU optimizations for better performance")
             except Exception as e:
-                print(f"⚠️  Failed to apply CPU optimizations: {e}")
+                print(f"Warning:  Failed to apply CPU optimizations: {e}")
         
         # Load the model
         model = UnimernetModel(str(model_path), device)
@@ -103,11 +103,11 @@ def load_unimernet_model(model_path: str = None, device: str = "cpu") -> Tuple[O
         # The tokenizer is embedded in the model for UnimerNet
         tokenizer = model.model.tokenizer if hasattr(model.model, 'tokenizer') else None
         
-        print("✅ UnimerNet model loaded successfully")
+        print("UnimerNet model loaded successfully")
         return model, tokenizer
         
     except Exception as e:
-        print(f"❌ Failed to load UnimerNet model: {e}")
+        print(f"Error: Failed to load UnimerNet model: {e}")
         return None, None
 
 def recognize_image(image_path: str, model: object, tokenizer: object = None) -> Optional[str]:
@@ -123,12 +123,12 @@ def recognize_image(image_path: str, model: object, tokenizer: object = None) ->
         Recognition result as string, or None if failed
     """
     if model is None:
-        print("❌ Model not loaded")
+        print("Error:  Model not loaded")
         return None
     
     image_path = Path(image_path)
     if not image_path.exists():
-        print(f"❌ Image not found: {image_path}")
+        print(f"Error: Image not found: {image_path}")
         return None
     
     try:
@@ -158,14 +158,14 @@ def recognize_image(image_path: str, model: object, tokenizer: object = None) ->
             # Extract the result
             if "fixed_str" in output and len(output["fixed_str"]) > 0:
                 result = output["fixed_str"][0]
-                print(f"✅ Recognition successful: {result[:50]}...")
+                print(f"Recognition successful: {result[:50]}...")
                 return result
             else:
                 print("⚠️  No recognition result")
                 return None
                 
     except Exception as e:
-        print(f"❌ Recognition failed: {e}")
+        print(f"Error: Recognition failed: {e}")
         return None
 
 def test_unimernet_recognition():
@@ -176,7 +176,7 @@ def test_unimernet_recognition():
     model, tokenizer = load_unimernet_model()
     
     if model is None:
-        print("❌ Cannot test without model")
+        print("Error:  Cannot test without model")
         return False
     
     # Test with a sample image (if available)
@@ -188,10 +188,10 @@ def test_unimernet_recognition():
             print(f"🎉 Test successful: {result}")
             return True
         else:
-            print("❌ Test failed: No recognition result")
+            print("Error:  Test failed: No recognition result")
             return False
     else:
-        print(f"⚠️  Test image not found: {test_image_path}")
+        print(f"Warning:  Test image not found: {test_image_path}")
         print("ℹ️  Model loaded successfully but cannot test without sample image")
         return True
 

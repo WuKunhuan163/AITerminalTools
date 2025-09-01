@@ -96,7 +96,7 @@ def parse_page_ranges(page_str: str, total_pages: int) -> set[int]:
 # --- Main Orchestration Function ---
 def extract_and_analyze_pdf(path_str: str, layout_mode: str, mode: str, call_api: bool, call_api_force: bool, page_range, debug: bool):
     path = Path(path_str)
-    if not path.exists(): print(f"❌ PDF not found: '{path}'", file=sys.stderr); return
+    if not path.exists(): print(f"Error: PDF not found: '{path}'", file=sys.stderr); return
     
     cache, doc = load_cache(), fitz.open(path)
     IMAGE_DIR.mkdir(exist_ok=True) 
@@ -167,7 +167,7 @@ def extract_and_analyze_pdf(path_str: str, layout_mode: str, mode: str, call_api
     output_path = find_next_numeric_filename(MARKDOWN_DIR) 
     with open(output_path, 'w', encoding='utf-8') as f: f.write(final_markdown_string)
     
-    print(f"✅ Report saved to: {output_path}", file=sys.stderr)
+    print(f"Report saved to: {output_path}", file=sys.stderr)
     # print(final_markdown_string)
     return output_path
 
@@ -191,9 +191,9 @@ if __name__ == "__main__":
         import shutil
         if DATA_DIR.exists():
             print(f"🗑️ Cleaning {DATA_DIR}...", file=sys.stderr)
-            print(f"📁 Deleting folder: {DATA_DIR.absolute()}", file=sys.stderr)
+            print(f"Deleting folder: {DATA_DIR.absolute()}", file=sys.stderr)
             shutil.rmtree(DATA_DIR)
-            print(f"✅ Folder deleted successfully", file=sys.stderr)
+            print(f"Folder deleted successfully", file=sys.stderr)
         else:
             print(f"ℹ️ Folder {DATA_DIR.absolute()} does not exist, nothing to clean", file=sys.stderr)
         
@@ -207,13 +207,13 @@ if __name__ == "__main__":
         print("ℹ️ Opening file dialog...", file=sys.stderr)
         root = tk.Tk(); root.withdraw()
         pdf_path = filedialog.askopenfilename(title="Select a PDF to analyze", filetypes=[("PDF", "*.pdf")])
-        if not pdf_path: print("❌ Operation cancelled.", file=sys.stderr); sys.exit(0)
+        if not pdf_path: print("Error:  Operation cancelled.", file=sys.stderr); sys.exit(0)
         
     # Try to use MinerU wrapper first, fallback to original if it fails
     try:
         from mineru_wrapper import extract_and_analyze_pdf_with_mineru
         extract_and_analyze_pdf_with_mineru(pdf_path, args.layout_mode, args.mode, args.call_api, args.call_api_force, args.page, args.debug)
     except Exception as e:
-        print(f"⚠️  MinerU wrapper failed: {e}", file=sys.stderr)
+        print(f"Warning:  MinerU wrapper failed: {e}", file=sys.stderr)
         print("🔄 Falling back to original PDF extractor...", file=sys.stderr)
         extract_and_analyze_pdf(pdf_path, args.layout_mode, args.mode, args.call_api, args.call_api_force, args.page, args.debug)

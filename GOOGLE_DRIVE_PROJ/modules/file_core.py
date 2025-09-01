@@ -206,7 +206,7 @@ class FileCore:
                             Path(zip_path).unlink()
                             print(f"Cleaned up local temporary file: {zip_filename}")
                     except Exception as e:
-                        print(f"⚠️ Failed to clean up temporary file: {e}")
+                        print(f"Warning: Failed to clean up temporary file: {e}")
                 else:
                     print(f"Saved local zip file: {zip_path}")
                     
@@ -321,7 +321,7 @@ class FileCore:
                 if override_check_result["success"] and override_check_result.get("overridden_files"):
                     overridden_files = override_check_result["overridden_files"]
                     for file_path in overridden_files:
-                        print(f"⚠️ Warning: Overriding remote file {file_path}")
+                        print(f"Warning: Overriding remote file {file_path}")
             
             # 4. 检查是否有文件夹，提示正确语法
             for source_file in source_files:
@@ -336,9 +336,9 @@ class FileCore:
             failed_moves = []
             
             for source_file in source_files:
-                debug_print(f"📁 Processing file: {source_file}")
+                debug_print(f"Processing file: {source_file}")
                 move_result = self.main_instance.sync_manager.move_to_local_equivalent(source_file)
-                debug_print(f"📁 Move result: {move_result}")
+                debug_print(f"Move result: {move_result}")
                 
                 if move_result["success"]:
                     file_moves.append({
@@ -353,7 +353,7 @@ class FileCore:
                     if move_result["renamed"]:
                         debug_print(f"🏷️  File renamed: {move_result['original_filename']} -> {move_result['filename']}")
                     else:
-                        debug_print(f"📁 File processed without renaming: {move_result['filename']}")
+                        debug_print(f"File processed without renaming: {move_result['filename']}")
                 else:
                     failed_moves.append({
                         "file": source_file,
@@ -385,7 +385,7 @@ class FileCore:
             
             if not sync_result["success"]:
                 # 同步检测失败，但继续执行
-                print(f"⚠️ File sync check failed: {sync_result.get('error', 'Unknown error')}")
+                print(f"Warning: File sync check failed: {sync_result.get('error', 'Unknown error')}")
                 print("📱 Upload may have succeeded, please manually verify files have been uploaded")
                 print("💡 You can retry upload if needed")
                 
@@ -481,12 +481,12 @@ class FileCore:
                     
                     # 记录原始文件名的使用
                     self.main_instance.cache_manager.add_deletion_record(original_filename)
-                    debug_print(f"📝 Added deletion record for original: {original_filename}")
+                    debug_print(f"Added deletion record for original: {original_filename}")
                     
                     # 如果文件被重命名，也记录临时文件名的使用
                     if file_info["renamed"] and temp_filename != original_filename:
                         self.main_instance.cache_manager.add_deletion_record(temp_filename)
-                        debug_print(f"📝 Added deletion record for temp: {temp_filename}")
+                        debug_print(f"Added deletion record for temp: {temp_filename}")
                 
                 # 如果指定了 --remove-local 选项，删除本地源文件
                 if remove_local:
@@ -935,13 +935,13 @@ class FileCore:
                     "success": True,
                     "new_path": target_path,
                     "folder_id": target_id,
-                    "message": f"✅ 已切换到目录: {target_path}"
+                    "message": f"Switched to directory: {target_path}"
                 }
             else:
-                return {"success": False, "error": "保存shell状态失败"}
+                return {"success": False, "error": "Save shell state failed"}
                 
         except Exception as e:
-            return {"success": False, "error": f"执行cd命令时出错: {e}"}
+            return {"success": False, "error": f"Execute cd command failed: {e}"}
 
     def cmd_mkdir_remote(self, target_path, recursive=False):
         """
@@ -958,12 +958,12 @@ class FileCore:
             # 获取当前shell以解析相对路径
             current_shell = self.main_instance.get_current_shell()
             if not current_shell:
-                return {"success": False, "error": "没有活跃的远程shell"}
+                return {"success": False, "error": "No active remote shell"}
             
             # 解析绝对路径
             absolute_path = self.main_instance.resolve_remote_absolute_path(target_path, current_shell)
             if not absolute_path:
-                return {"success": False, "error": f"无法解析路径: {target_path}"}
+                return {"success": False, "error": f"Cannot resolve path: {target_path}"}
             
             # 生成远端mkdir命令，添加清屏和成功/失败提示（总是使用-p确保父目录存在）
             remote_command = f'mkdir -p "{absolute_path}"'
@@ -996,7 +996,7 @@ class FileCore:
                     # 验证失败
                     return {
                         "success": False,
-                        "error": f"目录创建可能失败，验证超时: {target_path}",
+                        "error": f"Directory creation may have failed, verification timeout: {target_path}",
                         "verification": verification_result,
                         "remote_command": remote_command
                     }
@@ -1004,31 +1004,31 @@ class FileCore:
                 # 执行失败
                 return {
                     "success": False,
-                    "error": f"mkdir命令执行失败: {execution_result.get('error', 'Unknown error')}",
+                    "error": f"mkdir command execution failed: {execution_result.get('error', 'Unknown error')}",
                     "remote_command": remote_command
                 }
                 
         except Exception as e:
-            return {"success": False, "error": f"执行mkdir命令时出错: {e}"}
+            return {"success": False, "error": f"Execute mkdir command failed: {e}"}
 
     def cmd_mkdir(self, path, recursive=False):
         """创建目录，通过远程命令界面执行以确保由用户账户创建"""
         try:
             if not self.drive_service:
-                return {"success": False, "error": "Google Drive API服务未初始化"}
+                return {"success": False, "error": "Google Drive API service not initialized"}
                 
             current_shell = self.main_instance.get_current_shell()
             if not current_shell:
-                return {"success": False, "error": "没有活跃的远程shell，请先创建或切换到一个shell"}
+                return {"success": False, "error": "No active remote shell, please create or switch to a shell"}
             
             if not path:
-                return {"success": False, "error": "请指定要创建的目录名称"}
+                return {"success": False, "error": "Please specify the directory name to create"}
             
             # 调用统一的mkdir_remote方法
             return self.cmd_mkdir_remote(path, recursive)
                 
         except Exception as e:
-            return {"success": False, "error": f"执行mkdir命令时出错: {e}"}
+            return {"success": False, "error": f"Execute mkdir command failed: {e}"}
 
 
 
@@ -1066,14 +1066,14 @@ class FileCore:
         """创建空文件，通过远程命令界面执行"""
         try:
             if not self.drive_service:
-                return {"success": False, "error": "Google Drive API服务未初始化"}
+                return {"success": False, "error": "Google Drive API service not initialized"}
                 
             current_shell = self.main_instance.get_current_shell()
             if not current_shell:
-                return {"success": False, "error": "没有活跃的远程shell，请先创建或切换到一个shell"}
+                return {"success": False, "error": "No active remote shell, please create or switch to a shell"}
             
             if not filename:
-                return {"success": False, "error": "请指定要创建的文件名"}
+                return {"success": False, "error": "Please specify the file name to create"}
             
             # 解析绝对路径
             current_path = current_shell.get("current_path", "~")
@@ -1117,7 +1117,7 @@ class FileCore:
             return {
                 "success": False,
                 "error": str(e),
-                "message": f"远端touch命令生成失败: {e}"
+                "message": f"Remote touch command generation failed: {e}"
             }
 
     def cmd_rm(self, path, recursive=False, force=False):
@@ -1191,7 +1191,7 @@ class FileCore:
             
             current_shell = self.main_instance.get_current_shell()
             if not current_shell:
-                return {"success": False, "error": "没有活跃的远程shell"}
+                return {"success": False, "error": "No active remote shell"}
             
             # 构建远端绝对路径
             remote_absolute_path = self.main_instance.resolve_remote_absolute_path(filename, current_shell)
@@ -1287,7 +1287,7 @@ class FileCore:
             
             # 检查是否为文件（不是文件夹）
             if file_info['mimeType'] == 'application/vnd.google-apps.folder':
-                return {"success": False, "error": f"download: {actual_filename}: 是一个目录，无法下载"}
+                return {"success": False, "error": f"download: {actual_filename}: is a directory, cannot download"}
             
             # 使用Google Drive API直接下载文件
             import tempfile
@@ -1357,17 +1357,17 @@ class FileCore:
                     os.unlink(temp_path)
                     
         except Exception as e:
-            return {"success": False, "error": f"下载文件时出错: {e}"}
+            return {"success": False, "error": f"Download file failed: {e}"}
 
     def cmd_mv(self, source, destination, force=False):
         """mv命令 - 移动/重命名文件或文件夹（使用远端指令执行）"""
         try:
             current_shell = self.main_instance.get_current_shell()
             if not current_shell:
-                return {"success": False, "error": "没有活跃的远程shell"}
+                return {"success": False, "error": "No active remote shell"}
             
             if not source or not destination:
-                return {"success": False, "error": "用法: mv <source> <destination>"}
+                return {"success": False, "error": "Usage: mv <source> <destination>"}
             
             # 简化版本：不进行复杂的冲突检查
             
@@ -1398,18 +1398,18 @@ class FileCore:
                 else:
                     return {
                         "success": False,
-                        "error": f"mv命令执行成功但验证失败: {verification_result.get('error', 'Unknown verification error')}"
+                        "error": f"mv command execution succeeded but verification failed: {verification_result.get('error', 'Unknown verification error')}"
                     }
             else:
                 # 优先使用用户提供的错误信息
                 error_msg = result.get('error_info') or result.get('error') or 'Unknown error'
                 return {
                     "success": False,
-                    "error": f"远端mv命令执行失败: {error_msg}"
+                    "error": f"Remote mv command execution failed: {error_msg}"
                 }
                 
         except Exception as e:
-            return {"success": False, "error": f"执行mv命令时出错: {e}"}
+            return {"success": False, "error": f"Execute mv command failed: {e}"}
 
     def _resolve_file_path(self, file_path, current_shell):
         """解析文件路径，返回文件信息（如果存在）"""

@@ -115,11 +115,11 @@ class TestDownloadIntegration(unittest.TestCase):
             try:
                 output_json = json.loads(result.stdout)
                 self.assertTrue('success' in output_json or 'help' in output_json)
-                print("✅ RUN --show DOWNLOAD integration successful")
+                print("RUN --show DOWNLOAD integration successful")
             except json.JSONDecodeError:
                 self.fail(f"RUN --show should output valid JSON: {result.stdout[:200]}...")
         else:
-            print("✅ RUN --show DOWNLOAD test completed (failure expected without full setup)")
+            print("RUN --show DOWNLOAD test completed (failure expected without full setup)")
 
     def test_missing_arguments_error(self):
         """Test error handling when no arguments provided"""

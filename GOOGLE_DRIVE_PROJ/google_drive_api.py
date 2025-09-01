@@ -412,7 +412,7 @@ def test_drive_service():
         result = drive_service.test_connection()
         
         if result['success']:
-            print("✅ API connection test successful!")
+            print("API connection test successful!")
             print(f"📧 Service account email: {result.get('user_email', 'Unknown')}")
             print(f"👤 User name: {result.get('user_name', 'Unknown')}")
             
@@ -421,19 +421,19 @@ def test_drive_service():
             files_result = drive_service.list_files(max_results=5)
             
             if files_result['success']:
-                print(f"✅ File list retrieval successful! Found {files_result['count']} files")
+                print(f"File list retrieval successful! Found {files_result['count']} files")
                 for file in files_result['files'][:3]:  # 显示前3个文件
                     print(f"   📄 {file['name']} ({file['mimeType']})")
             else:
-                print(f"❌ File list retrieval failed: {files_result['error']}")
+                print(f"Error: File list retrieval failed: {files_result['error']}")
             
             return True
         else:
-            print(f"❌ API connection test failed: {result['error']}")
+            print(f"Error: API connection test failed: {result['error']}")
             return False
             
     except Exception as e:
-        print(f"❌ Error during test: {e}")
+        print(f"Error: Error during test: {e}")
         return False
 
 if __name__ == "__main__":

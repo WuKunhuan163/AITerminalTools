@@ -68,5 +68,23 @@
     "created_time": 1756608823.6166642,
     "updated_time": 1756608823.8249779,
     "output_dir": "/var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/tmp_jemtokj/integration_output"
+  },
+  "83c79aae1336761a600002d4da64f73e": {
+    "pdf_hash": "83c79aae1336761a600002d4da64f73e",
+    "pdf_path": "/Users/wukunhuan/.local/bin/_UNITTEST/_DATA/test_extract_paper.pdf",
+    "total_pages": 1,
+    "pages": {
+      "1": {
+        "page_num": 1,
+        "status": "failed",
+        "start_time": 1756718273.425076,
+        "end_time": 1756718273.545622,
+        "output_file": null,
+        "error_message": "页面 1 处理异常: MinerU not available"
+      }
+    },
+    "created_time": 1756718273.4247282,
+    "updated_time": 1756718273.545623,
+    "output_dir": "/var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/tmpe9tofj_d"
   }
 }

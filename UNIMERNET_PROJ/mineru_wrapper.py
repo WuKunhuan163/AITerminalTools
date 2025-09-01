@@ -155,7 +155,7 @@ class MinerUWrapper:
                     # Try again without formula recognition
                     retry_result = self._retry_without_formulas(pdf_path, page_range, debug)
                     if retry_result:
-                        # print("✅ Successfully processed without formula recognition", file=sys.stderr)  # Silenced per user request
+                        # print("Successfully processed without formula recognition", file=sys.stderr)  # Silenced per user request
                         return retry_result
                     
                     # If retry also fails, create basic output
@@ -573,9 +573,9 @@ class MinerUWrapper:
                     target_file = data_folder / target_name
                     try:
                         shutil.copy2(source_file, target_file)
-                        # print(f"📄 Copied {file} -> {target_name}", file=sys.stderr)  # Silenced per user request
+                        # print(f"Copied {file} -> {target_name}", file=sys.stderr)  # Silenced per user request
                     except Exception as e:
-                        print(f"⚠️  Warning: Could not copy {file}: {e}", file=sys.stderr)
+                        print(f"Warning:  Warning: Could not copy {file}: {e}", file=sys.stderr)
         
         # Copy images folder if it exists
         for root, dirs, files in os.walk(temp_path):
@@ -588,10 +588,10 @@ class MinerUWrapper:
                     if target_images_dir.exists():
                         shutil.rmtree(target_images_dir)
                     shutil.copytree(source_images_dir, target_images_dir)
-                    # print(f"📁 Copied images folder to {target_images_dir}", file=sys.stderr)  # Silenced per user request
+                    # print(f"Copied images folder to {target_images_dir}", file=sys.stderr)  # Silenced per user request
                     break  # Only copy the first images folder found
         
-        # print(f"✅ Created intermediate data folder: {data_folder}", file=sys.stderr)  # Silenced per user request
+        # print(f"Created intermediate data folder: {data_folder}", file=sys.stderr)  # Silenced per user request
     
     def _retry_without_formulas(self, pdf_path: str, page_range: Optional[str], debug: bool) -> Optional[str]:
         """
@@ -803,10 +803,10 @@ Formula recognition is currently unavailable.
             with open(markdown_file, 'w', encoding='utf-8') as f:
                 f.write(updated_content)
             
-            print(f"✅ Added API descriptions for {len(image_blocks)} images", file=sys.stderr)
+            print(f"Added API descriptions for {len(image_blocks)} images", file=sys.stderr)
             
         except Exception as e:
-            print(f"⚠️  Error in image API post-processing: {e}", file=sys.stderr)
+            print(f"Warning:  Error in image API post-processing: {e}", file=sys.stderr)
     
     def _add_async_placeholders(self, target_file: str, original_output_file: str, pdf_path: str = None):
         """Add placeholders for async post-processing in markdown file and create JSON status file."""
@@ -879,9 +879,9 @@ Formula recognition is currently unavailable.
                         with open(same_name_md_file, 'w', encoding='utf-8') as f:
                             f.write(updated_same_name_content)
                         
-                        print(f"✅ 同名文件也已更新: {same_name_md_file}", file=sys.stderr)
+                        print(f"同名文件也已更新: {same_name_md_file}", file=sys.stderr)
                 except Exception as e:
-                    print(f"⚠️  Error updating same-name file: {e}", file=sys.stderr)
+                    print(f"Warning:  Error updating same-name file: {e}", file=sys.stderr)
             
             # Create JSON status file instead of adding to markdown
             if pdf_path:
@@ -891,13 +891,13 @@ Formula recognition is currently unavailable.
                     formula_count = sum(1 for b in blocks_to_process if b['type'] in ['formula', 'interline_equation'])
                     table_count = sum(1 for b in blocks_to_process if b['type'] == 'table')
                     
-                    print(f"✅ 添加异步处理标签: {image_count}图片, {formula_count}公式, {table_count}表格", file=sys.stderr)
-                    print(f"📄 后处理状态保存至: {Path(status_file).name}", file=sys.stderr)
+                    print(f"添加异步处理标签: {image_count}图片, {formula_count}公式, {table_count}表格", file=sys.stderr)
+                    print(f"后处理状态保存至: {Path(status_file).name}", file=sys.stderr)
                 else:
                     print("⚠️  Failed to create status file", file=sys.stderr)
             
         except Exception as e:
-            print(f"⚠️  Error adding async placeholders: {e}", file=sys.stderr)
+            print(f"Warning:  Error adding async placeholders: {e}", file=sys.stderr)
     
     def _extract_image_path_from_block(self, block):
         """Extract image path from a block structure."""
@@ -926,7 +926,7 @@ Formula recognition is currently unavailable.
             
             return None
         except Exception as e:
-            print(f"⚠️  Error extracting image path: {e}", file=sys.stderr)
+            print(f"Warning:  Error extracting image path: {e}", file=sys.stderr)
             return None
     
     def _add_placeholders_to_content(self, content: str, image_path_to_type: dict):
@@ -1100,11 +1100,11 @@ Formula recognition is currently unavailable.
             # Update global hash mapping
             self._update_hash_mapping_from_items(status_data["items"])
             
-            print(f"✅ 创建后处理状态文件: {status_file}")
+            print(f"Created status file: {status_file}")
             return str(status_file)
             
         except Exception as e:
-            print(f"❌ 创建状态文件失败: {e}", file=sys.stderr)
+            print(f"Error: Created status file failed: {e}", file=sys.stderr)
             return None
     
     def _get_processor_for_type(self, block_type: str) -> str:
@@ -1139,9 +1139,9 @@ Formula recognition is currently unavailable.
                         if item.get('processed', False):
                             existing_processed_items[item.get('id', '')] = item
                             
-                    print(f"📄 保留 {len(existing_processed_items)} 个已处理项目")
+                    print(f"Keep {len(existing_processed_items)} processed items")
                 except Exception as e:
-                    print(f"⚠️  读取现有状态文件失败: {e}")
+                    print(f"Warning:  Read existing status file failed: {e}")
             
             # If no markdown file specified, look for same-name file
             if not markdown_file:
@@ -1150,7 +1150,7 @@ Formula recognition is currently unavailable.
                 markdown_file = Path(markdown_file)
             
             if not markdown_file.exists():
-                print(f"❌ Markdown文件不存在: {markdown_file}")
+                print(f"Error: Markdown file not exists: {markdown_file}")
                 return None
             
             # Read markdown content
@@ -1224,7 +1224,7 @@ Formula recognition is currently unavailable.
                             'processed': True,
                             'processed_at': processed_item.get('processed_at', '')
                         })
-                        print(f"🔄 重新添加已处理项目: {hash_id}")
+                        print(f"🔄 Re-add processed item: {hash_id}")
             
             if blocks_to_process:
                 # Create status file
@@ -1250,14 +1250,14 @@ Formula recognition is currently unavailable.
                     with open(status_file, 'w', encoding='utf-8') as f:
                         json.dump(status_data, f, ensure_ascii=False, indent=2)
                 
-                print(f"✅ 从Markdown重新生成状态文件: {len(blocks_to_process)} 个项目")
+                print(f"Regenerate status file from Markdown: {len(blocks_to_process)} items")
                 return status_file
             else:
-                print("ℹ️  Markdown中未找到有效的placeholder")
+                print("ℹ️  No valid placeholder found in Markdown")
                 return None
                 
         except Exception as e:
-            print(f"❌ 重新生成状态文件失败: {e}", file=sys.stderr)
+            print(f"Error: Regenerate status file failed: {e}", file=sys.stderr)
             return None
     
     def _check_or_create_status_file(self, pdf_path: str):
@@ -1269,7 +1269,7 @@ Formula recognition is currently unavailable.
         status_file = pdf_directory / f"{pdf_stem}_postprocess.json"
         
         if not status_file.exists():
-            print(f"📄 状态文件不存在，尝试从Markdown重新生成...")
+            print(f"Status file not exists, trying to regenerate from Markdown...")
             return self._regenerate_status_from_markdown(pdf_path)
         else:
             return str(status_file)
@@ -1296,11 +1296,11 @@ Formula recognition is currently unavailable.
             with open(status_file, 'w', encoding='utf-8') as f:
                 json.dump(status_data, f, ensure_ascii=False, indent=2)
             
-            print(f"✅ 添加hash ID到状态文件: {len(status_data.get('items', []))} 个项目")
+            print(f"Add hash ID to status file: {len(status_data.get('items', []))} items")
             return True
             
         except Exception as e:
-            print(f"❌ 添加hash ID失败: {e}", file=sys.stderr)
+            print(f"Error: Add hash ID failed: {e}", file=sys.stderr)
             return False
     
     def _get_items_by_hash_ids(self, status_file: str, hash_ids: list) -> list:
@@ -1332,7 +1332,7 @@ Formula recognition is currently unavailable.
                             item['id'] = generated_id
                             selected_items.append(item)
                             updated_items = True
-                            print(f"   📝 为项目生成ID: {generated_id}")
+                            print(f"Generate ID for item: {generated_id}")
             
             # Save updated status file if we generated new IDs
             if updated_items:
@@ -1342,7 +1342,7 @@ Formula recognition is currently unavailable.
             return selected_items
             
         except Exception as e:
-            print(f"❌ 获取指定ID项目失败: {e}", file=sys.stderr)
+            print(f"Error: Get items by hash IDs failed: {e}", file=sys.stderr)
             return []
     
     def _update_item_processing_status(self, status_file: str, hash_id: str, processed: bool = True):
@@ -1371,14 +1371,14 @@ Formula recognition is currently unavailable.
                 with open(status_file, 'w', encoding='utf-8') as f:
                     json.dump(status_data, f, ensure_ascii=False, indent=2)
                 
-                print(f"✅ 更新项目状态: {hash_id} -> {'已处理' if processed else '未处理'}")
+                print(f"Update item status: {hash_id} -> {'Processed' if processed else 'Unprocessed'}")
                 return True
             else:
-                print(f"⚠️  未找到ID: {hash_id}")
+                print(f"Warning:  No ID found: {hash_id}")
                 return False
                 
         except Exception as e:
-            print(f"❌ 更新状态失败: {e}", file=sys.stderr)
+            print(f"Error: Update status failed: {e}", file=sys.stderr)
             return False
     
     def _recalculate_counts(self, items: list) -> dict:
@@ -1426,7 +1426,7 @@ Formula recognition is currently unavailable.
                             
                             if image_hash in hash_ids:
                                 # Skip the placeholder line
-                                print(f"🗑️  移除placeholder: {image_hash}")
+                                print(f"🗑️  Remove placeholder: {image_hash}")
                                 i += 1  # Skip placeholder line
                                 continue
                 
@@ -1438,11 +1438,11 @@ Formula recognition is currently unavailable.
             with open(markdown_file, 'w', encoding='utf-8') as f:
                 f.write(updated_content)
             
-            print(f"✅ 移除了 {len(hash_ids)} 个placeholder")
+            print(f"Removed {len(hash_ids)} placeholders")
             return True
             
         except Exception as e:
-            print(f"❌ 移除placeholder失败: {e}", file=sys.stderr)
+            print(f"Error: Remove placeholder failed: {e}", file=sys.stderr)
             return False
     
     def process_items_by_hash_ids(self, pdf_path: str, hash_ids: list, processing_type: str = 'all', custom_prompt: str = None):
@@ -1455,7 +1455,7 @@ Formula recognition is currently unavailable.
             # Find status file
             status_file = pdf_directory / f"{pdf_stem}_postprocess.json"
             if not status_file.exists():
-                print(f"❌ 状态文件不存在: {status_file}")
+                print(f"Error: Status file does not exist: {status_file}")
                 return False
             
             # Add hash IDs if not present
@@ -1464,15 +1464,15 @@ Formula recognition is currently unavailable.
             # Get selected items
             selected_items = self._get_items_by_hash_ids(str(status_file), hash_ids)
             if not selected_items:
-                print(f"❌ 未找到指定的hash ID")
+                print(f"Error: No specified hash ID found")
                 return False
             
-            print(f"🔄 开始处理 {len(selected_items)} 个指定项目...")
+            print(f"🔄 Start processing {len(selected_items)} specified items...")
             
             # Find markdown file
             markdown_file = pdf_directory / f"{pdf_stem}.md"
             if not markdown_file.exists():
-                print(f"❌ Markdown文件不存在: {markdown_file}")
+                print(f"Error: Markdown file does not exist: {markdown_file}")
                 return False
             
             # Process each selected item with real content processing
@@ -1491,12 +1491,12 @@ Formula recognition is currently unavailable.
                     elif processing_type == 'table' and item_type != 'table':
                         continue
                 
-                print(f"🔄 处理 {item_type}: {item_id}")
+                print(f"🔄 Process {item_type}: {item_id}")
                 
                 # Find the actual image file
                 image_file_path = self._find_image_file(pdf_directory, image_path)
                 if not image_file_path:
-                    print(f"⚠️  找不到图片文件: {image_path}")
+                    print(f"Warning: No image file found: {image_path}")
                     continue
                 
                 # Perform real processing based on type
@@ -1514,19 +1514,19 @@ Formula recognition is currently unavailable.
                         # Update status
                         if self._update_item_processing_status(str(status_file), item_id, True):
                             processed_ids.append(item_id)
-                            print(f"✅ 成功处理并替换内容: {item_id}")
+                            print(f"Successfully processed and replaced content: {item_id}")
                         else:
-                            print(f"⚠️  状态更新失败: {item_id}")
+                            print(f"Warning:  Status update failed: {item_id}")
                     else:
-                        print(f"⚠️  内容替换失败: {item_id}")
+                        print(f"Warning:  Content replacement failed: {item_id}")
                 else:
-                    print(f"⚠️  内容处理失败: {item_id}")
+                    print(f"Warning:  Content processing failed: {item_id}")
             
-            print(f"✅ 完成处理 {len(processed_ids)} 个项目")
+            print(f"Completed processing {len(processed_ids)} items")
             return len(processed_ids) > 0
             
         except Exception as e:
-            print(f"❌ 批量处理失败: {e}", file=sys.stderr)
+            print(f"Error: Batch processing failed: {e}", file=sys.stderr)
             return False
     
     def _find_image_file(self, pdf_directory: Path, image_filename: str) -> Optional[str]:
@@ -1548,7 +1548,7 @@ Formula recognition is currently unavailable.
     def _process_image_content(self, image_file_path: str, custom_prompt: str = None) -> Optional[str]:
         """Process image content using IMG2TEXT tool."""
         try:
-            print(f"   🔄 调用IMG2TEXT工具...")
+            print(f"🔄 Call IMG2TEXT tool...")
             
             # Call IMG2TEXT tool with academic mode for papers
             import subprocess
@@ -1566,7 +1566,7 @@ Formula recognition is currently unavailable.
                 
                 # Check if the output indicates API failure
                 if "*[API调用失败：" in description or "API调用失败" in description:
-                    print(f"   ❌ IMG2TEXT API调用失败")
+                    print(f"Error: IMG2TEXT API call failed")
                     
                     # Extract detailed error information from stderr if available
                     stderr_output = result.stderr.strip()
@@ -1579,14 +1579,14 @@ Formula recognition is currently unavailable.
                     
                     return f"\n\n**图片分析结果:**\n{formatted_error}\n"
                 elif description:
-                    print(f"   ✅ IMG2TEXT处理成功")
+                    print(f"IMG2TEXT processing successful")
                     return f"\n\n**图片分析结果:**\n{description}\n"
                 else:
-                    print(f"   ⚠️  IMG2TEXT返回空结果")
+                    print(f"Warning:  IMG2TEXT returns empty result")
                     fallback_description = f"**[图片分析结果]** IMG2TEXT工具未返回描述，图片文件: `{Path(image_file_path).name}`"
                     return f"\n\n**图片分析结果:**\n{fallback_description}\n"
             else:
-                print(f"   ❌ IMG2TEXT调用失败，返回码: {result.returncode}")
+                print(f"Error: IMG2TEXT call failed, return code: {result.returncode}")
                 stderr_output = result.stderr.strip()
                 if stderr_output:
                     error_details = self._parse_img2text_errors(stderr_output, "")
@@ -1597,11 +1597,11 @@ Formula recognition is currently unavailable.
                 return f"\n\n**图片分析结果:**\n{formatted_error}\n"
             
         except subprocess.TimeoutExpired:
-            print(f"   ⏰ IMG2TEXT处理超时")
+            print(f"⏰ IMG2TEXT processing timeout")
             fallback_description = f"**[IMG2TEXT处理超时]** 图片文件: `{Path(image_file_path).name}`"
             return f"\n\n**图片分析结果:**\n{fallback_description}\n"
         except Exception as e:
-            print(f"   ❌ IMG2TEXT处理失败: {e}")
+            print(f"Error: IMG2TEXT processing failed: {e}")
             fallback_description = f"**[IMG2TEXT工具出错]** {str(e)}\n\n图片文件: `{Path(image_file_path).name}`"
             return f"\n\n**图片分析结果:**\n{fallback_description}\n"
     
@@ -1613,43 +1613,43 @@ Formula recognition is currently unavailable.
             # Look for API key error patterns in stderr
             lines = stderr_output.split('\n')
             for line in lines:
-                if "FREE 密钥时失败:" in line:
+                if "FREE key failed:" in line:
                     # Extract error message after the colon
-                    error_msg = line.split("FREE 密钥时失败:")[-1].strip()
-                    error_details.append(f"• FREE 密钥：{error_msg}")
-                elif "PAID 密钥时失败:" in line:
+                    error_msg = line.split("FREE key failed:")[-1].strip()
+                    error_details.append(f"• FREE key: {error_msg}")
+                elif "PAID key failed:" in line:
                     # Extract error message after the colon
-                    error_msg = line.split("PAID 密钥时失败:")[-1].strip()
-                    error_details.append(f"• PAID 密钥：{error_msg}")
-                elif "USER 密钥时失败:" in line:
+                    error_msg = line.split("PAID key failed:")[-1].strip()
+                    error_details.append(f"• PAID key: {error_msg}")
+                elif "USER key failed:" in line:
                     # Extract error message after the colon
-                    error_msg = line.split("USER 密钥时失败:")[-1].strip()
-                    error_details.append(f"• USER 密钥：{error_msg}")
-                elif "警告:" in line and "失败:" in line:
+                    error_msg = line.split("USER key failed:")[-1].strip()
+                    error_details.append(f"• USER key: {error_msg}")
+                elif "Warning:" in line and "failed:" in line:
                     # Generic error pattern
-                    error_msg = line.split("失败:")[-1].strip()
+                    error_msg = line.split("failed:")[-1].strip()
                     if "FREE" in line:
-                        error_details.append(f"• FREE 密钥：{error_msg}")
+                        error_details.append(f"• FREE key: {error_msg}")
                     elif "PAID" in line:
-                        error_details.append(f"• PAID 密钥：{error_msg}")
+                        error_details.append(f"• PAID key: {error_msg}")
                     elif "USER" in line:
-                        error_details.append(f"• USER 密钥：{error_msg}")
+                        error_details.append(f"• USER key: {error_msg}")
             
             if error_details:
                 return "\n".join(error_details)
             else:
                 # Fallback: return the stderr output as is, but clean it up
-                clean_stderr = stderr_output.replace('⚠️ 警告: ', '').strip()
+                clean_stderr = stderr_output.replace('⚠️  Warning: ', '').strip()
                 return clean_stderr if clean_stderr else "未知错误"
                 
         except Exception as e:
-            print(f"   ⚠️  解析错误信息失败: {e}")
-            return stderr_output.replace('\n', ' ').strip() if stderr_output else "未知错误"
+            print(f"Warning: Parse error information failed: {e}")
+            return stderr_output.replace('\n', ' ').strip() if stderr_output else "Unknown error"
     
     def _process_formula_content(self, image_file_path: str) -> Optional[str]:
         """Process formula content using MinerU's embedded UnimerNet."""
         try:
-            print(f"   🔄 调用UnimerNet处理公式...")
+            print(f"🔄 Call UnimerNet to process formula...")
             
             # Import UnimerNet directly
             current_dir = Path(__file__).parent
@@ -1660,26 +1660,26 @@ Formula recognition is currently unavailable.
             # Load model if not already loaded
             if not hasattr(self, '_unimernet_model') or self._unimernet_model is None:
                 self._unimernet_model, self._unimernet_tokenizer = load_unimernet_model()
-                print(f"   📱 UnimerNet模型加载成功")
+                print(f"📱 UnimerNet model loaded successfully")
             
             # Process the image (recognize_image expects file path, not PIL Image)
             result = recognize_image(image_file_path, self._unimernet_model, self._unimernet_tokenizer)
             
             if result and result.strip():
-                print(f"   ✅ UnimerNet公式识别成功")
+                print(f"UnimerNet formula recognition successful")
                 return f"\n\n**公式识别结果:**\n{result}\n"
             else:
-                print(f"   ⚠️  UnimerNet返回空结果")
+                print(f"Warning: UnimerNet returns empty result")
                 return f"\n\n**公式识别结果:**\n$$ \\text{{[公式识别失败]}} \\quad \\text{{来自 {Path(image_file_path).name}}} $$\n"
             
         except Exception as e:
-            print(f"   ❌ 公式处理失败: {e}")
+            print(f"Error: Formula processing failed: {e}")
             return f"\n\n**公式识别结果:**\n$$ \\text{{[公式识别失败]}} \\quad \\text{{来自 {Path(image_file_path).name}}} $$\n"
     
     def _process_table_content(self, image_file_path: str) -> Optional[str]:
         """Process table content using MinerU's embedded UnimerNet."""
         try:
-            print(f"   🔄 调用UnimerNet处理表格...")
+            print(f"🔄 Call UnimerNet to process table...")
             
             # Import UnimerNet directly
             current_dir = Path(__file__).parent
@@ -1690,21 +1690,21 @@ Formula recognition is currently unavailable.
             # Load model if not already loaded
             if not hasattr(self, '_unimernet_model') or self._unimernet_model is None:
                 self._unimernet_model, self._unimernet_tokenizer = load_unimernet_model()
-                print(f"   📱 UnimerNet模型加载成功")
+                print(f"📱 UnimerNet model loaded successfully")
             
             # Process the image (recognize_image expects file path, not PIL Image)
             result = recognize_image(image_file_path, self._unimernet_model, self._unimernet_tokenizer)
             
             if result and result.strip():
-                print(f"   ✅ UnimerNet表格识别成功")
+                print(f"UnimerNet table recognition successful")
                 return f"\n\n**表格识别结果:**\n{result}\n"
             else:
-                print(f"   ⚠️  UnimerNet返回空结果")
-                return f"\n\n**表格识别结果:**\n| 表格识别 | 失败 | 来自 {Path(image_file_path).name} |\n| 处理状态 | 失败 | UnimerNet处理 |\n"
+                print(f"Warning:  UnimerNet returns empty result")
+                return f"\n\n**表格识别结果:**\n| Table recognition | Failed | From {Path(image_file_path).name} |\n| Processing status | Failed | UnimerNet processing |\n"
             
         except Exception as e:
-            print(f"   ❌ 表格处理失败: {e}")
-            return f"\n\n**表格识别结果:**\n| 表格识别 | 失败 | 来自 {Path(image_file_path).name} |\n| 处理状态 | 失败 | 处理异常 |\n"
+            print(f"Error: Table processing failed: {e}")
+            return f"\n\n**表格识别结果:**\n| Table recognition | Failed | From {Path(image_file_path).name} |\n| Processing status | Failed | Processing exception |\n"
     
     def _replace_placeholder_with_content(self, markdown_file: str, hash_id: str, content: str, preserve_hash: bool = True) -> bool:
         """Replace placeholder with processed content in markdown file."""
@@ -1745,7 +1745,7 @@ Formula recognition is currently unavailable.
                                     # Original behavior: replace placeholder completely
                                     updated_lines.append(content)
                                     updated_lines.append(next_line)  # Keep the original image reference
-                                print(f"   🔄 替换placeholder: {hash_id}")
+                                print(f"🔄 Replace placeholder: {hash_id}")
                                 replaced = True
                                 i += 2  # Skip both placeholder and image lines
                                 continue
@@ -1761,11 +1761,11 @@ Formula recognition is currently unavailable.
                 
                 return True
             else:
-                print(f"   ⚠️  未找到对应的placeholder: {hash_id}")
+                print(f"Warning: No corresponding placeholder found: {hash_id}")
                 return False
                 
         except Exception as e:
-            print(f"   ❌ 替换内容失败: {e}", file=sys.stderr)
+            print(f"Error: Replace content failed: {e}", file=sys.stderr)
             return False
 
     def _load_hash_mapping(self) -> dict:
@@ -1778,7 +1778,7 @@ Formula recognition is currently unavailable.
                 return data.get('mappings', {})
             return {}
         except Exception as e:
-            print(f"⚠️  加载hash映射失败: {e}", file=sys.stderr)
+            print(f"Warning: Load hash mapping failed: {e}", file=sys.stderr)
             return {}
     
     def _save_hash_mapping(self, mappings: dict):
@@ -1810,11 +1810,11 @@ Formula recognition is currently unavailable.
             with open(mapping_file, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
             
-            print(f"✅ 更新hash映射: {len(mappings)} 个新映射")
+            print(f"Update hash mapping: {len(mappings)} new mappings")
             return True
             
         except Exception as e:
-            print(f"❌ 保存hash映射失败: {e}", file=sys.stderr)
+            print(f"Error: Save hash mapping failed: {e}", file=sys.stderr)
             return False
     
     def _update_hash_mapping_from_items(self, items: list):
@@ -1831,7 +1831,7 @@ Formula recognition is currently unavailable.
                 self._save_hash_mapping(new_mappings)
                 
         except Exception as e:
-            print(f"⚠️  更新hash映射失败: {e}", file=sys.stderr)
+            print(f"Warning: Update hash mapping failed: {e}", file=sys.stderr)
 
     def _update_image_cache_with_types(self, pdf_path: str):
         """Update EXTRACT_IMG_DATA/image_cache.json with type information from postprocess JSON."""
@@ -1843,7 +1843,7 @@ Formula recognition is currently unavailable.
             # Load postprocess JSON
             status_file = pdf_directory / f"{pdf_stem}_postprocess.json"
             if not status_file.exists():
-                print(f"⚠️  后处理状态文件不存在: {status_file}")
+                print(f"Warning: Postprocess status file does not exist: {status_file}")
                 return False
             
             with open(status_file, 'r', encoding='utf-8') as f:
@@ -1852,7 +1852,7 @@ Formula recognition is currently unavailable.
             # Load image cache
             cache_file = Path(__file__).parent.parent / "EXTRACT_IMG_DATA" / "image_cache.json"
             if not cache_file.exists():
-                print(f"⚠️  图片缓存文件不存在: {cache_file}")
+                print(f"Warning: Image cache file does not exist: {cache_file}")
                 return False
             
             with open(cache_file, 'r', encoding='utf-8') as f:
@@ -1873,7 +1873,7 @@ Formula recognition is currently unavailable.
                         cache_entry['updated_at'] = datetime.now().isoformat()
                         
                         if old_type != item_type:
-                            print(f"   📝 更新缓存条目类型: {hash_id[:16]}... -> {item_type}")
+                            print(f"Update cache entry type: {hash_id[:16]}... -> {item_type}")
                             updated_count += 1
                     else:
                         # Also check if hash is in the image path of any entry
@@ -1884,7 +1884,7 @@ Formula recognition is currently unavailable.
                                 cache_entry['updated_at'] = datetime.now().isoformat()
                                 
                                 if old_type != item_type:
-                                    print(f"   📝 更新缓存条目类型: {cache_key[:16]}... -> {item_type}")
+                                    print(f"Update cache entry type: {cache_key[:16]}... -> {item_type}")
                                     updated_count += 1
                                 break
             
@@ -1893,14 +1893,14 @@ Formula recognition is currently unavailable.
                 with open(cache_file, 'w', encoding='utf-8') as f:
                     json.dump(cache_data, f, ensure_ascii=False, indent=2)
                 
-                print(f"✅ 更新了 {updated_count} 个缓存条目的类型信息")
+                print(f"Updated {updated_count} cache entry types")
                 return True
             else:
-                print("ℹ️  没有缓存条目需要更新")
+                print("ℹ️  No cache entries need to be updated")
                 return True
                 
         except Exception as e:
-            print(f"❌ 更新图片缓存类型信息失败: {e}", file=sys.stderr)
+            print(f"Error: Update image cache type information failed: {e}", file=sys.stderr)
             return False
     
     def _sync_postprocess_with_cache(self, pdf_path: str):
@@ -1916,7 +1916,7 @@ Formula recognition is currently unavailable.
             # Then check if markdown and JSON are aligned
             markdown_file = pdf_directory / f"{pdf_stem}.md"
             if markdown_file.exists():
-                print("🔄 检查MD与JSON对齐状态...")
+                print("🔄 Check MD and JSON alignment status...")
                 
                 # Read markdown to count current placeholders
                 with open(markdown_file, 'r', encoding='utf-8') as f:
@@ -1936,21 +1936,21 @@ Formula recognition is currently unavailable.
                     json_items = status_data.get('items', [])
                     unprocessed_items = [item for item in json_items if not item.get('processed', False)]
                     
-                    print(f"📊 对齐检查:")
-                    print(f"   MD中的placeholder: {len(md_placeholders)} 个")
-                    print(f"   JSON中未处理项目: {len(unprocessed_items)} 个")
+                    print(f"📊 Check alignment:")
+                    print(f"MD中的placeholder: {len(md_placeholders)}")
+                    print(f"JSON unprocessed items: {len(unprocessed_items)}")
                     
                     if len(md_placeholders) == len(unprocessed_items):
-                        print("✅ MD与JSON已对齐，无需更新")
+                        print("MD and JSON are aligned, no need to update")
                         return True
                     else:
-                        print("⚠️  MD与JSON不对齐，建议重新生成状态文件")
+                        print("⚠️  MD and JSON are not aligned, suggest regenerating the status file")
                         return False
             
             return True
             
         except Exception as e:
-            print(f"❌ 同步处理失败: {e}", file=sys.stderr)
+            print(f"Error: Synchronization processing failed: {e}", file=sys.stderr)
             return False
 
 # Create a global instance
@@ -1976,8 +1976,7 @@ def extract_and_analyze_pdf_with_mineru(
             pdf_path, layout_mode, mode, call_api, call_api_force, page_range, debug, async_mode
         )
     except Exception as e:
-        print(f"⚠️  MinerU failed, falling back to original PDF extractor")
-        print(f"MinerU: Unexpected error: {e}")
+        print(f"Warning:  MinerU failed: {e}, falling back to original PDF extractor")
         
         # Fallback to original PDF extractor
         try:
@@ -1986,5 +1985,5 @@ def extract_and_analyze_pdf_with_mineru(
                 pdf_path, layout_mode, mode, call_api, call_api_force, page_range, debug
             )
         except Exception as fallback_error:
-            print(f"❌ Fallback also failed: {fallback_error}")
+            print(f"Error: Fallback also failed: {fallback_error}")
             raise fallback_error 

@@ -182,10 +182,10 @@ class UnifiedImageProcessor:
                         ):
                             cached_result['from_cache'] = True
                             cached_result['timestamp'] = datetime.now().isoformat()
-                            logger.info(f"✅ Using cached result for {Path(image_path).name}")
+                            logger.info(f"Using cached result for {Path(image_path).name}")
                             return cached_result
                         else:
-                            logger.info(f"⚠️  Cached content type '{cached_content_type}' doesn't match requested '{content_type}'")
+                            logger.info(f"Warning:  Cached content type '{cached_content_type}' doesn't match requested '{content_type}'")
                 except json.JSONDecodeError:
                     logger.info(f"📝 Found plain text cache for {Path(image_path).name}")
                     # Plain text result - wrap in standard format
@@ -256,7 +256,7 @@ class UnifiedImageProcessor:
                 result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
                 
                 if result.returncode == 0:
-                    logger.info(f"✅ RUN IMG2TEXT completed successfully")
+                    logger.info(f"RUN IMG2TEXT completed successfully")
                     try:
                         run_output = json.loads(result.stdout)
                         if run_output.get('success'):
@@ -264,7 +264,7 @@ class UnifiedImageProcessor:
                             # RUN --show IMG2TEXT returns result directly in 'result' field
                             img2text_result = run_output.get('result')
                             if img2text_result:
-                                logger.info(f"✅ Extracted IMG2TEXT result ({len(img2text_result)} chars)")
+                                logger.info(f"Extracted IMG2TEXT result ({len(img2text_result)} chars)")
                                 return {
                                     "success": True,
                                     "result": img2text_result,
@@ -487,10 +487,10 @@ class UnifiedImageProcessor:
                                     # Update content_type if it was auto-detected
                                     if unimernet_result.get('content_type') == 'auto' and content_type != 'auto':
                                         unimernet_result['content_type'] = content_type
-                                    logger.info(f"✅ Direct UNIMERNET call successful")
+                                    logger.info(f"Direct UNIMERNET call successful")
                                     return unimernet_result
                                 else:
-                                    logger.warning(f"⚠️  UNIMERNET returned success=false")
+                                    logger.warning(f"Warning:  UNIMERNET returned success=false")
                                     return unimernet_result
                             except json.JSONDecodeError as e:
                                 logger.error(f"❌ JSON decode error: {e}")
@@ -565,7 +565,7 @@ class UnifiedImageProcessor:
             
             if cached_result:
                 total_elapsed = (datetime.now() - start_time).total_seconds()
-                logger.info(f"✅ Found cached result for {Path(image_path).name} (total: {total_elapsed:.3f}s)")
+                logger.info(f"Found cached result for {Path(image_path).name} (total: {total_elapsed:.3f}s)")
                 return cached_result
         
         # Process based on detected type
@@ -577,7 +577,7 @@ class UnifiedImageProcessor:
             
             # Add padding for better UNIMERNET recognition (unless disabled)
             if no_padding:
-                logger.info(f"⚠️  Skipping padding due to --no-padding flag")
+                logger.info(f"Warning:  Skipping padding due to --no-padding flag")
                 processing_image_path = image_path
             else:
                 padded_image_path = self.add_image_padding(image_path)
@@ -592,7 +592,7 @@ class UnifiedImageProcessor:
                         shutil.copy2(padded_image_path, padded_copy)
                         logger.info(f"📁 Saved padded image to: {padded_copy}")
                     except Exception as e:
-                        logger.warning(f"⚠️  Could not save padded image: {e}")
+                        logger.warning(f"Warning:  Could not save padded image: {e}")
                 processing_image_path = padded_image_path
             
             result = self.process_with_unimernet(processing_image_path, detected_type)
@@ -786,19 +786,19 @@ def main():
                 if args.json or is_run_environment(command_identifier):
                     print(json.dumps(result, indent=2))
                 else:
-                    print("✅ Cache cleared successfully")
+                    print("Cache cleared successfully")
             except Exception as e:
                 result = {"success": False, "error": f"Failed to clear cache: {e}"}
                 if args.json or is_run_environment(command_identifier):
                     print(json.dumps(result, indent=2))
                 else:
-                    print(f"❌ Failed to clear cache: {e}")
+                    print(f"Error: Failed to clear cache: {e}")
         else:
             result = {"success": False, "error": "Cache system not available"}
             if args.json or is_run_environment(command_identifier):
                 print(json.dumps(result, indent=2))
             else:
-                print("❌ Cache system not available")
+                print("Error:  Cache system not available")
         return
     
     # Check for image path
@@ -825,10 +825,10 @@ def main():
         if result.get('success'):
             cache_info = " (from cache)" if result.get('from_cache') else ""
             processor_info = result.get('processor', 'unknown').upper()
-            print(f"✅ {processor_info} processing successful{cache_info}")
-            print(f"📄 Result:\n{result.get('result', 'No result')}")
+            print(f"{processor_info} processing successful{cache_info}")
+            print(f"Result:\n{result.get('result', 'No result')}")
         else:
-            print(f"❌ Processing failed: {result.get('error', 'Unknown error')}")
+            print(f"Error: Processing failed: {result.get('error', 'Unknown error')}")
             output = json.dumps(result, indent=2, ensure_ascii=False)
             print(output)
     
@@ -842,7 +842,7 @@ def main():
                     json.dump(result, f, indent=2, ensure_ascii=False)
             print(f"💾 Result saved to: {args.output}")
         except Exception as e:
-            print(f"❌ Failed to save file: {e}")
+            print(f"Error: Failed to save file: {e}")
 
 
 if __name__ == "__main__":

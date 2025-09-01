@@ -238,7 +238,7 @@ class TestLearnContentQuality(LongRunningTest):
             self.assertGreater(question_validation['question_count'], 5, 
                              f"Too few questions: {question_validation['question_count']}")
             
-            print(f"✅ Markdown test - Tutorial: {tutorial_validation['content_length']} chars, "
+            print(f"Markdown test - Tutorial: {tutorial_validation['content_length']} chars, "
                   f"Questions: {question_validation['question_count']} questions, "
                   f"Keywords: {len(found_keywords)}/{len(expected_keywords)}")
 
@@ -311,7 +311,7 @@ class TestLearnContentQuality(LongRunningTest):
             self.assertGreaterEqual(coverage_ratio, 0.75,  # 要求至少12/16 = 75%
                              f"Low keyword coverage: {coverage_ratio:.2f} ({len(found_keywords)}/{len(expected_keywords)})")
             
-            print(f"✅ PDF test - Tutorial: {tutorial_validation['content_length']} chars, "
+            print(f"PDF test - Tutorial: {tutorial_validation['content_length']} chars, "
                   f"Keywords: {len(found_keywords)}/{len(expected_keywords)} ({coverage_ratio:.1%})")
 
     def test_03_url_input_quality(self):
@@ -383,7 +383,7 @@ class TestLearnContentQuality(LongRunningTest):
             self.assertGreaterEqual(coverage_ratio, 0.75,  # 要求至少12/16 = 75%
                              f"Low keyword coverage: {coverage_ratio:.2f} ({len(found_keywords)}/{len(expected_keywords)})")
             
-            print(f"✅ URL test - Tutorial: {tutorial_validation['content_length']} chars, "
+            print(f"URL test - Tutorial: {tutorial_validation['content_length']} chars, "
                   f"Keywords: {len(found_keywords)}/{len(expected_keywords)} ({coverage_ratio:.1%})")
 
     def test_04_description_input_quality(self):
@@ -449,7 +449,7 @@ class TestLearnContentQuality(LongRunningTest):
             self.assertGreaterEqual(coverage_ratio, 0.44,  # 要求至少4/9 = 44%，体现指向性
                              f"Low keyword coverage: {coverage_ratio:.2f} ({len(found_keywords)}/{len(expected_keywords)})")
             
-            print(f"✅ Description test - Tutorial: {tutorial_validation['content_length']} chars, "
+            print(f"Description test - Tutorial: {tutorial_validation['content_length']} chars, "
                   f"Keywords: {len(found_keywords)}/{len(expected_keywords)} ({coverage_ratio:.1%})")
 
     def test_05_brainstorm_only_quality(self):
@@ -509,7 +509,7 @@ class TestLearnContentQuality(LongRunningTest):
             self.assertGreaterEqual(coverage_ratio, 0.68,  # 要求至少11/16 = 68%，实际表现良好
                              f"Low keyword coverage in brainstorm: {coverage_ratio:.2f} ({len(found_keywords)}/{len(expected_keywords)})")
             
-            print(f"✅ Brainstorm test - Output: {len(output_content)} chars, "
+            print(f"Brainstorm test - Output: {len(output_content)} chars, "
                   f"Keywords: {len(found_keywords)}/{len(expected_keywords)} ({coverage_ratio:.1%})")
 
     def test_06_description_general_topic_quality(self):
@@ -577,7 +577,7 @@ class TestLearnContentQuality(LongRunningTest):
             self.assertGreaterEqual(coverage_ratio, 0.5,  # 通用主题要求8/16 = 50%
                              f"Low keyword coverage: {coverage_ratio:.2f} ({len(found_keywords)}/{len(expected_keywords)})")
             
-            print(f"✅ General Topic test - Tutorial: {tutorial_validation['content_length']} chars, "
+            print(f"General Topic test - Tutorial: {tutorial_validation['content_length']} chars, "
                   f"Keywords: {len(found_keywords)}/{len(expected_keywords)} ({coverage_ratio:.1%})")
 
     def test_07a_at_reference_file_not_found(self):
@@ -615,7 +615,7 @@ class TestLearnContentQuality(LongRunningTest):
                 error_found,
                 f"未找到预期的错误信息，stderr: {result.stderr}, stdout: {result.stdout}"
             )
-            print(f"✅ @符号引用文件不存在测试通过 - 耗时: {execution_time:.1f}秒")
+            print(f"@符号引用文件不存在测试通过 - 耗时: {execution_time:.1f}秒")
 
     def test_07b_at_reference_single_paper_absolute_path(self):
         """测试@符号引用单个论文（绝对路径） - 内容质量验证"""
@@ -681,7 +681,7 @@ class TestLearnContentQuality(LongRunningTest):
             
             # 合并内容进行关键词分析
             combined_content = tutorial_content + "\n" + question_content
-            print(f"📄 生成的内容长度: tutorial={len(tutorial_content)} chars, question={len(question_content)} chars")
+            print(f"生成的内容长度: tutorial={len(tutorial_content)} chars, question={len(question_content)} chars")
             
             # 验证内容质量
             found_keywords, missing_keywords = self._extract_keywords_from_content(
@@ -701,7 +701,7 @@ class TestLearnContentQuality(LongRunningTest):
             self.assertGreater(len(tutorial_content), 100, "Tutorial内容太短")
             self.assertGreater(len(question_content), 100, "Question内容太短")
             
-            print(f"✅ @符号引用单论文（绝对路径）测试通过 - 关键词覆盖率: {coverage_ratio:.1%}")
+            print(f"@符号引用单论文（绝对路径）测试通过 - 关键词覆盖率: {coverage_ratio:.1%}")
 
     def test_07c_at_reference_single_paper_relative_path(self):
         """测试@符号引用单个论文（相对路径）"""
@@ -745,7 +745,7 @@ class TestLearnContentQuality(LongRunningTest):
             has_part = "部件" in result.stdout or "part" in result.stdout
             self.assertTrue(has_part, "应该包含'部件'或'part'相关概念")
             
-            print("✅ @符号引用单论文（相对路径）测试通过")
+            print("@符号引用单论文（相对路径）测试通过")
 
     def test_07d_at_reference_double_papers_comparison(self):
         """测试@符号引用双论文比较"""
@@ -818,7 +818,7 @@ class TestLearnContentQuality(LongRunningTest):
             self.assertGreaterEqual(quality_ratio, 0.39, 
                              f"双论文比较质量不足: {quality_ratio:.2f}")
             
-            print("✅ @符号引用双论文比较测试通过")
+            print("@符号引用双论文比较测试通过")
 
     def test_07h_context_option(self):
         """测试--context选项功能"""
@@ -898,7 +898,7 @@ class TestLearnContentQuality(LongRunningTest):
             
             # 合并内容进行关键词分析
             combined_content = tutorial_content + "\n" + question_content
-            print(f"📄 生成的内容长度: tutorial={len(tutorial_content)} chars, question={len(question_content)} chars")
+            print(f"生成的内容长度: tutorial={len(tutorial_content)} chars, question={len(question_content)} chars")
             
             # 验证内容质量
             found_keywords, missing_keywords = self._extract_keywords_from_content(
@@ -920,7 +920,7 @@ class TestLearnContentQuality(LongRunningTest):
             self.assertGreater(len(tutorial_content), 100, "Tutorial内容太短")
             self.assertGreater(len(question_content), 100, "Question内容太短")
             
-            print(f"✅ --context选项测试通过 - 关键词覆盖率: {coverage_ratio:.1%}")
+            print(f"--context选项测试通过 - 关键词覆盖率: {coverage_ratio:.1%}")
 
     def test_07i_context_brainstorm_only_mutual_exclusion(self):
         """测试--context和--brainstorm-only的互斥性"""
@@ -947,7 +947,7 @@ class TestLearnContentQuality(LongRunningTest):
                 f"未找到预期的互斥错误信息，stderr: {result.stderr}, stdout: {result.stdout}"
             )
             
-            print("✅ --context和--brainstorm-only互斥性测试通过")
+            print("--context和--brainstorm-only互斥性测试通过")
 
     def test_07e_at_reference_prompt_cleaning(self):
         """测试@符号引用文件时发给OpenRouter的prompt不包含placeholder和图片id"""
@@ -1019,7 +1019,7 @@ abcd1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab
                 self.assertIn("正常内容", output)
                 self.assertIn("测试论文", output)
                 
-                print("✅ @符号引用prompt清理测试通过 - 所有placeholder和图片id已被清理")
+                print("@符号引用prompt清理测试通过 - 所有placeholder和图片id已被清理")
                 
         finally:
             # 清理测试文件
@@ -1093,7 +1093,7 @@ abcd1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab
                 "未找到@文件引用或Context模式的相关信息"
             )
             
-            print(f"✅ @符号引用PDF文件测试通过 - 关键词覆盖率: {coverage_ratio:.1%}")
+            print(f"@符号引用PDF文件测试通过 - 关键词覆盖率: {coverage_ratio:.1%}")
 
     def test_07g_at_reference_txt_support(self):
         """测试@符号引用TXT文件支持 - 内容质量验证"""
@@ -1174,7 +1174,7 @@ abcd1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab
                 
                 # 合并内容进行关键词分析
                 combined_content = tutorial_content + "\n" + question_content
-                print(f"📄 生成的内容长度: tutorial={len(tutorial_content)} chars, question={len(question_content)} chars")
+                print(f"生成的内容长度: tutorial={len(tutorial_content)} chars, question={len(question_content)} chars")
                 
                 # 验证内容质量
                 found_keywords, missing_keywords = self._extract_keywords_from_content(
@@ -1194,14 +1194,14 @@ abcd1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab
                 self.assertGreater(len(tutorial_content), 100, "Tutorial内容太短")
                 self.assertGreater(len(question_content), 100, "Question内容太短")
                 
-                print(f"✅ @符号引用TXT文件测试通过 - 关键词覆盖率: {coverage_ratio:.1%}")
+                print(f"@符号引用TXT文件测试通过 - 关键词覆盖率: {coverage_ratio:.1%}")
                 
         finally:
             # 清理测试文件
             if test_file.exists():
                 test_file.unlink()
             
-            print("✅ @符号引用双论文比较测试通过")
+            print("@符号引用双论文比较测试通过")
 
     def test_08_file_override_handling(self):
         """测试文件覆盖处理的不同模式"""
@@ -1226,7 +1226,7 @@ abcd1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab
             
             self.assertIn("头脑风暴", result.stdout)
             self.assertIn("默认模式", result.stdout)
-            print("✅ 默认模式测试通过")
+            print("默认模式测试通过")
             
             # 测试2：no-override-material模式（应该自动重命名）
             target_dir2 = base_output / "test_no_override"
@@ -1247,7 +1247,7 @@ abcd1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab
             renamed_dirs = [d for d in base_output.iterdir() if d.name.startswith("test_no_override_")]
             auto_rename_worked = len(renamed_dirs) > 0 or "自动重命名" in result2.stdout
             
-            print(f"✅ 自动重命名测试通过 - 重命名目录数: {len(renamed_dirs)}")
+            print(f"自动重命名测试通过 - 重命名目录数: {len(renamed_dirs)}")
             
         finally:
             # 清理测试目录
@@ -1296,7 +1296,7 @@ class TestLearnAPI(APITest):
         self.assertGreater(tutorial_file.stat().st_size, 100, "tutorial.md文件内容太少")
         self.assertGreater(question_file.stat().st_size, 100, "question.md文件内容太少")
         
-        print("✅ LEARN直接模式测试通过")
+        print("LEARN直接模式测试通过")
 
     def test_learn_basic_functionality(self):
         """Test basic LEARN functionality"""
@@ -1323,7 +1323,7 @@ class TestLearnAPI(APITest):
         self.assertGreater(tutorial_file.stat().st_size, 0, "tutorial.md文件为空")
         self.assertGreater(question_file.stat().st_size, 0, "question.md文件为空")
         
-        print("✅ LEARN基本功能测试通过")
+        print("LEARN基本功能测试通过")
 
     def test_learn_paper_mode(self):
         """Test LEARN file mode"""
@@ -1356,7 +1356,7 @@ class TestLearnAPI(APITest):
             self.assertGreater(tutorial_file.stat().st_size, 100, "tutorial.md文件内容太少")
             self.assertGreater(question_file.stat().st_size, 100, "question.md文件内容太少")
             
-            print("✅ LEARN论文模式测试通过")
+            print("LEARN论文模式测试通过")
             
         finally:
             # No cleanup needed since we're using existing test PDF
@@ -1386,7 +1386,7 @@ class TestLearnAPI(APITest):
                 question_file = Path("/tmp/test/question.md")
                 
                 if tutorial_file.exists() and question_file.exists():
-                    print("✅ LEARN --file模式测试通过 - 成功生成文件")
+                    print("LEARN --file模式测试通过 - 成功生成文件")
                 else:
                     print("⚠️  LEARN --file模式部分成功 - 命令执行但文件生成不完整")
             else:

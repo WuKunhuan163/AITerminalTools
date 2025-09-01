@@ -25,7 +25,7 @@ try:
     from .validation import Validation
     from .verification import Verification
 except ImportError as e:
-    print(f"⚠️ Import Google Drive Shell system class failed: {e}")
+    print(f"Warning: Import Google Drive Shell system class failed: {e}")
 
 # 导入管理器类（委托模式）
 class CoreUtils:
@@ -187,7 +187,7 @@ class ShellCommands:
                 print(result.get("error", "cd command failed"))
                 return 1
         else:
-            print("❌ cd command needs a path")
+            print("Error:  cd command needs a path")
             return 1
     
     def shell_mkdir(self, *args, **kwargs):

@@ -250,17 +250,17 @@ def main():
     if args.check:
         # Check if components can be imported
         if _lazy_import_unimernet():
-            print("✅ Local UnimerNet components loaded successfully")
+            print("Local UnimerNet components loaded successfully")
             # Try to initialize model to check full availability
             try:
                 processor._init_unimernet_model()
                 processor._model_loaded = True
                 if processor.is_available():
-                    print("✅ UnimerNet is available and ready")
+                    print("UnimerNet is available and ready")
                 else:
-                    print("❌ UnimerNet model initialization failed")
+                    print("Error: UnimerNet model initialization failed")
             except Exception as e:
-                print("❌ UnimerNet model initialization failed")
+                print("Error: UnimerNet model initialization failed")
                 print(f"Error: {e}")
             
             if processor.cache_system:
@@ -268,7 +268,7 @@ def main():
                 if stats.get("cache_available"):
                     print(f"Cache: {stats.get('total_cached_images', 0)} images cached")
         else:
-            print("❌ UnimerNet is not available")
+            print("Error: UnimerNet is not available")
             print("Please ensure MinerU dependencies are installed")
         return
     

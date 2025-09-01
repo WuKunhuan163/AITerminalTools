@@ -490,10 +490,10 @@ class SyncManager:
                 return False
                 
         except subprocess.TimeoutExpired:
-            debug_print("❌ Google Drive Desktop restart timeout")
+            debug_print("Error:  Google Drive Desktop restart timeout")
             return False
         except Exception as e:
-            debug_print(f"❌ Error restarting Google Drive Desktop: {e}")
+            debug_print(f"Error: Error restarting Google Drive Desktop: {e}")
             return False
 
     def _wait_for_drive_equivalent_file_deletion(self, filename, timeout=60):
@@ -526,13 +526,13 @@ class SyncManager:
                         file_found = any(f.get("name") == filename for f in files)
                         
                         if not file_found:
-                            debug_print(f"✅ File deleted in DRIVE_EQUIVALENT: {filename}")
+                            debug_print(f"File deleted in DRIVE_EQUIVALENT: {filename}")
                             return {"success": True, "message": f"File {filename} deleted from DRIVE_EQUIVALENT"}
                     else:
-                        debug_print(f"⚠️ ls check failed: {ls_result.get('error')} (ls check failed)")
+                        debug_print(f"Warning: ls check failed: {ls_result.get('error')} (ls check failed)")
                 
                 except Exception as check_error:
-                    debug_print(f"⚠️ Error checking file: {check_error} (error checking file)")
+                    debug_print(f"Warning: Error checking file: {check_error} (error checking file)")
                 
                 # 显示进度点，类似上传时的显示
                 if attempt % 5 == 0 and attempt > 0:
@@ -545,14 +545,14 @@ class SyncManager:
             
             # 超时
             debug_print(f"\n⏰ Timeout waiting for deletion ({timeout}s): {filename}")
-            debug_print(f"⚠️ Warning: File deletion detection timed out in DRIVE_EQUIVALENT, but upload will continue")
+            debug_print(f"Warning: File deletion detection timed out in DRIVE_EQUIVALENT, but upload will continue")
             return {
                 "success": False, 
                 "error": f"Timeout waiting for {filename} deletion in DRIVE_EQUIVALENT"
             }
             
         except Exception as e:
-            debug_print(f"⚠️ Error waiting for file deletion: {e}")
+            debug_print(f"Warning: Error waiting for file deletion: {e}")
             return {"success": False, "error": f"Error waiting for file deletion: {e}"}
 
 

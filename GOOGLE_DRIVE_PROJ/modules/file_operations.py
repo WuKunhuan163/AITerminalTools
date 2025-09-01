@@ -162,9 +162,12 @@ class FileOperations:
             
             content = cat_result.get("output", "")
             
-            # Import and use the linter
-            from .linter import GDSLinter
-            linter = GDSLinter()
+            # Import and use the new LINTER tool
+            import sys
+            import os
+            sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+            from LINTER import MultiLanguageLinter
+            linter = MultiLanguageLinter()
             
             # Run linter on content
             result = linter.lint_content(content, filename)
@@ -172,21 +175,21 @@ class FileOperations:
             # Format output for display
             output_lines = []
             output_lines.append(f"Language: {result.get('language', 'unknown')}")
-            output_lines.append(f"Status: {'✅ PASS' if result.get('success', False) else '❌ FAIL'}")
+            output_lines.append(f"Status: {'PASS' if result.get('success', False) else 'FAIL'}")
             output_lines.append(f"Message: {result.get('message', '')}")
             
             if result.get('errors'):
-                output_lines.append("\n🚫 Errors:")
+                output_lines.append("\nErrors:")
                 for error in result['errors']:
                     output_lines.append(f"  • {error}")
             
             if result.get('warnings'):
-                output_lines.append("\n⚠️  Warnings:")
+                output_lines.append("\nWarnings:")
                 for warning in result['warnings']:
                     output_lines.append(f"  • {warning}")
             
             if result.get('info'):
-                output_lines.append("\nℹ️  Info:")
+                output_lines.append("\nInfo:")
                 for info in result['info']:
                     output_lines.append(f"  • {info}")
             
@@ -240,12 +243,12 @@ class FileOperations:
                 result = subprocess.run(['pgrep', '-f', 'Google Drive'], 
                                       capture_output=True, text=True)
                 if result.returncode == 0 and bool(result.stdout.strip()):
-                    print("✅ Google Drive Desktop started successfully")
+                    print("Google Drive Desktop started successfully")
                     return True
             
             print("⚠️ Could not confirm Google Drive Desktop startup")
             return False
             
         except Exception as e:
-            print(f"❌ Error managing Google Drive Desktop: {e}")
+            print(f"Error: Error managing Google Drive Desktop: {e}")
             return False

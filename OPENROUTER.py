@@ -75,11 +75,11 @@ def test_connection(api_key=None, model=None):
     if not test_api_key:
         return {
             "success": False,
-            "message": "❌ 连接测试失败：未设置API密钥",
+            "message": "Error: Connection test failed: API key not set",
             "results": [{
-                "test": "API密钥检查",
+                "test": "API key check",
                 "status": "error",
-                "message": "❌ 连接测试失败：未设置API密钥"
+                "message": "Error: Connection test failed: API key not set"
             }],
             "summary": {
                 "total_tests": 1,
@@ -87,7 +87,7 @@ def test_connection(api_key=None, model=None):
                 "warnings": 0,
                 "errors": 1
             },
-            "details": "请设置环境变量OPENROUTER_API_KEY或使用--key参数"
+            "details": "Please set the environment variable OPENROUTER_API_KEY or use the --key parameter"
         }
     
     results = []
@@ -108,9 +108,9 @@ def test_connection(api_key=None, model=None):
             models_data = response.json()
             model_count = len(models_data.get('data', []))
             results.append({
-                "test": "模型列表获取",
+                "test": "Model list retrieval",
                 "status": "success",
-                "message": f"✅ 成功获取 {model_count} 个可用模型"
+                "message": f"Successfully retrieved {model_count} available models"
             })
             
             # 如果指定了特定模型，检查其可用性
@@ -118,53 +118,53 @@ def test_connection(api_key=None, model=None):
                 available_models = [m['id'] for m in models_data.get('data', [])]
                 if model in available_models:
                     results.append({
-                        "test": f"模型 {model} 可用性",
+                        "test": f"Model {model} availability",
                         "status": "success", 
-                        "message": f"✅ 模型 {model} 可用"
+                        "message": f"Model {model} available"
                     })
                 else:
                     results.append({
-                        "test": f"模型 {model} 可用性",
+                        "test": f"Model {model} availability",
                         "status": "warning",
-                        "message": f"⚠️  模型 {model} 不在可用列表中"
+                        "message": f"Warning: Model {model} is not in the available list"
                     })
                     
         elif response.status_code == 401:
             results.append({
-                "test": "API认证",
+                "test": "API authentication",
                 "status": "error",
-                "message": "❌ API密钥无效或已过期"
+                "message": "API key invalid or expired"
             })
         elif response.status_code == 429:
             results.append({
-                "test": "API限制",
+                "test": "API limit",
                 "status": "warning",
-                "message": "⚠️  请求过于频繁，请稍后再试"
+                "message": "Request too frequent, please try again later"
             })
         else:
             results.append({
-                "test": "API连接",
+                "test": "API connection",
                 "status": "error",
-                "message": f"❌ API请求失败: HTTP {response.status_code}"
+                "message": f"Error: API request failed: HTTP {response.status_code}"
             })
             
     except requests.exceptions.Timeout:
         results.append({
-            "test": "网络连接",
+            "test": "Network connection",
             "status": "error", 
-            "message": "❌ 连接超时，请检查网络连接"
+            "message": "Error: Connection timeout, please check the network connection"
         })
     except requests.exceptions.ConnectionError:
         results.append({
-            "test": "网络连接",
+            "test": "Network connection",
             "status": "error",
-            "message": "❌ 无法连接到OpenRouter服务器"
+            "message": "Error: Unable to connect to OpenRouter server"
         })
     except Exception as e:
         results.append({
-            "test": "未知错误",
+            "test": "Unknown error",
             "status": "error",
-            "message": f"❌ 连接测试失败: {str(e)}"
+            "message": f"Error: Connection test failed: {str(e)}"
         })
     
     # 如果连接成功，可以测试一个简单的API调用
@@ -186,30 +186,30 @@ def test_connection(api_key=None, model=None):
             
             if api_response.status_code == 200:
                 results.append({
-                    "test": "API调用测试",
+                    "test": "API call test",
                     "status": "success",
-                    "message": f"✅ 成功调用模型 {test_model}"
+                    "message": f"Successfully called model {test_model}"
                 })
             elif api_response.status_code == 402:
                 results.append({
-                    "test": "API调用测试",
+                    "test": "API call test",
                     "status": "warning",
-                    "message": "⚠️  账户余额不足或需要付费"
+                    "message": "Warning: Account balance insufficient or needs to be paid"
                 })
             else:
                 error_data = api_response.json() if api_response.headers.get('content-type', '').startswith('application/json') else {}
                 error_msg = error_data.get('error', {}).get('message', f"HTTP {api_response.status_code}")
                 results.append({
-                    "test": "API调用测试",
+                    "test": "API call test",
                     "status": "error",
-                    "message": f"❌ API调用失败: {error_msg}"
+                    "message": f"Error: API call failed: {error_msg}"
                 })
                 
         except Exception as e:
             results.append({
-                "test": "API调用测试",
+                "test": "API call test",
                 "status": "error",
-                "message": f"❌ API调用测试失败: {str(e)}"
+                "message": f"Error: API call test failed: {str(e)}"
             })
     
     # 生成总结
@@ -219,7 +219,7 @@ def test_connection(api_key=None, model=None):
     
     return {
         "success": overall_success,
-        "message": f"连接测试完成: {success_count}/{total_count} 项成功",
+        "message": f"Connection test completed: {success_count}/{total_count} successful",
         "results": results,
         "summary": {
             "total_tests": total_count,
@@ -253,7 +253,7 @@ def load_models() -> Dict[str, Dict[str, Any]]:
                 
                 return models
         except Exception as e:
-            print(f"⚠️  Loading model configuration failed: {e}", file=sys.stderr)
+            print(f"Warning: Loading model configuration failed: {e}", file=sys.stderr)
     
     return get_default_models()
 
@@ -280,7 +280,7 @@ def set_default_model(model_ids_str: str) -> bool:
     model_ids = [mid.strip() for mid in model_ids if mid.strip()]
     
     if not model_ids:
-        print(f"❌ No valid model ID provided", file=sys.stderr)
+        print(f"Error: No valid model ID provided", file=sys.stderr)
         return False
     
     # 检查每个模型是否存在
@@ -295,10 +295,10 @@ def set_default_model(model_ids_str: str) -> bool:
     
     # 警告不存在的模型
     if missing_models:
-        print(f"⚠️  The following models do not exist in the list: {', '.join(missing_models)}")
+        print(f"Warning: The following models do not exist in the list: {', '.join(missing_models)}")
     
     if not existing_models:
-        print(f"❌ No valid models found", file=sys.stderr)
+        print(f"Error: No valid models found", file=sys.stderr)
         return False
     
     # 创建新的有序字典
@@ -315,13 +315,13 @@ def set_default_model(model_ids_str: str) -> bool:
     
     if save_models(new_models):
         if len(existing_models) == 1:
-            print(f"✅ '{existing_models[0]}' set as default model")
+            print(f"{existing_models[0]} set as default model")
         else:
-            print(f"✅ Set priority models in order: {' -> '.join(existing_models)}")
-            print(f"📋 New default model: {existing_models[0]}")
+            print(f"Set priority models in order: {' -> '.join(existing_models)}")
+            print(f"New default model: {existing_models[0]}")
         return True
     else:
-        print(f"❌ Setting default model failed", file=sys.stderr)
+        print(f"Error: Setting default model failed", file=sys.stderr)
         return False
 
 
@@ -333,7 +333,7 @@ def test_model_availability(model_id: str, api_key: str = None) -> Dict[str, Any
     if not test_api_key:
         return {
             "success": False,
-            "message": "❌ API key is required to test models",
+            "message": "Error: API key is required to test models",
             "error": "missing_api_key"
         }
     
@@ -363,25 +363,25 @@ def test_model_availability(model_id: str, api_key: str = None) -> Dict[str, Any
             if 'choices' in result and len(result['choices']) > 0:
                 return {
                     "success": True,
-                    "message": f"✅ Model {model_id} test successful",
+                    "message": f"Model {model_id} test successful",
                     "response": result['choices'][0]['message']['content'].strip()
                 }
             else:
                 return {
                     "success": False,
-                    "message": f"❌ Model {model_id} returned an abnormal format",
+                    "message": f"Error: Model {model_id} returned an abnormal format",
                     "error": "invalid_response_format"
                 }
         elif response.status_code == 404:
             return {
                 "success": False,
-                "message": f"❌ Model {model_id} does not exist",
+                "message": f"Error: Model {model_id} does not exist",
                 "error": "model_not_found"
             }
         elif response.status_code == 402:
             return {
                 "success": False,
-                "message": f"❌ Account balance insufficient or model requires payment",
+                "message": f"Error: Account balance insufficient or model requires payment",
                 "error": "payment_required"
             }
         else:
@@ -389,20 +389,20 @@ def test_model_availability(model_id: str, api_key: str = None) -> Dict[str, Any
             error_msg = error_data.get('error', {}).get('message', f"HTTP {response.status_code}")
             return {
                 "success": False,
-                "message": f"❌ Model {model_id} test failed: {error_msg}",
+                "message": f"Error: Model {model_id} test failed: {error_msg}",
                 "error": "api_error"
             }
             
     except requests.exceptions.Timeout:
         return {
             "success": False,
-            "message": f"❌ Model {model_id} test timeout",
+            "message": f"Error: Model {model_id} test timeout",
             "error": "timeout"
         }
     except Exception as e:
         return {
             "success": False,
-            "message": f"❌ Model {model_id} test error: {str(e)}",
+            "message": f"Error: Model {model_id} test error: {str(e)}",
             "error": "unknown_error"
         }
 
@@ -412,10 +412,10 @@ def add_model(model_id: str, api_key: str = None) -> bool:
     models = load_models()
     
     if model_id in models:
-        print(f"⚠️  Model '{model_id}' already exists in the list")
+        print(f"Warning: Model {model_id} already exists in the list")
         return False
     
-    print(f"🔍 Testing the availability of model '{model_id}'...")
+    print(f"Testing the availability of model {model_id}...")
     
     # 测试模型
     test_result = test_model_availability(model_id, api_key)
@@ -459,18 +459,18 @@ def add_model(model_id: str, api_key: str = None) -> bool:
                     break
     
     except Exception as e:
-        print(f"⚠️  Unable to get model details, using default values: {e}")
+        print(f"Warning: Unable to get model details, using default values: {e}")
     
     # 添加到模型列表
     models[model_id] = model_info
     
     if save_models(models):
-        print(f"✅ Successfully added model '{model_id}' to the list")
-        print(f"📊 Rate: input ${model_info['input_cost_per_1m']:.2f}/1M, output ${model_info['output_cost_per_1m']:.2f}/1M")
-        print(f"📏 Context length: {model_info['context_length']:,} tokens")
+        print(f"Successfully added model {model_id} to the list")
+        print(f"Rate: input ${model_info['input_cost_per_1m']:.2f}/1M, output ${model_info['output_cost_per_1m']:.2f}/1M")
+        print(f"Context length: {model_info['context_length']:,} tokens")
         return True
     else:
-        print(f"❌ Adding model failed")
+        print(f"Error: Adding model failed")
         return False
 
 
@@ -479,17 +479,17 @@ def remove_model(model_id: str) -> bool:
     models = load_models()
     
     if model_id not in models:
-        print(f"❌ Model '{model_id}' does not exist in the list")
+        print(f"Error: Model {model_id} does not exist in the list")
         return False
     
     # 删除模型
     del models[model_id]
     
     if save_models(models):
-        print(f"✅ Removed model '{model_id}' from the list")
+        print(f"Removed model {model_id} from the list")
         return True
     else:
-        print(f"❌ Removing model failed")
+        print(f"Error: Removing model failed")
         return False
 
 
@@ -583,7 +583,7 @@ def list_models():
         print(json.dumps(model_data, ensure_ascii=False, indent=2))
     else:
         # 在普通环境下显示格式化的模型列表（只显示可用模型）
-        print("📋 Available models list:")
+        print("Available models list:")
         print("=" * 40)
         for i, model_id in enumerate(useable_models, 1):
             info = models[model_id]
@@ -592,8 +592,8 @@ def list_models():
             context_length = info.get('context_length', 0)
             
             print(f"{i:2d}. {model_id}")
-            print(f"    📊 Rate: input ${input_cost:.2f}/1M, output ${output_cost:.2f}/1M")
-            print(f"    📏 Context length: {context_length:,} tokens")
+            print(f"    Rate: input ${input_cost:.2f}/1M, output ${output_cost:.2f}/1M")
+            print(f"    Context length: {context_length:,} tokens")
             print()
         
         print(f"Total: {len(useable_models)} available models")
@@ -659,7 +659,7 @@ def call_openrouter_api(query: str, model: str = None, api_key: str = None, max_
     if max_tokens is None:
         max_tokens = suggested_max_tokens
     elif max_tokens > suggested_max_tokens:
-        print(f"⚠️  Specified max_tokens ({max_tokens}) exceeds the recommended value ({suggested_max_tokens}), adjusted", file=sys.stderr)
+        print(f"Warning: Specified max_tokens ({max_tokens}) exceeds the recommended value ({suggested_max_tokens}), adjusted", file=sys.stderr)
         max_tokens = suggested_max_tokens
     
     url = "https://openrouter.ai/api/v1/chat/completions"
@@ -676,8 +676,8 @@ def call_openrouter_api(query: str, model: str = None, api_key: str = None, max_
     }
     
     try:
-        print(f"🤖 Calling OpenRouter API...", file=sys.stderr)
-        print(f"📝 Model: {model}, max tokens: {max_tokens}, temperature: {temperature}", file=sys.stderr)
+        print(f"Calling OpenRouter API...", file=sys.stderr)
+        print(f"Model: {model}, max tokens: {max_tokens}, temperature: {temperature}", file=sys.stderr)
         
         response = requests.post(url, headers=headers, json=data, timeout=60)
         response.raise_for_status()
@@ -696,9 +696,9 @@ def call_openrouter_api(query: str, model: str = None, api_key: str = None, max_
             # 计算费用
             cost = calculate_cost(input_tokens, output_tokens, model)
             
-            print(f"✅ API call successful", file=sys.stderr)
-            print(f"📊 Token usage: input {input_tokens}, output {output_tokens}, total {total_tokens}", file=sys.stderr)
-            print(f"💰 Cost: ${cost:.6f}", file=sys.stderr)
+            print(f"API call successful", file=sys.stderr)
+            print(f"Token usage: input {input_tokens}, output {output_tokens}, total {total_tokens}", file=sys.stderr)
+            print(f"Cost: ${cost:.6f}", file=sys.stderr)
             
             return {
                 "success": True,
@@ -830,20 +830,20 @@ Note: 只有标记为可用(useable=true)的模型才会显示在列表中。
             print(json.dumps(result, ensure_ascii=False, indent=2))
         else:
             # 普通模式：输出格式化文本
-            print("🔍 OpenRouter API connection test results:")
+            print("OpenRouter API connection test results:")
             print()
             
             for test_result in result["results"]:
-                print(f"📊 {test_result['test']}: {test_result['message']}")
+                print(f"{test_result['test']}: {test_result['message']}")
             
             print()
             summary = result["summary"]
             if result["success"]:
-                print(f"✅ Summary: connection test successful - {summary['successful']}/{summary['total_tests']} passed")
+                print(f"Summary: connection test successful - {summary['successful']}/{summary['total_tests']} passed")
                 if summary['warnings'] > 0:
-                    print(f"⚠️  Warning: {summary['warnings']} items need attention")
+                    print(f"Warning: {summary['warnings']} items need attention")
             else:
-                print(f"❌ Summary: connection test failed - {summary['errors']} errors, {summary['warnings']} warnings")
+                print(f"Error: Summary: connection test failed - {summary['errors']} errors, {summary['warnings']} warnings")
                 
         return
     
@@ -856,7 +856,7 @@ Note: 只有标记为可用(useable=true)的模型才会显示在列表中。
                 with open(file_path, 'r', encoding='utf-8') as f:
                     query_content = f.read()
             except Exception as e:
-                print(f"❌ Unable to read file {file_path}: {e}", file=sys.stderr)
+                print(f"Error: Unable to read file {file_path}: {e}", file=sys.stderr)
                 sys.exit(1)
         else:
             query_content = args.query
@@ -866,13 +866,13 @@ Note: 只有标记为可用(useable=true)的模型才会显示在列表中。
             try:
                 query_content = sys.stdin.read().strip()
                 if not query_content:
-                    print("❌ Content read from stdin is empty", file=sys.stderr)
+                    print("Error: Content read from stdin is empty", file=sys.stderr)
                     sys.exit(1)
             except Exception as e:
-                print(f"❌ Failed to read content from stdin: {e}", file=sys.stderr)
+                print(f"Error: Failed to read content from stdin: {e}", file=sys.stderr)
                 sys.exit(1)
         else:
-            print("❌ No query content provided", file=sys.stderr)
+            print("Error: No query content provided", file=sys.stderr)
             sys.exit(1)
     
     result = call_openrouter_api(
@@ -907,10 +907,10 @@ Note: 只有标记为可用(useable=true)的模型才会显示在列表中。
                 f.write(result['content'])
             
             result['output_file'] = str(output_file)
-            print(f"💾 Reply saved to: {output_file}", file=sys.stderr)
+            print(f"Reply saved to: {output_file}", file=sys.stderr)
             
         except Exception as e:
-            print(f"⚠️  Saving to output directory failed: {e}", file=sys.stderr)
+            print(f"Warning: Saving to output directory failed: {e}", file=sys.stderr)
     
     if is_run_environment():
         # 在RUN环境下输出JSON格式
@@ -923,7 +923,7 @@ Note: 只有标记为可用(useable=true)的模型才会显示在列表中。
         if result['success']:
             print(result['content'])
         else:
-            print(f"❌ Error: {result['error']}", file=sys.stderr)
+            print(f"Error: Error: {result['error']}", file=sys.stderr)
             sys.exit(1)
 
 

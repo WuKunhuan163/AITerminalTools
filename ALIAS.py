@@ -65,17 +65,17 @@ def update_shell_configs():
             )
             if result.returncode == 0:
                 success_count += 1
-                print(f"✅ Updated: {config_file}")
+                print(f"Updated: {config_file}")
             else:
-                print(f"❌ Failed to update {config_file}: {result.stderr}")
+                print(f"Error: Failed to update {config_file}: {result.stderr}")
         except Exception as e:
-            print(f"❌ Error updating {config_file}: {e}")
+            print(f"Error: Error updating {config_file}: {e}")
     
     if success_count > 0:
         print(f"🎉 Successfully updated {success_count} configuration files!")
         print("💡 Changes should now be active in your current shell.")
     else:
-        print("❌ Failed to update any configuration files.")
+        print("Error:  Failed to update any configuration files.")
     
     return success_count > 0
 
@@ -184,7 +184,7 @@ def create_alias(alias_name: str, alias_command: str, command_identifier=None) -
         if is_run_environment(command_identifier):
             write_to_json_output(error_data, command_identifier)
         else:
-            print(f"❌ Error: {error_msg}")
+            print(f"Error: {error_msg}")
         
         return 1
     
@@ -241,7 +241,7 @@ def create_alias(alias_name: str, alias_command: str, command_identifier=None) -
                     status += f" Added alias to: {result['file']}"
                 print(status)
             else:
-                print(f"❌ Failed to update: {result['file']}")
+                print(f"Error: Failed to update: {result['file']}")
         
         print()
         if success_count > 0:
@@ -249,7 +249,7 @@ def create_alias(alias_name: str, alias_command: str, command_identifier=None) -
             print("🔄 Alias will be available in new terminal sessions")
             print("💡 Note: Current session may need manual source or restart for aliases")
         else:
-            print("❌ Failed to create alias in any configuration file")
+            print("Error:  Failed to create alias in any configuration file")
     
     return 0 if success_count > 0 else 1
 
@@ -289,14 +289,14 @@ def remove_alias_from_all_files(alias_name: str, command_identifier=None) -> int
         print()
         for result in results:
             if result["success"]:
-                print(f"✅ Removed alias '{alias_name}' from {result['file']}")
+                print(f"Removed alias '{alias_name}' from {result['file']}")
             else:
-                print(f"❌ Failed to remove alias '{alias_name}' from {result['file']}: {result['error']}")
+                print(f"Error: Failed to remove alias '{alias_name}' from {result['file']}: {result['error']}")
         print()
         if removed_count > 0:
             print("🎉 Alias removed successfully!")
         else:
-            print("❌ Alias not found in any configuration file.")
+            print("Error:  Alias not found in any configuration file.")
     
     return 0 if removed_count > 0 else 1
 
@@ -359,7 +359,7 @@ def main():
             }
             write_to_json_output(error_data, command_identifier)
         else:
-            print("❌ Error: No arguments provided")
+            print("Error: No arguments provided")
             print("Usage: ALIAS <alias_name> <alias_command>")
             print("Use --help for more information")
         return 1
@@ -384,7 +384,7 @@ def main():
                 error_data = {"success": False, "error": error_msg}
                 write_to_json_output(error_data, command_identifier)
             else:
-                print(f"❌ {error_msg}")
+                print(f"Error: {error_msg}")
                 print("Usage: ALIAS --remove <alias_name>")
                 print("       ALIAS --undo <alias_name>")
             return 1
@@ -400,7 +400,7 @@ def main():
                 error_data = {"success": False, "error": error_msg}
                 write_to_json_output(error_data, command_identifier)
             else:
-                print(f"❌ {error_msg}")
+                print(f"Error: {error_msg}")
                 print("Usage: ALIAS --update")
             return 1
         
@@ -423,7 +423,7 @@ def main():
             error_data = {"success": False, "error": error_msg}
             write_to_json_output(error_data, command_identifier)
         else:
-            print(f"❌ {error_msg}")
+            print(f"Error: {error_msg}")
             print("Usage: ALIAS <alias_name> <alias_command>")
             print("Use --help for more information")
         return 1

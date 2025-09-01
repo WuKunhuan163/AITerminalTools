@@ -36,13 +36,13 @@ class ConfigLoader:
             config_file = current_dir / "GOOGLE_DRIVE_DATA" / "config.json"
             
             if not config_file.exists():
-                raise FileNotFoundError(f"配置文件不存在: {config_file}")
+                raise FileNotFoundError(f"Config file not found: {config_file}")
             
             with open(config_file, 'r', encoding='utf-8') as f:
                 self._config = json.load(f)
 
         except Exception as e:
-            print(f"❌ 配置文件加载失败: {e}")
+            print(f"Error: Config file loading failed: {e}")
             self._config = self._get_default_config()
     
     def _get_default_config(self) -> Dict[str, Any]:

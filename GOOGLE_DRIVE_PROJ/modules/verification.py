@@ -201,7 +201,7 @@ class Verification:
                 if move_result["success"]:
                     return {
                         "success": True,
-                        "message": f"✅ Cache path mapping updated: {old_remote_path} -> {new_remote_path}",
+                        "message": f"Cache path mapping updated: {old_remote_path} -> {new_remote_path}",
                         "old_path": old_remote_path,
                         "new_path": new_remote_path,
                         "cache_file": move_result["cache_file"]

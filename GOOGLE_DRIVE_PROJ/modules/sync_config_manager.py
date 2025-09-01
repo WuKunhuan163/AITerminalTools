@@ -22,7 +22,7 @@ load_dotenv()
 # try:
 #     from google_drive_shell import GoogleDriveShell
 # except ImportError as e:
-#     print(f"❌ 导入Google Drive Shell失败: {e}")
+#     print(f"Error: Load Google Drive Shell failed: {e}")
 #     GoogleDriveShell = None
 
 # 添加缺失的工具函数
@@ -183,7 +183,7 @@ def set_local_sync_dir(command_identifier=None):
         new_path = get_multiline_input_safe("请输入新的本地同步目录路径 (直接回车保持不变): ", single_line=True)
         
         if not new_path:
-            print("✅ 保持当前设置不变")
+            print("Keep current setting")
             return 0
         
         # 展开路径
@@ -191,33 +191,33 @@ def set_local_sync_dir(command_identifier=None):
         
         # 检查路径是否存在
         if not os.path.exists(expanded_path):
-            print(f"❌ 错误: 路径不存在: {expanded_path}")
+            print(f"Error: Path does not exist: {expanded_path}")
             print("请确认路径正确后重试")
             return 1
         
         if not os.path.isdir(expanded_path):
-            print(f"❌ 错误: 路径不是目录: {expanded_path}")
+            print(f"Error: Path is not a directory: {expanded_path}")
             return 1
         
         # 更新配置
         config["local_equivalent"] = expanded_path
         
         if save_sync_config(config):
-            print(f"✅ 本地同步目录已更新: {expanded_path}")
+            print(f"Local sync directory updated: {expanded_path}")
             return 0
         else:
-            print("❌ 保存配置失败")
+            print("Error:  Save configuration failed")
             return 1
             
     except KeyboardInterrupt:
-        print("\n❌ 操作已取消")
+        print("\n❌ Operation cancelled")
         return 1
     except Exception as e:
-        error_msg = f"设置本地同步目录时出错: {e}"
+        error_msg = f"Error setting local sync directory: {e}"
         if is_run_environment(command_identifier):
             write_to_json_output({"success": False, "error": error_msg}, command_identifier)
         else:
-            print(f"❌ {error_msg}")
+            print(f"Error: {error_msg}")
         return 1
 
 def set_global_sync_dir(command_identifier=None):
@@ -250,55 +250,55 @@ def set_global_sync_dir(command_identifier=None):
         folder_url = get_multiline_input_safe("请输入Google Drive文件夹链接 (直接回车保持不变): ", single_line=True)
         
         if not folder_url:
-            print("✅ 保持当前设置不变")
+            print("Keep current setting")
             return 0
         
         # 提取文件夹ID
         folder_id = extract_folder_id_from_url(folder_url)
         if not folder_id:
-            print("❌ 错误: 无法从URL中提取文件夹ID")
+            print("Error: Unable to extract folder ID from URL")
             print("请确认URL格式正确，例如: https://drive.google.com/drive/u/0/folders/1E6Dw-LZlPF7WT5RV0EhIquDwdP2oZYbY")
             return 1
         
-        print(f"📁 提取到文件夹ID: {folder_id}")
+        print(f"Extracted folder ID: {folder_id}")
         
         # 测试文件夹访问
         print("🔍 测试文件夹访问权限...")
         if not test_drive_folder_access(folder_id):
-            print("❌ 错误: 无法访问该文件夹")
+            print("Error: Unable to access the folder")
             print("请确认:")
             print("  1. 文件夹ID正确")
             print("  2. 服务账户有访问权限")
             print("  3. 网络连接正常")
             return 1
         
-        print("✅ 文件夹访问测试通过")
+        print("Folder access test passed")
         
         # 获取逻辑路径
         logical_path = get_multiline_input_safe("请输入该文件夹对应的逻辑路径 (例如: /content/drive/Othercomputers/我的 MacBook Air/Google Drive): ", single_line=True)
         
         if not logical_path:
-            print("❌ 错误: 逻辑路径不能为空")
+            print("Error: Logical path cannot be empty")
             return 1
         
         # 测试上传工作流程
-        print("🧪 测试上传工作流程...")
+        print("🧪 Testing upload workflow...")
         test_result = test_upload_workflow(logical_path, folder_id, command_identifier)
         
         if not test_result["success"]:
-            print(f"❌ 上传工作流程测试失败: {test_result['error']}")
+            print(f"Error: Upload workflow test failed: {test_result['error']}")
             print("请检查逻辑路径是否正确")
             print("注意: REMOTE_ROOT的逻辑路径应为 /content/drive/MyDrive/REMOTE_ROOT")
             return 1
         
-        print("✅ 上传工作流程测试通过")
+        print("Upload workflow test passed")
         
         # 更新配置
         config["drive_equivalent"] = logical_path
         config["drive_equivalent_folder_id"] = folder_id
         
         if save_sync_config(config):
-            print("✅ 全局同步目录配置已更新:")
+            print("Global sync directory configuration updated:")
             print(f"  文件夹ID: {folder_id}")
             print(f"  逻辑路径: {logical_path}")
             
@@ -307,24 +307,24 @@ def set_global_sync_dir(command_identifier=None):
                 shell = GoogleDriveShell()
                 shell.DRIVE_EQUIVALENT = logical_path
                 shell.DRIVE_EQUIVALENT_FOLDER_ID = folder_id
-                print("✅ 运行时配置也已同步更新")
+                print("Runtime configuration also updated")
             except:
                 pass  # 如果更新失败也不影响主要功能
             
             return 0
         else:
-            print("❌ 保存配置失败")
+            print("Error:  Save configuration failed")
             return 1
             
     except KeyboardInterrupt:
-        print("\n❌ 操作已取消")
+        print("\n❌ Operation cancelled")
         return 1
     except Exception as e:
-        error_msg = f"设置全局同步目录时出错: {e}"
+        error_msg = f"Error setting global sync directory: {e}"
         if is_run_environment(command_identifier):
             write_to_json_output({"success": False, "error": error_msg}, command_identifier)
         else:
-            print(f"❌ {error_msg}")
+            print(f"Error: {error_msg}")
         return 1
 
 def get_google_drive_status(command_identifier=None):

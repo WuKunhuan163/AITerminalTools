@@ -68,11 +68,11 @@ class TestExtractImg(unittest.TestCase):
                 self.assertEqual(output_json.get('processor'), 'img2text')
                 self.assertEqual(output_json.get('content_type'), 'image')
                 self.assertTrue(output_json.get('success', False))
-                print("✅ General image correctly routed to IMG2TEXT")
+                print("General image correctly routed to IMG2TEXT")
             except json.JSONDecodeError:
                 # Plain text output - check for success indicators
                 self.assertNotIn('error', result.stdout.lower())
-                print("✅ General image processed successfully (plain text output)")
+                print("General image processed successfully (plain text output)")
         else:
             # API failure case - check error handling
             self.assertTrue(
@@ -99,11 +99,11 @@ class TestExtractImg(unittest.TestCase):
                 self.assertEqual(output_json.get('content_type'), 'image')
                 self.assertEqual(output_json.get('mode'), 'academic')
                 self.assertTrue(output_json.get('success', False))
-                print("✅ Academic image correctly routed to IMG2TEXT")
+                print("Academic image correctly routed to IMG2TEXT")
             except json.JSONDecodeError:
                 # Plain text output - check for success indicators
                 self.assertNotIn('error', result.stdout.lower())
-                print("✅ Academic image processed successfully (plain text output)")
+                print("Academic image processed successfully (plain text output)")
         else:
             # API failure case - check error handling
             self.assertTrue(
@@ -133,11 +133,11 @@ class TestExtractImg(unittest.TestCase):
                     # Successful UNIMERNET processing
                     self.assertEqual(output_json.get('processor'), 'unimernet')
                     self.assertEqual(output_json.get('content_type'), 'formula')
-                    print("✅ Formula image correctly routed to UNIMERNET")
+                    print("Formula image correctly routed to UNIMERNET")
                 else:
                     # Failed UNIMERNET processing but routing worked
                     self.assertIn('unimernet', output_json.get('error', '').lower())
-                    print("✅ Formula image routing to UNIMERNET attempted (expected UNIMERNET failure)")
+                    print("Formula image routing to UNIMERNET attempted (expected UNIMERNET failure)")
             except json.JSONDecodeError:
                 # Plain text output - check for UNIMERNET attempt indicators
                 if 'error' in result.stdout.lower():
@@ -146,9 +146,9 @@ class TestExtractImg(unittest.TestCase):
                         'unimernet' in result.stdout.lower() or 'json' in result.stdout.lower(),
                         f"Expected UNIMERNET-related error, got: {result.stdout[:200]}..."
                     )
-                    print("✅ Formula image routing to UNIMERNET attempted (expected UNIMERNET failure)")
+                    print("Formula image routing to UNIMERNET attempted (expected UNIMERNET failure)")
                 else:
-                    print("✅ Formula image processed successfully (plain text output)")
+                    print("Formula image processed successfully (plain text output)")
         else:
             # Expected failure case for UNIMERNET (may not be fully configured)
             # Just check that the routing attempt was made
@@ -158,7 +158,7 @@ class TestExtractImg(unittest.TestCase):
                 'timeout' in result.stderr.lower(),
                 f"Expected UNIMERNET-related output, got: {result.stdout[:200]}... stderr: {result.stderr[:200]}..."
             )
-            print("✅ Formula image routing to UNIMERNET attempted (expected failure/timeout due to setup)")
+            print("Formula image routing to UNIMERNET attempted (expected failure/timeout due to setup)")
 
     def test_table_image_routing_to_unimernet(self):
         """Test that table images are routed to UNIMERNET"""
@@ -182,11 +182,11 @@ class TestExtractImg(unittest.TestCase):
                     # Successful UNIMERNET processing
                     self.assertEqual(output_json.get('processor'), 'unimernet')
                     self.assertEqual(output_json.get('content_type'), 'table')
-                    print("✅ Table image correctly routed to UNIMERNET")
+                    print("Table image correctly routed to UNIMERNET")
                 else:
                     # Failed UNIMERNET processing but routing worked
                     self.assertIn('unimernet', output_json.get('error', '').lower())
-                    print("✅ Table image routing to UNIMERNET attempted (expected UNIMERNET failure)")
+                    print("Table image routing to UNIMERNET attempted (expected UNIMERNET failure)")
             except json.JSONDecodeError:
                 # Plain text output - check for UNIMERNET attempt indicators
                 if 'error' in result.stdout.lower():
@@ -195,9 +195,9 @@ class TestExtractImg(unittest.TestCase):
                         'unimernet' in result.stdout.lower() or 'json' in result.stdout.lower(),
                         f"Expected UNIMERNET-related error, got: {result.stdout[:200]}..."
                     )
-                    print("✅ Table image routing to UNIMERNET attempted (expected UNIMERNET failure)")
+                    print("Table image routing to UNIMERNET attempted (expected UNIMERNET failure)")
                 else:
-                    print("✅ Table image processed successfully (plain text output)")
+                    print("Table image processed successfully (plain text output)")
         else:
             # Expected failure case for UNIMERNET (may not be fully configured)
             # Just check that the routing attempt was made
@@ -207,7 +207,7 @@ class TestExtractImg(unittest.TestCase):
                 'timeout' in result.stderr.lower(),
                 f"Expected UNIMERNET-related output, got: {result.stdout[:200]}... stderr: {result.stderr[:200]}..."
             )
-            print("✅ Table image routing to UNIMERNET attempted (expected failure/timeout due to setup)")
+            print("Table image routing to UNIMERNET attempted (expected failure/timeout due to setup)")
 
     def test_auto_type_detection(self):
         """Test automatic type detection for images"""
@@ -225,13 +225,13 @@ class TestExtractImg(unittest.TestCase):
             try:
                 output_json = json.loads(result.stdout)
                 self.assertIn(output_json.get('content_type'), ['image', 'formula', 'table'])
-                print(f"✅ Auto-detection successful: {output_json.get('content_type')}")
+                print(f"Auto-detection successful: {output_json.get('content_type')}")
             except json.JSONDecodeError:
                 # Plain text output is also acceptable
-                print("✅ Auto-detection processed successfully (plain text output)")
+                print("Auto-detection processed successfully (plain text output)")
         else:
             # Failure is acceptable for auto-detection tests
-            print("✅ Auto-detection test completed (failure expected without full setup)")
+            print("Auto-detection test completed (failure expected without full setup)")
 
     def test_run_show_json_output(self):
         """Test RUN --show compatibility (JSON output)"""
@@ -249,12 +249,12 @@ class TestExtractImg(unittest.TestCase):
             try:
                 output_json = json.loads(result.stdout)
                 self.assertTrue('success' in output_json or 'result' in output_json)
-                print("✅ RUN --show EXTRACT_IMG integration successful")
+                print("RUN --show EXTRACT_IMG integration successful")
             except json.JSONDecodeError:
                 self.fail(f"RUN --show should output valid JSON: {result.stdout[:200]}...")
         else:
             # RUN integration failure is acceptable
-            print("✅ RUN --show EXTRACT_IMG test completed (failure expected without full setup)")
+            print("RUN --show EXTRACT_IMG test completed (failure expected without full setup)")
 
     def test_custom_prompt_parameter(self):
         """Test --prompt parameter functionality"""
@@ -283,12 +283,12 @@ class TestExtractImg(unittest.TestCase):
                 self.assertIsInstance(output_json, dict)
                 # Should have success or error information
                 self.assertTrue('success' in output_json or 'error' in output_json)
-                print("✅ --prompt parameter accepted and processed")
+                print("--prompt parameter accepted and processed")
             except json.JSONDecodeError:
                 self.fail(f"Expected valid JSON output with --prompt: {result.stdout[:200]}...")
         else:
             # Even if processing fails, --prompt should be recognized
-            print("✅ --prompt parameter recognized (processing failure acceptable)")
+            print("--prompt parameter recognized (processing failure acceptable)")
 
     def test_help_includes_prompt_option(self):
         """Test that help output includes --prompt option"""
@@ -301,7 +301,7 @@ class TestExtractImg(unittest.TestCase):
                      "Help output should include --prompt option")
         self.assertIn('Custom prompt for image analysis', result.stdout,
                      "Help should describe --prompt functionality")
-        print("✅ --prompt option documented in help")
+        print("--prompt option documented in help")
 
     def test_cache_hit_functionality(self):
         """Test that cache system works correctly with cache hits"""
@@ -321,7 +321,7 @@ class TestExtractImg(unittest.TestCase):
             try:
                 output1 = json.loads(result1.stdout)
                 self.assertIsInstance(output1, dict)
-                print("✅ First call completed successfully")
+                print("First call completed successfully")
                 
                 # Second call - should hit cache (remove --force)
                 result2 = subprocess.run([
@@ -336,7 +336,7 @@ class TestExtractImg(unittest.TestCase):
                         
                         # Check if cache was used (should be faster or indicate cache hit)
                         # The exact output format may vary, but both should succeed
-                        print("✅ Second call completed successfully (likely cache hit)")
+                        print("Second call completed successfully (likely cache hit)")
                         
                         # Test cache stats functionality
                         stats_result = subprocess.run([
@@ -344,7 +344,7 @@ class TestExtractImg(unittest.TestCase):
                         ], capture_output=True, text=True, timeout=10)
                         
                         if stats_result.returncode == 0:
-                            print("✅ Cache stats retrieved successfully")
+                            print("Cache stats retrieved successfully")
                             self.assertIn('cache', stats_result.stdout.lower())
                         else:
                             print("⚠️  Cache stats command failed (but cache hit test passed)")
@@ -362,8 +362,8 @@ class TestExtractImg(unittest.TestCase):
             if any(keyword in error_output.lower() for keyword in ['import', 'module', 'dependency']):
                 self.skipTest(f"Skipping cache test due to missing dependencies: {error_output[:200]}...")
             else:
-                print(f"⚠️  EXTRACT_IMG tool failed: {error_output[:200]}...")
-                print("✅ Cache hit test attempted (tool execution issues may be environmental)")
+                print(f"Warning:  EXTRACT_IMG tool failed: {error_output[:200]}...")
+                print("Cache hit test attempted (tool execution issues may be environmental)")
 
 if __name__ == '__main__':
     unittest.main() 

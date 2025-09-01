@@ -228,5 +228,5 @@ def get_layout_processor(layout_mode: str):
         print("ℹ️ Using arXiv layout processor.", file=sys.stderr)
         return ArxivLayoutProcessor()
     else:
-        print(f"⚠️ Layout '{layout_mode}' not recognized, using default (arXiv).", file=sys.stderr)
+        print(f"Warning: Layout '{layout_mode}' not recognized, using default (arXiv).", file=sys.stderr)
         return ArxivLayoutProcessor()

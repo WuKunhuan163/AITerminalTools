@@ -223,7 +223,7 @@ def main():
                     error_data = {"success": False, "error": error_msg}
                     write_to_json_output(error_data, command_identifier)
                 else:
-                    print(f"❌ {error_msg}")
+                    print(f"Error: {error_msg}")
                 return 1
                 
         elif arg == '--title':
@@ -236,7 +236,7 @@ def main():
                     error_data = {"success": False, "error": error_msg}
                     write_to_json_output(error_data, command_identifier)
                 else:
-                    print(f"❌ {error_msg}")
+                    print(f"Error: {error_msg}")
                 return 1
                 
         elif arg == '--dir':
@@ -249,7 +249,7 @@ def main():
                     error_data = {"success": False, "error": error_msg}
                     write_to_json_output(error_data, command_identifier)
                 else:
-                    print(f"❌ {error_msg}")
+                    print(f"Error: {error_msg}")
                 return 1
                 
         elif arg == '--multiple':
@@ -262,7 +262,7 @@ def main():
                 error_data = {"success": False, "error": error_msg}
                 write_to_json_output(error_data, command_identifier)
             else:
-                print(f"❌ {error_msg}")
+                print(f"Error: {error_msg}")
                 print("Use --help for usage information")
             return 1
     
@@ -273,7 +273,7 @@ def main():
             error_data = {"success": False, "error": error_msg}
             write_to_json_output(error_data, command_identifier)
         else:
-            print(f"❌ {error_msg}")
+            print(f"Error: {error_msg}")
         return 1
     
     # 解析文件类型
@@ -293,7 +293,7 @@ def main():
                 }
                 write_to_json_output(result_data, command_identifier)
             else:
-                print("❌ File selection cancelled")
+                print("Error:  File selection cancelled")
             return 1
         
         # 处理选择结果
@@ -308,7 +308,7 @@ def main():
                     }
                     write_to_json_output(result_data, command_identifier)
                 else:
-                    print("❌ No files selected")
+                    print("Error:  No files selected")
                 return 1
             else:
                 # 选择了多个文件
@@ -321,7 +321,7 @@ def main():
                     }
                     write_to_json_output(result_data, command_identifier)
                 else:
-                    print(f"✅ Selected {len(selected)} file(s):")
+                    print(f"Selected {len(selected)} file(s):")
                     for i, file_path in enumerate(selected, 1):
                         print(f"  {i}. {file_path}")
         else:
@@ -336,7 +336,7 @@ def main():
                 }
                 write_to_json_output(result_data, command_identifier)
             else:
-                print(f"✅ Selected file: {selected}")
+                print(f"Selected file: {selected}")
                 if os.path.exists(selected):
                     file_size = os.path.getsize(selected)
                     print(f"   File size: {file_size} bytes")
@@ -349,7 +349,7 @@ def main():
             error_data = {"success": False, "error": error_msg}
             write_to_json_output(error_data, command_identifier)
         else:
-            print(f"❌ {error_msg}")
+            print(f"Error: {error_msg}")
         return 1
 
 if __name__ == "__main__":

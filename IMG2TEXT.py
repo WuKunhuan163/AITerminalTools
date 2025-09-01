@@ -47,7 +47,7 @@ def test_connection(api: str = "google", key: str = None) -> str:
         }
     
     if not any(api_keys.values()):
-        return "❌ 连接测试失败：未设置API密钥"
+        return "Connection test failed: API key not set"
     
     # 测试每个可用的API密钥
     results = []
@@ -65,28 +65,28 @@ def test_connection(api: str = "google", key: str = None) -> str:
                 vision_models = [m for m in models if 'vision' in m.name.lower() or 'gemini-1.5' in m.name.lower()]
                 
                 if vision_models:
-                    results.append(f"✅ {key_name} 密钥: 连接成功，找到视觉模型: {vision_models[0].name}")
+                    results.append(f"{key_name} key: Connection successful, found vision model: {vision_models[0].name}")
                 else:
-                    results.append(f"⚠️  {key_name} 密钥: 连接成功但未找到视觉模型")
+                    results.append(f"Warning: {key_name} key: Connection successful but no vision model found")
                     
             except exceptions.Forbidden as e:
-                results.append(f"❌ {key_name} 密钥: 访问被禁止（可能是地区限制）")
+                results.append(f"Error: {key_name} key: Access forbidden (possible regional restriction)")
             except Exception as e:
-                results.append(f"❌ {key_name} 密钥: API调用失败: {str(e)}")
+                results.append(f"Error: {key_name} key: API call failed: {str(e)}")
                 
         except Exception as e:
-            results.append(f"❌ {key_name} 密钥: 连接失败: {str(e)}")
+            results.append(f"Error: {key_name} key: Connection failed: {str(e)}")
     
     # 生成结果报告
-    report = ["🔍 API连接测试结果:", ""]
+    report = ["API connection test results:", ""]
     report.extend(results)
     report.append("")
     
-    success_count = sum(1 for r in results if r.startswith("✅"))
+    success_count = sum(1 for r in results if "Connection successful" in r and "Warning:" not in r and "Error:" not in r)
     if success_count > 0:
-        report.append(f"✅ 总结: {success_count}/{len(results)} 个密钥可用")
+        report.append(f"Summary: {success_count}/{len(results)} keys can connect successfully")
     else:
-        report.append(f"❌ 总结: 所有 {len(results)} 个密钥都无法使用")
+        report.append(f"Summary: All {len(results)} keys have connection issues")
         
     return "\n".join(report)
 
@@ -110,31 +110,31 @@ def get_image_analysis(image_path: str, mode: str = "general", api: str = "googl
             "PAID": os.getenv("GOOGLE_API_KEY_PAID")
         }
     if not any(api_keys.values()):
-        reason = "API调用错误：环境变量 GOOGLE_API_KEY_FREE 或 GOOGLE_API_KEY_PAID 未设置，且未通过--key指定。"
+        reason = "API call error: Environment variable GOOGLE_API_KEY_FREE or GOOGLE_API_KEY_PAID is not set, and not specified through --key."
         if is_run_environment():
             output = create_json_output(False, "No valid API key", None, image_path, api, reason)
             with open(os.environ['RUN_DATA_FILE'], 'w', encoding='utf-8') as f:
                 json.dump(output, f, ensure_ascii=False, indent=2)
             return json.dumps(output, ensure_ascii=False)
-        return f"*[API调用错误：{reason}]*"
+        return f"*[API call error: {reason}]*"
     if not os.path.exists(image_path):
-        reason = f"图片路径不存在: {image_path}"
+        reason = f"Image path does not exist: {image_path}"
         if is_run_environment():
             output = create_json_output(False, "Image path does not exist", None, image_path, api, reason)
             with open(os.environ['RUN_DATA_FILE'], 'w', encoding='utf-8') as f:
                 json.dump(output, f, ensure_ascii=False, indent=2)
             return json.dumps(output, ensure_ascii=False)
-        return f"*[错误：{reason}]*"
+        return f"*[Error: {reason}]*"
     try:
         img = Image.open(image_path)
     except Exception as e:
-        reason = f"无法打开图片文件 {image_path}: {e}"
+        reason = f"Cannot open image file {image_path}: {e}"
         if is_run_environment():
             output = create_json_output(False, "Failed to open image", None, image_path, api, reason)
             with open(os.environ['RUN_DATA_FILE'], 'w', encoding='utf-8') as f:
                 json.dump(output, f, ensure_ascii=False, indent=2)
             return json.dumps(output, ensure_ascii=False)
-        return f"*[错误：{reason}]*"
+        return f"*[Error: {reason}]*"
     # Use custom prompt if provided, otherwise use mode-based prompts
     if custom_prompt:
         prompt_instruction = custom_prompt
@@ -166,7 +166,7 @@ def get_image_analysis(image_path: str, mode: str = "general", api: str = "googl
             model = genai.GenerativeModel('gemini-1.5-flash-latest')
             response = model.generate_content([prompt_instruction, img], stream=False)
             response.resolve()
-            print(f"✅ Success! Using {key_type} key to get response.", file=sys.stderr)
+            print(f"Success! Using {key_type} key to get response.", file=sys.stderr)
             if is_run_environment(command_identifier):
                 output = create_json_output(True, "Success", response.text, image_path, api)
                 with open(os.environ['RUN_DATA_FILE'], 'w', encoding='utf-8') as f:
@@ -176,7 +176,7 @@ def get_image_analysis(image_path: str, mode: str = "general", api: str = "googl
         except (exceptions.ResourceExhausted, exceptions.PermissionDenied, Exception) as e:
             error_detail = f"Using {key_type} key failed: {str(e)}"
             failed_reasons.append(error_detail)
-            print(f"⚠️ Warning: {error_detail[:100]}... Trying next...", file=sys.stderr)
+            print(f"Warning: {error_detail[:100]}... Trying next...", file=sys.stderr)
             continue
     
     # 构建详细的失败原因
@@ -252,13 +252,13 @@ def main():
         if args.output:
             with open(args.output, 'w', encoding='utf-8') as f:
                 f.write(result)
-            print(f"✅ Analysis result saved to: {args.output}")
+            print(f"Analysis result saved to: {args.output}")
         elif args.output_dir:
             # 如果指定了输出目录，则将结果保存到该目录
             output_file = os.path.join(args.output_dir, f"{os.path.splitext(os.path.basename(args.image_path))[0]}.json")
             with open(output_file, 'w', encoding='utf-8') as f:
                 f.write(result)
-            print(f"✅ Analysis result saved to: {output_file}")
+            print(f"Analysis result saved to: {output_file}")
         else:
             print(result)
 

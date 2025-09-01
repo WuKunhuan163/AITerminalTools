@@ -50,7 +50,7 @@ def write_to_json_output(data, command_identifier=None):
 # try:
 #     from google_drive_shell import GoogleDriveShell
 # except ImportError as e:
-#     print(f"❌ 导入Google Drive Shell失败: {e}")
+#     print(f"Error: Load Google Drive Shell failed: {e}")
 #     GoogleDriveShell = None
 
 # 全局常量

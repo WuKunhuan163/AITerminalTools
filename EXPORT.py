@@ -66,17 +66,17 @@ def update_shell_configs():
             )
             if result.returncode == 0:
                 success_count += 1
-                print(f"✅ Updated: {config_file}")
+                print(f"Updated: {config_file}")
             else:
-                print(f"❌ Failed to update {config_file}: {result.stderr}")
+                print(f"Error: Failed to update {config_file}: {result.stderr}")
         except Exception as e:
-            print(f"❌ Error updating {config_file}: {e}")
+            print(f"Error: Error updating {config_file}: {e}")
     
     if success_count > 0:
         print(f"🎉 Successfully updated {success_count} configuration files!")
         print("💡 Changes should now be active in your current shell.")
     else:
-        print("❌ Failed to update any configuration files.")
+        print("Error:  Failed to update any configuration files.")
     
     return success_count > 0
 
@@ -133,7 +133,7 @@ def copy_source_commands_to_clipboard(updated_files):
         print(f"   {source_command_line}")
         print("💡 Paste and execute to take effect immediately in the current session")
     else:
-        print(f"⚠️ Cannot copy to clipboard, please execute manually:")
+        print(f"Warning: Cannot copy to clipboard, please execute manually:")
         print(f"   {source_command_line}")
 
 def get_shell_config_files():
@@ -251,7 +251,7 @@ def remove_variable(var_name: str, command_identifier=None):
         if is_run_environment(command_identifier):
             write_to_json_output(error_data, command_identifier)
         else:
-            print(f"❌ Error: Invalid variable name: {var_name}")
+            print(f"Error: Invalid variable name: {var_name}")
         return 1
     
     # 获取配置文件
@@ -287,7 +287,7 @@ def remove_variable(var_name: str, command_identifier=None):
         except Exception as e:
             failed_files.append(str(config_file))
             if not is_run_environment(command_identifier):
-                print(f"❌ Error updating {config_file}: {e}")
+                print(f"Error: Error updating {config_file}: {e}")
     
     # 准备结果
     result_data = {
@@ -302,11 +302,11 @@ def remove_variable(var_name: str, command_identifier=None):
         write_to_json_output(result_data, command_identifier)
     else:
         if len(failed_files) == 0:
-            print(f"✅ Successfully removed {var_name} from {len(updated_files)} configuration files!")
+            print(f"Successfully removed {var_name} from {len(updated_files)} configuration files!")
             for file in updated_files:
                 print(f"   📝 {file}")
         else:
-            print(f"⚠️ Partially successful: removed from {len(updated_files)} files, failed on {len(failed_files)} files")
+            print(f"Warning: Partially successful: removed from {len(updated_files)} files, failed on {len(failed_files)} files")
             for file in failed_files:
                 print(f"   ❌ {file}")
     
@@ -343,7 +343,7 @@ def export_variable(var_name: str, var_value: str, command_identifier=None):
         if is_run_environment(command_identifier):
             write_to_json_output(error_data, command_identifier)
         else:
-            print(f"❌ Error: Invalid variable name: {var_name}")
+            print(f"Error: Invalid variable name: {var_name}")
         return 1
     
     # 获取配置文件
@@ -392,10 +392,10 @@ def export_variable(var_name: str, var_value: str, command_identifier=None):
         if is_run_environment(command_identifier):
             write_to_json_output(success_data, command_identifier)
         else:
-            print(f"✅ Successfully exported {var_name}='{var_value}'")
-            print(f"📝 Updated files: {', '.join(updated_files)}")
+            print(f"Successfully exported {var_name}='{var_value}'")
+            print(f"Updated files: {', '.join(updated_files)}")
             if failed_files:
-                print(f"❌ Failed files: {', '.join(failed_files)}")
+                print(f"Error: Failed files: {', '.join(failed_files)}")
             
             # 自动在当前shell中设置环境变量
             os.environ[var_name] = var_value
@@ -416,7 +416,7 @@ def export_variable(var_name: str, var_value: str, command_identifier=None):
         if is_run_environment(command_identifier):
             write_to_json_output(error_data, command_identifier)
         else:
-            print(f"❌ Error: Failed to update any configuration files")
+            print(f"Error: Failed to update any configuration files")
             print(f"Failed files: {', '.join(failed_files)}")
         return 1
 
@@ -474,7 +474,7 @@ def main():
             }
             write_to_json_output(error_data, command_identifier)
         else:
-            print("❌ Error: No arguments provided")
+            print("Error: No arguments provided")
             print("Usage: EXPORT <variable_name> <value>")
             print("Use --help for more information")
         return 1
@@ -512,7 +512,7 @@ def main():
                 }
                 write_to_json_output(error_data, command_identifier)
             else:
-                print("❌ Error: Missing value")
+                print("Error: Missing value")
                 print("Usage: EXPORT <variable_name> <value>")
                 print("       EXPORT --remove <variable_name>")
                 print("       EXPORT --undo <variable_name>")

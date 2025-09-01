@@ -43,7 +43,7 @@ class GDSCacheManager:
                 with open(self.cache_config_file, 'r', encoding='utf-8') as f:
                     return json.load(f)
             except Exception as e:
-                print(f"⚠️  Failed to load cache config: {e}")
+                print(f"Warning:  Failed to load cache config: {e}")
         
         # 默认配置
         return {
@@ -58,7 +58,7 @@ class GDSCacheManager:
             with open(self.cache_config_file, 'w', encoding='utf-8') as f:
                 json.dump(self.cache_config, f, indent=2, ensure_ascii=False)
         except Exception as e:
-            print(f"❌ Failed to save cache config: {e}")
+            print(f"Error: Failed to save cache config: {e}")
     
     def _generate_file_hash(self, file_path: str) -> str:
         """为文件生成哈希值作为缓存文件名"""
@@ -79,7 +79,7 @@ class GDSCacheManager:
                     hasher.update(chunk)
             return hasher.hexdigest()
         except Exception as e:
-            print(f"❌ Failed to calculate file hash: {e}")
+            print(f"Error: Failed to calculate file hash: {e}")
             return ""
     
     def cache_file(self, remote_path: str, temp_file_path: str) -> Dict:

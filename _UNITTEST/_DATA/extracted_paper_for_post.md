@@ -12,6 +12,16 @@ QI TIAN, Huawei Inc., China
 [placeholder: image]
 ![](/Users/wukunhuan/.local/bin/_UNITTEST/_DATA/extracted_paper_img.png)
 
+IMG2TEXT execution failed: /Users/wukunhuan/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+usage: IMG2TEXT.py [-h] [--mode {academic,general,code_snippet}]
+                   [--api {google}] [--key KEY] [--prompt PROMPT]
+                   [--output OUTPUT] [--output-dir OUTPUT_DIR]
+                   [--test-connection]
+                   [positional_args ...]
+IMG2TEXT.py: error: unrecognized arguments: --json
+
+
 Fig. 1. We introduce GaussianObject, a framework capable of reconstructing high-quality 3D objects from only 4 images with Gaussian spla"ing. GaussianObject demonstrates superior performance over previous state-of-the-art (SOTA) methods on challenging objects.
 
 Reconstructing and rendering 3D objects from highly sparse views is of critical importance for promoting applications of 3D vision techniques and improving user experience. However, images from sparse views only contain very limited 3D information, leading to two signi!cant challenges: 1) Di"- culty in building multi-view consistency as images for matching are too few; 2) Partially omitted or highly compressed object information as view coverage is insu"cient. To tackle these challenges, we propose GaussianObject, a framework to represent and render the 3D object with Gaussian splatting that achieves high rendering quality with only 4 input images. We !rst introduce techniques of visual hull and #oater elimination, which explicitly inject structure priors into the initial optimization process to help build multi-view consistency, yielding a coarse 3D Gaussian representation. Then we construct a Gaussian repair model based on di\$usion models to supplement the omitted object information, where Gaussians are further re!ned. We design a self-generating strategy to obtain image pairs for training the repair model. We further design a COLMAP-free variant, where pre-given accurate camera poses are not required, which achieves competitive quality and facilitates wider applications. GaussianObject is evaluated on several challenging datasets, including MipNeRF360, OmniObject3D, OpenIllumination, and our-collected unposed images, achieving superior performance from only four views and signi!cantly outperforming previous SOTA methods. Our demo is available at https:// gaussianobject.github.io/ , and the code has been released at https:// github.com/ GaussianObject/ GaussianObject.
