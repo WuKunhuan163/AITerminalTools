@@ -1,0 +1,133 @@
+#!/bin/bash
+#
+# BACKGROUND_CMD - 后台进程管理工具启动脚本
+#
+# 这个脚本提供了一个便捷的方式来调用 BACKGROUND_CMD.py
+# 支持所有原始参数，并添加了一些额外的便利功能
+#
+
+# 获取脚本所在目录
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PYTHON_SCRIPT="$SCRIPT_DIR/BACKGROUND_CMD.py"
+
+# 检查Python脚本是否存在
+if [[ ! -f "$PYTHON_SCRIPT" ]]; then
+    echo "Error: BACKGROUND_CMD.py not found: $PYTHON_SCRIPT" >&2
+    exit 1
+fi
+
+# 检查Python是否可用
+if ! command -v python3 >/dev/null 2>&1; then
+    echo "Error: python3 not found" >&2
+    exit 1
+fi
+
+# 检查必要的Python模块
+python3 -c "import psutil" 2>/dev/null
+if [[ $? -ne 0 ]]; then
+    echo "Error: Missing required Python module 'psutil'" >&2
+    echo "Please run: pip install psutil" >&2
+    exit 1
+fi
+
+# 设置默认环境变量（如果未设置）
+export BACKGROUND_CMD_LOG_DIR="${BACKGROUND_CMD_LOG_DIR:-~/tmp/background_cmd_logs}"
+export BACKGROUND_CMD_MAX_PROCESSES="${BACKGROUND_CMD_MAX_PROCESSES:-1000}"
+export BACKGROUND_CMD_DEFAULT_SHELL="${BACKGROUND_CMD_DEFAULT_SHELL:-zsh}"
+
+# 处理特殊的快捷命令
+case "$1" in
+    "help"|"-h"|"--help")
+        python3 "$PYTHON_SCRIPT" --help
+        exit $?
+        ;;
+    "ls"|"list")
+        # 快捷列表命令
+        shift
+        python3 "$PYTHON_SCRIPT" --list "$@"
+        exit $?
+        ;;
+    "ps"|"status")
+        # 显示详细状态
+        shift
+        python3 "$PYTHON_SCRIPT" --list "$@"
+        exit $?
+        ;;
+    "clean"|"cleanup")
+        # 快捷清理命令
+        shift
+        echo "Warning: This will terminate all processes managed by BACKGROUND_CMD"
+        read -p "Confirm to continue? (y/N): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            python3 "$PYTHON_SCRIPT" --cleanup "$@"
+        else
+            echo "Operation cancelled"
+            exit 0
+        fi
+        exit $?
+        ;;
+    "kill")
+        # 快捷终止命令
+        if [[ -z "$2" ]]; then
+            echo "Error: Please specify process PID to terminate" >&2
+            echo "Usage: BACKGROUND_CMD kill <PID>" >&2
+            exit 1
+        fi
+        shift
+        python3 "$PYTHON_SCRIPT" --kill "$@"
+        exit $?
+        ;;
+    "fkill"|"force-kill")
+        # 强制终止命令
+        if [[ -z "$2" ]]; then
+            echo "Error: Please specify process PID to force terminate" >&2
+            echo "Usage: BACKGROUND_CMD fkill <PID>" >&2
+            exit 1
+        fi
+        shift
+        shift  # 移除 "fkill"
+        python3 "$PYTHON_SCRIPT" --force-kill "$@"
+        exit $?
+        ;;
+    "logs"|"log")
+        # 显示日志目录
+        shift
+        log_dir=$(python3 -c "import os; print(os.path.expanduser('$BACKGROUND_CMD_LOG_DIR'))")
+        if [[ "$1" == "tail" ]] && [[ -n "$2" ]]; then
+            # tail 特定PID的日志
+            pid="$2"
+            log_file=$(find "$log_dir" -name "*${pid}*" -type f | head -1)
+            if [[ -n "$log_file" ]]; then
+                echo "Showing log for process $pid: $log_file"
+                tail -f "$log_file"
+            else
+                echo "Error: Log file not found for process $pid" >&2
+                exit 1
+            fi
+        else
+            echo "Log directory: $log_dir"
+            if [[ -d "$log_dir" ]]; then
+                echo "Recent log files:"
+                ls -lt "$log_dir"/*.log 2>/dev/null | head -10
+            else
+                echo "Log directory does not exist or is empty"
+            fi
+        fi
+        exit $?
+        ;;
+    "version"|"-v"|"--version")
+        echo "BACKGROUND_CMD v1.0"
+        echo "Safe background process management tool"
+        exit 0
+        ;;
+esac
+
+# 如果没有参数，显示帮助
+if [[ $# -eq 0 ]]; then
+    python3 "$PYTHON_SCRIPT" --help
+    exit 0
+fi
+
+# 传递所有参数给Python脚本
+exec python3 "$PYTHON_SCRIPT" "$@"

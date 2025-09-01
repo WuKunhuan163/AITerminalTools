@@ -15,6 +15,35 @@ warnings.filterwarnings('ignore', message='urllib3 v2 only supports OpenSSL 1.1.
 from dotenv import load_dotenv
 load_dotenv()
 
+# 导入shell命令函数
+try:
+    from .shell_commands import shell_pwd, shell_rm
+except ImportError:
+    try:
+        from shell_commands import shell_pwd, shell_rm
+    except ImportError:
+        # 如果导入失败，定义简单的fallback函数
+        def shell_pwd():
+            print("~/")
+        def shell_rm(path, recursive=False):
+            print(f"rm: {path}")
+
+# 定义缺失的shell命令函数
+def shell_mkdir(path):
+    """创建目录的简化实现"""
+    try:
+        # 使用GoogleDriveShell实例执行mkdir命令
+        import sys
+        import os
+        sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+        from google_drive_shell import GoogleDriveShell
+        
+        shell = GoogleDriveShell()
+        result = shell.cmd_mkdir(path)
+        if not result.get("success", False):
+            print(result.get("error", f"Failed to create directory: {path}"))
+    except Exception as e:
+        print(f"mkdir: {path}: {e}")
 
 
 # 添加缺失的工具函数
@@ -50,21 +79,19 @@ def get_multiline_input_safe(prompt, single_line=False):
         except Exception:
             pass  # 如果配置失败，继续使用默认设置
         
-        print(prompt, end="", flush=True)
-        
         if single_line:
-            # 单行输入
+            # 单行输入 - 使用input(prompt)确保提示符不被删除键影响
             try:
-                return input()
+                return input(prompt)
             except EOFError:
                 return None
         else:
             # 多行输入，直到Ctrl+D
             lines = []
-            print("(多行输入，按 Ctrl+D 结束):")
+            print(f"{prompt}(多行输入，按 Ctrl+D 结束):")
             try:
                 while True:
-                    line = input()
+                    line = input("  ")  # 使用缩进提示符
                     lines.append(line)
             except EOFError:
                 # Ctrl+D被按下，结束输入
@@ -114,12 +141,13 @@ HOME_FOLDER_ID = "root"  # Google Drive中My Drive的文件夹ID
 REMOTE_ROOT_FOLDER_ID = "1LSndouoVj8pkoyi-yTYnC4Uv03I77T8f"  # REMOTE_ROOT文件夹ID
 
 def get_shells_file():
-    """获取远程shell配置文件路径"""
+    """获取远程shell配置文件路径 - 与GoogleDriveShell保持一致"""
     # 获取bin目录路径（从modules向上两级：modules -> GOOGLE_DRIVE_PROJ -> bin）
     bin_dir = Path(__file__).parent.parent.parent
     data_dir = bin_dir / "GOOGLE_DRIVE_DATA"
     data_dir.mkdir(exist_ok=True)
-    return data_dir / "remote_shells.json"
+    # 使用与GoogleDriveShell相同的文件名
+    return data_dir / "shells.json"
 
 def load_shells():
     """加载远程shell配置"""
@@ -164,16 +192,18 @@ def create_shell(name=None, folder_id=None, command_identifier=None):
         if not name:
             name = f"shell_{shell_id[:8]}"
         
-        # 创建shell配置
+        # 改进的shell配置，简化结构并添加虚拟环境支持
         shell_config = {
             "id": shell_id,
             "name": name,
-            "folder_id": folder_id or REMOTE_ROOT_FOLDER_ID,  # 默认使用REMOTE_ROOT作为根目录
-            "current_path": "~",  # 当前逻辑路径，初始为~（指向REMOTE_ROOT）
+            "current_path": "~",  # 当前逻辑路径
             "current_folder_id": REMOTE_ROOT_FOLDER_ID,  # 当前所在的Google Drive文件夹ID
             "created_time": created_time,
             "last_accessed": created_time,
-            "status": "active"
+            "venv_state": {
+                "active_env": None,  # 当前激活的虚拟环境名称
+                "pythonpath": "/env/python"  # 当前PYTHONPATH
+            }
         }
         
         # 加载现有shells
@@ -414,6 +444,55 @@ def get_current_shell():
     
     return shells_data["shells"][active_shell_id]
 
+def _detect_active_venv():
+    """使用统一的venv --current接口检测当前激活的虚拟环境"""
+    try:
+        import sys
+        import os
+        import subprocess
+        
+        sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+        
+        # 使用统一的venv --current接口
+        from pathlib import Path
+        result = subprocess.run(
+            [sys.executable, str(Path(__file__).parent.parent / "GOOGLE_DRIVE.py"), 
+             "--shell", "venv --current"],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        
+        if result.returncode == 0:
+            output = result.stdout
+            # 解析输出中的环境名称
+            for line in output.split('\n'):
+                if line.startswith("Current virtual environment:"):
+                    env_name = line.split(":")[1].strip()
+                    return env_name if env_name != "None" else None
+        
+        return None
+    except Exception:
+        return None
+
+def _update_shell_venv_state(current_shell, active_env):
+    """更新shell状态中的虚拟环境信息"""
+    try:
+        shells_data = load_shells()
+        shell_id = current_shell['id']
+        
+        if shell_id in shells_data["shells"]:
+            # 确保venv_state字段存在
+            if "venv_state" not in shells_data["shells"][shell_id]:
+                shells_data["shells"][shell_id]["venv_state"] = {}
+            
+            shells_data["shells"][shell_id]["venv_state"]["active_env"] = active_env
+            shells_data["shells"][shell_id]["last_accessed"] = time.strftime("%Y-%m-%d %H:%M:%S")
+            
+            save_shells(shells_data)
+    except Exception:
+        pass  # 如果更新失败，不影响shell正常运行
+
 def enter_shell_mode(command_identifier=None):
     """进入交互式shell模式"""
     try:
@@ -445,19 +524,47 @@ def enter_shell_mode(command_identifier=None):
             return 0
         else:
             # 在直接执行模式下，启动交互式shell
-            print(f"🌟 Google Drive Shell (GDS) - {current_shell['name']}")
-            print(f"📍 Current path: {current_shell.get('current_path', '~')}")
-            print("💡 Enter 'help' to view available commands, enter 'exit' to exit")
-            print()
+            print("Enter 'help' to view available commands, enter 'exit' to exit")
             
             while True:
                 try:
-                    # 显示提示符
+                    # 获取当前shell状态（可能在循环中被更新）
+                    current_shell = get_current_shell()
+                    
+                    # 显示提示符，包括虚拟环境和当前路径
                     current_path = current_shell.get("current_path", "~")
-                    prompt = f"GDS:{current_path}$ "
                     
+                    # 检查是否有激活的虚拟环境
+                    venv_prefix = ""
+                    try:
+                        # 首先尝试从shell配置中获取虚拟环境信息
+                        venv_state = current_shell.get("venv_state", {})
+                        active_env = venv_state.get("active_env")
+                        
+                        # 如果shell配置中没有venv信息，进行一次检测并缓存
+                        if not active_env:
+                            active_env = _detect_active_venv()
+                            if active_env:
+                                _update_shell_venv_state(current_shell, active_env)
+                                # 更新当前shell对象，避免下次循环重复检测
+                                current_shell["venv_state"] = {"active_env": active_env}
+                        
+                        if active_env:
+                            venv_prefix = f"({active_env}) "
+                    except Exception as e:
+                        # 如果检测失败，继续使用默认提示符
+                        pass
+                    
+                    # 简化路径显示：类似bash只显示最后一个部分
+                    if current_path == "~":
+                        display_path = "~"
+                    else:
+                        # 显示最后一个路径部分，类似bash的行为
+                        path_parts = current_path.split('/')
+                        display_path = path_parts[-1] if path_parts[-1] else path_parts[-2]
+                    
+                    prompt = f"\n{venv_prefix}GDS:{display_path}$ "
                     user_input = get_multiline_input_safe(prompt, single_line=True)
-                    
                     if not user_input:
                         continue
                     
@@ -466,113 +573,26 @@ def enter_shell_mode(command_identifier=None):
                     cmd = parts[0].lower()
                     
                     if cmd == "exit":
-                        print("👋 Exit Google Drive Shell")
+                        # print("👋 Exit Google Drive Shell")
                         break
-                    elif cmd == "pwd":
-                        shell_pwd()
-                    elif cmd == "ls":
-                        # 使用GoogleDriveShell实例执行ls命令
-                        try:
-                            import sys
-                            import os
-                            sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-                            from google_drive_shell import GoogleDriveShell
-                            shell_instance = GoogleDriveShell()
-                            result = shell_instance.cmd_ls(path=None, detailed=False, recursive=False, show_hidden=False)
-                            if result.get("success"):
-                                files = result.get("files", [])
-                                folders = result.get("folders", [])
-                                all_items = folders + files
-                                if all_items:
-                                    sorted_folders = sorted(folders, key=lambda x: x.get('name', '').lower())
-                                    sorted_files = sorted(files, key=lambda x: x.get('name', '').lower())
-                                    all_sorted_items = sorted_folders + sorted_files
-                                    for item in all_sorted_items:
-                                        name = item.get('name', 'Unknown')
-                                        if item.get('mimeType') == 'application/vnd.google-apps.folder':
-                                            print(f"{name}/")
-                                        else:
-                                            print(name)
-                            else:
-                                print(result.get('error', 'ls command failed'))
-                        except Exception as e:
-                            print(f"Error executing ls command: {e}")
-                    elif cmd.startswith("mkdir "):
-                        path = cmd[6:].strip()
-                        shell_mkdir(path)
-                    elif cmd.startswith("cd "):
-                        path = cmd[3:].strip()
-                        # 使用GoogleDriveShell实例执行cd命令
-                        try:
-                            import sys
-                            import os
-                            sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-                            from google_drive_shell import GoogleDriveShell
-                            shell_instance = GoogleDriveShell()
-                            result = shell_instance.cmd_cd(path)
-                            if result.get("success"):
-                                print(result.get("message", f"Switched to directory: {result.get('new_path', path)}"))
-                            else:
-                                print(result.get("error", "cd command failed"))
-                        except Exception as e:
-                            print(f"Error executing cd command: {e}")
-                    elif cmd == "cd":
-                        # cd到根目录
-                        try:
-                            import sys
-                            import os
-                            sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-                            from google_drive_shell import GoogleDriveShell
-                            shell_instance = GoogleDriveShell()
-                            result = shell_instance.cmd_cd("~")
-                            if result.get("success"):
-                                print(result.get("message", f"Switched to directory: {result.get('new_path', '~')}"))
-                            else:
-                                print(result.get("error", "cd command failed"))
-                        except Exception as e:
-                            print(f"Error executing cd command: {e}")
-                    elif cmd.startswith("rm -rf "):
-                        path = cmd[7:].strip()
-                        shell_rm(path, True)
-                    elif cmd.startswith("rm "):
-                        path = cmd[3:].strip()
-                        shell_rm(path, False)
-                    elif cmd == "help":
-                        try:
-                            from .help_system import show_unified_help
-                            show_unified_help(context="shell")
-                        except ImportError:
-                            try:
-                                from help_system import show_unified_help
-                                show_unified_help(context="shell")
-                            except ImportError:
-                                # Fallback to basic help
-                                print("📋 Available commands:")
-                                print("  pwd           - Show current remote logical address")
-                                print("  ls            - List current directory content")
-                                print("  mkdir <dir>   - Create directory")
-                                print("  cd <path>     - Switch directory")
-                                print("  rm <file>     - Delete file")
-                                print("  rm -rf <dir>  - Recursively delete directory")
-                                print("  help          - Show help information")
-                                print("  exit          - Exit shell mode")
-                                print()
-                    elif cmd == "read":
-                        if not args:
-                            result = {"success": False, "error": "Usage: read <filename> [start end] or read <filename> [[start1, end1], [start2, end2], ...]"}
-                        else:
-                            filename = args[0]
-                            range_args = args[1:] if len(args) > 1 else []
-                            result = shell.cmd_read(filename, *range_args)
-                    elif cmd == "find":
-                        if not args:
-                            result = {"success": False, "error": "Usage: find [path] -name [pattern] or find [path] -type [f|d] -name [pattern]"}
-                        else:
-                            result = shell.cmd_find(*args)
                     else:
-                        print(f"Unknown command: {cmd}")
-                        print("💡 Enter 'help' to view available commands")
-                        print()
+                        # 使用GoogleDriveShell的execute_shell_command方法处理所有命令
+                        try:
+                            import sys
+                            import os
+                            sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+                            from google_drive_shell import GoogleDriveShell
+                            shell_instance = GoogleDriveShell()
+                            
+                            # 执行完整的shell命令
+                            result_code = shell_instance.execute_shell_command(user_input)
+                            
+                            # 如果命令执行失败，显示帮助提示
+                            if result_code != 0:
+                                print("💡 Enter 'help' to view available commands")
+                        except Exception as e:
+                            print(f"Error executing command '{cmd}': {e}")
+                            print("💡 Enter 'help' to view available commands")
                     
                 except KeyboardInterrupt:
                     print("\n👋 Exited Google Drive Shell")

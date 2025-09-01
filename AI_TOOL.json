@@ -250,7 +250,7 @@
         "file_operations": [
           "mkdir [-p] <dir>",
           "rm <file>",
-          "rm -rf <dir>", 
+          "rm -rf <dir>",
           "rm -f <file>",
           "mv <source> <dest>",
           "cat <file>",
@@ -697,11 +697,43 @@
         "python": "23f08fbd21a9ec2984094fad8f9db6bee2529dcc02f0dd1d1cfe68da1ebb5a99",
         "markdown": "14a847810109cd0e7468de6adea44335e6360f0564b6cf533043cb42ee49a68f"
       }
+    },
+    "BACKGROUND_CMD": {
+      "name": "BACKGROUND_CMD",
+      "description": "Safe background process management tool",
+      "purpose": "Create, monitor, and manage background processes safely, preventing system resource exhaustion",
+      "usage": "BACKGROUND_CMD <command> [options]",
+      "examples": [
+        "BACKGROUND_CMD \"sleep 60\"",
+        "BACKGROUND_CMD \"ls -la\" --shell bash",
+        "BACKGROUND_CMD --list",
+        "BACKGROUND_CMD --kill 12345",
+        "BACKGROUND_CMD --cleanup", 
+        "BACKGROUND_CMD --help"
+      ],
+      "files": {
+        "binary": "BACKGROUND_CMD.sh",
+        "python": "BACKGROUND_CMD.py",
+        "markdown": "BACKGROUND_CMD.md"
+      },
+      "run_compatible": true,
+      "testable": true,
+      "test_passed": true,
+      "ai_usable": true,
+      "test_command": [
+        "_UNITTEST/test_background_cmd.py"
+      ],
+      "tool_use_scenario": "When user needs to run background processes safely, manage process resources, or resolve posix_spawnp failed errors",
+      "file_hashes": {
+        "binary": "7ce4207c4fa79988bae1674460b63b5f6767d998b7085b1f4fd0aa7631dbe247",
+        "python": "b495cbc4b0c7d4c0cec8664863f080369b8a41816a725ef5cf6d422233c6c608",
+        "markdown": "c85cb625677458f87d49d1b1eeece203645452888b98d27c20f33b0448d1ceac"
+      }
     }
   },
   "metadata": {
     "version": "1.0.0",
-    "last_updated": "2025-08-22",
-    "total_tools": 19
+    "last_updated": "2025-09-01",
+    "total_tools": 20
   }
 }

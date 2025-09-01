@@ -406,6 +406,46 @@ Shell commands: ls -la && echo "done"
         print(f"💥 所有重试失败")
         return False, result
     
+    def _run_command_with_input(self, command_list, input_text, timeout=60):
+        """
+        运行命令并提供输入的辅助方法
+        
+        Args:
+            command_list: 命令列表 (如 [sys.executable, str(self.GOOGLE_DRIVE_PY), "--shell"])
+            input_text: 要发送给命令的输入文本
+            timeout: 超时时间（秒）
+        
+        Returns:
+            subprocess结果对象
+        """
+        try:
+            result = subprocess.run(
+                command_list,
+                input=input_text,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                cwd=self.BIN_DIR
+            )
+            return result
+        except subprocess.TimeoutExpired:
+            print(f"⏰ 命令执行超时 ({timeout}s)")
+            # 创建一个模拟的失败结果
+            class MockResult:
+                def __init__(self):
+                    self.returncode = 1
+                    self.stdout = ""
+                    self.stderr = f"Command timed out after {timeout} seconds"
+            return MockResult()
+        except Exception as e:
+            print(f"💥 命令执行异常: {e}")
+            class MockResult:
+                def __init__(self):
+                    self.returncode = 1
+                    self.stdout = ""
+                    self.stderr = str(e)
+            return MockResult()
+    
     # ==================== 基础功能测试 ====================
     
     def test_01_echo_basic(self):
@@ -1998,6 +2038,369 @@ print(f"Sum: {result}")
         # 验证层级汇总
         print("📋 验证层级汇总")
         self.assertRegex(output, r'Level \d+:', "应该包含层级汇总")
+        
+        print("✅ 依赖分析功能测试完成")
+
+    def test_20_shell_mode_continuous_operations(self):
+        """测试Shell模式下的连续操作"""
+        print("🐚 测试Shell模式连续操作")
+        
+        # 创建测试文件
+        test_file = self.TEST_TEMP_DIR / "shell_test.txt"
+        test_file.write_text("shell test content", encoding='utf-8')
+        
+        # 测试连续的shell命令执行
+        shell_commands = [
+            "pwd",
+            "ls",
+            f"upload {test_file} shell_upload_test.txt",
+            "ls",  # 验证上传后的文件列表
+            "cat shell_upload_test.txt",  # 验证上传的文件内容
+            "mkdir shell_test_dir",
+            "cd shell_test_dir",
+            "pwd",  # 验证目录切换
+            "cd ..",
+            "rm shell_upload_test.txt",
+            "rm -rf shell_test_dir"
+        ]
+        
+        # 构建shell输入
+        shell_input = "\n".join(shell_commands) + "\nexit\n"
+        
+        # 执行shell模式
+        result = self._run_command_with_input(
+            [sys.executable, str(self.GOOGLE_DRIVE_PY), "--shell"],
+            shell_input,
+            timeout=180
+        )
+        
+        self.assertEqual(result.returncode, 0, "Shell模式连续操作应该成功")
+        
+        # 验证关键输出
+        output = result.stdout
+        self.assertIn("Google Drive Shell (GDS)", output, "应该显示Shell启动信息")
+        self.assertIn("Exit Google Drive Shell", output, "应该显示Shell退出信息")
+        
+        # 验证命令执行结果
+        self.assertRegex(output, r"GDS:.*\$", "应该显示Shell提示符")
+        
+        print("✅ Shell模式连续操作测试完成")
+
+    def test_21_shell_mode_vs_direct_consistency(self):
+        """测试Shell模式与直接命令执行的输出一致性"""
+        print("🔄 测试Shell模式与直接命令一致性")
+        
+        # 测试命令列表
+        test_commands = [
+            "pwd",
+            "ls",
+            "help"
+        ]
+        
+        for cmd in test_commands:
+            print(f"🔍 测试命令: {cmd}")
+            
+            # 直接命令执行
+            direct_result = self._run_gds_command(cmd)
+            
+            # Shell模式执行
+            shell_input = f"{cmd}\nexit\n"
+            shell_result = self._run_command_with_input(
+                [sys.executable, str(self.GOOGLE_DRIVE_PY), "--shell"],
+                shell_input,
+                timeout=60
+            )
+            
+            self.assertEqual(direct_result.returncode, 0, f"直接执行{cmd}应该成功")
+            self.assertEqual(shell_result.returncode, 0, f"Shell模式执行{cmd}应该成功")
+            
+            # 提取shell模式中的命令输出（去除shell提示符等）
+            shell_output = shell_result.stdout
+            
+            # 对于help命令，验证关键内容存在
+            if cmd == "help":
+                # 验证直接执行包含基本命令
+                self.assertIn("pwd", direct_result.stdout, "直接执行help应该包含pwd命令")
+                self.assertIn("ls", direct_result.stdout, "直接执行help应该包含ls命令")
+                
+                # 验证shell模式也包含相同命令
+                self.assertIn("pwd", shell_output, "Shell模式help应该包含pwd命令")
+                self.assertIn("ls", shell_output, "Shell模式help应该包含ls命令")
+                
+                print(f"✅ {cmd}命令在两种模式下都包含必要内容")
+            else:
+                # 对于其他命令，验证命令执行成功（不要求非空输出，因为ls在空目录中可能无输出）
+                self.assertIn("GDS:", shell_output, f"Shell模式执行{cmd}应该包含提示符")
+                
+                print(f"✅ {cmd}命令在两种模式下都正常执行")
+        
+        print("✅ Shell模式与直接命令一致性测试完成")
+
+    def test_22_shell_switching_and_state(self):
+        """测试Shell切换和状态管理"""
+        print("🔄 测试Shell切换和状态管理")
+        
+        # 首先创建一个新的remote shell
+        print("📝 创建新的remote shell")
+        create_result = self._run_gds_command_with_retry('--create-remote-shell', max_retries=2)
+        self.assertEqual(create_result.returncode, 0, "创建remote shell应该成功")
+        
+        # 从输出中提取shell ID
+        shell_id_match = re.search(r'Shell ID: (\w+)', create_result.stdout)
+        if shell_id_match:
+            new_shell_id = shell_id_match.group(1)
+            print(f"📋 创建的Shell ID: {new_shell_id}")
+            
+            # 列出所有shells
+            print("📋 列出所有shells")
+            list_result = self._run_gds_command('--list-remote-shell')
+            self.assertEqual(list_result.returncode, 0, "列出shells应该成功")
+            self.assertIn(new_shell_id, list_result.stdout, "新创建的shell应该在列表中")
+            
+            # 切换到新shell
+            print(f"🔄 切换到新shell: {new_shell_id}")
+            checkout_result = self._run_gds_command(f'--checkout-remote-shell {new_shell_id}')
+            self.assertEqual(checkout_result.returncode, 0, "切换shell应该成功")
+            
+            # 在新shell中执行一些操作
+            print("🧪 在新shell中执行操作")
+            shell_commands = [
+                "pwd",
+                "mkdir test_shell_state",
+                "cd test_shell_state",
+                "pwd",
+                "echo 'shell state test' > state_test.txt",
+                "cat state_test.txt",
+                "cd ..",
+                "ls"
+            ]
+            
+            shell_input = "\n".join(shell_commands) + "\nexit\n"
+            shell_result = self._run_command_with_input(
+                [sys.executable, str(self.GOOGLE_DRIVE_PY), "--shell"],
+                shell_input,
+                timeout=120
+            )
+            
+            self.assertEqual(shell_result.returncode, 0, "新shell中的操作应该成功")
+            
+            # 验证状态保持
+            output = shell_result.stdout
+            self.assertIn("state test", output, "应该能够创建和读取文件")
+            self.assertIn("test_shell_state", output, "应该能够创建目录")
+            
+            # 清理：删除创建的shell
+            print(f"🧹 清理：删除shell {new_shell_id}")
+            cleanup_result = self._run_gds_command(f'--terminate-remote-shell {new_shell_id}')
+            # 注意：cleanup可能失败，但不影响测试结果
+            
+            print("✅ Shell切换和状态管理测试完成")
+        else:
+            print("⚠️ 无法从输出中提取Shell ID，跳过后续测试")
+            self.skipTest("无法提取新创建的Shell ID")
+
+    def test_23_shell_mode_error_handling(self):
+        """测试Shell模式的错误处理"""
+        print("❌ 测试Shell模式错误处理")
+        
+        # 测试无效命令
+        error_commands = [
+            "invalid_command",
+            "ls /nonexistent/path",
+            "rm nonexistent_file.txt",
+            "cd /invalid/directory"
+        ]
+        
+        for cmd in error_commands:
+            print(f"🔍 测试错误命令: {cmd}")
+            
+            shell_input = f"{cmd}\nexit\n"
+            shell_result = self._run_command_with_input(
+                [sys.executable, str(self.GOOGLE_DRIVE_PY), "--shell"],
+                shell_input,
+                timeout=60
+            )
+            
+            # Shell模式应该能够处理错误而不崩溃
+            self.assertEqual(shell_result.returncode, 0, f"Shell模式处理错误命令{cmd}时不应该崩溃")
+            
+            # 验证错误信息或提示
+            output = shell_result.stdout
+            self.assertIn("GDS:", output, "即使命令失败，Shell模式也应该继续运行")
+            self.assertIn("Exit Google Drive Shell", output, "Shell应该正常退出")
+        
+        print("✅ Shell模式错误处理测试完成")
+
+    def test_24_shell_mode_performance(self):
+        """测试Shell模式的性能表现"""
+        print("⚡ 测试Shell模式性能")
+        
+        # 测试快速连续命令
+        quick_commands = ["pwd"] * 5  # 执行5次pwd命令
+        shell_input = "\n".join(quick_commands) + "\nexit\n"
+        
+        start_time = time.time()
+        shell_result = self._run_command_with_input(
+            [sys.executable, str(self.GOOGLE_DRIVE_PY), "--shell"],
+            shell_input,
+            timeout=60
+        )
+        end_time = time.time()
+        
+        self.assertEqual(shell_result.returncode, 0, "快速连续命令应该成功")
+        
+        execution_time = end_time - start_time
+        print(f"📊 执行5个pwd命令用时: {execution_time:.2f}s")
+        
+        # 验证性能合理（应该在合理时间内完成）
+        self.assertLess(execution_time, 30, "5个简单命令应该在30秒内完成")
+        
+        # 验证所有命令都执行了
+        output = shell_result.stdout
+        pwd_count = output.count("~")  # pwd命令通常返回包含~的路径
+        self.assertGreaterEqual(pwd_count, 3, "应该执行了多个pwd命令")
+        
+        print("✅ Shell模式性能测试完成")
+
+    def test_25_shell_prompt_improvements(self):
+        """测试Shell提示符改进"""
+        print("🎨 测试Shell提示符改进")
+        
+        # 测试目录切换后提示符更新
+        shell_commands = [
+            "pwd",  # 显示初始路径
+            "mkdir test_prompt_dir",
+            "cd test_prompt_dir", 
+            "pwd",  # 显示切换后的路径
+            "cd ..",
+            "pwd",  # 显示返回后的路径
+            "rm -rf test_prompt_dir"
+        ]
+        
+        shell_input = "\n".join(shell_commands) + "\nexit\n"
+        
+        result = self._run_command_with_input(
+            [sys.executable, str(self.GOOGLE_DRIVE_PY), "--shell"],
+            shell_input,
+            timeout=120
+        )
+        
+        self.assertEqual(result.returncode, 0, "Shell提示符测试应该成功")
+        
+        output = result.stdout
+        
+        # 验证路径切换
+        self.assertIn("test_prompt_dir", output, "应该显示切换到的目录")
+        
+        # 验证pwd命令显示不同的路径
+        pwd_outputs = []
+        lines = output.split('\n')
+        for line in lines:
+            # 查找包含路径的行（可能包含~符号的路径）
+            if ('~' in line and 
+                not line.startswith('GDS:') and 
+                not line.startswith('💡') and 
+                not line.startswith('🌟') and
+                not line.startswith('📍')):
+                pwd_outputs.append(line.strip())
+        
+        # 打印调试信息
+        print(f"📋 找到的pwd输出: {pwd_outputs}")
+        
+        # 验证路径变化 - 至少应该有一些路径输出
+        self.assertGreater(len(pwd_outputs), 0, "应该有pwd输出")
+        
+        # 验证路径变化
+        found_test_dir = False
+        for pwd_output in pwd_outputs:
+            if "test_prompt_dir" in pwd_output:
+                found_test_dir = True
+                break
+        
+        self.assertTrue(found_test_dir, f"应该找到切换到测试目录的pwd输出，实际输出: {pwd_outputs}")
+        
+        print("✅ Shell提示符改进测试完成")
+
+    def test_26_shell_command_routing(self):
+        """测试Shell命令路由改进"""
+        print("🔄 测试Shell命令路由改进")
+        
+        # 测试各种命令都能正确路由
+        test_commands = [
+            ("pwd", "应该显示当前路径"),
+            ("ls", "应该列出文件"),
+            ("help", "应该显示帮助信息"),
+            ("mkdir test_routing", "应该创建目录"),
+            ("ls", "应该显示新创建的目录"),
+            ("rm -rf test_routing", "应该删除目录")
+        ]
+        
+        for cmd, description in test_commands:
+            print(f"🔍 测试命令: {cmd}")
+            
+            shell_input = f"{cmd}\nexit\n"
+            result = self._run_command_with_input(
+                [sys.executable, str(self.GOOGLE_DRIVE_PY), "--shell"],
+                shell_input,
+                timeout=60
+            )
+            
+            self.assertEqual(result.returncode, 0, f"{cmd}命令应该成功执行")
+            
+            output = result.stdout
+            self.assertIn("GDS:", output, f"{cmd}命令应该在shell模式中执行")
+            
+            # 验证没有"Unknown command"错误
+            self.assertNotIn("Unknown command", output, f"{cmd}命令不应该被认为是未知命令")
+            
+            print(f"✅ {cmd}命令路由正常")
+        
+        print("✅ Shell命令路由改进测试完成")
+
+    def test_27_shell_state_persistence(self):
+        """测试Shell状态持久性"""
+        print("💾 测试Shell状态持久性")
+        
+        # 测试连续的状态变化操作
+        shell_commands = [
+            "pwd",
+            "mkdir test_state_dir",
+            "cd test_state_dir",
+            "pwd",
+            "echo 'test content' > test_file.txt",
+            "cat test_file.txt",
+            "ls",
+            "cd ..",
+            "pwd",
+            "ls",
+            "rm -rf test_state_dir"
+        ]
+        
+        shell_input = "\n".join(shell_commands) + "\nexit\n"
+        
+        result = self._run_command_with_input(
+            [sys.executable, str(self.GOOGLE_DRIVE_PY), "--shell"],
+            shell_input,
+            timeout=150
+        )
+        
+        self.assertEqual(result.returncode, 0, "Shell状态持久性测试应该成功")
+        
+        output = result.stdout
+        
+        # 验证状态变化的连续性
+        self.assertIn("test_state_dir", output, "应该显示创建的目录")
+        self.assertIn("test content", output, "应该显示文件内容")
+        
+        # 验证目录切换的效果
+        lines = output.split('\n')
+        pwd_lines = [line.strip() for line in lines if line.strip().startswith('~') and not line.startswith('GDS:')]
+        
+        # 应该有不同的路径输出
+        path_changes = len(set(pwd_lines))
+        self.assertGreaterEqual(path_changes, 2, "应该有路径变化")
+        
+        print("✅ Shell状态持久性测试完成")
 
 class ParallelTestRunner:
     """并行测试运行器"""

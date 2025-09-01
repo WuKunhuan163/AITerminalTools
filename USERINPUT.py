@@ -132,7 +132,6 @@ def show_prompt_header(project_name):
     print(f"{title}")
     print(f"{separator}")
     print("\nEnter your next prompt. Press Ctrl+D (EOF) when done.")
-    print("Prompt: ", end="", flush=True)
 
 def show_tkinter_window_in_subprocess(project_name, timeout_seconds):
     """在子进程中显示tkinter窗口，抑制所有stdout/stderr输出"""
@@ -402,9 +401,16 @@ def _read_input_with_signal(lines, timeout_seconds):
     signal.alarm(timeout_seconds)
     
     try:
+        first_line = True
         while True:
             try:
-                line = input()
+                if first_line:
+                    # 第一行使用提示符，避免delete键清除提示符
+                    line = input("Prompt: ")
+                    first_line = False
+                else:
+                    # 后续行使用空提示符
+                    line = input("         ")  # 8个空格对齐
                 lines.append(line)
                 # 不要重置超时计时器 - 让全局超时继续计时
                 # 这样可以确保整个USERINPUT调用不超过总时间限制

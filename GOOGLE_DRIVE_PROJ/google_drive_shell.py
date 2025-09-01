@@ -616,6 +616,50 @@ class GoogleDriveShell:
         """委托到sync_manager管理器"""
         return self.sync_manager.wait_for_file_sync(*args, **kwargs)
     
+    def _sync_venv_state_to_local_shell(self, venv_args):
+        """同步虚拟环境状态到本地shell配置"""
+        try:
+            import time
+            
+            # 检查是否是会改变venv状态的命令
+            if not venv_args or venv_args[0] not in ['--activate', '--deactivate']:
+                return
+            
+            # 获取当前shell
+            current_shell = self.get_current_shell()
+            if not current_shell:
+                return
+            
+            # 使用统一的venv --current接口获取最新状态
+            current_result = self.cmd_venv("--current")
+            
+            if current_result.get("success"):
+                # 解析当前激活的环境 - 适配实际的返回格式
+                current_env = current_result.get("current")
+                # 如果current字段为空或"None"，设置为None
+                if current_env == "None" or not current_env:
+                    current_env = None
+                
+                # 更新本地shell状态
+                shells_data = self.load_shells()
+                shell_id = current_shell['id']
+                
+                if shell_id in shells_data["shells"]:
+                    # 确保venv_state字段存在
+                    if "venv_state" not in shells_data["shells"][shell_id]:
+                        shells_data["shells"][shell_id]["venv_state"] = {}
+                    
+                    # 更新虚拟环境状态
+                    shells_data["shells"][shell_id]["venv_state"]["active_env"] = current_env
+                    shells_data["shells"][shell_id]["last_accessed"] = time.strftime("%Y-%m-%d %H:%M:%S")
+                    
+                    # 保存到本地
+                    self.save_shells(shells_data)
+                    
+        except Exception as e:
+            # 如果同步失败，不影响venv命令的正常执行
+            pass
+    
     def execute_shell_command(self, shell_cmd, command_identifier=None):
         """执行shell命令 - 新的架构入口点"""
         try:
@@ -995,6 +1039,8 @@ class GoogleDriveShell:
                 # 使用委托方法处理venv命令
                 result = self.cmd_venv(*args)
                 if result.get("success", False):
+                    # venv命令成功后，同步更新本地shell状态
+                    self._sync_venv_state_to_local_shell(args)
                     return 0
                 else:
                     error_message = result.get("error", "Virtual environment operation failed")

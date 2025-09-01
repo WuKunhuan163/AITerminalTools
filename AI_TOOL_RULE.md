@@ -70,8 +70,8 @@ When working with the user, you have access to the following custom binary tools
   - `FILEDIALOG --multiple --types pdf`
 
 ### GOOGLE_DRIVE
-- **Purpose**: Access Google Drive in browser and manage files remotely through an interactive shell interface (GDS). Supports file operations, remote Python execution, and comprehensive Google Drive API integration.
-- **Description**: Google Drive access tool with GDS (Google Drive Shell) for remote file management
+- **Purpose**: Access Google Drive in browser and manage files remotely through an interactive shell interface (GDS). Supports file operations, remote Python execution, Python package management with dependency analysis, and comprehensive Google Drive API integration.
+- **Description**: Google Drive access tool with GDS (Google Drive Shell) for remote file management and Python package management
 - **Usage**: `GOOGLE_DRIVE [url] [options] | GOOGLE_DRIVE --shell [command] | GDS [command]`
 - **Examples**:
   - `GOOGLE_DRIVE`
@@ -79,15 +79,34 @@ When working with the user, you have access to the following custom binary tools
   - `GOOGLE_DRIVE https://drive.google.com/drive/my-drive`
   - `GOOGLE_DRIVE --shell`
   - `GOOGLE_DRIVE --shell pwd`
-  - `GOOGLE_DRIVE --shell ls`
+  - `GOOGLE_DRIVE --shell ls -R`
   - `GOOGLE_DRIVE --shell "cd test && ls"`
   - `GOOGLE_DRIVE --shell upload file.txt`
+  - `GOOGLE_DRIVE --shell upload --target-dir docs file.txt`
+  - `GOOGLE_DRIVE --shell rm -rf old_folder`
+  - `GOOGLE_DRIVE --shell edit file.py '[["old_code", "new_code"]]'`
+  - `GOOGLE_DRIVE --shell python -c 'print("Hello World")'`
   - `GOOGLE_DRIVE --upload file.txt remote/path`
   - `GDS pwd`
-  - `GDS ls`
-  - `GDS mkdir test`
+  - `GDS ls --detailed`
+  - `GDS mkdir -p deep/nested/folder`
   - `GDS cd test`
   - `GDS upload file.txt`
+  - `GDS download report.pdf`
+  - `GDS cat config.json`
+  - `GDS grep "error" log.txt`
+  - `GDS find . -name "*.py"`
+  - `GDS touch new_file.txt`
+  - `GDS mv old_name.txt new_name.txt`
+  - `GDS read script.py 10 20`
+  - `GDS echo "Hello" > greeting.txt`
+  - `GDS pip list`
+  - `GDS pip install numpy`
+  - `GDS deps tensorflow --depth=2`
+  - `GDS venv --create myenv`
+  - `GDS venv --activate myenv`
+  - `GDS venv --list`
+  - `GDS linter script.py`
   - `GOOGLE_DRIVE --create-remote-shell`
   - `GOOGLE_DRIVE --list-remote-shell`
   - `GOOGLE_DRIVE --console-setup`
@@ -128,11 +147,14 @@ When working with the user, you have access to the following custom binary tools
   - `OPENROUTER --test-connection`
 
 ### OVERLEAF
-- **Purpose**: Compile LaTeX files to PDF
-- **Description**: LaTeX文件编译工具，支持GUI文件选择和JSON返回值
-- **Usage**: `OVERLEAF [file.tex]`
+- **Purpose**: Compile LaTeX files to PDF and manage LaTeX project templates
+- **Description**: LaTeX文件编译工具，支持GUI文件选择、JSON返回值和模板管理功能
+- **Usage**: `OVERLEAF [file.tex] [options] | OVERLEAF --template <name> <dir> | OVERLEAF --list-templates`
 - **Examples**:
   - `OVERLEAF document.tex`
+  - `OVERLEAF main.tex --output-dir /path/to/output`
+  - `OVERLEAF --list-templates`
+  - `OVERLEAF --template ICPRS my_paper`
   - `OVERLEAF`
 
 ### SEARCH_PAPER
@@ -161,6 +183,33 @@ When working with the user, you have access to the following custom binary tools
 - **Usage**: `USERINPUT`
 - **Examples**:
   - `USERINPUT`
+
+### PYPI
+- **Purpose**: Retrieve package information, dependencies, and metadata from PyPI
+- **Description**: PyPI Package Information Tool
+- **Usage**: `PYPI <command> [options]`
+- **Examples**:
+  - `PYPI info requests`
+  - `PYPI deps numpy`
+  - `PYPI batch --packages requests numpy --json`
+
+### NETWORK
+- **Purpose**: Test network speed, latency, and connectivity
+- **Description**: Network Testing Tool
+- **Usage**: `NETWORK --test`
+- **Examples**:
+  - `NETWORK --test`
+
+### BACKGROUND_CMD
+- **Purpose**: Create, monitor, and manage background processes safely, preventing system resource exhaustion
+- **Description**: Safe background process management tool
+- **Usage**: `BACKGROUND_CMD <command> [options]`
+- **Examples**:
+  - `BACKGROUND_CMD "sleep 60"`
+  - `BACKGROUND_CMD "ls -la" --shell bash`
+  - `BACKGROUND_CMD --list`
+  - `BACKGROUND_CMD --kill 12345`
+  - `BACKGROUND_CMD --cleanup`
 
 ## Other Tools:
 
@@ -193,14 +242,17 @@ When working with the user, you have access to the following custom binary tools
 - **EXTRACT_PDF**: When user needs to extract text from PDF files with different extraction engines
 - **EXTRACT_IMG**: When user needs intelligent image analysis with automatic content type detection
 - **FILEDIALOG**: When user needs to select specific file types through a GUI dialog
-- **GOOGLE_DRIVE**: When user needs to access Google Drive, manage remote files through shell interface, upload/download files, execute remote Python code, or set up Google Drive API integration
+- **GOOGLE_DRIVE**: When user needs to access Google Drive, manage remote files through shell interface, upload/download files, execute remote Python code, manage Python packages with dependency analysis, create and manage virtual environments, perform code quality checks, edit files with advanced features, or set up Google Drive API integration
 - **IMG2TEXT**: When user needs to convert images to text descriptions
 - **LEARN**: When user needs structured learning materials, paper analysis, context-aware tutorials, or LEARN command generation
 - **OPENROUTER**: When user needs to call OpenRouter API for AI responses with cost tracking
-- **OVERLEAF**: When user needs to compile LaTeX documents
+- **OVERLEAF**: When user needs to compile LaTeX documents or manage LaTeX project templates
 - **RUN**: When user needs to execute other tools with JSON output
 - **SEARCH_PAPER**: When user needs to search for academic papers
 - **UNIMERNET**: When user needs to extract mathematical formulas or tables from images
 - **USERINPUT**: When you need to get user feedback in workflows
+- **PYPI**: When user needs to get PyPI package information, dependencies, or metadata
+- **NETWORK**: When user needs to test network performance and connectivity
+- **BACKGROUND_CMD**: When user needs to run background processes safely, manage process resources, or resolve posix_spawnp failed errors
 
 Always prefer using these tools over manual implementations when the functionality matches the user's needs.

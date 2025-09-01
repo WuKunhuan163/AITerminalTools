@@ -112,17 +112,18 @@ class ShellManagement:
             shell_id = "default_shell"
             shell_name = "default"
             
-            # 默认shell配置，总是从根目录开始
+            # 改进的shell配置，简化结构并添加虚拟环境支持
             shell_config = {
                 "id": shell_id,
                 "name": shell_name,
-                "folder_id": self.main_instance.REMOTE_ROOT_FOLDER_ID,  # 根目录
-                "current_path": "~",  # 根路径
-                "current_folder_id": self.main_instance.REMOTE_ROOT_FOLDER_ID,
+                "current_path": "~",  # 当前逻辑路径
+                "current_folder_id": self.main_instance.REMOTE_ROOT_FOLDER_ID,  # Google Drive文件夹ID
                 "created_time": time.strftime("%Y-%m-%d %H:%M:%S"),
                 "last_accessed": time.strftime("%Y-%m-%d %H:%M:%S"),
-                "status": "active",
-                "type": "default"
+                "venv_state": {
+                    "active_env": None,  # 当前激活的虚拟环境名称
+                    "pythonpath": "/env/python"  # 当前PYTHONPATH
+                }
             }
             
             # 加载现有shells数据
