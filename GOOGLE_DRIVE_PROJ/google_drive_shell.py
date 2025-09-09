@@ -294,6 +294,8 @@ class GoogleDriveShell:
     
     def execute_generic_command(self, *args, **kwargs):
         """委托到remote_commands管理器"""
+        # 检查是否已经在execute_shell_command的队列管理中
+        kwargs['_skip_queue_management'] = kwargs.get('_skip_queue_management', False)
         return self.remote_commands.execute_generic_command(*args, **kwargs)
     
     def _verify_mkdir_with_ls(self, *args, **kwargs):
@@ -656,7 +658,20 @@ class GoogleDriveShell:
             pass
     
     def execute_shell_command(self, shell_cmd, command_identifier=None):
-        """执行shell命令 - 新的架构入口点"""
+        """执行shell命令 - 使用WindowManager的新架构入口点"""
+        print(f"[FORCE_DEBUG] execute_shell_command CALLED: shell_cmd={shell_cmd}")
+        import os
+        os.makedirs("/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_DATA", exist_ok=True)
+        with open("/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_DATA/force_debug.log", 'a') as f:
+            f.write(f"[FORCE_DEBUG] execute_shell_command CALLED: shell_cmd={shell_cmd}\n")
+        
+        # ============ 简化架构：委托给execute_generic_command ============
+        # 队列管理由execute_generic_command统一处理，避免双重管理
+        print(f"[FORCE_DEBUG] Delegating queue management to execute_generic_command")
+        with open("/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_DATA/force_debug.log", 'a') as f:
+            f.write(f"[FORCE_DEBUG] Delegating queue management to execute_generic_command\n")
+        # ========== 简化架构结束 ==========
+        
         try:
             # 检测引号命令标记
             is_quoted_command = shell_cmd.startswith("__QUOTED_COMMAND__")
@@ -866,7 +881,7 @@ class GoogleDriveShell:
                         title = f"GDS Remote Command: ls {options_str} {paths_str}".strip()
                         instruction = f"Command: ls {options_str} {paths_str}\n\nPlease execute the following command in your remote environment:"
                         
-                        result = self.remote_commands.show_command_window_subprocess(
+                        result = self.remote_commands.show_command_window_subprocess(  # WARNING: BYPASSING QUEUE SYSTEM
                             title=title,
                             command_text=remote_command,
                             timeout_seconds=300
@@ -1550,4 +1565,11 @@ class GoogleDriveShell:
             error_msg = f"Error: Error executing shell command: {e}"
             print(error_msg)
             return 1
+        finally:
+            # ============ 简化架构：无需手动释放槽位 ============
+            # 槽位释放由execute_generic_command统一处理
+            print(f"[FORCE_DEBUG] Command execution completed - slot management delegated")
+            with open("/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_DATA/force_debug.log", 'a') as f:
+                f.write(f"[FORCE_DEBUG] Command execution completed - slot management delegated\n")
+            # ========== 简化架构结束 ==========
     

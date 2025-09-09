@@ -1141,25 +1141,24 @@ fi
 
 
 
-    def execute_generic_command(self, cmd, args):
+    def execute_generic_command(self, cmd, args, _skip_queue_management=False):
         """
         统一远端命令执行接口 - 处理除特殊命令外的所有命令
         
         Args:
             cmd (str): 命令名称
             args (list): 命令参数
+            _skip_queue_management (bool): 是否跳过队列管理（避免双重管理）
             
         Returns:
             dict: 执行结果，包含stdout、stderr、path等字段
         """
-        # 导入改进的文件队列管理器并生成唯一的窗口ID
-        try:
-            from .improved_file_queue import get_improved_file_queue
-            queue_manager = get_improved_file_queue()
-        except ImportError:
-            print(f"Warning: Failed to import improved file queue manager, will execute directly")
-            queue_manager = None
-        
+        print(f"[FORCE_DEBUG] execute_generic_command CALLED: cmd={cmd}, args={args}")
+        import os
+        os.makedirs("/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_DATA", exist_ok=True)
+        with open("/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_DATA/force_debug.log", 'a') as f:
+            f.write(f"[FORCE_DEBUG] execute_generic_command CALLED: cmd={cmd}, args={args}\n")
+        # 导入正确的远程窗口队列管理器并生成唯一的窗口ID
         import threading
         import time
         import uuid
@@ -1172,80 +1171,30 @@ fi
             return f"{time.time() - self._debug_start_time:.3f}s"
         
         def debug_log(message):
-            """写入调试信息到文件 - 已注释以减少队列管理debug消息"""
-            pass  # 注释掉debug输出以减少噪音
-            # try:
-            #     # 写入到tmp文件夹中的调试文件
-            #     from pathlib import Path
-            #     current_dir = Path(__file__).parent.parent.parent
-            #     debug_file = current_dir / "concurrent_debug.log"
-            #     
-            #     with open(debug_file, 'a', encoding='utf-8') as f:
-            #         timestamp = time.strftime('%H:%M:%S.%f')[:-3]  # 精确到毫秒
-            #         f.write(f"[{timestamp}] {message}\n")
-            #     
-            # except Exception as e:
-            #     print(f"Debug logging error: {e}")
-            #     pass  # 如果调试日志失败，继续执行
+            """写入调试信息到文件 - 启用详细调试"""
+            try:
+                # 写入到GOOGLE_DRIVE_DATA文件夹中的调试文件
+                from pathlib import Path
+                current_dir = Path(__file__).parent.parent
+                debug_file = current_dir / "GOOGLE_DRIVE_DATA" / "remote_commands_debug.log"
+                debug_file.parent.mkdir(exist_ok=True)
+                
+                with open(debug_file, 'a', encoding='utf-8') as f:
+                    timestamp = time.strftime('%H:%M:%S.%f')[:-3]  # 精确到毫秒
+                    f.write(f"[{timestamp}] {message}\n")
+                
+                # 同时输出到控制台以便实时观察
+                print(f"[REMOTE_DEBUG] {message}")
+            except Exception as e:
+                print(f"[REMOTE_DEBUG_ERROR] Debug logging error: {e}")
+        
+        # 使用WindowManager替代旧的队列系统
+        debug_log(f"🏗️ DEBUG: [{get_relative_timestamp()}] [WINDOW_MANAGER] 使用WindowManager统一管理窗口")
         
         window_id = f"{cmd}_{threading.get_ident()}_{int(time.time() * 1000)}_{uuid.uuid4().hex[:8]}"
         
-        # 请求窗口槽位
-        if queue_manager:
-            debug_log(f"🔒 DEBUG: [{get_relative_timestamp()}] [ENTRY] execute_generic_command - 请求窗口槽位 - window_id: {window_id}, cmd: {cmd}, thread: {threading.get_ident()}")
-            slot_status = queue_manager.request_window_slot(window_id)
-            debug_log(f"📋 DEBUG: [{get_relative_timestamp()}] [SLOT_STATUS] 槽位状态: {slot_status} - window_id: {window_id}")
-            
-            if slot_status == 'waiting':
-                # 等待状态，阻塞等待直到轮到显示窗口
-                debug_log(f"⏳ DEBUG: [{get_relative_timestamp()}] [WAITING] 窗口在等待队列中，开始阻塞等待 - window_id: {window_id}")
-                
-                # 轮询等待直到获得active状态
-                max_wait_time = 3600  # 最多等待1小时
-                check_interval = 1.0  # 每1秒检查一次
-                waited_time = 0
-                
-                while waited_time < max_wait_time:
-                    time.sleep(check_interval)
-                    waited_time += check_interval
-                    
-                    # 重新检查槽位状态
-                    current_status = queue_manager.check_window_status(window_id)
-                    debug_log(f"🔄 DEBUG: [{get_relative_timestamp()}] [WAITING_CHECK] 检查状态: {current_status}, 已等待: {waited_time:.1f}s - window_id: {window_id}")
-                    
-                    if current_status == 'active':
-                        debug_log(f"✅ DEBUG: [{get_relative_timestamp()}] [WAITING_ACTIVATED] 等待结束，获得活动状态 - window_id: {window_id}, 等待时间: {waited_time:.1f}s")
-                        break
-                    elif current_status == 'not_found':
-                        debug_log(f"❌ DEBUG: [{get_relative_timestamp()}] [WAITING_LOST] 窗口从队列中消失 - window_id: {window_id}")
-                        return {
-                            "success": False,
-                            "error": "窗口从等待队列中消失",
-                            "window_id": window_id
-                        }
-                
-                if waited_time >= max_wait_time:
-                    debug_log(f"⏰ DEBUG: [{get_relative_timestamp()}] [WAITING_TIMEOUT] 等待超时 - window_id: {window_id}")
-                    return {
-                        "success": False,
-                        "error": f"等待窗口槽位超时 ({max_wait_time}秒)",
-                        "window_id": window_id
-                    }
-                    
-                # 等待结束，继续执行窗口显示逻辑
-                debug_log(f"✅ DEBUG: [{get_relative_timestamp()}] [ACQUIRED] 窗口槽位已获得（等待后） - window_id: {window_id}, cmd: {cmd}")
-            elif slot_status == 'active':
-                debug_log(f"✅ DEBUG: [{get_relative_timestamp()}] [ACQUIRED] 窗口槽位已获得（直接） - window_id: {window_id}, cmd: {cmd}")
-            else:
-                debug_log(f"❌ DEBUG: [{get_relative_timestamp()}] [SLOT_ERROR] 未知槽位状态: {slot_status} - window_id: {window_id}, cmd: {cmd}")
-                return {
-                    "success": False,
-                    "error": f"未知槽位状态: {slot_status}",
-                    "window_id": window_id
-                }
-        
-        # 添加窗口显示调试信息
-        debug_log(f"🪟 DEBUG: [{get_relative_timestamp()}] [WINDOW_SHOW] 准备显示窗口 - window_id: {window_id}, cmd: {cmd}, thread: {threading.get_ident()}")
+        # WindowManager自动处理队列，无需手动槽位管理
+        debug_log(f"🪟 DEBUG: [{get_relative_timestamp()}] [WINDOW_SHOW] 准备通过WindowManager显示窗口 - window_id: {window_id}, cmd: {cmd}, thread: {threading.get_ident()}")
         
         try:
             # 检查是否为特殊命令
@@ -1281,13 +1230,10 @@ fi
             # 正常执行流程：显示远端命令并通过tkinter获取用户执行结果
             debug_log(f"🖥️ DEBUG: [{get_relative_timestamp()}] [EXEC] 开始执行远端命令 - window_id: {window_id}, cmd: {cmd}")
             debug_log(f"🔧 DEBUG: [{get_relative_timestamp()}] [EXEC_CALL] 调用_execute_with_result_capture - window_id: {window_id}, remote_command_info: {len(remote_command_info) if isinstance(remote_command_info, (list, tuple)) else 'not_list'}")
-            result = self._execute_with_result_capture(remote_command_info, cmd, args, window_id, get_relative_timestamp, queue_manager, debug_log)
+            result = self._execute_with_result_capture(remote_command_info, cmd, args, window_id, get_relative_timestamp, debug_log)
             debug_log(f"📋 DEBUG: [{get_relative_timestamp()}] [RESULT] 远端命令执行完成 - window_id: {window_id}, success: {result.get('success', False)}")
             
-            # 标记窗口为已完成（不管成功还是失败）
-            if queue_manager:
-                queue_manager.mark_window_completed(window_id)
-                debug_log(f"✅ DEBUG: [{get_relative_timestamp()}] [MARK_COMPLETE] 窗口已标记为完成 - window_id: {window_id}")
+            # WindowManager自动管理窗口生命周期，无需手动释放
             
             # 如果命令执行成功且包含重定向，则验证文件创建
             if result.get("success", False) and self._is_redirect_command(cmd, args):
@@ -1308,8 +1254,8 @@ fi
                 "error": f"执行远端命令时出错: {str(e)}"
             }
         finally:
-            # 注意：槽位释放现在由用户关闭窗口控制，不在命令执行完成时自动释放
-            debug_log(f"📋 DEBUG: [{get_relative_timestamp()}] [COMMAND_END] 命令执行流程结束，槽位保持占用直到用户关闭窗口 - window_id: {window_id}, cmd: {cmd}")
+            # WindowManager自动管理窗口生命周期
+            debug_log(f"🏗️ DEBUG: [{get_relative_timestamp()}] [COMMAND_END] 命令执行流程结束，WindowManager自动管理 - window_id: {window_id}, cmd: {cmd}")
     
     def _is_redirect_command(self, cmd, args):
         """检测命令是否包含重定向操作"""
@@ -1619,7 +1565,7 @@ fi
         except Exception as e:
             raise Exception(f"Generate remote command failed: {str(e)}")
 
-    def _execute_with_result_capture(self, remote_command_info, cmd, args, window_id, get_timestamp_func, queue_manager, debug_log_func):
+    def _execute_with_result_capture(self, remote_command_info, cmd, args, window_id, get_timestamp_func, debug_log_func):
         """
         执行远端命令并捕获结果
         
@@ -1629,25 +1575,21 @@ fi
             args (list): 原始命令参数
             window_id (str): 窗口唯一标识符
             get_timestamp_func (function): 获取相对时间戳的函数
-            queue_manager (ImprovedFileQueue): 改进的文件队列管理器
             debug_log_func (function): 调试日志函数
             
         Returns:
             dict: 执行结果
         """
         debug_log_func(f"🎯 DEBUG: [{get_timestamp_func()}] [CAPTURE_START] _execute_with_result_capture 开始 - window_id: {window_id}, cmd: {cmd}")
-        # print(f"DEBUG: [{get_timestamp_func()}] [CAPTURE_ENTRY] _execute_with_result_capture 开始 - window_id: {window_id}, cmd: {cmd}")
         
         # 开始进度缓冲
         from .progress_manager import start_progress_buffering, stop_progress_buffering
         start_progress_buffering()
         
-        # 内存队列管理器会自动处理心跳，无需额外启动心跳线程
-        debug_log_func(f"💓 DEBUG: [{get_timestamp_func()}] [HEARTBEAT_MANAGED] 心跳由队列管理器自动处理 - window_id: {window_id}")
-        heartbeat_stop_event = None  # 保持兼容性
+        # WindowManager自动处理窗口生命周期
+        debug_log_func(f"🏗️ DEBUG: [{get_timestamp_func()}] [WINDOW_MANAGER] WindowManager自动处理窗口 - window_id: {window_id}")
         try:
             remote_command, result_filename = remote_command_info
-            # print(f"DEBUG: [{get_timestamp_func()}] [FILES] 结果文件名: {result_filename} - window_id: {window_id}")
             
             # 在显示命令窗口前进行语法检查
             debug_log_func(f"🔍 DEBUG: [{get_timestamp_func()}] [SYNTAX_CHECK] 开始语法检查 - window_id: {window_id}")
@@ -1679,7 +1621,6 @@ fi
             debug_log_func(f"🪟 DEBUG: [{get_timestamp_func()}] [WINDOW_CALL] 即将调用_show_command_window - window_id: {window_id}")
             window_result = self._show_command_window(cmd, args, remote_command, debug_info)
             debug_print(f"_show_command_window返回结果: {window_result}")
-            # print(f"DEBUG: [{get_timestamp_func()}] [WINDOW_RESULT] 窗口操作完成 - window_id: {window_id}, action: {window_result.get('action', 'unknown')}")
             
             # 检查用户窗口操作结果，并在适当时机释放槽位
             user_completed_window = False
@@ -1692,14 +1633,8 @@ fi
                 debug_log_func(f"👤 DEBUG: [{get_timestamp_func()}] [USER_COMPLETED] 设置user_completed_window=True (direct_feedback) - window_id: {window_id}")
                 debug_capture.stop_capture()  # 在返回前停止debug捕获
                 
-                # 释放窗口槽位（用户完成操作）
-                if queue_manager:
-                    try:
-                        debug_log_func(f"🔓 DEBUG: [{get_timestamp_func()}] [PRE_RELEASE] 准备释放槽位 - window_id: {window_id}, thread: {threading.get_ident()}")
-                        queue_manager.release_window_slot(window_id)
-                        debug_log_func(f"🔓 DEBUG: [{get_timestamp_func()}] [USER_RELEASE] 用户完成直接反馈，释放槽位 - window_id: {window_id}")
-                    except Exception as e:
-                        debug_log_func(f"❌ DEBUG: [{get_timestamp_func()}] [RELEASE_ERROR] 释放槽位失败: {e}")
+                # WindowManager自动处理窗口生命周期
+                debug_log_func(f"🏗️ DEBUG: [{get_timestamp_func()}] [USER_FEEDBACK] 用户完成直接反馈 - window_id: {window_id}")
                 
                 return window_result
             elif window_result.get("action") == "success":
@@ -1715,13 +1650,8 @@ fi
                 debug_log_func(f"👤 DEBUG: [{get_timestamp_func()}] [USER_COMPLETED] 设置user_completed_window=True (non-success: {window_result.get('action')}) - window_id: {window_id}")
                 debug_capture.stop_capture()  # 在返回前停止debug捕获
                 
-                # 释放窗口槽位（用户取消或超时）
-                if queue_manager:
-                    try:
-                        queue_manager.release_window_slot(window_id)
-                        debug_log_func(f"🔓 DEBUG: [{get_timestamp_func()}] [USER_CANCEL_RELEASE] 用户取消/超时，释放槽位 - window_id: {window_id}")
-                    except Exception as e:
-                        debug_log_func(f"❌ DEBUG: [{get_timestamp_func()}] [RELEASE_ERROR] 释放槽位失败: {e}")
+                # WindowManager自动处理窗口生命周期
+                debug_log_func(f"🏗️ DEBUG: [{get_timestamp_func()}] [USER_CANCEL] 用户取消/超时 - window_id: {window_id}")
                 
                 return {
                     "success": False,
@@ -1805,7 +1735,7 @@ fi
             title = f"GDS Remote Command: {cmd}"
             instruction = f"Command: {cmd} {' '.join(args)}\n\nPlease execute the following command in your remote environment:"
             
-            # 使用subprocess方法显示窗口（修复参数不匹配问题）
+            # 使用新的WindowManager显示窗口
             result = self.show_command_window_subprocess(
                 title=title,
                 command_text=remote_command
@@ -2000,6 +1930,19 @@ fi
     
     def show_command_window_subprocess(self, title, command_text, timeout_seconds=3600):
         """
+        使用WindowManager显示命令窗口
+        新架构：统一窗口管理，避免多线程竞态问题
+        """
+        from .window_manager import get_window_manager
+        
+        # 获取窗口管理器并请求窗口
+        window_manager = get_window_manager()
+        result = window_manager.request_window(title, command_text, timeout_seconds)
+        
+        return result
+    
+    def show_command_window_subprocess_legacy(self, title, command_text, timeout_seconds=3600):
+        """
         在subprocess中显示命令窗口，完全抑制所有系统输出
         恢复原来GDS的窗口设计：500x50，三按钮，自动复制
         
@@ -2027,8 +1970,8 @@ fi
         current_dir = os.path.dirname(__file__)
         audio_file_path = os.path.join(os.path.dirname(current_dir), "tkinter_bell.mp3")
         
-        # 创建子进程脚本 - 恢复原来的500x60窄窗口设计
-        subprocess_script = f'''
+        # 创建子进程脚本 - 恢复原来的500x60窗口设计
+        subprocess_script = '''
 import sys
 import os
 import json
@@ -2043,7 +1986,7 @@ try:
     import tkinter as tk
     import queue
     
-    result = {{"action": "timeout"}}
+    result = {"action": "timeout"}
     result_queue = queue.Queue()
     
     # 解码base64命令
@@ -2053,6 +1996,18 @@ try:
     root.title("Google Drive Shell")
     root.geometry("500x60")
     root.resizable(False, False)
+    
+    # 窗口计数器 - 记录到debug日志
+    import os
+    debug_file = "/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_DATA/window_queue_debug.log"
+    try:
+        with open(debug_file, "a", encoding="utf-8") as f:
+            import time
+            timestamp = time.time() - 1757413752.714440  # 相对时间戳
+            f.write("🪟 DEBUG: [{:.3f}s] [TKINTER_WINDOW_CREATED] 窗口创建成功\\n".format(timestamp))
+            f.flush()
+    except:
+        pass
     
     # 居中窗口
     root.eval('tk::PlaceWindow . center')
@@ -2194,16 +2149,32 @@ try:
     def execution_completed():
         global button_clicked
         button_clicked = True
-        result_queue.put({{"action": "success", "message": "用户确认执行完成"}})
+        result_queue.put({"action": "success", "message": "用户确认执行完成"})
         result["action"] = "success"
+        # 记录窗口销毁
+        try:
+            with open(debug_file, "a", encoding="utf-8") as f:
+                timestamp = time.time() - 1757413752.714440
+                f.write("🪟 DEBUG: [{:.3f}s] [TKINTER_WINDOW_DESTROYED] 窗口销毁 - 用户点击成功\\n".format(timestamp))
+                f.flush()
+        except:
+            pass
         root.destroy()
     
     def direct_feedback():
         """直接反馈功能"""
         global button_clicked
         button_clicked = True
-        result_queue.put({{"action": "direct_feedback", "message": "启动直接反馈模式"}})
+        result_queue.put({"action": "direct_feedback", "message": "启动直接反馈模式"})
         result["action"] = "direct_feedback"
+        # 记录窗口销毁
+        try:
+            with open(debug_file, "a", encoding="utf-8") as f:
+                timestamp = time.time() - 1757413752.714440
+                f.write("🪟 DEBUG: [{:.3f}s] [TKINTER_WINDOW_DESTROYED] 窗口销毁 - 用户点击反馈\\n".format(timestamp))
+                f.flush()
+        except:
+            pass
         root.destroy()
     
     # 复制指令按钮
@@ -2285,7 +2256,18 @@ try:
     root.after(30000, refocus_window)
     
     # 设置自动关闭定时器
-    root.after({timeout_seconds * 1000}, lambda: (result.update({{"action": "timeout"}}), root.destroy()))
+    def timeout_destroy():
+        try:
+            with open(debug_file, "a", encoding="utf-8") as f:
+                timestamp = time.time() - 1757413752.714440
+                f.write("🪟 DEBUG: [{:.3f}s] [TKINTER_WINDOW_DESTROYED] 窗口销毁 - 超时\\n".format(timestamp))
+                f.flush()
+        except:
+            pass
+        result.update({"action": "timeout"})
+        root.destroy()
+    
+    root.after({timeout_seconds * 1000}, timeout_destroy)
     
     # 运行窗口
     root.mainloop()
@@ -2294,8 +2276,12 @@ try:
     print(json.dumps(result))
     
 except Exception as e:
-    print(json.dumps({{"action": "error", "error": str(e)}}))
-'''
+    print(json.dumps({"action": "error", "error": str(e)}))
+'''.format(
+    command_b64=command_b64,
+    audio_file_path=audio_file_path,
+    timeout_seconds=timeout_seconds
+)
         
         try:
             # 在子进程中运行tkinter窗口，抑制所有输出
@@ -2325,7 +2311,10 @@ except Exception as e:
                     
                     return {"action": "error", "error": "Failed to parse result"}
             else:
-                return {"action": "error", "error": "Subprocess failed"}
+                # 添加调试信息
+                error_info = f"Subprocess failed - returncode: {result.returncode}, stdout: {result.stdout[:200]}, stderr: {result.stderr[:200]}"
+                print(f"[WINDOW_DEBUG] {error_info}")
+                return {"action": "error", "error": error_info}
                 
         except subprocess.TimeoutExpired:
             return {"action": "timeout", "error": "Window timeout"}
