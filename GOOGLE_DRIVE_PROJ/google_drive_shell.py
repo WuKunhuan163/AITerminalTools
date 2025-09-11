@@ -280,6 +280,10 @@ class GoogleDriveShell:
         """委托到file_operations管理器"""
         return self.file_operations.cmd_venv(*args, **kwargs)
     
+    def cmd_pyenv(self, *args, **kwargs):
+        """委托到file_operations管理器"""
+        return self.file_operations.cmd_pyenv(*args, **kwargs)
+    
     def cmd_linter(self, *args, **kwargs):
         """委托到file_operations管理器"""
         return self.file_operations.cmd_linter(*args, **kwargs)
@@ -1070,6 +1074,47 @@ class GoogleDriveShell:
                 else:
                     error_message = result.get("error", "Virtual environment operation failed")
                     print(error_message)
+            elif cmd == 'pyenv':
+                # 使用委托方法处理pyenv命令
+                result = self.cmd_pyenv(*args)
+                if result.get("success", False):
+                    return 0
+                else:
+                    error_message = result.get("error", "Python version management operation failed")
+                    print(error_message)
+            elif cmd == 'cleanup-windows':
+                # 手动清理窗口命令
+                force = '--force' in args
+                try:
+                    from modules.window_manager import get_window_manager
+                    manager = get_window_manager()
+                    
+                    # 获取清理前的窗口数量
+                    before_count = manager.get_active_windows_count()
+                    print(f"清理前活跃窗口数量: {before_count}")
+                    
+                    # 执行清理
+                    manager.cleanup_windows(force=force)
+                    
+                    # 等待一下再检查
+                    import time
+                    time.sleep(1)
+                    after_count = manager.get_active_windows_count()
+                    print(f"清理后活跃窗口数量: {after_count}")
+                    
+                    if before_count > 0 and after_count == 0:
+                        print("✅ 窗口清理成功")
+                    elif before_count == 0:
+                        print("ℹ️ 没有需要清理的窗口")
+                    elif after_count < before_count:
+                        print(f"✅ 部分窗口清理成功 (清理了 {before_count - after_count} 个窗口)")
+                    else:
+                        print("⚠️ 窗口清理可能未完全成功")
+                    
+                    return 0
+                except Exception as e:
+                    print(f"❌ 窗口清理失败: {e}")
+                    return 1
                     
                     # 显示stderr如果存在
                     stderr = result.get("stderr", "")

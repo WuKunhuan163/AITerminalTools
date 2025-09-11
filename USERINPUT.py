@@ -266,15 +266,9 @@ try:
     )
     btn.pack(expand=True)
     
-    # 添加键盘快捷键：回车键等同于点击按钮
-    def on_key_press(event):
-        if event.keysym == 'Return':
-            on_button_click()  # 使用相同的点击处理函数
-            return "break"
+    # 回车键快捷键已删除，用户需要点击按钮
     
-    # 绑定键盘事件
-    root.bind('<Key>', on_key_press)
-    btn.focus_set()  # 确保按钮能接收键盘事件
+    # 键盘事件绑定已移除
     
     # 定期重新获取焦点的函数 - 暂时注释掉5秒refocus机制
     def refocus_window():
@@ -291,7 +285,11 @@ try:
     root.after(30000, refocus_window)
     
     # 设置自动关闭定时器
-    root.after({timeout_seconds * 1000}, root.destroy)
+    def auto_close():
+        if not button_clicked:
+            root.destroy()
+    
+    root.after({timeout_seconds} * 1000, auto_close)
     
     # 运行窗口
     root.mainloop()
@@ -391,8 +389,6 @@ def timeout_handler(signum, frame):
     """Signal handler for timeout"""
     raise TimeoutException("Input timeout")
 
-
-
 def _read_input_with_signal(lines, timeout_seconds):
     """使用信号的传统方法，改进以捕获部分输入"""
     import readline
@@ -401,22 +397,21 @@ def _read_input_with_signal(lines, timeout_seconds):
     signal.alarm(timeout_seconds)
     
     try:
-        first_line = True
         while True:
             try:
-                if first_line:
-                    # 第一行使用提示符，避免delete键清除提示符
-                    line = input("Prompt: ")
-                    first_line = False
-                else:
-                    # 后续行使用空提示符
-                    line = input("         ")  # 8个空格对齐
+                # 所有行都使用空提示符，正常换行，不要置顶的空格
+                line = input()
+                # 成功读取一行后，将其添加到lines列表中
                 lines.append(line)
-                # 不要重置超时计时器 - 让全局超时继续计时
-                # 这样可以确保整个USERINPUT调用不超过总时间限制
-                # signal.alarm(timeout_seconds)  # 移除这行，让计时器继续倒计时
             except EOFError:
                 # Ctrl+D 被按下，结束输入
+                # 在返回前，检查是否有当前正在输入的行需要保存
+                try:
+                    current_line = readline.get_line_buffer()
+                    if current_line.strip():
+                        lines.append(current_line.strip())
+                except:
+                    pass  # 如果无法获取缓冲区内容，忽略错误
                 return False
             except KeyboardInterrupt:
                 # Ctrl+C 被按下 - 改进的处理逻辑
@@ -424,8 +419,11 @@ def _read_input_with_signal(lines, timeout_seconds):
                     # 获取当前输入缓冲区的内容
                     current_line = readline.get_line_buffer()
                     if current_line.strip():
-                        lines.append(current_line.strip())
-                except:
+                        # 检查当前行是否已经在lines数组中，避免重复添加
+                        stripped_line = current_line.strip()
+                        if not lines or lines[-1] != stripped_line:
+                            lines.append(stripped_line)
+                except Exception:
                     pass  # 如果无法获取缓冲区内容，忽略错误
                 
                 # 如果有任何内容（包括之前输入的行或当前行），返回内容而不是"stop"
@@ -440,7 +438,7 @@ def _read_input_with_signal(lines, timeout_seconds):
                     current_line = readline.get_line_buffer()
                     if current_line.strip():
                         lines.append(current_line.strip())
-                except:
+                except Exception:
                     pass  # 如果无法获取缓冲区内容，忽略错误
                 return True
     finally:
@@ -455,11 +453,11 @@ def get_user_input_via_terminal(project_name):
     # 获取剩余超时时间
     if _global_timeout_manager:
         remaining_time = _global_timeout_manager.get_remaining_time()
-        TIMEOUT_SECONDS = max(1, int(remaining_time))  # 确保至少1秒，并且是整数
         if remaining_time <= 0:
             timeout_seconds = _global_timeout_manager.timeout_seconds
             timeout_message = f"\n[TIMEOUT] 输入超时 ({timeout_seconds}秒)。如果上述信息没有有效反馈（有可能用户几分钟内没有打字），请再次调用 USERINPUT 重复进行直到有有效反馈。"
             return f"[无用户输入]{timeout_message}"
+        TIMEOUT_SECONDS = max(1, int(remaining_time))  # 确保至少1秒，并且是整数
     else:
         # 设置超时时间 (默认3分钟，可通过命令行参数或环境变量配置)
         # 优先级：命令行参数 > 环境变量 > 默认值(180秒)
@@ -594,6 +592,7 @@ Environment Variables:
 
 def main():
     """主函数，支持命令行参数"""
+    
     # 获取command_identifier
     args = sys.argv[1:]
     command_identifier = None
@@ -641,21 +640,31 @@ def main():
     
     # 初始化全局超时管理器
     global _global_timeout_manager
-    default_timeout = int(os.environ.get('USERINPUT_TIMEOUT', '300'))
+    default_timeout = int(os.environ.get('USERINPUT_TIMEOUT', '180'))
     final_timeout = timeout_override if timeout_override is not None else default_timeout
     _global_timeout_manager = GlobalTimeoutManager(final_timeout)
     
     # 尝试显示极简UI（仅在非RUN环境中）
     if not is_run_environment(command_identifier):
         ui_result = show_dummy_ui(project_name)
+        
         # 如果UI因超时关闭，直接返回超时结果
         if not ui_result and _global_timeout_manager.is_timeout_expired():
             timeout_message = f"\n[TIMEOUT] 输入超时 ({final_timeout}秒)。如果上述信息没有有效反馈（有可能用户几分钟内没有打字），请再次调用 USERINPUT 重复进行直到有有效反馈。"
             user_input = f"[无用户输入]{timeout_message}"
+        elif not ui_result:
+            # UI关闭但不是因为超时，可能是用户关闭了窗口，直接返回stop
+            user_input = "stop"
         else:
-            show_project_info(current_dir, project_dir)
-            show_prompt_header(project_name)
-            user_input = get_user_input_via_terminal(project_name)
+            # 用户点击了按钮，继续到终端输入
+            # 检查是否还有剩余时间
+            if _global_timeout_manager.is_timeout_expired():
+                timeout_message = f"\n[TIMEOUT] 输入超时 ({final_timeout}秒)。如果上述信息没有有效反馈（有可能用户几分钟内没有打字），请再次调用 USERINPUT 重复进行直到有有效反馈。"
+                user_input = f"[无用户输入]{timeout_message}"
+            else:
+                show_project_info(current_dir, project_dir)
+                show_prompt_header(project_name)
+                user_input = get_user_input_via_terminal(project_name)
     else:
         user_input = get_user_input_via_terminal(project_name)
     

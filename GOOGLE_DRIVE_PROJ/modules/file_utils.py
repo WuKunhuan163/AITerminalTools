@@ -235,7 +235,7 @@ class FileUtils:
 """
                 
                 # 使用subprocess方法显示窗口
-                result = self.main_instance.remote_commands.show_command_window_subprocess(
+                result = self.main_instance.remote_commands.show_command_window_subprocess(  # WARNING: BYPASSING QUEUE SYSTEM
                     title=title,
                     command_text=remote_command,
                     timeout_seconds=300

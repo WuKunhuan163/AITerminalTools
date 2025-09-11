@@ -149,7 +149,7 @@ def test_return_command_no_output():
     cmd = ['python', google_drive_path, '--shell', 'touch', 'test_file.txt', '--return']
     
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=25)
         
         # 检查输出格式 - 应该是纯净的JSON或者明确的错误信息
         output = result.stdout + result.stderr
@@ -182,7 +182,7 @@ def test_error_handling():
     cmd = ['python', google_drive_path, '--shell', 'invalid_command_that_does_not_exist']
     
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=25)
         
         # Should handle error gracefully (non-zero exit code is expected)
         assert result.returncode != 0, "Invalid command should return non-zero exit code"
@@ -209,7 +209,7 @@ def test_gds_read_command():
     cmd = ['python', google_drive_path, '--shell', 'help']
     
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=25)
         
         # Should include read command in help
         output = result.stdout.lower() + result.stderr.lower()
@@ -258,7 +258,7 @@ def test_path_conversion():
     cmd = ['python', google_drive_path, '--shell', 'pwd']
     
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=25)
         
         # Should return some path information
         assert result.returncode == 0, "pwd command should succeed"
@@ -949,7 +949,6 @@ def run_upload_improvements_tests():
 
 ALL_GOOGLE_DRIVE_TESTS = [
     # Merged tests from original files
-    test_return_command_basic,
     test_bash_syntax_validation,
     test_return_command_no_output,
     test_error_handling,

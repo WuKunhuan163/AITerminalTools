@@ -13,6 +13,7 @@ import json
 import signal
 import atexit
 import subprocess
+import psutil
 from pathlib import Path
 
 class WindowManager:
@@ -45,9 +46,15 @@ class WindowManager:
         self._initialized = True
         self.window_counter = 0  # 窗口计数器
         self.active_processes = {}  # 活跃的子进程 {window_id: process}
+        self.lock_file_path = Path("/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_DATA/window_lock.lock")
+        self.pid_file_path = Path("/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_DATA/window_lock.pid")
+        self.current_lock_fd = None  # 当前持有的锁文件描述符
         
         # 设置进程清理处理器
         self._setup_cleanup_handlers()
+        
+        # 清理可能存在的无效锁
+        self._cleanup_stale_locks()
         
         # 跨进程窗口管理，不需要线程队列
     
@@ -56,13 +63,32 @@ class WindowManager:
         def cleanup_handler(signum=None, frame=None):
             self._debug_log(f"🧹 DEBUG: [CLEANUP_HANDLER] 进程清理处理器触发，信号: {signum}")
             self._cleanup_all_processes()
+            self._release_lock()
         
-        # 注册信号处理器
+        def emergency_cleanup_handler(signum=None, frame=None):
+            """紧急清理处理器 - 用于强制退出信号"""
+            self._debug_log(f"🚨 DEBUG: [EMERGENCY_CLEANUP] 紧急清理处理器触发，信号: {signum}")
+            self._force_cleanup_all_processes()
+            self._release_lock()
+            # 对于SIGKILL等信号，立即退出
+            if signum in (signal.SIGKILL, signal.SIGQUIT):
+                os._exit(1)
+        
+        # 注册常规信号处理器
         signal.signal(signal.SIGTERM, cleanup_handler)
         signal.signal(signal.SIGINT, cleanup_handler)
         
+        # 注册紧急信号处理器
+        try:
+            signal.signal(signal.SIGQUIT, emergency_cleanup_handler)  # Ctrl+\
+            if hasattr(signal, 'SIGHUP'):
+                signal.signal(signal.SIGHUP, cleanup_handler)  # 挂起信号
+        except (OSError, ValueError):
+            # 某些信号在某些系统上可能不可用
+            pass
+        
         # 注册退出处理器
-        atexit.register(self._cleanup_all_processes)
+        atexit.register(cleanup_handler)
         
         self._debug_log("🛡️ DEBUG: [CLEANUP_SETUP] 进程清理处理器已设置")
     
@@ -92,13 +118,222 @@ class WindowManager:
         if cleanup_count > 0:
             self._debug_log(f"🧹 DEBUG: [CLEANUP_COMPLETE] 清理了 {cleanup_count} 个子进程")
     
+    def _force_cleanup_all_processes(self):
+        """强制清理所有活跃的子进程 - 用于紧急情况"""
+        if not hasattr(self, 'active_processes'):
+            return
+            
+        cleanup_count = 0
+        for window_id, process in list(self.active_processes.items()):
+            try:
+                if process.poll() is None:  # 进程还在运行
+                    self._debug_log(f"🚨 DEBUG: [FORCE_CLEANUP_PROCESS] 强制清理子进程: PID={process.pid}, window_id: {window_id}")
+                    
+                    # 立即杀死进程，不等待
+                    process.kill()
+                    try:
+                        process.wait(timeout=1)
+                    except subprocess.TimeoutExpired:
+                        # 如果1秒内还没死，就忽略
+                        pass
+                    cleanup_count += 1
+            except Exception as e:
+                self._debug_log(f"❌ DEBUG: [FORCE_CLEANUP_ERROR] 强制清理进程失败: {e}")
+            
+            # 从活跃进程列表中移除
+            self.active_processes.pop(window_id, None)
+        
+        # 额外的系统级清理：查找并杀死所有可能的tkinter窗口进程
+        try:
+            import psutil
+            killed_count = 0
+            for proc in psutil.process_iter(['pid', 'cmdline']):
+                try:
+                    cmdline = proc.info['cmdline']
+                    if not cmdline:
+                        continue
+                        
+                    cmdline_str = ' '.join(cmdline)
+                    
+                    # 检测可能的GDS tkinter窗口进程
+                    if ('python' in cmdline_str.lower() and 
+                        ('-c' in cmdline_str or 'tkinter' in cmdline_str.lower()) and
+                        ('Google Drive Shell' in cmdline_str or 'root.title' in cmdline_str)):
+                        
+                        self._debug_log(f"🚨 DEBUG: [SYSTEM_CLEANUP] 发现并清理tkinter进程: PID={proc.info['pid']}")
+                        proc.kill()
+                        killed_count += 1
+                        
+                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                    continue
+            
+            if killed_count > 0:
+                self._debug_log(f"🚨 DEBUG: [SYSTEM_CLEANUP_COMPLETE] 系统级清理了 {killed_count} 个tkinter进程")
+                
+        except Exception as e:
+            self._debug_log(f"❌ DEBUG: [SYSTEM_CLEANUP_ERROR] 系统级清理失败: {e}")
+        
+        if cleanup_count > 0:
+            self._debug_log(f"🚨 DEBUG: [FORCE_CLEANUP_COMPLETE] 强制清理了 {cleanup_count} 个子进程")
+    
+    def _cleanup_stale_locks(self):
+        """清理过期的锁文件"""
+        try:
+            if self.pid_file_path.exists():
+                with open(self.pid_file_path, 'r') as f:
+                    old_pid = int(f.read().strip())
+                
+                # 检查进程是否还存在
+                try:
+                    old_process = psutil.Process(old_pid)
+                    # 检查是否是GDS相关进程
+                    cmdline = ' '.join(old_process.cmdline())
+                    if 'GOOGLE_DRIVE.py' not in cmdline and 'python' not in cmdline.lower():
+                        # 不是GDS进程，清理锁
+                        self._force_cleanup_lock()
+                        self._debug_log(f"🧹 DEBUG: [STALE_LOCK_CLEANUP] 清理了非GDS进程的锁: PID={old_pid}")
+                except psutil.NoSuchProcess:
+                    # 进程不存在，清理锁
+                    self._force_cleanup_lock()
+                    self._debug_log(f"🧹 DEBUG: [STALE_LOCK_CLEANUP] 清理了不存在进程的锁: PID={old_pid}")
+                    
+        except Exception as e:
+            self._debug_log(f"⚠️ DEBUG: [STALE_LOCK_CLEANUP_ERROR] 清理过期锁失败: {e}")
+    
+    def _force_cleanup_lock(self):
+        """强制清理锁文件"""
+        try:
+            if self.lock_file_path.exists():
+                self.lock_file_path.unlink()
+            if self.pid_file_path.exists():
+                self.pid_file_path.unlink()
+        except Exception as e:
+            self._debug_log(f"❌ DEBUG: [FORCE_CLEANUP_ERROR] 强制清理锁失败: {e}")
+    
+    def _acquire_lock(self, request_id, timeout_seconds=30):
+        """
+        获取跨进程锁
+        
+        Args:
+            request_id (str): 请求ID
+            timeout_seconds (int): 超时时间
+            
+        Returns:
+            bool: 是否成功获取锁
+        """
+        current_pid = os.getpid()
+        start_time = time.time()
+        
+        self._debug_log(f"🔒 DEBUG: [LOCK_REQUEST] 进程 {current_pid} 请求窗口锁: {request_id}")
+        
+        while time.time() - start_time < timeout_seconds:
+            try:
+                # 尝试创建PID文件（原子操作）
+                if not self.pid_file_path.exists():
+                    # PID文件不存在，尝试创建
+                    with open(self.pid_file_path, 'x') as f:  # 'x' 模式确保原子性创建
+                        f.write(str(current_pid))
+                        f.flush()
+                        os.fsync(f.fileno())  # 强制写入磁盘
+                    
+                    # 再次验证PID文件内容（防止竞态条件）
+                    time.sleep(0.01)  # 短暂等待
+                    with open(self.pid_file_path, 'r') as f:
+                        stored_pid = int(f.read().strip())
+                    
+                    if stored_pid == current_pid:
+                        # 成功获取锁，现在获取文件锁作为双重保险
+                        try:
+                            self.current_lock_fd = open(self.lock_file_path, 'w')
+                            fcntl.flock(self.current_lock_fd.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                            self._debug_log(f"🔓 DEBUG: [LOCK_ACQUIRED] 进程 {current_pid} 成功获得窗口锁: {request_id}")
+                            return True
+                        except (IOError, OSError):
+                            # 文件锁获取失败，清理PID文件
+                            self._force_cleanup_lock()
+                            continue
+                    else:
+                        # PID文件被其他进程修改，继续等待
+                        continue
+                else:
+                    # PID文件存在，检查持有锁的进程是否还活着
+                    try:
+                        with open(self.pid_file_path, 'r') as f:
+                            lock_holder_pid = int(f.read().strip())
+                        
+                        try:
+                            lock_process = psutil.Process(lock_holder_pid)
+                            # 进程存在，检查是否是GDS进程
+                            cmdline = ' '.join(lock_process.cmdline())
+                            if 'GOOGLE_DRIVE.py' in cmdline or 'python' in cmdline.lower():
+                                # 是有效的GDS进程，等待
+                                self._debug_log(f"⏳ DEBUG: [LOCK_WAITING] 进程 {current_pid} 等待锁释放，当前持有者: PID={lock_holder_pid}")
+                                time.sleep(0.5)
+                                continue
+                            else:
+                                # 不是GDS进程，清理锁
+                                self._force_cleanup_lock()
+                                continue
+                        except psutil.NoSuchProcess:
+                            # 持有锁的进程已不存在，清理锁
+                            self._force_cleanup_lock()
+                            self._debug_log(f"🧹 DEBUG: [DEAD_LOCK_CLEANUP] 清理了死进程的锁: PID={lock_holder_pid}")
+                            continue
+                            
+                    except (ValueError, FileNotFoundError):
+                        # PID文件损坏，清理
+                        self._force_cleanup_lock()
+                        continue
+                        
+            except FileExistsError:
+                # PID文件已存在，等待
+                time.sleep(0.1)
+                continue
+            except Exception as e:
+                self._debug_log(f"❌ DEBUG: [LOCK_ERROR] 获取锁时出错: {e}")
+                time.sleep(0.5)
+                continue
+        
+        # 超时
+        self._debug_log(f"⏰ DEBUG: [LOCK_TIMEOUT] 进程 {current_pid} 获取锁超时: {request_id}")
+        return False
+    
+    def _release_lock(self):
+        """释放跨进程锁"""
+        try:
+            current_pid = os.getpid()
+            
+            # 检查是否是当前进程持有的锁
+            if self.pid_file_path.exists():
+                with open(self.pid_file_path, 'r') as f:
+                    lock_holder_pid = int(f.read().strip())
+                
+                if lock_holder_pid == current_pid:
+                    # 释放文件锁
+                    if self.current_lock_fd:
+                        try:
+                            fcntl.flock(self.current_lock_fd.fileno(), fcntl.LOCK_UN)
+                            self.current_lock_fd.close()
+                            self.current_lock_fd = None
+                        except Exception as e:
+                            self._debug_log(f"⚠️ DEBUG: [FILE_LOCK_RELEASE_ERROR] 释放文件锁失败: {e}")
+                    
+                    # 清理锁文件
+                    self._force_cleanup_lock()
+                    self._debug_log(f"🔓 DEBUG: [LOCK_RELEASED] 进程 {current_pid} 释放了窗口锁")
+                else:
+                    self._debug_log(f"⚠️ DEBUG: [LOCK_RELEASE_WARNING] 进程 {current_pid} 尝试释放不属于自己的锁")
+            
+        except Exception as e:
+            self._debug_log(f"❌ DEBUG: [LOCK_RELEASE_ERROR] 释放锁时出错: {e}")
+    
     def start_manager(self):
         """跨进程窗口管理器，无需启动线程"""
         self._debug_log("🏗️ DEBUG: [CROSS_PROCESS_WINDOW_MANAGER] 跨进程窗口管理器启动成功")
     
     def request_window(self, title, command_text, timeout_seconds=3600):
         """
-        请求显示窗口 - 跨进程队列管理
+        请求显示窗口 - 改进的跨进程锁管理
         
         Args:
             title (str): 窗口标题
@@ -110,39 +345,37 @@ class WindowManager:
         """
         request_id = f"req_{int(time.time() * 1000)}_{os.getpid()}_{threading.get_ident()}"
         
-        # 使用跨进程文件锁确保只有一个窗口
-        lock_file = Path("/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_DATA/window_lock.lock")
-        lock_file.parent.mkdir(exist_ok=True)
-        
-        self._debug_log(f"🔒 DEBUG: [CROSS_PROCESS_LOCK] 进程 {os.getpid()} 请求窗口锁: {request_id}")
+        # 尝试获取改进的跨进程锁
+        if not self._acquire_lock(request_id):
+            return {
+                "action": "error", 
+                "message": "无法获取窗口锁，可能有其他窗口正在显示"
+            }
         
         try:
-            with open(lock_file, 'w') as f:
-                # 获取排他锁，阻塞等待直到获得锁
-                fcntl.flock(f.fileno(), fcntl.LOCK_EX)
-                self._debug_log(f"🔓 DEBUG: [LOCK_ACQUIRED] 进程 {os.getpid()} 获得窗口锁: {request_id}")
-                
-                # 现在只有这个进程可以创建窗口
-                window_request = {
-                    'request_id': request_id,
-                    'title': title,
-                    'command_text': command_text,
-                    'timeout_seconds': timeout_seconds,
-                    'process_id': os.getpid(),
-                    'thread_id': threading.get_ident()
-                }
-                
-                # 直接创建窗口（因为已经获得了跨进程锁）
-                result = self._create_and_show_window(window_request)
-                self._debug_log(f"✅ DEBUG: [CROSS_PROCESS_WINDOW] 进程 {os.getpid()} 窗口完成: {request_id}, action: {result.get('action')}")
-                
-                return result
-                
+            # 创建窗口请求
+            window_request = {
+                'request_id': request_id,
+                'title': title,
+                'command_text': command_text,
+                'timeout_seconds': timeout_seconds,
+                'process_id': os.getpid(),
+                'thread_id': threading.get_ident()
+            }
+            
+            # 创建和显示窗口
+            result = self._create_and_show_window(window_request)
+            self._debug_log(f"✅ DEBUG: [WINDOW_COMPLETED] 进程 {os.getpid()} 窗口完成: {request_id}, action: {result.get('action')}")
+            
+            return result
+            
         except Exception as e:
-            error_msg = f"跨进程窗口创建失败: {str(e)}"
-            self._debug_log(f"❌ DEBUG: [CROSS_PROCESS_ERROR] 进程 {os.getpid()} 窗口错误: {request_id}, error: {str(e)}")
+            error_msg = f"窗口创建失败: {str(e)}"
+            self._debug_log(f"❌ DEBUG: [WINDOW_ERROR] 进程 {os.getpid()} 窗口错误: {request_id}, error: {str(e)}")
             return {"action": "error", "message": error_msg}
-        # fcntl.flock会在文件关闭时自动释放锁
+        finally:
+            # 确保释放锁
+            self._release_lock()
     
     def _create_and_show_window(self, request):
         """创建和显示tkinter窗口"""
@@ -470,12 +703,13 @@ except Exception as e:
         
         # 使用Popen来获得更好的进程控制
         try:
-            # 启动子进程
+            # 启动子进程，创建新的进程组便于管理
             process = subprocess.Popen(
                 ['python', '-c', subprocess_script],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                text=True
+                text=True,
+                preexec_fn=os.setsid if hasattr(os, 'setsid') else None  # Unix系统创建新进程组
             )
             
             self._debug_log(f"🪟 DEBUG: [SUBPROCESS_STARTED] 启动窗口子进程: PID={process.pid}, window_id: {window_id}")
@@ -538,6 +772,116 @@ except Exception as e:
                 f.flush()
         except Exception:
             pass  # 忽略日志错误
+    
+    def cleanup_windows(self, force=False):
+        """
+        手动清理窗口 - 支持跨进程清理
+        
+        Args:
+            force (bool): 是否使用强制清理模式
+        """
+        if force:
+            self._debug_log("🚨 DEBUG: [MANUAL_FORCE_CLEANUP] 手动强制清理所有窗口")
+            self._force_cleanup_all_processes()
+        else:
+            self._debug_log("🧹 DEBUG: [MANUAL_CLEANUP] 手动清理所有窗口")
+            self._cleanup_all_processes()
+        
+        # 额外执行跨进程清理
+        self._cross_process_cleanup(force=force)
+        
+        self._release_lock()
+    
+    def _cross_process_cleanup(self, force=False):
+        """跨进程清理 - 清理所有GDS相关的tkinter窗口"""
+        try:
+            import psutil
+            cleaned_count = 0
+            
+            self._debug_log(f"🌐 DEBUG: [CROSS_PROCESS_CLEANUP] 开始跨进程清理，force={force}")
+            
+            for proc in psutil.process_iter(['pid', 'cmdline', 'ppid']):
+                try:
+                    cmdline = proc.info['cmdline']
+                    if not cmdline:
+                        continue
+                        
+                    cmdline_str = ' '.join(cmdline)
+                    
+                    # 检测GDS相关的tkinter窗口进程
+                    if ('python' in cmdline_str.lower() and 
+                        ('-c' in cmdline_str or 'tkinter' in cmdline_str.lower()) and
+                        ('Google Drive Shell' in cmdline_str or 'root.title' in cmdline_str or 
+                         'tkinter' in cmdline_str)):
+                        
+                        self._debug_log(f"🌐 DEBUG: [CROSS_PROCESS_FOUND] 发现tkinter进程: PID={proc.info['pid']}")
+                        
+                        if force:
+                            # 强制清理：立即杀死
+                            proc.kill()
+                            self._debug_log(f"🚨 DEBUG: [CROSS_PROCESS_KILLED] 强制杀死进程: PID={proc.info['pid']}")
+                        else:
+                            # 温和清理：先尝试terminate
+                            proc.terminate()
+                            self._debug_log(f"🧹 DEBUG: [CROSS_PROCESS_TERMINATED] 温和终止进程: PID={proc.info['pid']}")
+                        
+                        cleaned_count += 1
+                        
+                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                    continue
+                except Exception as e:
+                    self._debug_log(f"❌ DEBUG: [CROSS_PROCESS_ERROR] 清理进程失败: {e}")
+            
+            if cleaned_count > 0:
+                self._debug_log(f"🌐 DEBUG: [CROSS_PROCESS_COMPLETE] 跨进程清理了 {cleaned_count} 个tkinter进程")
+            else:
+                self._debug_log("🌐 DEBUG: [CROSS_PROCESS_NONE] 没有找到需要清理的tkinter进程")
+                
+        except Exception as e:
+            self._debug_log(f"❌ DEBUG: [CROSS_PROCESS_CLEANUP_ERROR] 跨进程清理失败: {e}")
+    
+    def get_active_windows_count(self):
+        """获取当前活跃窗口数量 - 跨进程统计"""
+        # 本进程的窗口数量
+        local_count = 0
+        if hasattr(self, 'active_processes'):
+            for window_id, process in list(self.active_processes.items()):
+                try:
+                    if process.poll() is None:  # 进程还在运行
+                        local_count += 1
+                    else:
+                        # 进程已结束，从列表中移除
+                        self.active_processes.pop(window_id, None)
+                except Exception:
+                    # 进程可能已经不存在，移除它
+                    self.active_processes.pop(window_id, None)
+        
+        # 跨进程统计所有GDS tkinter窗口
+        system_count = 0
+        try:
+            import psutil
+            for proc in psutil.process_iter(['pid', 'cmdline']):
+                try:
+                    cmdline = proc.info['cmdline']
+                    if not cmdline:
+                        continue
+                        
+                    cmdline_str = ' '.join(cmdline)
+                    
+                    # 检测GDS相关的tkinter窗口进程
+                    if ('python' in cmdline_str.lower() and 
+                        ('-c' in cmdline_str or 'tkinter' in cmdline_str.lower()) and
+                        ('Google Drive Shell' in cmdline_str or 'root.title' in cmdline_str or 
+                         'tkinter' in cmdline_str)):
+                        system_count += 1
+                        
+                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                    continue
+        except Exception:
+            pass
+        
+        # 返回系统级统计（更准确）
+        return system_count
     
     def stop_manager(self):
         """停止跨进程窗口管理器"""

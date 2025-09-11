@@ -2402,6 +2402,158 @@ print(f"Sum: {result}")
         
         print(f"Shell状态持久性测试完成")
 
+    def test_28_pyenv_basic(self):
+        """测试Python版本管理基础功能"""
+        print(f"测试Python版本管理基础功能")
+        
+        # 测试列出可用版本
+        result = self._run_gds_command(["pyenv", "--list-available"])
+        self.assertEqual(result.returncode, 0, "列出可用Python版本应该成功")
+        
+        output = result.stdout
+        self.assertIn("Available Python versions", output, "应该显示可用版本列表")
+        self.assertIn("3.8", output, "应该包含Python 3.8版本")
+        self.assertIn("3.9", output, "应该包含Python 3.9版本")
+        self.assertIn("3.10", output, "应该包含Python 3.10版本")
+        self.assertIn("3.11", output, "应该包含Python 3.11版本")
+        
+        # 测试列出已安装版本（初始应该为空）
+        result = self._run_gds_command(["pyenv", "--list"])
+        self.assertEqual(result.returncode, 0, "列出已安装Python版本应该成功")
+        
+        # 测试显示当前版本
+        result = self._run_gds_command(["pyenv", "--version"])
+        self.assertEqual(result.returncode, 0, "显示当前Python版本应该成功")
+        
+        # 测试显示全局版本
+        result = self._run_gds_command(["pyenv", "--global"])
+        self.assertEqual(result.returncode, 0, "显示全局Python版本应该成功")
+        
+        # 测试显示本地版本
+        result = self._run_gds_command(["pyenv", "--local"])
+        self.assertEqual(result.returncode, 0, "显示本地Python版本应该成功")
+        
+        print(f"Python版本管理基础功能测试完成")
+
+    def test_29_pyenv_version_management(self):
+        """测试Python版本安装和管理"""
+        print(f"测试Python版本安装和管理")
+        
+        # 注意：实际安装会很耗时，这里主要测试命令接口
+        # 在实际环境中可以选择性地进行完整安装测试
+        
+        test_version = "3.9.18"
+        
+        print(f"注意：Python版本安装测试仅验证命令接口，不进行实际安装")
+        print(f"如需完整测试，请手动执行: GDS pyenv --install {test_version}")
+        
+        # 测试安装命令格式验证
+        result = self._run_gds_command(["pyenv", "--install"])
+        self.assertNotEqual(result.returncode, 0, "不提供版本号的安装命令应该失败")
+        
+        output = result.stdout + result.stderr
+        self.assertIn("Please specify a Python version", output, "应该提示需要指定版本号")
+        
+        # 测试卸载命令格式验证
+        result = self._run_gds_command(["pyenv", "--uninstall"])
+        self.assertNotEqual(result.returncode, 0, "不提供版本号的卸载命令应该失败")
+        
+        output = result.stdout + result.stderr
+        self.assertIn("Please specify a Python version", output, "应该提示需要指定版本号")
+        
+        # 测试设置全局版本（未安装版本）
+        result = self._run_gds_command(["pyenv", "--global", test_version])
+        self.assertNotEqual(result.returncode, 0, "设置未安装版本为全局版本应该失败")
+        
+        output = result.stdout + result.stderr
+        self.assertIn("is not installed", output, "应该提示版本未安装")
+        
+        # 测试设置本地版本（未安装版本）
+        result = self._run_gds_command(["pyenv", "--local", test_version])
+        self.assertNotEqual(result.returncode, 0, "设置未安装版本为本地版本应该失败")
+        
+        output = result.stdout + result.stderr
+        self.assertIn("is not installed", output, "应该提示版本未安装")
+        
+        print(f"Python版本安装和管理测试完成")
+
+    def test_30_pyenv_integration_with_python_execution(self):
+        """测试pyenv与Python代码执行的集成"""
+        print(f"测试pyenv与Python代码执行的集成")
+        
+        # 测试Python代码执行仍然正常工作
+        test_code = "import sys; print(f'Python version: {sys.version}'); print('Hello from Python!')"
+        
+        result = self._run_gds_command(["python", test_code])
+        self.assertEqual(result.returncode, 0, "Python代码执行应该成功")
+        
+        output = result.stdout
+        self.assertIn("Python version:", output, "应该显示Python版本信息")
+        self.assertIn("Hello from Python!", output, "应该显示Python输出")
+        
+        # 测试Python文件执行
+        # 创建一个简单的Python测试文件
+        test_script_content = '''#!/usr/bin/env python3
+import sys
+import os
+print(f"Python executable: {sys.executable}")
+print(f"Python version: {sys.version}")
+print(f"Current working directory: {os.getcwd()}")
+print("Python script execution test successful!")
+'''
+        
+        # 写入测试脚本
+        result = self._run_gds_command(["echo", test_script_content, ">", "test_pyenv_script.py"])
+        self.assertEqual(result.returncode, 0, "创建Python测试脚本应该成功")
+        
+        # 执行Python脚本
+        result = self._run_gds_command(["python", "test_pyenv_script.py"])
+        self.assertEqual(result.returncode, 0, "执行Python脚本应该成功")
+        
+        output = result.stdout
+        self.assertIn("Python executable:", output, "应该显示Python可执行文件路径")
+        self.assertIn("Python version:", output, "应该显示Python版本")
+        self.assertIn("Python script execution test successful!", output, "应该显示脚本执行成功信息")
+        
+        # 清理测试文件
+        result = self._run_gds_command(["rm", "-f", "test_pyenv_script.py"])
+        self.assertEqual(result.returncode, 0, "清理测试文件应该成功")
+        
+        print(f"pyenv与Python代码执行集成测试完成")
+
+    def test_31_pyenv_error_handling(self):
+        """测试pyenv错误处理"""
+        print(f"测试pyenv错误处理")
+        
+        # 测试无效的命令选项
+        result = self._run_gds_command(["pyenv", "--invalid-option"])
+        self.assertNotEqual(result.returncode, 0, "无效选项应该失败")
+        
+        output = result.stdout + result.stderr
+        self.assertIn("Unknown pyenv command", output, "应该提示未知命令")
+        
+        # 测试无效的版本格式
+        invalid_versions = ["3.9", "python3.9", "3.9.x", "invalid"]
+        
+        for invalid_version in invalid_versions:
+            result = self._run_gds_command(["pyenv", "--global", invalid_version])
+            self.assertNotEqual(result.returncode, 0, f"无效版本格式 {invalid_version} 应该失败")
+            
+            output = result.stdout + result.stderr
+            self.assertTrue(
+                "Invalid Python version format" in output or "is not installed" in output,
+                f"应该提示版本格式无效或版本未安装: {invalid_version}"
+            )
+        
+        # 测试尝试卸载不存在的版本
+        result = self._run_gds_command(["pyenv", "--uninstall", "3.99.99"])
+        self.assertNotEqual(result.returncode, 0, "卸载不存在的版本应该失败")
+        
+        output = result.stdout + result.stderr
+        self.assertIn("is not installed", output, "应该提示版本未安装")
+        
+        print(f"pyenv错误处理测试完成")
+
 class ParallelTestRunner:
     """并行测试运行器"""
     

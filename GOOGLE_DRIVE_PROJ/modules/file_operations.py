@@ -1,5 +1,6 @@
 
 from .venv_operations import VenvOperations
+from .pyenv_operations import PyenvOperations
 from .pip_operations import PipOperations
 from .dependency_analysis import DependencyAnalysis
 from .python_execution import PythonExecution
@@ -18,6 +19,7 @@ class FileOperations:
     
         # Initialize specialized modules
         self.venv_operations = VenvOperations(drive_service, main_instance)
+        self.pyenv_operations = PyenvOperations(drive_service, main_instance)
         self.pip_operations = PipOperations(drive_service, main_instance)
         self.dependency_analysis = DependencyAnalysis(drive_service, main_instance)
         self.python_execution = PythonExecution(drive_service, main_instance)
@@ -43,6 +45,10 @@ class FileOperations:
     def cmd_venv(self, *args, **kwargs):
         """Delegate to venv_operations"""
         return self.venv_operations.cmd_venv(*args, **kwargs)
+    
+    def cmd_pyenv(self, *args, **kwargs):
+        """Delegate to pyenv_operations"""
+        return self.pyenv_operations.cmd_pyenv(*args, **kwargs)
     
     def cmd_pip(self, *args, **kwargs):
         """Delegate to pip_operations"""

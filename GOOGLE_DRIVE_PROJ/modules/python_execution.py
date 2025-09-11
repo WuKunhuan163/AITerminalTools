@@ -7,6 +7,22 @@ class PythonExecution:
     def __init__(self, drive_service, main_instance):
         self.drive_service = drive_service
         self.main_instance = main_instance
+        
+    def _get_python_executable(self):
+        """获取当前应该使用的Python可执行文件路径"""
+        try:
+            # 尝试通过file_operations获取pyenv_operations
+            if hasattr(self.main_instance, 'file_operations') and hasattr(self.main_instance.file_operations, 'pyenv_operations'):
+                pyenv_ops = self.main_instance.file_operations.pyenv_operations
+                python_path = pyenv_ops.get_python_executable_path()
+                print(f"Debug: Using Python executable: {python_path}")
+                return python_path
+            else:
+                # 回退到默认Python
+                return "python3"
+        except Exception as e:
+            print(f"Warning: Failed to get pyenv Python executable: {e}")
+            return "python3"
 
     def cmd_python(self, code=None, filename=None, python_args=None, save_output=False):
         """python命令 - 执行Python代码"""
@@ -76,8 +92,9 @@ class PythonExecution:
             echo "{code_base64}" > "{temp_file_path}" && \\
             source {env_file} 2>/dev/null || true
             
-            # 执行Python代码并捕获退出码
-            python3 -c "import base64; exec(base64.b64decode(open(\\"{temp_file_path}\\").read().strip()).decode(\\"utf-8\\"))"
+            # 获取Python可执行文件路径并执行代码
+            PYTHON_EXEC="{self._get_python_executable()}"
+            $PYTHON_EXEC -c "import base64; exec(base64.b64decode(open(\\"{temp_file_path}\\").read().strip()).decode(\\"utf-8\\"))"
             PYTHON_EXIT_CODE=$?
             
             # 清理临时文件
@@ -120,7 +137,8 @@ class PythonExecution:
             env_file = f"{self.main_instance.REMOTE_ENV}/venv/venv_pythonpath.sh"
             
             # 构建Python命令，包含文件名和参数
-            python_cmd_parts = ['python3', filename]
+            python_executable = self._get_python_executable()
+            python_cmd_parts = [python_executable, filename]
             if python_args:
                 python_cmd_parts.extend(python_args)
             python_cmd = ' '.join(python_cmd_parts)
@@ -169,10 +187,11 @@ class PythonExecution:
             env_file = f"{self.main_instance.REMOTE_ENV}/venv/venv_pythonpath.sh"
             
             # 构建远程命令：source环境文件并执行Python代码
+            python_executable = self._get_python_executable()
             commands = [
                 # source环境文件，如果失败则忽略
                 f"source {env_file} 2>/dev/null || true",
-                f'python3 -c "{escaped_code}"'
+                f'{python_executable} -c "{escaped_code}"'
             ]
             command = " && ".join(commands)
             
