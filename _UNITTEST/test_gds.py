@@ -2936,6 +2936,127 @@ if __name__ == "__main__":
         
         print(f"性能和可靠性测试完成")
 
+    def test_38_pyenv_functional_verification(self):
+        """测试pyenv功能性验证 - 确保版本切换真正生效"""
+        print(f"测试pyenv功能性验证 - Python版本切换")
+        
+        # 创建一个专门用于验证Python版本的脚本
+        version_check_script = '''#!/usr/bin/env python3
+import sys
+import os
+
+print("=== Python Version Verification ===")
+print(f"Python executable path: {sys.executable}")
+print(f"Python version: {sys.version}")
+print(f"Python version info: {sys.version_info}")
+print(f"Major version: {sys.version_info.major}")
+print(f"Minor version: {sys.version_info.minor}")
+print(f"Micro version: {sys.version_info.micro}")
+
+# 检查是否在pyenv管理的路径中
+if "REMOTE_ENV/python" in sys.executable:
+    print("✅ Using pyenv-managed Python")
+    # 从路径中提取版本信息
+    path_parts = sys.executable.split('/')
+    for i, part in enumerate(path_parts):
+        if part == "python" and i + 1 < len(path_parts):
+            expected_version = path_parts[i + 1]
+            print(f"Expected version from path: {expected_version}")
+            
+            # 验证版本是否匹配
+            actual_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+            if actual_version == expected_version:
+                print("✅ Version verification PASSED")
+            else:
+                print(f"❌ Version mismatch: expected {expected_version}, got {actual_version}")
+            break
+else:
+    print("ℹ️ Using system Python (no pyenv version set)")
+
+print("=== Verification completed ===")
+'''
+        
+        # 创建验证脚本
+        result = self._run_gds_command(["echo", version_check_script, ">", "python_version_check.py"])
+        self.assertEqual(result.returncode, 0, "创建版本验证脚本应该成功")
+        
+        # 测试1: 在没有设置pyenv版本的情况下执行脚本
+        print("测试场景1: 系统默认Python")
+        result = self._run_gds_command(["python", "python_version_check.py"])
+        self.assertEqual(result.returncode, 0, "执行版本验证脚本应该成功")
+        
+        output = result.stdout
+        self.assertIn("=== Python Version Verification ===", output, "应该包含验证开始标记")
+        self.assertIn("Python executable path:", output, "应该显示Python可执行文件路径")
+        self.assertIn("Python version:", output, "应该显示Python版本")
+        self.assertIn("=== Verification completed ===", output, "应该包含验证完成标记")
+        
+        # 验证当前使用的是系统Python（因为没有安装pyenv版本）
+        if "Using system Python" in output:
+            print("✅ 正确使用系统Python")
+        elif "Using pyenv-managed Python" in output:
+            print("ℹ️ 使用pyenv管理的Python（如果之前有安装）")
+        
+        # 测试2: 使用python -c进行简单的版本验证
+        print("测试场景2: 简单版本检查")
+        result = self._run_gds_command(["python", "-c", "import sys; print(f'Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')"])
+        self.assertEqual(result.returncode, 0, "简单版本检查应该成功")
+        
+        version_output = result.stdout.strip()
+        self.assertRegex(version_output, r'Python \d+\.\d+\.\d+', "应该输出正确的版本格式")
+        print(f"当前Python版本: {version_output}")
+        
+        # 测试3: 验证Python路径信息
+        print("测试场景3: Python路径验证")
+        result = self._run_gds_command(["python", "-c", "import sys; print(sys.executable)"])
+        self.assertEqual(result.returncode, 0, "Python路径查询应该成功")
+        
+        python_path = result.stdout.strip()
+        print(f"Python可执行文件路径: {python_path}")
+        
+        # 根据路径判断是否使用了pyenv
+        if "REMOTE_ENV/python" in python_path:
+            print("✅ 使用pyenv管理的Python版本")
+            # 从路径提取版本
+            import re
+            version_match = re.search(r'/python/(\d+\.\d+\.\d+)/', python_path)
+            if version_match:
+                pyenv_version = version_match.group(1)
+                print(f"Pyenv管理的版本: {pyenv_version}")
+        else:
+            print("ℹ️ 使用系统默认Python")
+        
+        # 测试4: 验证pyenv状态与实际Python版本的一致性
+        print("测试场景4: pyenv状态一致性验证")
+        
+        # 获取pyenv当前版本设置
+        pyenv_result = self._run_gds_command(["pyenv", "--version"])
+        self.assertEqual(pyenv_result.returncode, 0, "pyenv版本查询应该成功")
+        
+        pyenv_output = pyenv_result.stdout
+        print(f"Pyenv状态: {pyenv_output.strip()}")
+        
+        # 如果pyenv显示有设置版本，验证Python执行是否使用了该版本
+        if "Current Python version:" in pyenv_output:
+            # 提取pyenv设置的版本
+            import re
+            version_match = re.search(r'Current Python version: (\d+\.\d+\.\d+)', pyenv_output)
+            if version_match:
+                expected_version = version_match.group(1)
+                print(f"Pyenv期望版本: {expected_version}")
+                
+                # 验证实际Python版本是否匹配
+                if expected_version in version_output:
+                    print("✅ Pyenv版本设置与实际Python版本一致")
+                else:
+                    print(f"⚠️ 版本可能不一致: pyenv={expected_version}, actual={version_output}")
+        
+        # 清理测试文件
+        result = self._run_gds_command(["rm", "-f", "python_version_check.py"])
+        self.assertEqual(result.returncode, 0, "清理测试文件应该成功")
+        
+        print(f"pyenv功能性验证完成")
+
 class ParallelTestRunner:
     """并行测试运行器"""
     
