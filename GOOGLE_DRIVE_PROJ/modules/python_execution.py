@@ -9,20 +9,10 @@ class PythonExecution:
         self.main_instance = main_instance
         
     def _get_python_executable(self):
-        """获取当前应该使用的Python可执行文件路径"""
-        try:
-            # 尝试通过file_operations获取pyenv_operations
-            if hasattr(self.main_instance, 'file_operations') and hasattr(self.main_instance.file_operations, 'pyenv_operations'):
-                pyenv_ops = self.main_instance.file_operations.pyenv_operations
-                python_path = pyenv_ops.get_python_executable_path()
-                print(f"Debug: Using Python executable: {python_path}")
-                return python_path
-            else:
-                # 回退到默认Python
-                return "python3"
-        except Exception as e:
-            print(f"Warning: Failed to get pyenv Python executable: {e}")
-            return "python3"
+        """获取当前应该使用的Python可执行文件路径 - 已废弃，Python版本选择在远程进行"""
+        # 这个方法已经不再使用，Python版本选择逻辑已移到远程命令中
+        # 保留这个方法以保持兼容性，但总是返回默认值
+        return "python3"
 
     def cmd_python(self, code=None, filename=None, python_args=None, save_output=False):
         """python命令 - 执行Python代码"""
@@ -86,14 +76,61 @@ class PythonExecution:
             # 3. source环境文件
             # 4. 从临时文件读取base64并解码执行
             # 5. 清理临时文件
-            # 构建命令，确保Python脚本的退出码被正确捕获
+            # 构建命令，在远程环境中智能选择Python可执行文件
+            # 所有的Python版本选择逻辑都在远程执行，避免多次窗口调用
             command = f'''
             mkdir -p {self.main_instance.REMOTE_ROOT}/tmp && \\
             echo "{code_base64}" > "{temp_file_path}" && \\
             source {env_file} 2>/dev/null || true
             
-            # 获取Python可执行文件路径并执行代码
-            PYTHON_EXEC="{self._get_python_executable()}"
+            # 在远程环境中智能选择Python可执行文件
+            # 1. 检查是否有pyenv设置的Python版本
+            PYTHON_EXEC="python3"  # 默认
+            PYTHON_BASE_PATH="{self.main_instance.REMOTE_ENV}/python"
+            STATE_FILE="$PYTHON_BASE_PATH/python_states.json"
+            
+            # 获取当前shell ID (简化版本)
+            SHELL_ID="default"
+            
+            # 如果状态文件存在，尝试读取Python版本设置
+            if [ -f "$STATE_FILE" ]; then
+                # 优先检查local版本
+                LOCAL_VERSION=$(python3 -c "
+import json, sys
+try:
+    with open('$STATE_FILE', 'r') as f:
+        states = json.load(f)
+    print(states.get('shell_${{SHELL_ID}}', ''))
+except:
+    pass
+" 2>/dev/null || echo "")
+                
+                # 如果没有local版本，检查global版本
+                if [ -z "$LOCAL_VERSION" ]; then
+                    GLOBAL_VERSION=$(python3 -c "
+import json, sys
+try:
+    with open('$STATE_FILE', 'r') as f:
+        states = json.load(f)
+    print(states.get('global', ''))
+except:
+    pass
+" 2>/dev/null || echo "")
+                    CURRENT_VERSION="$GLOBAL_VERSION"
+                else
+                    CURRENT_VERSION="$LOCAL_VERSION"
+                fi
+                
+                # 如果找到了版本设置，检查对应的Python是否存在
+                if [ -n "$CURRENT_VERSION" ] && [ "$CURRENT_VERSION" != "system" ]; then
+                    PYENV_PYTHON="$PYTHON_BASE_PATH/$CURRENT_VERSION/bin/python3"
+                    if [ -f "$PYENV_PYTHON" ] && [ -x "$PYENV_PYTHON" ]; then
+                        PYTHON_EXEC="$PYENV_PYTHON"
+                    fi
+                fi
+            fi
+            
+            # 执行Python代码
             $PYTHON_EXEC -c "import base64; exec(base64.b64decode(open(\\"{temp_file_path}\\").read().strip()).decode(\\"utf-8\\"))"
             PYTHON_EXIT_CODE=$?
             

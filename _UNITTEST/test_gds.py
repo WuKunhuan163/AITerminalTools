@@ -2554,6 +2554,388 @@ print("Python script execution test successful!")
         
         print(f"pyenv错误处理测试完成")
 
+    def test_32_pyenv_concurrent_operations(self):
+        """测试pyenv并发操作和竞态条件"""
+        print(f"测试pyenv并发操作和竞态条件")
+        
+        # 测试并发查询操作（这些操作应该是安全的）
+        import threading
+        import time
+        
+        results = []
+        errors = []
+        
+        def concurrent_list_available():
+            try:
+                result = self._run_gds_command(["pyenv", "--list-available"])
+                results.append(("list-available", result.returncode))
+            except Exception as e:
+                errors.append(("list-available", str(e)))
+        
+        def concurrent_list_installed():
+            try:
+                result = self._run_gds_command(["pyenv", "--list"])
+                results.append(("list", result.returncode))
+            except Exception as e:
+                errors.append(("list", str(e)))
+        
+        def concurrent_version_check():
+            try:
+                result = self._run_gds_command(["pyenv", "--version"])
+                results.append(("version", result.returncode))
+            except Exception as e:
+                errors.append(("version", str(e)))
+        
+        # 启动并发线程
+        threads = []
+        for _ in range(3):
+            threads.extend([
+                threading.Thread(target=concurrent_list_available),
+                threading.Thread(target=concurrent_list_installed),
+                threading.Thread(target=concurrent_version_check)
+            ])
+        
+        # 执行并发操作
+        start_time = time.time()
+        for thread in threads:
+            thread.start()
+        
+        for thread in threads:
+            thread.join(timeout=30)  # 30秒超时
+        
+        execution_time = time.time() - start_time
+        
+        # 验证结果
+        self.assertEqual(len(errors), 0, f"并发操作不应该产生错误: {errors}")
+        self.assertEqual(len(results), 9, "应该有9个并发操作结果")
+        
+        # 所有查询操作都应该成功
+        for operation, returncode in results:
+            self.assertEqual(returncode, 0, f"{operation} 操作应该成功")
+        
+        print(f"并发操作测试完成，执行时间: {execution_time:.2f}秒")
+
+    def test_33_pyenv_state_persistence(self):
+        """测试pyenv状态持久性和一致性"""
+        print(f"测试pyenv状态持久性和一致性")
+        
+        # 测试多次查询状态的一致性
+        results = []
+        for i in range(5):
+            result = self._run_gds_command(["pyenv", "--version"])
+            self.assertEqual(result.returncode, 0, f"第{i+1}次版本查询应该成功")
+            results.append(result.stdout.strip())
+        
+        # 所有结果应该一致
+        unique_results = set(results)
+        self.assertEqual(len(unique_results), 1, f"多次查询结果应该一致: {unique_results}")
+        
+        # 测试global和local状态查询
+        global_result1 = self._run_gds_command(["pyenv", "--global"])
+        self.assertEqual(global_result1.returncode, 0, "第一次global查询应该成功")
+        
+        local_result1 = self._run_gds_command(["pyenv", "--local"])
+        self.assertEqual(local_result1.returncode, 0, "第一次local查询应该成功")
+        
+        # 再次查询，结果应该一致
+        global_result2 = self._run_gds_command(["pyenv", "--global"])
+        self.assertEqual(global_result2.returncode, 0, "第二次global查询应该成功")
+        self.assertEqual(global_result1.stdout, global_result2.stdout, "global状态应该保持一致")
+        
+        local_result2 = self._run_gds_command(["pyenv", "--local"])
+        self.assertEqual(local_result2.returncode, 0, "第二次local查询应该成功")
+        self.assertEqual(local_result1.stdout, local_result2.stdout, "local状态应该保持一致")
+        
+        print(f"状态持久性测试完成")
+
+    def test_34_pyenv_integration_with_existing_python(self):
+        """测试pyenv与现有Python执行的集成和兼容性"""
+        print(f"测试pyenv与现有Python执行的集成和兼容性")
+        
+        # 测试在pyenv环境下执行各种Python代码
+        test_cases = [
+            # 基本Python代码
+            ("print('Hello World')", "Hello World"),
+            
+            # 系统信息查询
+            ("import sys; print(sys.version_info.major)", "3"),
+            
+            # 模块导入测试
+            ("import os; print('os module imported')", "os module imported"),
+            
+            # 数学运算
+            ("print(2 + 3 * 4)", "14"),
+            
+            # 字符串操作
+            ("print('Python'.upper())", "PYTHON"),
+        ]
+        
+        for code, expected_output in test_cases:
+            result = self._run_gds_command(["python", code])
+            self.assertEqual(result.returncode, 0, f"Python代码执行应该成功: {code}")
+            self.assertIn(expected_output, result.stdout, f"应该包含预期输出: {expected_output}")
+        
+        # 测试Python文件执行（通过echo创建文件）
+        python_script = '''import sys
+import os
+import json
+print("=== Python Environment Test ===")
+print(f"Python executable: {sys.executable}")
+print(f"Python version: {sys.version}")
+print(f"Platform: {sys.platform}")
+print(f"Current directory: {os.getcwd()}")
+print("=== Test completed successfully ===")'''
+        
+        # 创建测试文件
+        result = self._run_gds_command(["echo", python_script, ">", "pyenv_integration_test.py"])
+        self.assertEqual(result.returncode, 0, "创建Python测试文件应该成功")
+        
+        # 执行测试文件
+        result = self._run_gds_command(["python", "pyenv_integration_test.py"])
+        self.assertEqual(result.returncode, 0, "执行Python测试文件应该成功")
+        
+        output = result.stdout
+        self.assertIn("=== Python Environment Test ===", output, "应该包含测试开始标记")
+        self.assertIn("Python executable:", output, "应该显示Python可执行文件路径")
+        self.assertIn("Python version:", output, "应该显示Python版本")
+        self.assertIn("=== Test completed successfully ===", output, "应该包含测试完成标记")
+        
+        # 清理测试文件
+        result = self._run_gds_command(["rm", "-f", "pyenv_integration_test.py"])
+        self.assertEqual(result.returncode, 0, "清理测试文件应该成功")
+        
+        print(f"Python执行集成测试完成")
+
+    def test_35_pyenv_edge_cases_and_stress_test(self):
+        """测试pyenv边缘情况和压力测试"""
+        print(f"测试pyenv边缘情况和压力测试")
+        
+        # 测试极端版本号
+        extreme_versions = [
+            "0.0.1",      # 极小版本号
+            "99.99.99",   # 极大版本号
+            "3.99.999",   # 不存在的版本
+        ]
+        
+        for version in extreme_versions:
+            # 测试全局设置
+            result = self._run_gds_command(["pyenv", "--global", version])
+            self.assertNotEqual(result.returncode, 0, f"设置不存在版本 {version} 应该失败")
+            
+            output = result.stdout + result.stderr
+            self.assertIn("is not installed", output, f"应该提示版本 {version} 未安装")
+        
+        # 测试重复操作
+        for i in range(10):
+            result = self._run_gds_command(["pyenv", "--list-available"])
+            self.assertEqual(result.returncode, 0, f"第{i+1}次list-available操作应该成功")
+        
+        # 测试长字符串参数
+        long_version = "3." + "9" * 100 + ".1"
+        result = self._run_gds_command(["pyenv", "--global", long_version])
+        self.assertNotEqual(result.returncode, 0, "超长版本号应该失败")
+        
+        # 测试特殊字符版本号
+        special_versions = [
+            "3.9.1-alpha",
+            "3.9.1+build",
+            "3.9.1~rc1",
+            "3.9.1 with spaces",
+            "3.9.1;injection",
+            "3.9.1|pipe",
+            "3.9.1&background",
+        ]
+        
+        for version in special_versions:
+            result = self._run_gds_command(["pyenv", "--global", version])
+            self.assertNotEqual(result.returncode, 0, f"特殊字符版本 {version} 应该失败")
+        
+        # 测试快速连续操作
+        start_time = time.time()
+        for i in range(20):
+            result = self._run_gds_command(["pyenv", "--version"])
+            self.assertEqual(result.returncode, 0, f"快速连续操作 {i+1} 应该成功")
+        execution_time = time.time() - start_time
+        
+        # 操作应该在合理时间内完成
+        self.assertLess(execution_time, 60, "20次快速操作应该在60秒内完成")
+        
+        print(f"边缘情况和压力测试完成，快速操作时间: {execution_time:.2f}秒")
+
+    def test_36_pyenv_real_world_scenarios(self):
+        """测试pyenv在真实世界场景中的应用"""
+        print(f"测试pyenv在真实世界场景中的应用")
+        
+        # 场景1: 检查当前Python环境并准备项目开发
+        print("场景1: 项目开发环境检查")
+        
+        # 检查当前Python版本
+        result = self._run_gds_command(["pyenv", "--version"])
+        self.assertEqual(result.returncode, 0, "检查当前Python版本应该成功")
+        
+        # 列出可用版本（模拟开发者选择版本）
+        result = self._run_gds_command(["pyenv", "--list-available"])
+        self.assertEqual(result.returncode, 0, "列出可用版本应该成功")
+        
+        # 检查已安装版本
+        result = self._run_gds_command(["pyenv", "--list"])
+        self.assertEqual(result.returncode, 0, "检查已安装版本应该成功")
+        
+        # 场景2: Python代码开发和测试工作流
+        print("场景2: Python代码开发工作流")
+        
+        # 创建一个模拟的Python项目
+        project_code = '''#!/usr/bin/env python3
+"""
+模拟的Python项目 - 数据分析脚本
+"""
+import sys
+import json
+import os
+from datetime import datetime
+
+def analyze_data():
+    """模拟数据分析功能"""
+    data = {
+        "python_version": sys.version,
+        "python_executable": sys.executable,
+        "timestamp": datetime.now().isoformat(),
+        "platform": sys.platform,
+        "working_directory": os.getcwd(),
+        "analysis_result": "Data analysis completed successfully"
+    }
+    return data
+
+def main():
+    print("=== Python Project Simulation ===")
+    print(f"Starting analysis with Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}")
+    
+    result = analyze_data()
+    
+    print("Analysis Results:")
+    for key, value in result.items():
+        if key == "python_version":
+            # 只显示版本的第一行
+            value = value.split('\\n')[0]
+        print(f"  {key}: {value}")
+    
+    print("=== Project execution completed ===")
+    return 0
+
+if __name__ == "__main__":
+    exit(main())
+'''
+        
+        # 创建项目文件
+        result = self._run_gds_command(["echo", project_code, ">", "data_analysis_project.py"])
+        self.assertEqual(result.returncode, 0, "创建项目文件应该成功")
+        
+        # 执行项目
+        result = self._run_gds_command(["python", "data_analysis_project.py"])
+        self.assertEqual(result.returncode, 0, "执行Python项目应该成功")
+        
+        output = result.stdout
+        self.assertIn("=== Python Project Simulation ===", output, "应该包含项目开始标记")
+        self.assertIn("Starting analysis with Python", output, "应该显示Python版本信息")
+        self.assertIn("Analysis Results:", output, "应该显示分析结果")
+        self.assertIn("=== Project execution completed ===", output, "应该包含项目完成标记")
+        
+        # 场景3: 模拟多项目环境切换
+        print("场景3: 多项目环境管理")
+        
+        # 检查当前全局设置
+        result = self._run_gds_command(["pyenv", "--global"])
+        self.assertEqual(result.returncode, 0, "检查全局设置应该成功")
+        
+        # 检查当前本地设置
+        result = self._run_gds_command(["pyenv", "--local"])
+        self.assertEqual(result.returncode, 0, "检查本地设置应该成功")
+        
+        # 验证Python执行仍然正常
+        result = self._run_gds_command(["python", "print('Multi-project environment test')"])
+        self.assertEqual(result.returncode, 0, "多项目环境下Python执行应该正常")
+        self.assertIn("Multi-project environment test", result.stdout, "应该正常输出")
+        
+        # 清理项目文件
+        result = self._run_gds_command(["rm", "-f", "data_analysis_project.py"])
+        self.assertEqual(result.returncode, 0, "清理项目文件应该成功")
+        
+        print(f"真实世界场景测试完成")
+
+    def test_37_pyenv_performance_and_reliability(self):
+        """测试pyenv性能和可靠性"""
+        print(f"测试pyenv性能和可靠性")
+        
+        import time
+        
+        # 性能测试：测量各种操作的执行时间
+        operations = [
+            (["pyenv", "--version"], "version check"),
+            (["pyenv", "--list"], "list installed"),
+            (["pyenv", "--list-available"], "list available"),
+            (["pyenv", "--global"], "global check"),
+            (["pyenv", "--local"], "local check"),
+        ]
+        
+        performance_results = {}
+        
+        for command, operation_name in operations:
+            times = []
+            
+            # 每个操作测试5次
+            for i in range(5):
+                start_time = time.time()
+                result = self._run_gds_command(command)
+                end_time = time.time()
+                
+                self.assertEqual(result.returncode, 0, f"{operation_name} 应该成功")
+                times.append(end_time - start_time)
+            
+            avg_time = sum(times) / len(times)
+            max_time = max(times)
+            min_time = min(times)
+            
+            performance_results[operation_name] = {
+                'avg': avg_time,
+                'max': max_time,
+                'min': min_time
+            }
+            
+            print(f"  {operation_name}: 平均 {avg_time:.3f}s, 最大 {max_time:.3f}s, 最小 {min_time:.3f}s")
+        
+        # 验证性能基准（操作应该在合理时间内完成）
+        for operation_name, times in performance_results.items():
+            self.assertLess(times['max'], 30, f"{operation_name} 最大执行时间应该小于30秒")
+            self.assertLess(times['avg'], 15, f"{operation_name} 平均执行时间应该小于15秒")
+        
+        # 可靠性测试：重复执行相同操作，结果应该一致
+        print("可靠性测试：重复操作一致性")
+        
+        reference_results = {}
+        
+        # 获取参考结果
+        for command, operation_name in operations:
+            result = self._run_gds_command(command)
+            self.assertEqual(result.returncode, 0, f"参考 {operation_name} 应该成功")
+            reference_results[operation_name] = result.stdout.strip()
+        
+        # 重复测试，验证结果一致性
+        for i in range(3):
+            for command, operation_name in operations:
+                result = self._run_gds_command(command)
+                self.assertEqual(result.returncode, 0, f"重复 {operation_name} 第{i+1}次应该成功")
+                
+                current_output = result.stdout.strip()
+                reference_output = reference_results[operation_name]
+                
+                self.assertEqual(
+                    current_output, 
+                    reference_output, 
+                    f"{operation_name} 第{i+1}次重复结果应该与参考结果一致"
+                )
+        
+        print(f"性能和可靠性测试完成")
+
 class ParallelTestRunner:
     """并行测试运行器"""
     

@@ -429,32 +429,62 @@ fi
     def _pyenv_version(self):
         """显示当前使用的Python版本"""
         try:
-            current_version = self._get_current_python_version()
+            # 一次性读取状态文件，避免多次远程调用
+            current_shell = self.main_instance.get_current_shell()
+            shell_id = current_shell.get("id", "default") if current_shell else "default"
             
-            if current_version:
-                # 获取版本来源（local或global）
-                current_shell = self.main_instance.get_current_shell()
-                shell_id = current_shell.get("id", "default") if current_shell else "default"
-                
-                local_version = self._get_python_state(f"shell_{shell_id}")
-                if local_version == current_version:
-                    source = f"local (shell {shell_id})"
-                else:
-                    source = "global"
-                
-                print(f"Current Python version: {current_version} ({source})")
-                return {
-                    "success": True,
-                    "version": current_version,
-                    "source": source
-                }
-            else:
-                print("No Python version configured (using system default)")
-                return {
-                    "success": True,
-                    "version": "system",
-                    "source": "system"
-                }
+            # 构建一个命令来一次性获取所有需要的信息
+            check_command = f'''
+            STATE_FILE="{self._get_python_state_file_path()}"
+            if [ -f "$STATE_FILE" ]; then
+                python3 -c "
+import json
+try:
+    with open('$STATE_FILE', 'r') as f:
+        states = json.load(f)
+    
+    shell_key = 'shell_{shell_id}'
+    local_version = states.get(shell_key, '')
+    global_version = states.get('global', '')
+    
+    if local_version:
+        print(f'{{local_version}}|local')
+    elif global_version:
+        print(f'{{global_version}}|global')
+    else:
+        print('|system')
+except:
+    print('|system')
+"
+            else
+                echo "|system"
+            fi
+            '''
+            
+            result = self.main_instance.execute_generic_command("bash", ["-c", check_command])
+            
+            if result.get("success") and result.get("stdout"):
+                version_info = result["stdout"].strip()
+                if "|" in version_info:
+                    version, source = version_info.split("|", 1)
+                    
+                    if version and source != "system":
+                        if source == "local":
+                            source = f"local (shell {shell_id})"
+                        print(f"Current Python version: {version} ({source})")
+                        return {
+                            "success": True,
+                            "version": version,
+                            "source": source
+                        }
+            
+            # 如果没有配置或出错，返回系统默认
+            print("No Python version configured (using system default)")
+            return {
+                "success": True,
+                "version": "system",
+                "source": "system"
+            }
                 
         except Exception as e:
             return {"success": False, "error": f"Error getting current Python version: {str(e)}"}
@@ -472,10 +502,9 @@ fi
         if not version or version == "system":
             return "python3"  # 使用系统默认Python
         
-        if self._is_version_installed(version):
-            return f"{self._get_python_base_path()}/{version}/bin/python3"
-        else:
-            return "python3"  # 回退到系统Python
+        # 为了避免多次远程调用，直接构造路径并让远程命令处理fallback
+        # 这样只需要一次远程调用，在实际执行时检查文件是否存在
+        return f"{self._get_python_base_path()}/{version}/bin/python3"
     
     # 辅助方法
     def _validate_version(self, version):

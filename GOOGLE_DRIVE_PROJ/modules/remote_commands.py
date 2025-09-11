@@ -1153,11 +1153,7 @@ fi
         Returns:
             dict: 执行结果，包含stdout、stderr、path等字段
         """
-        print(f"[FORCE_DEBUG] execute_generic_command CALLED: cmd={cmd}, args={args}")
-        import os
-        os.makedirs("/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_DATA", exist_ok=True)
-        with open("/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_DATA/force_debug.log", 'a') as f:
-            f.write(f"[FORCE_DEBUG] execute_generic_command CALLED: cmd={cmd}, args={args}\n")
+        # 调试日志已禁用
         # 导入正确的远程窗口队列管理器并生成唯一的窗口ID
         import threading
         import time
@@ -1183,10 +1179,10 @@ fi
                     timestamp = time.strftime('%H:%M:%S.%f')[:-3]  # 精确到毫秒
                     f.write(f"[{timestamp}] {message}\n")
                 
-                # 同时输出到控制台以便实时观察
-                print(f"[REMOTE_DEBUG] {message}")
+                # 调试输出已禁用以减少日志噪音
+                pass
             except Exception as e:
-                print(f"[REMOTE_DEBUG_ERROR] Debug logging error: {e}")
+                pass  # 调试错误也不输出
         
         # 使用WindowManager替代旧的队列系统
         debug_log(f"🏗️ DEBUG: [{get_relative_timestamp()}] [WINDOW_MANAGER] 使用WindowManager统一管理窗口")
@@ -1673,17 +1669,12 @@ fi
                     "read_error": result_data.get("error")
                 }
             
-            # 用户确认执行完成，释放窗口槽位
-            debug_log_func(f"🔍 DEBUG: [{get_timestamp_func()}] [RELEASE_CHECK] 检查释放条件 - queue_manager: {queue_manager is not None}, user_completed_window: {user_completed_window}, window_id: {window_id}")
-            if queue_manager and user_completed_window:
-                try:
-                    debug_log_func(f"🔓 DEBUG: [{get_timestamp_func()}] [PRE_RELEASE] 准备释放槽位 - window_id: {window_id}, thread: {threading.get_ident()}")
-                    queue_manager.release_window_slot(window_id)
-                    debug_log_func(f"🔓 DEBUG: [{get_timestamp_func()}] [USER_SUCCESS_RELEASE] 用户确认成功完成，释放槽位 - window_id: {window_id}")
-                except Exception as e:
-                    debug_log_func(f"❌ DEBUG: [{get_timestamp_func()}] [RELEASE_ERROR] 释放槽位失败: {e}")
+            # 用户确认执行完成（单窗口锁机制下不需要队列管理）
+            debug_log_func(f"🔍 DEBUG: [{get_timestamp_func()}] [COMPLETION_CHECK] 检查完成状态 - user_completed_window: {user_completed_window}, window_id: {window_id}")
+            if user_completed_window:
+                debug_log_func(f"✅ DEBUG: [{get_timestamp_func()}] [USER_COMPLETED] 用户确认成功完成 - window_id: {window_id}")
             else:
-                debug_log_func(f"Warning: DEBUG: [{get_timestamp_func()}] [RELEASE_SKIP] 跳过释放槽位 - queue_manager: {queue_manager is not None}, user_completed_window: {user_completed_window}, window_id: {window_id}")
+                debug_log_func(f"⚠️ DEBUG: [{get_timestamp_func()}] [USER_NOT_COMPLETED] 用户未确认完成 - window_id: {window_id}")
             
             # 返回完整结果
             return {
@@ -1708,10 +1699,8 @@ fi
             # 停止进度缓冲
             stop_progress_buffering()
             
-            # 停止心跳线程
-            if heartbeat_stop_event:
-                heartbeat_stop_event.set()
-                # print(f"DEBUG: [{get_timestamp_func()}] [HEARTBEAT_STOP] 心跳线程已停止 - window_id: {window_id}")
+            # 单窗口锁机制下不需要心跳线程
+            debug_log_func(f"🏁 DEBUG: [{get_timestamp_func()}] [CLEANUP] 清理完成 - window_id: {window_id}")
             
             # print(f"DEBUG: [{get_timestamp_func()}] [CAPTURE_EXIT] _execute_with_result_capture 结束 - window_id: {window_id}")
         # 注意：窗口槽位的释放由execute_generic_command的finally块统一处理
