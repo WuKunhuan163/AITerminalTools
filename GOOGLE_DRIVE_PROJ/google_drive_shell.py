@@ -1609,4 +1609,5 @@ class GoogleDriveShell:
             # 槽位释放由execute_generic_command统一处理
             # 调试日志已禁用
             # ========== 简化架构结束 ==========
+            pass
     
