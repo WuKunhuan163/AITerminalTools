@@ -104,7 +104,9 @@ class TextOperations:
             # 查找文件
             file_info = self._find_file(filename, current_shell)
             if not file_info:
-                return {"success": False, "error": f"File or directory does not exist: {filename}"}
+                # 将本地路径转换为远程路径格式以便在错误消息中正确显示
+                converted_filename = self.main_instance.path_resolver._convert_local_path_to_remote(filename)
+                return {"success": False, "error": f"File or directory does not exist: {converted_filename}"}
             
             # 检查是否为文件
             if file_info['mimeType'] == 'application/vnd.google-apps.folder':

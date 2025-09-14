@@ -1,5 +1,0 @@
-def main():
-    print(f"Hello World")
-    return "success"
-
-main() 

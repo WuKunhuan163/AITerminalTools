@@ -390,7 +390,7 @@ def timeout_handler(signum, frame):
     raise TimeoutException("Input timeout")
 
 def _read_input_with_signal(lines, timeout_seconds):
-    """使用信号的传统方法，改进以捕获部分输入"""
+    """使用信号的传统方法，简化输入处理"""
     import readline
     
     original_handler = signal.signal(signal.SIGALRM, timeout_handler)
@@ -399,54 +399,43 @@ def _read_input_with_signal(lines, timeout_seconds):
     try:
         while True:
             try:
-                # 所有行都使用空提示符，正常换行，不要置顶的空格
                 line = input()
-                # 成功读取一行后，将其添加到lines列表中
                 lines.append(line)
             except EOFError:
-                # Ctrl+D 被按下，结束输入
-                # 在返回前，检查是否有当前正在输入的行需要保存
+                # Ctrl+D 结束输入
                 try:
                     current_line = readline.get_line_buffer()
                     if current_line.strip():
                         lines.append(current_line.strip())
                 except:
-                    pass  # 如果无法获取缓冲区内容，忽略错误
+                    pass
                 return False
             except KeyboardInterrupt:
-                # Ctrl+C 被按下 - 改进的处理逻辑
+                # Ctrl+C 处理
                 try:
-                    # 获取当前输入缓冲区的内容
                     current_line = readline.get_line_buffer()
                     if current_line.strip():
-                        # 检查当前行是否已经在lines数组中，避免重复添加
                         stripped_line = current_line.strip()
                         if not lines or lines[-1] != stripped_line:
                             lines.append(stripped_line)
                 except Exception:
-                    pass  # 如果无法获取缓冲区内容，忽略错误
-                
-                # 如果有任何内容（包括之前输入的行或当前行），返回内容而不是"stop"
-                if lines:
-                    return "partial_input"  # 特殊标记表示部分输入
-                else:
-                    return "stop"  # 没有任何输入，返回stop
+                    pass
+                return "partial_input" if lines else "no_input"
             except TimeoutException:
-                # 超时发生 - 尝试捕获当前正在输入的行
+                # 超时处理
                 try:
-                    # 获取当前输入缓冲区的内容
                     current_line = readline.get_line_buffer()
                     if current_line.strip():
                         lines.append(current_line.strip())
                 except Exception:
-                    pass  # 如果无法获取缓冲区内容，忽略错误
+                    pass
                 return True
     finally:
         # 清理超时设置
         signal.alarm(0)
         signal.signal(signal.SIGALRM, original_handler)
 
-def get_user_input_via_terminal(project_name):
+def get_user_input_via_terminal(project_name, timeout_hint=""):
     """直接在终端中获取用户输入，带有超时功能"""
     global _global_timeout_manager
 
@@ -454,65 +443,38 @@ def get_user_input_via_terminal(project_name):
     if _global_timeout_manager:
         remaining_time = _global_timeout_manager.get_remaining_time()
         if remaining_time <= 0:
-            timeout_seconds = _global_timeout_manager.timeout_seconds
-            timeout_message = f"\n[TIMEOUT] 输入超时 ({timeout_seconds}秒)。如果上述信息没有有效反馈（有可能用户几分钟内没有打字），请再次调用 USERINPUT 重复进行直到有有效反馈。"
-            return f"[无用户输入]{timeout_message}"
-        TIMEOUT_SECONDS = max(1, int(remaining_time))  # 确保至少1秒，并且是整数
+            return timeout_hint if timeout_hint else "输入超时"
+        TIMEOUT_SECONDS = max(1, int(remaining_time))
     else:
-        # 设置超时时间 (默认3分钟，可通过命令行参数或环境变量配置)
-        # 优先级：命令行参数 > 环境变量 > 默认值(180秒)
         default_timeout = int(os.environ.get('USERINPUT_TIMEOUT', '300'))
         TIMEOUT_SECONDS = int(getattr(get_user_input_via_terminal, '_timeout_override', default_timeout))
     
-    # 读取多行输入直到EOF (Ctrl+D) 或超时
+    # 读取多行输入
     lines = []
     timeout_occurred = False
     
-    # 使用信号方式进行超时控制，简单可靠
-    ctrl_c_partial_input = False  # 标记是否是Ctrl+C导致的部分输入
-    normal_eof = False  # 标记是否是正常的EOF（Ctrl+D）结束
     try:
         result = _read_input_with_signal(lines, TIMEOUT_SECONDS)
-        if result == "stop":
-            return "stop"
-        elif result == "partial_input":
-            # 有部分输入，这是Ctrl+C导致的，不是超时
+        if result == "partial_input" or result == False:
             timeout_occurred = False
-            ctrl_c_partial_input = True
-        elif result == False:
-            # 正常的EOF（Ctrl+D）结束，不是超时
-            timeout_occurred = False
-            normal_eof = True
         else:
             timeout_occurred = result  # True for timeout
     except KeyboardInterrupt:
-        # 这个异常处理现在应该不会被触发，因为KeyboardInterrupt在_read_input_with_signal中处理
-        return "stop"
+        pass  # 忽略KeyboardInterrupt，继续处理
     
-    # 组合所有行为最终输入
+    # 组合输入
     full_input = '\n'.join(lines).strip()
-    
-    # 如果是Ctrl+C导致的部分输入，直接返回用户输入，不添加任何前缀或后缀
-    if ctrl_c_partial_input:
-        return full_input or "stop"
-    
-    # 如果是正常的EOF（Ctrl+D）结束，直接返回用户输入，不添加超时消息
-    if normal_eof:
-        return full_input or "stop"
     
     # 如果发生超时，添加超时提示
     if timeout_occurred or (_global_timeout_manager and _global_timeout_manager.is_timeout_expired()):
-        display_timeout = _global_timeout_manager.timeout_seconds if _global_timeout_manager else TIMEOUT_SECONDS
-        timeout_message = f"\n[TIMEOUT] 输入超时 ({display_timeout}秒)。如果上述信息没有有效反馈（有可能用户几分钟内没有打字），请再次调用 USERINPUT 重复进行直到有有效反馈。"
-        if full_input:
-            full_input = f"[用户部分输入]\n{full_input}{timeout_message}"
-        else:
-            full_input = f"[无用户输入]{timeout_message}"
+        if timeout_hint:
+            full_input = f"{full_input}\n{timeout_hint}" if full_input else timeout_hint
     
     # 清理屏幕
     if not is_run_environment():
         print(f"\n" + "="*50)
-    return full_input or "stop"  # 空输入转为stop
+    
+    return full_input or "用户暂无输入"
 
 def write_to_json_output(user_input, command_identifier=None):
     """将用户输入写入到指定的 JSON 输出文件中"""
@@ -635,6 +597,8 @@ def main():
     
     # IGNOREEOF 现在由 USERINPUT shell 脚本自动设置
     # 设置超时覆盖（如果有的话）
+    timeout_hint = "\n用户还在测试代码，或者准备给你的反馈。如果你没有得到指导你下一步工作的信息，请通过再次执行USERINPUT等待用户，不要直接结束。"
+    end_hint = "\n任务完成后，执行终端命令 `USERINPUT` 获取用户反馈。如果程序停止，重复执行 `USERINPUT` 直到获得自然语言反馈。编程遇到不确定的情况或者Keyboard Interrupt时，请执行 `USERINPUT`，不要直接结束。注意：使用 run_terminal_cmd 工具执行的命令就是字面上的 `USERINPUT`，不要添加其他参数或构造交互式命令。"
     if timeout_override is not None:
         get_user_input_via_terminal._timeout_override = timeout_override
     
@@ -643,30 +607,23 @@ def main():
     default_timeout = int(os.environ.get('USERINPUT_TIMEOUT', '180'))
     final_timeout = timeout_override if timeout_override is not None else default_timeout
     _global_timeout_manager = GlobalTimeoutManager(final_timeout)
+    timeout = False
     
     # 尝试显示极简UI（仅在非RUN环境中）
     if not is_run_environment(command_identifier):
         ui_result = show_dummy_ui(project_name)
         
         # 如果UI因超时关闭，直接返回超时结果
-        if not ui_result and _global_timeout_manager.is_timeout_expired():
-            timeout_message = f"\n[TIMEOUT] 输入超时 ({final_timeout}秒)。如果上述信息没有有效反馈（有可能用户几分钟内没有打字），请再次调用 USERINPUT 重复进行直到有有效反馈。"
-            user_input = f"[无用户输入]{timeout_message}"
-        elif not ui_result:
-            # UI关闭但不是因为超时，可能是用户关闭了窗口，直接返回stop
-            user_input = "stop"
+        if (not ui_result and _global_timeout_manager.is_timeout_expired()) or \
+            _global_timeout_manager.is_timeout_expired():
+            timeout = True
+            user_input = f"输入超时 ({final_timeout}秒)。{timeout_hint}"
         else:
-            # 用户点击了按钮，继续到终端输入
-            # 检查是否还有剩余时间
-            if _global_timeout_manager.is_timeout_expired():
-                timeout_message = f"\n[TIMEOUT] 输入超时 ({final_timeout}秒)。如果上述信息没有有效反馈（有可能用户几分钟内没有打字），请再次调用 USERINPUT 重复进行直到有有效反馈。"
-                user_input = f"[无用户输入]{timeout_message}"
-            else:
-                show_project_info(current_dir, project_dir)
-                show_prompt_header(project_name)
-                user_input = get_user_input_via_terminal(project_name)
+            show_project_info(current_dir, project_dir)
+            show_prompt_header(project_name)
+            user_input = get_user_input_via_terminal(project_name, timeout_hint)
     else:
-        user_input = get_user_input_via_terminal(project_name)
+        user_input = get_user_input_via_terminal(project_name, timeout_hint)
     
     if is_run_environment(command_identifier):
         if not write_to_json_output(user_input, command_identifier):
@@ -675,8 +632,8 @@ def main():
     else:
         # 不在 RUN 环境中，直接输出到 stdout（保持原有行为）
         os.system("clear") if os.name == "posix" else os.system("cls")
-        if user_input != "stop":
-            user_input += "\n\n任务完成后，执行终端命令 `USERINPUT` 获取用户反馈。如果程序停止，重复执行 `USERINPUT` 直到获得自然语言反馈。编程遇到不确定的情况或者Keyboard Interrupt时，请执行 `USERINPUT`，不要直接结束。注意：使用 run_terminal_cmd 工具执行的命令就是字面上的 `USERINPUT`，不要添加其他参数或构造交互式命令。"
+        if not timeout:
+            user_input += f"\n{end_hint}"
         print(user_input)
 
 if __name__ == "__main__":

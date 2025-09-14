@@ -86,6 +86,16 @@ def get_unified_help_data():
                 "venv --deactivate": "deactivate virtual environment (clear PYTHONPATH)",
                 "venv --list": "list all virtual environments"
             },
+            "python_version_management": {
+                "pyenv --install <version>": "install specified Python version (e.g., 3.9.18, 3.10.12)",
+                "pyenv --uninstall <version>": "uninstall specified Python version",
+                "pyenv --list": "list all installed Python versions",
+                "pyenv --list-available": "list all available Python versions for download",
+                "pyenv --global [version]": "set/show global default Python version",
+                "pyenv --local [version]": "set/show current shell Python version",
+                "pyenv --version": "show currently active Python version",
+                "pyenv --versions": "show all installed versions with current version marked"
+            },
             "search": {
                 "find [path] -name [pattern]": "search for files matching pattern",
                 "find [path] -type [f|d] -name [pattern]": "search by type (file/directory) and pattern"

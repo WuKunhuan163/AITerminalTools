@@ -609,6 +609,9 @@ class FileCore:
                 # print(f"DEBUG: Using root directory - target_folder_id='{target_folder_id}'")
             else:
                 # print(f"DEBUG: Processing custom path '{path}'")
+                # 首先将本地路径转换为远程路径格式以便在错误消息中正确显示
+                converted_path = self.main_instance.path_resolver._convert_local_path_to_remote(path)
+                
                 # 首先尝试作为目录解析
                 # print(f"DEBUG: Step 1 - Trying to resolve '{path}' as directory")
                 target_folder_id, display_path = self.main_instance.resolve_path(path, current_shell)
@@ -625,7 +628,7 @@ class FileCore:
                         # 内联_ls_single_file的逻辑
                         return {
                             "success": True,
-                            "path": path,
+                            "path": converted_path,
                             "files": [file_result],
                             "folders": [],
                             "count": 1,
@@ -633,7 +636,7 @@ class FileCore:
                         }
                     else:
                         # # print(f"DEBUG: Neither directory nor file found for path '{path}'")
-                        return {"success": False, "error": f"Path not found: {path}"}
+                        return {"success": False, "error": f"Path not found: {converted_path}"}
             
             if recursive:
                 return self._ls_recursive(target_folder_id, display_path, detailed, show_hidden)

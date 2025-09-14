@@ -273,6 +273,11 @@ class RemoteCommands:
             # 远端文件路径（在REMOTE_ROOT/tmp目录中）
             remote_file_path = f"{self.main_instance.REMOTE_ROOT}/tmp/{result_filename}"
             
+            # DEBUG: 显示等待的文件路径
+            print(f"DEBUG: _wait_and_read_result_file - 等待文件: {remote_file_path}")
+            print(f"DEBUG: REMOTE_ROOT = {self.main_instance.REMOTE_ROOT}")
+            print(f"DEBUG: result_filename = {result_filename}")
+            
 
             # 使用进度缓冲输出等待指示器
             from .progress_manager import start_progress_buffering
@@ -281,11 +286,101 @@ class RemoteCommands:
             # 等待文件出现，最多60秒
             max_wait_time = 60
             for i in range(max_wait_time):
+                # DEBUG: 显示等待循环状态
+                if i == 0:
+                    print(f"\nDEBUG: 开始等待循环 - 等待文件: {remote_file_path}")
+                if i % 10 == 0 and i > 0:
+                    print(f"\nDEBUG: 等待循环第{i}次 - 已等待{i}秒")
+                
                 # 检查文件是否存在
                 check_result = self._check_remote_file_exists(remote_file_path)
                 
+                # DEBUG: 显示文件检查结果
+                if i < 5 or i % 10 == 0:  # 只在前5次或每10次显示
+                    print(f"\nDEBUG: 第{i+1}次检查 - 文件存在: {check_result.get('exists', False)}")
+                    if not check_result.get("exists") and check_result.get("error"):
+                        print(f"DEBUG: 检查错误: {check_result.get('error')}")
+                
+                # 使用GDS pwd和GDS ls来详细诊断问题
+                if i == 4:  # 在第5次检查时进行诊断（i从0开始）
+                    print(f"\nDEBUG: 详细诊断开始...")
+                    try:
+                        import subprocess
+                        import os
+                        gds_cmd = "/Users/wukunhuan/.local/bin/GOOGLE_DRIVE.py"
+                            
+                        # 1. 检查当前工作目录
+                        run_cmd = "/Users/wukunhuan/.local/bin/RUN"
+                        pwd_result = subprocess.run([
+                            run_cmd, "--show", "GDS", "pwd"
+                        ], capture_output=True, text=True, timeout=30)
+                        
+                        if pwd_result.returncode == 0:
+                            import json
+                            pwd_data = json.loads(pwd_result.stdout)
+                            if pwd_data.get("success"):
+                                current_dir = pwd_data.get("output", "").strip()
+                                print(f"DEBUG: 当前远端工作目录: '{current_dir}'")
+                            else:
+                                print(f"DEBUG: GDS pwd失败: {pwd_data}")
+                                current_dir = "unknown"
+                        else:
+                            print(f"DEBUG: RUN --show GDS pwd失败: {pwd_result.stderr}")
+                            current_dir = "unknown"
+                            
+                        # 2. 检查当前目录下的文件  
+                        ls_result = subprocess.run([
+                            run_cmd, "--show", "GDS", "ls"
+                        ], capture_output=True, text=True, timeout=30)
+                        
+                        if ls_result.returncode == 0:
+                            ls_data = json.loads(ls_result.stdout)
+                            if ls_data.get("success"):
+                                current_files = ls_data.get("output", "").strip().split('\n')
+                                print(f"DEBUG: 当前目录文件列表 (共{len(current_files)}个):")
+                                for f in current_files:
+                                    if f.strip():
+                                        print(f"  - {f}")
+                            else:
+                                print(f"DEBUG: GDS ls失败: {ls_data}")
+                        else:
+                            print(f"DEBUG: RUN --show GDS ls失败: {ls_result.stderr}")
+                        
+                        # 3. 检查tmp目录
+                        ls_tmp_result = subprocess.run([
+                            run_cmd, "--show", "GDS", "ls", "tmp"
+                        ], capture_output=True, text=True, timeout=30)
+                        
+                        if ls_tmp_result.returncode == 0:
+                            ls_tmp_data = json.loads(ls_tmp_result.stdout)
+                            if ls_tmp_data.get("success"):
+                                tmp_files = ls_tmp_data.get("output", "").strip().split('\n')
+                                expected_file = result_filename
+                                print(f"DEBUG: tmp目录文件列表 (共{len(tmp_files)}个):")
+                                for f in tmp_files[-20:]:  # 显示最后20个文件
+                                    if f.strip():
+                                        print(f"  - {f}")
+                                
+                                if expected_file in tmp_files:
+                                    print(f"DEBUG: ✅ 预期文件在远端存在: {expected_file}")
+                                    print(f"DEBUG: 这说明是文件下载/检查机制的问题")
+                                else:
+                                    print(f"DEBUG: ❌ 预期文件在远端不存在: {expected_file}")
+                                    print(f"DEBUG: 这说明远端命令没有成功生成结果文件")
+                            else:
+                                print(f"DEBUG: GDS ls tmp失败: {ls_tmp_data}")
+                        else:
+                            print(f"DEBUG: RUN --show GDS ls tmp失败: {ls_tmp_result.stderr}")
+                                
+                    except Exception as e:
+                        print(f"DEBUG: 详细诊断失败: {e}")
+                    
+                    print(f"DEBUG: 详细诊断完成")
+                    print(f"="*60)
+                
                 if check_result.get("exists"):
                     # 文件存在，读取内容
+                    print(f"\nDEBUG: 文件找到！开始读取内容...")
                     file_result = self._read_result_file_via_gds(result_filename)
                     
                     # 先在进度行显示√标记，然后清除进度显示
@@ -293,8 +388,7 @@ class RemoteCommands:
                     add_success_mark()
                     clear_progress()
                     
-                    # _wait_and_read_result_file专一地等待结果，不处理输出显示
-                    # 输出显示由上层统一处理
+                    print(f"DEBUG: 文件读取完成 - 成功: {file_result.get('success', False)}")
                     
                     return file_result
                 
@@ -1211,6 +1305,15 @@ fi
             try:
                 remote_command_info = self._generate_command(cmd, args, current_shell)
                 remote_command, result_filename = remote_command_info
+                
+                # DEBUG: 显示生成的远端命令
+                # print(f"DEBUG: Generated remote command for '{cmd} {' '.join(args)}':")
+                # print(f"=" * 60)
+                # print(remote_command)
+                # print(f"=" * 60)
+                # print(f"DEBUG: Expected result filename: {result_filename}")
+                # print(f"=" * 60)
+                
             except Exception as e:
                 # 如果语法检查失败，直接返回错误，不弹出窗口
                 if "语法错误" in str(e):
@@ -1604,6 +1707,12 @@ fi
             # 通过tkinter显示命令并获取用户反馈
             debug_log_func(f"🖥️ DEBUG: [{get_timestamp_func()}] [WINDOW_PREP] 准备显示窗口 - window_id: {window_id}, cmd: {cmd}")
             
+            # DEBUG: 显示即将调用的窗口信息
+            # print(f"\nDEBUG: 即将调用show_command_window")
+            # print(f"DEBUG: cmd = {cmd}, args = {args}")
+            # print(f"DEBUG: remote_command 长度 = {len(remote_command)} 字符")
+            # print(f"DEBUG: window_id = {window_id}")
+            
             # 记录窗口打开时间到专用的测试文件
             try:
                 debug_log_func(f"📝 DEBUG: [{get_timestamp_func()}] [LOG_TIME] 窗口时间记录成功 - window_id: {window_id}")
@@ -1615,7 +1724,39 @@ fi
             debug_print(f"_execute_with_result_capture: 即将调用_show_command_window")
             debug_print(f"cmd: {cmd}, args: {args}")
             debug_log_func(f"🪟 DEBUG: [{get_timestamp_func()}] [WINDOW_CALL] 即将调用_show_command_window - window_id: {window_id}")
-            window_result = self._show_command_window(cmd, args, remote_command, debug_info)
+            
+            # 临时输出完整远端指令后直接返回，不执行
+            print(f"DEBUG: 输出完整远端指令并复制到剪切板")
+            print(f"=" * 80)
+            print(f"REMOTE COMMAND (长度: {len(remote_command)} 字符):")
+            print(f"=" * 80)
+            print(remote_command)
+            print(f"=" * 80)
+            print(f"预期结果文件: {result_filename}")
+            print(f"=" * 80)
+            
+            # 复制指令到剪切板
+            try:
+                import subprocess
+                subprocess.run(['pbcopy'], input=remote_command.encode('utf-8'))
+                print(f"✅ 远端指令已复制到剪切板")
+            except Exception as e:
+                print(f"❌ 复制到剪切板失败: {e}")
+                print(f"请手动复制上面的远端指令")
+            
+            # 直接返回成功，不执行任何远端操作
+            return {
+                "success": True,
+                "cmd": cmd,
+                "args": args,
+                "exit_code": 0,
+                "stdout": f"DEBUG: 远端指令已输出，未执行。预期结果文件: {result_filename}",
+                "stderr": "",
+                "working_dir": "debug_mode",
+                "timestamp": "debug_mode",
+                "path": f"tmp/{result_filename}",
+                "debug_mode": True
+            }
             debug_print(f"_show_command_window返回结果: {window_result}")
             
             # 检查用户窗口操作结果，并在适当时机释放槽位
@@ -1658,9 +1799,11 @@ fi
             debug_capture.stop_capture()  # 成功路径的debug捕获停止
             
             # 等待远端文件出现，最多等待60秒
-            # print(f"DEBUG: [{get_timestamp_func()}] [WAIT_FILE] 等待结果文件 - window_id: {window_id}, filename: {result_filename}")
+            print(f"DEBUG: [{get_timestamp_func()}] [WAIT_FILE] 开始等待结果文件 - window_id: {window_id}, filename: {result_filename}")
             result_data = self._wait_and_read_result_file(result_filename)
-            # print(f"DEBUG: [{get_timestamp_func()}] [FILE_READ] 结果文件读取完成 - window_id: {window_id}, success: {result_data.get('success', False)}")
+            print(f"DEBUG: [{get_timestamp_func()}] [FILE_READ] 结果文件读取完成 - window_id: {window_id}, success: {result_data.get('success', False)}")
+            if not result_data.get('success'):
+                print(f"DEBUG: 结果文件读取失败: {result_data.get('error', 'Unknown error')}")
             
             if not result_data.get("success"):
                 return {
@@ -1950,8 +2093,6 @@ fi
         
         # 转义字符串以防止注入 - 使用base64编码避免复杂转义问题
         import base64
-        title_escaped = title.replace('"', '\\"').replace("'", "\\'")
-        # 使用base64编码来避免复杂的字符串转义问题
         command_b64 = base64.b64encode(command_text.encode('utf-8')).decode('ascii')
         
         # 获取音频文件路径

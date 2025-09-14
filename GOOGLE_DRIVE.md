@@ -96,6 +96,91 @@ GOOGLE_DRIVE --checkout-remote-shell abc123
 GDS pwd  # 显示项目A的当前路径
 ```
 
+### 🚀 Background 执行功能 (新功能)
+
+GDS 现在支持后台执行命令，让你可以同时运行多个任务而不被阻塞：
+
+#### Background 选项
+```bash
+# 三种等效的后台执行方式
+GDS --background <command>    # 完整形式
+GDS --bg <command>           # 简写形式  
+GDS --async <command>        # 异步形式
+```
+
+#### Background 管理命令
+```bash
+# 启动后台任务
+GDS --bg "python train.py"
+GDS --background "find . -name '*.py' | wc -l"
+
+# 查看任务状态
+GDS --status                 # 查看所有后台任务
+GDS --status <task_id>       # 查看特定任务状态
+
+# 查看任务日志
+GDS --log <task_id>         # 查看任务输出日志
+
+# 查看任务结果
+GDS --result <task_id>      # 查看任务最终结果
+
+# 等待任务完成
+GDS --wait <task_id>        # 等待特定任务完成
+
+# 清理任务
+GDS --cleanup               # 清理所有已完成任务
+GDS --cleanup <task_id>     # 清理特定任务
+```
+
+#### 使用示例
+```bash
+# 启动一个长时间运行的训练任务
+GDS --bg "python train_model.py --epochs 100"
+# 输出: Background task started with ID: 1726234567_1234
+
+# 同时启动数据处理任务
+GDS --bg "python process_data.py"
+# 输出: Background task started with ID: 1726234580_5678
+
+# 查看所有任务状态
+GDS --status
+# 输出:
+# ========================
+# Task ID: 1726234567_1234
+# Command: python train_model.py --epochs 100
+# Status: running
+# PID: 12345
+# Start time: 2025-09-13T10:30:00Z
+# Log size: 2048 bytes
+# ========================
+# Task ID: 1726234580_5678
+# Command: python process_data.py
+# Status: completed
+# PID: 12350 (finished)
+
+# 查看训练任务的实时日志
+GDS --log 1726234567_1234
+
+# 查看任务最终结果（包含完整输出）
+GDS --result 1726234567_1234
+
+# 等待训练完成
+GDS --wait 1726234567_1234
+
+# 清理已完成的任务
+GDS --cleanup
+```
+
+#### Background 功能特点
+- ✅ **非阻塞执行**: 后台任务不会阻塞当前终端
+- ✅ **状态追踪**: 实时查看任务运行状态和PID
+- ✅ **日志管理**: 自动保存任务输出到日志文件
+- ✅ **结果保存**: 任务完成后保存完整的stdout和stderr输出
+- ✅ **多任务支持**: 同时运行多个后台任务
+- ✅ **智能清理**: 自动管理已完成任务的文件
+- ✅ **简洁输出**: 后台启动时只显示关键信息，不显示冗长的远程命令
+- ✅ **错误处理**: 完善的错误检测和报告机制
+
 ## 🤖 AI Agent 使用指南
 
 ### 文件编辑最佳实践
@@ -717,6 +802,150 @@ GDS upload ~/local_project/main.py
 GDS python main.py
 ```
 
+## Python版本管理详解 ⭐ **新功能**
+
+### 概述
+
+GDS现在支持类似pyenv的Python版本管理功能，允许在远端环境中安装和切换不同版本的Python。这个功能对于需要在不同Python版本下测试代码的开发者特别有用。
+
+### 目录结构
+
+Python版本管理使用以下目录结构：
+```
+REMOTE_ROOT/
+└── .env/
+    └── python/
+        ├── 3.8.10/         # Python 3.8.10 安装目录
+        ├── 3.9.18/         # Python 3.9.18 安装目录
+        ├── 3.10.12/        # Python 3.10.12 安装目录
+        ├── 3.11.7/         # Python 3.11.7 安装目录
+        └── python_states.json  # Python版本状态文件
+```
+
+### 基本使用
+
+#### 查看可用版本
+```bash
+# 查看所有可下载的Python版本
+GDS pyenv --list-available
+```
+输出示例：
+```
+Available Python versions for download:
+  3.8.10
+  3.8.18
+  3.9.18
+  3.10.12
+  3.11.7
+  3.12.1
+```
+
+#### 安装Python版本
+```bash
+# 安装Python 3.10.12
+GDS pyenv --install 3.10.12
+```
+
+**注意**: Python版本安装需要在远端进行源码编译，可能需要较长时间（10-30分钟）。
+
+#### 查看已安装版本
+```bash
+# 查看所有已安装的Python版本
+GDS pyenv --list
+```
+输出示例：
+```
+Installed Python versions:
+  3.9.18
+* 3.10.12    # 星号表示当前激活版本
+  3.11.7
+```
+
+#### 切换Python版本
+```bash
+# 设置全局默认Python版本
+GDS pyenv --global 3.10.12
+
+# 设置当前shell的Python版本（优先级更高）
+GDS pyenv --local 3.11.7
+```
+
+#### 查看当前版本
+```bash
+# 查看当前使用的Python版本
+GDS pyenv --version
+```
+
+### 高级功能
+
+#### Shell隔离
+不同的shell会话可以使用不同的Python版本：
+```bash
+# Shell A 使用 Python 3.10
+GOOGLE_DRIVE --checkout-remote-shell shell_a
+GDS pyenv --local 3.10.12
+GDS python --version  # Python 3.10.12
+
+# Shell B 使用 Python 3.11
+GOOGLE_DRIVE --checkout-remote-shell shell_b  
+GDS pyenv --local 3.11.7
+GDS python --version  # Python 3.11.7
+```
+
+#### 与虚拟环境结合
+```bash
+# 1. 切换到特定Python版本
+GDS pyenv --local 3.10.12
+
+# 2. 创建基于该版本的虚拟环境
+GDS venv --create myproject_py310
+
+# 3. 激活虚拟环境
+GDS venv --activate myproject_py310
+
+# 4. 在虚拟环境中安装包
+GDS pip install numpy tensorflow
+```
+
+### 实际使用场景
+
+#### 多版本兼容性测试
+```bash
+# 测试代码在不同Python版本下的兼容性
+GDS pyenv --local 3.8.10
+GDS python test_script.py  # 在Python 3.8下测试
+
+GDS pyenv --local 3.11.7  
+GDS python test_script.py  # 在Python 3.11下测试
+```
+
+#### 项目特定Python版本
+```bash
+# 为特定项目设置Python版本
+GDS cd /path/to/project
+GDS pyenv --local 3.9.18    # 该目录下使用Python 3.9.18
+GDS python manage.py runserver  # 使用指定版本运行项目
+```
+
+### 故障排除
+
+#### 安装失败
+如果Python版本安装失败，可能的原因：
+1. 网络连接问题
+2. 远端磁盘空间不足
+3. 编译依赖缺失
+
+#### 版本切换无效
+确保使用正确的命令：
+- `pyenv --global <version>` 设置全局版本
+- `pyenv --local <version>` 设置当前shell版本
+
+#### 清理无用版本
+```bash
+# 卸载不再需要的Python版本
+GDS pyenv --uninstall 3.8.10
+```
+
 ## UPLOAD 功能详解
 
 ### 概述
@@ -917,6 +1146,18 @@ venv --deactivate          # 取消激活虚拟环境（清除PYTHONPATH）
 venv --list                # 列出所有虚拟环境
 pip <command> [options]     # pip包管理器（自动识别激活的虚拟环境）
 pip --show-deps <package> [--depth=N]  # 智能依赖树分析（新功能）
+```
+
+### Python版本管理 ⭐ **新功能**
+```bash
+pyenv --install <version>       # 安装指定Python版本（如 3.9.18, 3.10.12）
+pyenv --uninstall <version>     # 卸载指定Python版本
+pyenv --list                    # 列出所有已安装的Python版本
+pyenv --list-available          # 列出所有可下载的Python版本
+pyenv --global [version]        # 设置/查看全局默认Python版本
+pyenv --local [version]         # 设置/查看当前shell的Python版本
+pyenv --version                 # 显示当前使用的Python版本
+pyenv --versions                # 显示所有已安装版本及当前版本标记
 ```
 
 ### 代码质量检查 ⭐ **新功能**

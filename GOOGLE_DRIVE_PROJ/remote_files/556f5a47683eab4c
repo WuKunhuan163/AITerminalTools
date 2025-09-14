@@ -1,5 +1,0 @@
-def greet():
-    print(f"Hello World")
-    return "success"
-
-main() 
