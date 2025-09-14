@@ -1725,77 +1725,24 @@ fi
             debug_print(f"cmd: {cmd}, args: {args}")
             debug_log_func(f"🪟 DEBUG: [{get_timestamp_func()}] [WINDOW_CALL] 即将调用_show_command_window - window_id: {window_id}")
             
-            # 动态挂载架构：生成包含挂载代码的远端指令
-            import time
-            import hashlib
-            import random
-            
-            timestamp = str(int(time.time()))
-            # 生成随机hash作为挂载点标识
-            random_hash = hashlib.md5(f"{timestamp}_{random.randint(1000, 9999)}".encode()).hexdigest()[:8]
-            mount_point = f"/content/drives/mounted_drive_{random_hash}"
-            
-            # 更新路径以使用动态挂载点
-            dynamic_remote_root = f"{mount_point}/MyDrive/REMOTE_ROOT"
-            result_filename = f"cmd_{timestamp}_{random_hash}.json"
-            result_path = f"{dynamic_remote_root}/tmp/{result_filename}"
-            args_json = str(args) if args else '[]'
-            
-            simple_test_content = f"TEST_SUCCESS_{timestamp}_{random_hash}"
-            
-            # 生成包含动态挂载的远端指令
-            dynamic_mount_command = (
-                f'# 动态挂载Google Drive架构\n'
-                f'print("=== GDS动态挂载系统 ===")\n'
-                f'print("挂载点: {mount_point}")\n'
-                f'print("请在Colab中执行以下代码：")\n'
-                f'print("")\n'
-                f'print("# 创建挂载目录")\n'
-                f'print("import os")\n'
-                f'print("os.makedirs(\\"{mount_point}\\", exist_ok=True)")\n'
-                f'print("")\n'
-                f'print("# 挂载Google Drive")\n'
-                f'print("from google.colab import drive")\n'
-                f'print("drive.mount(\\"{mount_point}\\")")\n'
-                f'print("")\n'
-                f'print("执行完成后，请按任意键继续...")\n'
-                f'# read -p "挂载完成后按Enter继续..." dummy\n'
-                f'echo "假设挂载已完成，继续执行..."\n'
-                f'\n'
-                f'# 创建必要的目录结构\n'
-                f'mkdir -p "{dynamic_remote_root}/tmp"\n'
-                f'\n'
-                f'# 生成测试结果文件\n'
-                f'echo "{{" > "{result_path}"\n'
-                f'echo "  \\"success\\": true," >> "{result_path}"\n'
-                f'echo "  \\"cmd\\": \\"{cmd}\\"," >> "{result_path}"\n'
-                f'echo "  \\"mount_point\\": \\"{mount_point}\\"," >> "{result_path}"\n'
-                f'echo "  \\"dynamic_remote_root\\": \\"{dynamic_remote_root}\\"," >> "{result_path}"\n'
-                f'echo "  \\"exit_code\\": 0," >> "{result_path}"\n'
-                f'echo "  \\"stdout\\": \\"{simple_test_content}\\"," >> "{result_path}"\n'
-                f'echo "  \\"test_mode\\": \\"dynamic_mount\\"" >> "{result_path}"\n'
-                f'echo "}}" >> "{result_path}"\n'
-                f'echo "动态挂载测试完成: {result_filename}"\n'
-                f'echo "结果文件路径: {result_path}"\n'
-            )
-            
-            # 输出并复制动态挂载指令
-            print(f"DEBUG: 动态挂载远端指令 (长度: {len(dynamic_mount_command)} 字符):")
-            print(f"=" * 60)
-            print(dynamic_mount_command)
-            print(f"=" * 60)
-            print(f"挂载点: {mount_point}")
-            print(f"动态REMOTE_ROOT: {dynamic_remote_root}")
+            # 临时输出完整远端指令后直接返回，不执行
+            print(f"DEBUG: 输出完整远端指令并复制到剪切板")
+            print(f"=" * 80)
+            print(f"REMOTE COMMAND (长度: {len(remote_command)} 字符):")
+            print(f"=" * 80)
+            print(remote_command)
+            print(f"=" * 80)
             print(f"预期结果文件: {result_filename}")
-            print(f"=" * 60)
+            print(f"=" * 80)
             
             # 复制指令到剪切板
             try:
                 import subprocess
-                subprocess.run(['pbcopy'], input=dynamic_mount_command.encode('utf-8'))
-                print(f"✅ 动态挂载远端指令已复制到剪切板")
+                subprocess.run(['pbcopy'], input=remote_command.encode('utf-8'))
+                print(f"✅ 远端指令已复制到剪切板")
             except Exception as e:
                 print(f"❌ 复制到剪切板失败: {e}")
+                print(f"请手动复制上面的远端指令")
             
             # 直接返回成功，不执行任何远端操作
             return {
@@ -1803,13 +1750,11 @@ fi
                 "cmd": cmd,
                 "args": args,
                 "exit_code": 0,
-                "stdout": f"DEBUG: 动态挂载远端指令已输出，未执行。挂载点: {mount_point}，预期结果文件: {result_filename}",
+                "stdout": f"DEBUG: 远端指令已输出，未执行。预期结果文件: {result_filename}",
                 "stderr": "",
                 "working_dir": "debug_mode",
                 "timestamp": "debug_mode",
                 "path": f"tmp/{result_filename}",
-                "mount_point": mount_point,
-                "dynamic_remote_root": dynamic_remote_root,
                 "debug_mode": True
             }
             debug_print(f"_show_command_window返回结果: {window_result}")

@@ -586,27 +586,29 @@ class FileCore:
     def cmd_ls(self, path=None, detailed=False, recursive=False, show_hidden=False):
         """列出目录内容，支持递归、详细模式和扩展信息模式，支持文件路径"""
         try:
-            # print(f"DEBUG: cmd_ls called with path='{path}', detailed={detailed}, recursive={recursive}")
+            print(f"DEBUG: cmd_ls called with path='{path}', detailed={detailed}, recursive={recursive}")
             
             if not self.drive_service:
+                print(f"DEBUG: Google Drive API服务未初始化")
                 return {"success": False, "error": "Google Drive API服务未初始化"}
                 
             current_shell = self.main_instance.get_current_shell()
             if not current_shell:
+                print(f"DEBUG: 没有活跃的远程shell")
                 return {"success": False, "error": "没有活跃的远程shell，请先创建或切换到一个shell"}
             
-            # print(f"DEBUG: current_shell info - current_path='{current_shell.get('current_path', 'UNKNOWN')}', current_folder_id='{current_shell.get('current_folder_id', 'UNKNOWN')}'")
+            print(f"DEBUG: current_shell info - current_path='{current_shell.get('current_path', 'UNKNOWN')}', current_folder_id='{current_shell.get('current_folder_id', 'UNKNOWN')}'")
             
             if path is None or path == ".":
                 # 当前目录
                 target_folder_id = current_shell.get("current_folder_id", self.main_instance.REMOTE_ROOT_FOLDER_ID)
                 display_path = current_shell.get("current_path", "~")
-                # print(f"DEBUG: Using current directory - target_folder_id='{target_folder_id}', display_path='{display_path}'")
+                print(f"DEBUG: Using current directory - target_folder_id='{target_folder_id}', display_path='{display_path}'")
             elif path == "~":
                 # 根目录
                 target_folder_id = self.main_instance.REMOTE_ROOT_FOLDER_ID
                 display_path = "~"
-                # print(f"DEBUG: Using root directory - target_folder_id='{target_folder_id}'")
+                print(f"DEBUG: Using root directory - target_folder_id='{target_folder_id}'")
             else:
                 # print(f"DEBUG: Processing custom path '{path}'")
                 # 首先将本地路径转换为远程路径格式以便在错误消息中正确显示
@@ -642,7 +644,9 @@ class FileCore:
                 return self._ls_recursive(target_folder_id, display_path, detailed, show_hidden)
             else:
                 # 内联_ls_single的逻辑
-                result = self.drive_service.list_files(folder_id=target_folder_id, max_results=50)
+                print(f"DEBUG: 调用drive_service.list_files, target_folder_id='{target_folder_id}', max_results=None (无限制)")
+                result = self.drive_service.list_files(folder_id=target_folder_id, max_results=None)
+                print(f"DEBUG: drive_service.list_files 返回结果: success={result.get('success')}, files_count={len(result.get('files', []))}")
                 
                 if result['success']:
                     files = result['files']
