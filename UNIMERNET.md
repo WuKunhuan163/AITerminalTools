@@ -147,7 +147,7 @@ UNIMERNET --batch table*.png --type table --json
 UNIMERNET --check
 
 # Expected output if available:
-# ✅ UnimerNet is available and ready
+# UnimerNet is available and ready
 # Cache: X images cached
 ```
 
@@ -286,7 +286,7 @@ UNIMERNET --check
 
 Expected output:
 ```
-✅ UnimerNet is available and ready
+UnimerNet is available and ready
 Cache: X images cached
 ```
 

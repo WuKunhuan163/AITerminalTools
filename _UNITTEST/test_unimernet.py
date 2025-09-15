@@ -68,7 +68,7 @@ class TestUnimernet(unittest.TestCase):
             sys.executable, UNIMERNET_PY, '--check'
         ], capture_output=True, text=True, timeout=180)
         self.assertEqual(result.returncode, 0)
-        self.assertIn('✅ Local UnimerNet components loaded successfully', result.stdout)
+        self.assertIn('Local UnimerNet components loaded successfully', result.stdout)
 
         # Test error when image path does not exist
         result = subprocess.run([
@@ -361,7 +361,7 @@ End of document.
             self.assertTrue(has_recognition_success, 
                           f"UnimerNet should show 'Recognition successful:' in output. Output: {output_text}")
             self.assertTrue(has_unimernet_success, 
-                          f"Should show '✅ UnimerNet公式识别成功' in output. Output: {output_text}")
+                          f"Should show 'UnimerNet公式识别成功' in output. Output: {output_text}")
             self.assertTrue(has_placeholder_replacement, 
                           f"Should show placeholder replacement in output. Output: {output_text}")
             

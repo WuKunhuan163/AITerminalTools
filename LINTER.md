@@ -218,7 +218,7 @@ LINTER app.js --language javascript
 
 # Output:
 # Language: javascript
-# Status: ✅ PASS
+# Status: PASS
 # Linter: No linter available for javascript
 #
 # ℹ️  Info:

@@ -262,7 +262,7 @@ def test_api_connection(command_identifier=None):
         ], capture_output=True, text=True, timeout=30)
         
         if result.returncode == 0:
-            success_msg = "✅ Google Drive API connection test successful"
+            success_msg = "Google Drive API connection test successful"
             if is_run_environment(command_identifier):
                 write_to_json_output({
                     "success": True,

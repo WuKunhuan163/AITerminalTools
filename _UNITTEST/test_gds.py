@@ -2955,7 +2955,7 @@ print(f"Micro version: {sys.version_info.micro}")
 
 # 检查是否在pyenv管理的路径中
 if "REMOTE_ENV/python" in sys.executable:
-    print("✅ Using pyenv-managed Python")
+    print("Using pyenv-managed Python")
     # 从路径中提取版本信息
     path_parts = sys.executable.split('/')
     for i, part in enumerate(path_parts):
@@ -2966,7 +2966,7 @@ if "REMOTE_ENV/python" in sys.executable:
             # 验证版本是否匹配
             actual_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
             if actual_version == expected_version:
-                print("✅ Version verification PASSED")
+                print("Version verification PASSED")
             else:
                 print(f"❌ Version mismatch: expected {expected_version}, got {actual_version}")
             break
@@ -2993,7 +2993,7 @@ print("=== Verification completed ===")
         
         # 验证当前使用的是系统Python（因为没有安装pyenv版本）
         if "Using system Python" in output:
-            print("✅ 正确使用系统Python")
+            print("正确使用系统Python")
         elif "Using pyenv-managed Python" in output:
             print("ℹ️ 使用pyenv管理的Python（如果之前有安装）")
         
@@ -3016,7 +3016,7 @@ print("=== Verification completed ===")
         
         # 根据路径判断是否使用了pyenv
         if "REMOTE_ENV/python" in python_path:
-            print("✅ 使用pyenv管理的Python版本")
+            print("使用pyenv管理的Python版本")
             # 从路径提取版本
             import re
             version_match = re.search(r'/python/(\d+\.\d+\.\d+)/', python_path)
@@ -3047,7 +3047,7 @@ print("=== Verification completed ===")
                 
                 # 验证实际Python版本是否匹配
                 if expected_version in version_output:
-                    print("✅ Pyenv版本设置与实际Python版本一致")
+                    print("Pyenv版本设置与实际Python版本一致")
                 else:
                     print(f"⚠️ 版本可能不一致: pyenv={expected_version}, actual={version_output}")
         
@@ -3155,7 +3155,7 @@ class ParallelTestRunner:
                 
                 # 显示进度
                 elapsed = time.time() - self.start_time if self.start_time else 0
-                print(f"\r进度: {success_count}✅ {failed_count}❌ {pending_count}⏳ | "
+                print(f"\r进度: {success_count}{failed_count}❌ {pending_count}⏳ | "
                       f"GDS命令: {self.completed_gds_commands}/{self.total_gds_commands} ({progress_percent:.1f}%) | "
                       f"用时: {elapsed:.0f}s", end="", flush=True)
             
@@ -3236,7 +3236,7 @@ class ParallelTestRunner:
         print(f"\nWorker statistics:")
         for worker_id in sorted(worker_stats.keys()):
             stats = worker_stats[worker_id]
-            print(f"Worker-{worker_id}: {stats['success']}✅ {stats['failed']}❌ ({stats['time']:.1f}s)")
+            print(f"Worker-{worker_id}: {stats['success']}{stats['failed']}❌ ({stats['time']:.1f}s)")
         
         print(f"=" * 80)
         

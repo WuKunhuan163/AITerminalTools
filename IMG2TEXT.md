@@ -56,9 +56,9 @@ IMG2TEXT
 IMG2TEXT --test-connection
 # 输出：
 # 🔍 API连接测试结果:
-# ✅ FREE 密钥: 连接成功，找到视觉模型: models/gemini-1.0-pro-vision-latest
-# ✅ PAID 密钥: 连接成功，找到视觉模型: models/gemini-1.0-pro-vision-latest
-# ✅ 总结: 2/2 个密钥可用
+# FREE 密钥: 连接成功，找到视觉模型: models/gemini-1.0-pro-vision-latest
+# PAID 密钥: 连接成功，找到视觉模型: models/gemini-1.0-pro-vision-latest
+# 总结: 2/2 个密钥可用
 ```
 
 ### 自定义提示

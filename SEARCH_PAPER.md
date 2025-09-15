@@ -57,14 +57,14 @@ SEARCH_PAPER "3DGS" --max-results 3
 - **来源**：CVPR 2024
 - **链接**：http://openaccess.thecvf.com/content/CVPR2024/html/Zhou_Feature_3DGS_Supercharging_3D_Gaussian_Splatting_to_Enable_Distilled_Feature_CVPR_2024_paper.html
 - **PDF**：http://openaccess.thecvf.com/content/CVPR2024/papers/Zhou_Feature_3DGS_Supercharging_3D_Gaussian_Splatting_to_Enable_Distilled_Feature_CVPR_2024_paper.pdf
-- **状态**：✅ 链接已验证有效
+- **状态**：链接已验证有效
 
 #### 论文2：3DGS-Enhancer: Enhancing Unbounded 3D Gaussian Splatting with View-Consistent 2D Diffusion Priors
 - **作者**：X Liu, C Zhou, S Huang
 - **来源**：NeurIPS 2024
 - **链接**：https://proceedings.neurips.cc/paper_files/paper/2024/hash/f0b42291ddab77dcb2ef8a3488301b62-Abstract-Conference.html
 - **PDF**：https://proceedings.neurips.cc/paper_files/paper/2024/file/f0b42291ddab77dcb2ef8a3488301b62-Paper-Conference.pdf
-- **状态**：✅ 链接已验证有效
+- **状态**：链接已验证有效
 
 ## 📊 JSON输出格式
 

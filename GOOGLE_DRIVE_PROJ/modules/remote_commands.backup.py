@@ -362,7 +362,7 @@ class RemoteCommands:
                                         print(f"  - {f}")
                                 
                                 if expected_file in tmp_files:
-                                    print(f"DEBUG: ✅ 预期文件在远端存在: {expected_file}")
+                                    print(f"DEBUG: 预期文件在远端存在: {expected_file}")
                                     print(f"DEBUG: 这说明是文件下载/检查机制的问题")
                                 else:
                                     print(f"DEBUG: ❌ 预期文件在远端不存在: {expected_file}")
@@ -767,7 +767,7 @@ done'''
 {chr(10).join(retry_commands)}
 
 clear
-echo "✅ 执行完成"'''
+echo "执行完成"'''
             
             return script
             
@@ -910,9 +910,9 @@ fi
 # 输出最终结果
 total_files={len(file_info_list)}
 if [ "${{fail_count:-0}}" -eq 0 ]; then
-    echo "✅ 所有文件移动完成"
+    echo "所有文件移动完成"
 else
-    echo "⚠️  部分文件移动完成: ${{success_count:-0}}/${{total_files:-0}} 成功, ${{fail_count:-0}} 失败"
+    echo "Warning: 部分文件移动完成: ${{success_count:-0}}/${{total_files:-0}} 成功, ${{fail_count:-0}} 失败"
 fi
 '''
             
@@ -1530,9 +1530,9 @@ fi
                 f'    \n'
                 f'    # 统一的执行完成提示（无论成功失败都显示完成）\n'
                 f'    if [ "$EXIT_CODE" -eq 0 ]; then\n'
-                f'        clear && echo "✅ 执行完成"\n'
+                f'        clear && echo "执行完成"\n'
                 f'    else\n'
-                f'        clear && echo "✅ 执行完成"\n'
+                f'        clear && echo "执行完成"\n'
                 f'    fi\n'
                 f'    \n'
             )
@@ -1739,7 +1739,7 @@ fi
             try:
                 import subprocess
                 subprocess.run(['pbcopy'], input=remote_command.encode('utf-8'))
-                print(f"✅ 远端指令已复制到剪切板")
+                print(f"远端指令已复制到剪切板")
             except Exception as e:
                 print(f"❌ 复制到剪切板失败: {e}")
                 print(f"请手动复制上面的远端指令")
@@ -1815,7 +1815,7 @@ fi
             # 用户确认执行完成（单窗口锁机制下不需要队列管理）
             debug_log_func(f"🔍 DEBUG: [{get_timestamp_func()}] [COMPLETION_CHECK] 检查完成状态 - user_completed_window: {user_completed_window}, window_id: {window_id}")
             if user_completed_window:
-                debug_log_func(f"✅ DEBUG: [{get_timestamp_func()}] [USER_COMPLETED] 用户确认成功完成 - window_id: {window_id}")
+                debug_log_func(f"DEBUG: [{get_timestamp_func()}] [USER_COMPLETED] 用户确认成功完成 - window_id: {window_id}")
             else:
                 debug_log_func(f"⚠️ DEBUG: [{get_timestamp_func()}] [USER_NOT_COMPLETED] 用户未确认完成 - window_id: {window_id}")
             
@@ -2251,7 +2251,7 @@ try:
             try:
                 clipboard_content = root.clipboard_get()
                 if clipboard_content == command_text:
-                    copy_btn.config(text="✅ 复制成功", bg="#4CAF50")
+                    copy_btn.config(text="复制成功", bg="#4CAF50")
                 else:
                     # 复制不完整，重试一次
                     root.clipboard_clear()
@@ -2259,7 +2259,7 @@ try:
                     copy_btn.config(text="⚠️ 已重试", bg="#FF9800")
             except Exception as verify_error:
                 # 验证失败但复制可能成功，显示已复制
-                copy_btn.config(text="✅ 已复制", bg="#4CAF50")
+                copy_btn.config(text="已复制", bg="#4CAF50")
             
             root.after(1500, lambda: copy_btn.config(text="📋 复制指令", bg="#2196F3"))
         except Exception as e:
@@ -2340,7 +2340,7 @@ try:
     # 执行完成按钮（最右边）
     complete_btn = tk.Button(
         button_frame, 
-        text="✅ 执行完成", 
+        text="执行完成", 
         command=execution_completed,
         font=("Arial", 9, "bold"),
         bg="#4CAF50",

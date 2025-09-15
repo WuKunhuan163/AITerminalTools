@@ -98,7 +98,7 @@ class USERINPUTTest(unittest.TestCase):
         self.assertEqual(returncode, 0, f"返回码应为0，实际为{returncode}")
         self.assertIn("Hello World", stdout, "输出应包含输入的内容")
         
-        print("✅ 单行输入测试通过")
+        print("单行输入测试通过")
     
     def test_02_multiline_input(self):
         """测试多行输入（修复后的核心功能）"""
@@ -115,7 +115,7 @@ class USERINPUTTest(unittest.TestCase):
         # 确保不是只输出"stop"
         self.assertNotEqual(stdout.strip(), "stop", "不应该只输出stop")
         
-        print("✅ 多行输入测试通过")
+        print("多行输入测试通过")
     
     def test_03_chinese_characters(self):
         """测试中文字符输入"""
@@ -128,7 +128,7 @@ class USERINPUTTest(unittest.TestCase):
         self.assertIn("你好世界", stdout, "输出应包含中文内容")
         self.assertIn("中文测试", stdout, "输出应包含中文内容")
         
-        print("✅ 中文字符输入测试通过")
+        print("中文字符输入测试通过")
     
     def test_04_mixed_languages(self):
         """测试中英文混合输入"""
@@ -142,7 +142,7 @@ class USERINPUTTest(unittest.TestCase):
         self.assertIn("World 世界", stdout, "输出应包含中英文混合内容")
         self.assertIn("Mixed 混合测试", stdout, "输出应包含中英文混合内容")
         
-        print("✅ 中英文混合输入测试通过")
+        print("中英文混合输入测试通过")
     
     def test_05_special_characters(self):
         """测试特殊字符输入"""
@@ -155,7 +155,7 @@ class USERINPUTTest(unittest.TestCase):
         # 特殊字符可能被转义，所以检查部分内容
         self.assertTrue(any(char in stdout for char in "!@#$%"), "输出应包含特殊字符")
         
-        print("✅ 特殊字符输入测试通过")
+        print("特殊字符输入测试通过")
     
     def test_06_empty_lines(self):
         """测试包含空行的输入"""
@@ -169,7 +169,7 @@ class USERINPUTTest(unittest.TestCase):
         self.assertIn("第三行", stdout, "输出应包含第三行")
         self.assertIn("第五行", stdout, "输出应包含第五行")
         
-        print("✅ 包含空行的输入测试通过")
+        print("包含空行的输入测试通过")
     
     def test_07_long_lines(self):
         """测试长行输入"""
@@ -184,7 +184,7 @@ class USERINPUTTest(unittest.TestCase):
         # 检查长行的部分内容
         self.assertIn("这是一个很长的行", stdout, "输出应包含长行的部分内容")
         
-        print("✅ 长行输入测试通过")
+        print("长行输入测试通过")
     
     def test_08_timeout_parameter(self):
         """测试超时参数"""
@@ -200,7 +200,7 @@ class USERINPUTTest(unittest.TestCase):
         self.assertEqual(returncode, 0, f"返回码应为0，实际为{returncode}")
         self.assertIn("测试超时", stdout, "输出应包含输入内容")
         
-        print("✅ 超时参数测试通过")
+        print("超时参数测试通过")
     
     def test_09_help_command(self):
         """测试帮助命令"""
@@ -216,7 +216,7 @@ class USERINPUTTest(unittest.TestCase):
         self.assertIn("USERINPUT", stdout, "帮助信息应包含USERINPUT")
         self.assertIn("Usage:", stdout, "帮助信息应包含使用说明")
         
-        print("✅ 帮助命令测试通过")
+        print("帮助命令测试通过")
     
     def test_10_only_spaces(self):
         """测试只包含空格的输入"""
@@ -228,7 +228,7 @@ class USERINPUTTest(unittest.TestCase):
         self.assertEqual(returncode, 0, f"返回码应为0，实际为{returncode}")
         # 空格行可能被过滤，但不应该导致错误
         
-        print("✅ 只包含空格的输入测试通过")
+        print("只包含空格的输入测试通过")
     
     def test_11_numbers_and_symbols(self):
         """测试数字和符号混合输入"""
@@ -243,7 +243,7 @@ class USERINPUTTest(unittest.TestCase):
         self.assertIn("+100%", stdout, "输出应包含百分号")
         self.assertIn("$50.00", stdout, "输出应包含货币符号")
         
-        print("✅ 数字和符号混合输入测试通过")
+        print("数字和符号混合输入测试通过")
     
     def test_12_unicode_emojis(self):
         """测试Unicode表情符号输入"""
@@ -256,7 +256,7 @@ class USERINPUTTest(unittest.TestCase):
         # 检查是否包含表情符号（可能在编码过程中发生变化）
         # 至少应该不报错
         
-        print("✅ Unicode表情符号输入测试通过")
+        print("Unicode表情符号输入测试通过")
     
     def test_13_code_snippets(self):
         """测试代码片段输入"""
@@ -276,7 +276,7 @@ if __name__ == "__main__":
         self.assertIn("print", stdout, "输出应包含print语句")
         self.assertIn("if __name__", stdout, "输出应包含main检查")
         
-        print("✅ 代码片段输入测试通过")
+        print("代码片段输入测试通过")
     
     def test_14_json_input(self):
         """测试JSON格式输入"""
@@ -293,7 +293,7 @@ if __name__ == "__main__":
         self.assertIn('"value"', stdout, "输出应包含JSON键")
         self.assertIn("123", stdout, "输出应包含JSON值")
         
-        print("✅ JSON格式输入测试通过")
+        print("JSON格式输入测试通过")
     
     def test_15_very_long_multiline(self):
         """测试超长多行输入"""
@@ -312,7 +312,7 @@ if __name__ == "__main__":
         self.assertIn("Line 1", stdout, "输出应包含英文内容")
         self.assertIn("Line 50", stdout, "输出应包含英文内容")
         
-        print("✅ 超长多行输入测试通过")
+        print("超长多行输入测试通过")
     
     def test_16_timeout_bug_fix(self):
         """测试超时bug修复 - GUI按钮点击后超时应该捕获部分输入"""
@@ -340,7 +340,7 @@ if __name__ == "__main__":
         self.assertTrue(timeout_manager.is_timeout_expired())
         self.assertEqual(timeout_manager.get_remaining_time(), 0)
         
-        print("✅ 超时bug修复测试通过")
+        print("超时bug修复测试通过")
     
     def test_17_ctrl_c_duplication_bug_fix(self):
         """测试Ctrl+C重复输入bug修复 - 按回车再按Ctrl+C不应该重复行"""
@@ -371,7 +371,7 @@ if __name__ == "__main__":
             self.assertEqual(lines[0], "test line", "行内容应该正确")
             self.assertEqual(result, "partial_input", "应该返回partial_input")
         
-        print("✅ Ctrl+C重复输入bug修复测试通过")
+        print("Ctrl+C重复输入bug修复测试通过")
     
     def test_18_both_fixes_integration(self):
         """测试两个bug修复的集成 - 确保两个修复一起工作"""
@@ -410,7 +410,7 @@ if __name__ == "__main__":
         # 清理全局状态
         USERINPUT._global_timeout_manager = None
         
-        print("✅ 两个bug修复的集成测试通过")
+        print("两个bug修复的集成测试通过")
 
 def run_tests():
     """运行所有测试"""

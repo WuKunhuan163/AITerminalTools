@@ -76,16 +76,16 @@ $ NETWORK test
 Network Performance Test Results:
 ================================
 Endpoint: google.com
-  ✅ Connectivity: OK
+  Connectivity: OK
   ⏱️  Latency: 15.3ms
   📊 Response: 200 OK
   
 Endpoint: github.com  
-  ✅ Connectivity: OK
+  Connectivity: OK
   ⏱️  Latency: 42.7ms
   📊 Response: 200 OK
 
-Overall Status: ✅ All endpoints reachable
+Overall Status: All endpoints reachable
 Average Latency: 29.0ms
 ```
 
@@ -105,9 +105,9 @@ Test Server: speedtest.net
 $ NETWORK batch --endpoints google.com github.com stackoverflow.com
 Batch Test Results (3 endpoints):
 =================================
-google.com: ✅ 15.3ms (200 OK)
-github.com: ✅ 42.7ms (200 OK)  
-stackoverflow.com: ✅ 28.1ms (200 OK)
+google.com: 15.3ms (200 OK)
+github.com: 42.7ms (200 OK)  
+stackoverflow.com: 28.1ms (200 OK)
 
 Summary:
 - Success Rate: 100% (3/3)
@@ -128,7 +128,7 @@ Failed: 20 (1.7%)
 Average Response Time: 125ms
 Rate Achieved: 39.3 req/s
 
-Status: ✅ API can handle 40 req/s with 98.3% success rate
+Status: API can handle 40 req/s with 98.3% success rate
 ```
 
 ### JSON Output

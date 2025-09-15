@@ -78,7 +78,7 @@ Please visit https://huggingface.co/settings/tokens to get your token
 You can create a new token or use an existing one.
 
 Enter your HuggingFace token: hf_xxxxxxxxxxxxxxxxxxxxxxxxx
-✅ Successfully logged in to HuggingFace
+Successfully logged in to HuggingFace
    token_saved: Yes
    git_credential: Added
 ```
@@ -101,7 +101,7 @@ HUGGINGFACE --status
 
 **Output (Authenticated):**
 ```
-✅ HuggingFace authentication active
+HuggingFace authentication active
    authenticated: Yes
    username: your_username
    email: your_email@example.com
@@ -124,7 +124,7 @@ HUGGINGFACE --whoami
 
 **Output:**
 ```
-✅ Current HuggingFace user information
+Current HuggingFace user information
    username: your_username
    fullname: Your Full Name
    email: your_email@example.com
@@ -142,11 +142,11 @@ HUGGINGFACE --test
 
 **Output:**
 ```
-✅ HuggingFace authentication test passed
-   user_test: ✅ Passed
+HuggingFace authentication test passed
+   user_test: Passed
    username: your_username
-   api_test: ✅ Passed
-   model_access: ✅ Can access public models
+   api_test: Passed
+   model_access: Can access public models
    test_model: bert-base-uncased
 ```
 
@@ -160,7 +160,7 @@ HUGGINGFACE --logout
 
 **Output:**
 ```
-✅ Successfully logged out from HuggingFace
+Successfully logged out from HuggingFace
    token_removed: Yes
    git_credential: Removed
 ```
@@ -301,7 +301,7 @@ HUGGINGFACE --whoami
 #!/bin/bash
 # Check if authenticated before running ML pipeline
 if RUN --show HUGGINGFACE --status | jq -r '.success' | grep -q true; then
-    echo "✅ HuggingFace authenticated, proceeding..."
+    echo "HuggingFace authenticated, proceeding..."
     python train_model.py
 else
     echo "❌ Not authenticated, please run: HUGGINGFACE --login"

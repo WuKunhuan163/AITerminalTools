@@ -276,7 +276,7 @@ class UnifiedImageProcessor:
                                     "from_cache": False
                                 }
                             else:
-                                logger.warning("⚠️  No result in RUN IMG2TEXT output")
+                                logger.warning("Warning: No result in RUN IMG2TEXT output")
                         
                         logger.error(f"❌ RUN IMG2TEXT failed: {run_output.get('message', 'Unknown error')}")
                         return {

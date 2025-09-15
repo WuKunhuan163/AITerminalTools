@@ -2625,7 +2625,7 @@ except Exception as e:
                 "mkdir -p tmp",  # 确保远程tmp目录存在
                 env_setup,  # 设置虚拟环境（如果需要）
                 f"python3 -c '{python_script}'",
-                "clear && echo '✅ 执行完成'"  # 清屏并显示完成提示
+                "clear && echo '执行完成'"  # 清屏并显示完成提示
             ]
             
             # 过滤空命令
@@ -7052,7 +7052,7 @@ except Exception as e:
             commands = [
                 f"mkdir -p {self.main_instance.REMOTE_ROOT}/tmp",  # 确保远程tmp目录存在
                 f"python3 -c '{python_script}'",
-                "clear && echo '✅ 执行完成'"  # 清屏并显示完成提示
+                "clear && echo '执行完成'"  # 清屏并显示完成提示
             ]
             
             full_command = " && ".join(commands)

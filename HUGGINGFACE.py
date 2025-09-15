@@ -254,10 +254,10 @@ def test_authentication():
                 "success": True,
                 "message": "HuggingFace authentication test passed",
                 "details": {
-                    "user_test": "✅ Passed",
+                    "user_test": "Passed",
                     "username": username,
-                    "api_test": "✅ Passed",
-                    "model_access": "✅ Can access public models",
+                    "api_test": "Passed",
+                    "model_access": "Can access public models",
                     "test_model": "bert-base-uncased"
                 }
             }

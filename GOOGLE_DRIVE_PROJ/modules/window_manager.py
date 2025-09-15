@@ -365,7 +365,7 @@ class WindowManager:
             
             # 创建和显示窗口
             result = self._create_and_show_window(window_request)
-            self._debug_log(f"✅ DEBUG: [WINDOW_COMPLETED] 进程 {os.getpid()} 窗口完成: {request_id}, action: {result.get('action')}")
+            self._debug_log(f"DEBUG: [WINDOW_COMPLETED] 进程 {os.getpid()} 窗口完成: {request_id}, action: {result.get('action')}")
             
             return result
             
@@ -549,7 +549,7 @@ try:
             try:
                 clipboard_content = root.clipboard_get()
                 if clipboard_content == command_text:
-                    copy_btn.config(text="✅ 复制成功", bg="#4CAF50")
+                    copy_btn.config(text="复制成功", bg="#4CAF50")
                 else:
                     # 复制不完整，重试一次
                     root.clipboard_clear()
@@ -557,7 +557,7 @@ try:
                     copy_btn.config(text="⚠️ 已重试", bg="#FF9800")
             except Exception as verify_error:
                 # 验证失败但复制可能成功，显示已复制
-                copy_btn.config(text="✅ 已复制", bg="#4CAF50")
+                copy_btn.config(text="已复制", bg="#4CAF50")
             
             root.after(1500, lambda: copy_btn.config(text="📋 复制指令", bg="#2196F3"))
         except Exception as e:
@@ -640,7 +640,7 @@ try:
     # 执行完成按钮（最右边）
     complete_btn = tk.Button(
         button_frame, 
-        text="✅ 执行完成", 
+        text="执行完成", 
         command=execution_completed,
         font=("Arial", 9, "bold"),
         bg="#4CAF50",

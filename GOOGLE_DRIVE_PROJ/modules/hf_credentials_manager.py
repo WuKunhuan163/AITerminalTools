@@ -106,7 +106,7 @@ chmod 600 ~/.cache/huggingface/token
 
 # Verify setup
 if [ -f ~/.cache/huggingface/token ]; then
-    echo "✅ HuggingFace token configured successfully"
+    echo "HuggingFace token configured successfully"
     echo "Token length: {len(token)}"
     echo "Token prefix: {token[:8]}..."
 else
@@ -137,16 +137,16 @@ try:
     username = user_info.get('name', 'Unknown')
     email = user_info.get('email', 'Unknown')
     
-    print('✅ HuggingFace authentication successful!')
+    print('HuggingFace authentication successful!')
     print(f'   Username: {{username}}')
     print(f'   Email: {{email}}')
     
     # Test model access
     try:
         model_info = api.model_info('bert-base-uncased')
-        print('✅ Model access verified (can access public models)')
+        print('Model access verified (can access public models)')
     except Exception as model_error:
-        print(f'⚠️  Model access test failed: {{model_error}}')
+        print(f'Warning: Model access test failed: {{model_error}}')
     
     # Final success indicator
     print('🎉 HuggingFace setup completed successfully!')
@@ -161,13 +161,13 @@ except Exception as e:
     # Check the exit code from Python script
     if [ $? -eq 0 ]; then
         clear
-        echo "✅ Setup completed"
+        echo "Setup completed"
     else
         echo "❌ Setup failed"
         exit 1
     fi
 else
-    echo "⚠️  Python not available, skipping authentication test"
+    echo "Warning: Python not available, skipping authentication test"
     echo "🎉 Token configured, but manual verification needed"
 fi
 """
@@ -247,7 +247,7 @@ echo "  HUGGINGFACE_HUB_TOKEN: ${HUGGINGFACE_HUB_TOKEN:0:8}..."
 # Check token file
 if [ -f ~/.cache/huggingface/token ]; then
     token_content=$(cat ~/.cache/huggingface/token)
-    echo "  Token file: ✅ Exists (${#token_content} chars)"
+    echo "  Token file: Exists (${#token_content} chars)"
 else
     echo "  Token file: ❌ Missing"
 fi
@@ -262,13 +262,13 @@ try:
     
     api = HfApi()
     user_info = api.whoami()
-    print(f'  Authentication: ✅ Success')
+    print(f'  Authentication: Success')
     print(f'  Username: {user_info.get(\"name\", \"Unknown\")}')
     print(f'  Email: {user_info.get(\"email\", \"Unknown\")}')
     
     # Test model access
     model_info = api.model_info('bert-base-uncased')
-    print(f'  Model Access: ✅ Can access public models')
+    print(f'  Model Access: Can access public models')
     
 except ImportError:
     print('  HuggingFace Hub: ❌ Not installed')

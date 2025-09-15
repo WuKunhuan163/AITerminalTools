@@ -273,10 +273,6 @@ class RemoteCommands:
             # 远端文件路径（在REMOTE_ROOT/tmp目录中）
             remote_file_path = f"{self.main_instance.REMOTE_ROOT}/tmp/{result_filename}"
             
-            # DEBUG: 显示等待的文件路径
-            print(f"DEBUG: _wait_and_read_result_file - 等待文件: {remote_file_path}")
-            print(f"DEBUG: REMOTE_ROOT = {self.main_instance.REMOTE_ROOT}")
-            print(f"DEBUG: result_filename = {result_filename}")
             
 
             # 使用进度缓冲输出等待指示器
@@ -286,23 +282,13 @@ class RemoteCommands:
             # 等待文件出现，最多60秒
             max_wait_time = 60
             for i in range(max_wait_time):
-                # DEBUG: 显示等待循环状态
-                if i == 0:
-                    print(f"\nDEBUG: 开始等待循环 - 等待文件: {remote_file_path}")
-                if i % 10 == 0 and i > 0:
-                    print(f"\nDEBUG: 等待循环第{i}次 - 已等待{i}秒")
                 
                 # 检查文件是否存在
                 check_result = self._check_remote_file_exists(remote_file_path)
                 
-                # DEBUG: 显示文件检查结果
-                if i < 5 or i % 10 == 0:  # 只在前5次或每10次显示
-                    print(f"\nDEBUG: 第{i+1}次检查 - 文件存在: {check_result.get('exists', False)}")
-                    if not check_result.get("exists") and check_result.get("error"):
-                        print(f"DEBUG: 检查错误: {check_result.get('error')}")
                 
-                # 使用GDS pwd和GDS ls来详细诊断问题
-                if i == 4:  # 在第5次检查时进行诊断（i从0开始）
+                # 简化检查逻辑
+                if False:  # 禁用详细诊断
                     print(f"\nDEBUG: 详细诊断开始...")
                     try:
                         import subprocess
@@ -362,7 +348,7 @@ class RemoteCommands:
                                         print(f"  - {f}")
                                 
                                 if expected_file in tmp_files:
-                                    print(f"DEBUG: ✅ 预期文件在远端存在: {expected_file}")
+                                    print(f"DEBUG: 预期文件在远端存在: {expected_file}")
                                     print(f"DEBUG: 这说明是文件下载/检查机制的问题")
                                 else:
                                     print(f"DEBUG: ❌ 预期文件在远端不存在: {expected_file}")
@@ -380,7 +366,6 @@ class RemoteCommands:
                 
                 if check_result.get("exists"):
                     # 文件存在，读取内容
-                    print(f"\nDEBUG: 文件找到！开始读取内容...")
                     file_result = self._read_result_file_via_gds(result_filename)
                     
                     # 先在进度行显示√标记，然后清除进度显示
@@ -388,7 +373,6 @@ class RemoteCommands:
                     add_success_mark()
                     clear_progress()
                     
-                    print(f"DEBUG: 文件读取完成 - 成功: {file_result.get('success', False)}")
                     
                     return file_result
                 
@@ -767,7 +751,7 @@ done'''
 {chr(10).join(retry_commands)}
 
 clear
-echo "✅ 执行完成"'''
+echo "执行完成"'''
             
             return script
             
@@ -910,9 +894,9 @@ fi
 # 输出最终结果
 total_files={len(file_info_list)}
 if [ "${{fail_count:-0}}" -eq 0 ]; then
-    echo "✅ 所有文件移动完成"
+    echo "所有文件移动完成"
 else
-    echo "⚠️  部分文件移动完成: ${{success_count:-0}}/${{total_files:-0}} 成功, ${{fail_count:-0}} 失败"
+    echo "Warning: 部分文件移动完成: ${{success_count:-0}}/${{total_files:-0}} 成功, ${{fail_count:-0}} 失败"
 fi
 '''
             
@@ -1530,9 +1514,9 @@ fi
                 f'    \n'
                 f'    # 统一的执行完成提示（无论成功失败都显示完成）\n'
                 f'    if [ "$EXIT_CODE" -eq 0 ]; then\n'
-                f'        clear && echo "✅ 执行完成"\n'
+                f'        clear && echo "执行完成"\n'
                 f'    else\n'
-                f'        clear && echo "✅ 执行完成"\n'
+                f'        clear && echo "执行完成"\n'
                 f'    fi\n'
                 f'    \n'
             )
@@ -1721,97 +1705,17 @@ fi
             
             debug_info = debug_capture.get_debug_info()
             debug_capture.start_capture()  # 启动debug捕获，避免窗口期间的debug输出
-            debug_print(f"_execute_with_result_capture: 即将调用_show_command_window")
-            debug_print(f"cmd: {cmd}, args: {args}")
             debug_log_func(f"🪟 DEBUG: [{get_timestamp_func()}] [WINDOW_CALL] 即将调用_show_command_window - window_id: {window_id}")
             
-            # 动态挂载架构：生成包含挂载代码的远端指令
-            import time
-            import hashlib
-            import random
+            # 获取当前shell状态
+            current_shell = self.main_instance.get_current_shell()
             
-            timestamp = str(int(time.time()))
-            # 生成随机hash作为挂载点标识
-            random_hash = hashlib.md5(f"{timestamp}_{random.randint(1000, 9999)}".encode()).hexdigest()[:8]
-            mount_point = f"/content/drives/mounted_drive_{random_hash}"
+            # 生成最终的远端命令（使用原有的_generate_command方法）
+            remote_command_info = self._generate_command(cmd, args, current_shell)
+            final_remote_command, result_filename = remote_command_info
             
-            # 更新路径以使用动态挂载点
-            dynamic_remote_root = f"{mount_point}/MyDrive/REMOTE_ROOT"
-            result_filename = f"cmd_{timestamp}_{random_hash}.json"
-            result_path = f"{dynamic_remote_root}/tmp/{result_filename}"
-            args_json = str(args) if args else '[]'
-            
-            simple_test_content = f"TEST_SUCCESS_{timestamp}_{random_hash}"
-            
-            # 生成包含动态挂载的远端指令
-            dynamic_mount_command = (
-                f'# 动态挂载Google Drive架构\n'
-                f'print("=== GDS动态挂载系统 ===")\n'
-                f'print("挂载点: {mount_point}")\n'
-                f'print("请在Colab中执行以下代码：")\n'
-                f'print("")\n'
-                f'print("# 创建挂载目录")\n'
-                f'print("import os")\n'
-                f'print("os.makedirs(\\"{mount_point}\\", exist_ok=True)")\n'
-                f'print("")\n'
-                f'print("# 挂载Google Drive")\n'
-                f'print("from google.colab import drive")\n'
-                f'print("drive.mount(\\"{mount_point}\\")")\n'
-                f'print("")\n'
-                f'print("执行完成后，请按任意键继续...")\n'
-                f'# read -p "挂载完成后按Enter继续..." dummy\n'
-                f'echo "假设挂载已完成，继续执行..."\n'
-                f'\n'
-                f'# 创建必要的目录结构\n'
-                f'mkdir -p "{dynamic_remote_root}/tmp"\n'
-                f'\n'
-                f'# 生成测试结果文件\n'
-                f'echo "{{" > "{result_path}"\n'
-                f'echo "  \\"success\\": true," >> "{result_path}"\n'
-                f'echo "  \\"cmd\\": \\"{cmd}\\"," >> "{result_path}"\n'
-                f'echo "  \\"mount_point\\": \\"{mount_point}\\"," >> "{result_path}"\n'
-                f'echo "  \\"dynamic_remote_root\\": \\"{dynamic_remote_root}\\"," >> "{result_path}"\n'
-                f'echo "  \\"exit_code\\": 0," >> "{result_path}"\n'
-                f'echo "  \\"stdout\\": \\"{simple_test_content}\\"," >> "{result_path}"\n'
-                f'echo "  \\"test_mode\\": \\"dynamic_mount\\"" >> "{result_path}"\n'
-                f'echo "}}" >> "{result_path}"\n'
-                f'echo "动态挂载测试完成: {result_filename}"\n'
-                f'echo "结果文件路径: {result_path}"\n'
-            )
-            
-            # 输出并复制动态挂载指令
-            print(f"DEBUG: 动态挂载远端指令 (长度: {len(dynamic_mount_command)} 字符):")
-            print(f"=" * 60)
-            print(dynamic_mount_command)
-            print(f"=" * 60)
-            print(f"挂载点: {mount_point}")
-            print(f"动态REMOTE_ROOT: {dynamic_remote_root}")
-            print(f"预期结果文件: {result_filename}")
-            print(f"=" * 60)
-            
-            # 复制指令到剪切板
-            try:
-                import subprocess
-                subprocess.run(['pbcopy'], input=dynamic_mount_command.encode('utf-8'))
-                print(f"✅ 动态挂载远端指令已复制到剪切板")
-            except Exception as e:
-                print(f"❌ 复制到剪切板失败: {e}")
-            
-            # 直接返回成功，不执行任何远端操作
-            return {
-                "success": True,
-                "cmd": cmd,
-                "args": args,
-                "exit_code": 0,
-                "stdout": f"DEBUG: 动态挂载远端指令已输出，未执行。挂载点: {mount_point}，预期结果文件: {result_filename}",
-                "stderr": "",
-                "working_dir": "debug_mode",
-                "timestamp": "debug_mode",
-                "path": f"tmp/{result_filename}",
-                "mount_point": mount_point,
-                "dynamic_remote_root": dynamic_remote_root,
-                "debug_mode": True
-            }
+            # 显示命令窗口
+            window_result = self._show_command_window(cmd, args, final_remote_command)
             debug_print(f"_show_command_window返回结果: {window_result}")
             
             # 检查用户窗口操作结果，并在适当时机释放槽位
@@ -1854,11 +1758,7 @@ fi
             debug_capture.stop_capture()  # 成功路径的debug捕获停止
             
             # 等待远端文件出现，最多等待60秒
-            print(f"DEBUG: [{get_timestamp_func()}] [WAIT_FILE] 开始等待结果文件 - window_id: {window_id}, filename: {result_filename}")
             result_data = self._wait_and_read_result_file(result_filename)
-            print(f"DEBUG: [{get_timestamp_func()}] [FILE_READ] 结果文件读取完成 - window_id: {window_id}, success: {result_data.get('success', False)}")
-            if not result_data.get('success'):
-                print(f"DEBUG: 结果文件读取失败: {result_data.get('error', 'Unknown error')}")
             
             if not result_data.get("success"):
                 return {
@@ -1870,7 +1770,7 @@ fi
             # 用户确认执行完成（单窗口锁机制下不需要队列管理）
             debug_log_func(f"🔍 DEBUG: [{get_timestamp_func()}] [COMPLETION_CHECK] 检查完成状态 - user_completed_window: {user_completed_window}, window_id: {window_id}")
             if user_completed_window:
-                debug_log_func(f"✅ DEBUG: [{get_timestamp_func()}] [USER_COMPLETED] 用户确认成功完成 - window_id: {window_id}")
+                debug_log_func(f"DEBUG: [{get_timestamp_func()}] [USER_COMPLETED] 用户确认成功完成 - window_id: {window_id}")
             else:
                 debug_log_func(f"⚠️ DEBUG: [{get_timestamp_func()}] [USER_NOT_COMPLETED] 用户未确认完成 - window_id: {window_id}")
             
@@ -2306,7 +2206,7 @@ try:
             try:
                 clipboard_content = root.clipboard_get()
                 if clipboard_content == command_text:
-                    copy_btn.config(text="✅ 复制成功", bg="#4CAF50")
+                    copy_btn.config(text="复制成功", bg="#4CAF50")
                 else:
                     # 复制不完整，重试一次
                     root.clipboard_clear()
@@ -2314,7 +2214,7 @@ try:
                     copy_btn.config(text="⚠️ 已重试", bg="#FF9800")
             except Exception as verify_error:
                 # 验证失败但复制可能成功，显示已复制
-                copy_btn.config(text="✅ 已复制", bg="#4CAF50")
+                copy_btn.config(text="已复制", bg="#4CAF50")
             
             root.after(1500, lambda: copy_btn.config(text="📋 复制指令", bg="#2196F3"))
         except Exception as e:
@@ -2395,7 +2295,7 @@ try:
     # 执行完成按钮（最右边）
     complete_btn = tk.Button(
         button_frame, 
-        text="✅ 执行完成", 
+        text="执行完成", 
         command=execution_completed,
         font=("Arial", 9, "bold"),
         bg="#4CAF50",
@@ -2640,6 +2540,9 @@ def main():
             return 1
         shell_id = args[1]
         return terminate_shell(shell_id, command_identifier) if terminate_shell else 1
+    elif args[0] == '--remount':
+        # 处理重新挂载命令
+        return handle_remount_command(command_identifier)
     elif args[0] == '--shell':
         if len(args) == 1:
             # 进入交互模式
@@ -2828,3 +2731,28 @@ def main():
         # 默认作为URL处理
         url = args[0]
         return open_google_drive(url, command_identifier) if open_google_drive else 1
+
+
+def handle_remount_command(command_identifier):
+    """处理GOOGLE_DRIVE --remount命令"""
+    try:
+        # 导入GoogleDriveShell并调用重新挂载方法
+        import sys
+        import os
+        
+        # 添加GOOGLE_DRIVE_PROJ到路径
+        current_dir = os.path.dirname(os.path.dirname(__file__))
+        if current_dir not in sys.path:
+            sys.path.insert(0, current_dir)
+        
+        from google_drive_shell import GoogleDriveShell
+        
+        # 创建GoogleDriveShell实例
+        shell = GoogleDriveShell()
+        
+        # 调用重新挂载方法
+        return shell._handle_remount_command(command_identifier)
+        
+    except Exception as e:
+        print(f"❌ 重新挂载命令失败: {e}")
+        return 1

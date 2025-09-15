@@ -550,7 +550,7 @@ class TestOpenRouterIntegration(APITest):
             remove_result = self.assertCommandSuccess([
                 sys.executable, str(self.openrouter_py), '--remove', 'deepseek/deepseek-chat'
             ])
-            self.assertIn('✅ 已从列表中移除模型', remove_result.stdout)
+            self.assertIn('已从列表中移除模型', remove_result.stdout)
             
             # Verify it's no longer in the list
             list_result = self.assertCommandSuccess([
@@ -586,7 +586,7 @@ class TestOpenRouterIntegration(APITest):
             default_result = self.assertCommandSuccess([
                 sys.executable, str(self.openrouter_py), '--default', first_model
             ])
-            self.assertIn('✅ 已将', default_result.stdout)
+            self.assertIn('已将', default_result.stdout)
 
     def test_default_multiple_models(self):
         """Test setting multiple default models"""
@@ -614,7 +614,7 @@ class TestOpenRouterIntegration(APITest):
             default_result = self.assertCommandSuccess([
                 sys.executable, str(self.openrouter_py), '--default', model_str
             ])
-            self.assertIn('✅ 已按顺序设置优先模型:', default_result.stdout)
+            self.assertIn('已按顺序设置优先模型:', default_result.stdout)
             self.assertIn(models[1], default_result.stdout)
             self.assertIn(models[0], default_result.stdout)
 
@@ -638,10 +638,10 @@ class TestOpenRouterIntegration(APITest):
             default_result = self.assertCommandSuccess([
                 sys.executable, str(self.openrouter_py), '--default', model_str
             ])
-            self.assertIn('⚠️  以下模型不存在于列表中:', default_result.stdout)
+            self.assertIn('Warning: 以下模型不存在于列表中:', default_result.stdout)
             self.assertIn('nonexistent/model', default_result.stdout)
             self.assertIn('another/fake', default_result.stdout)
-            self.assertIn('✅ 已将', default_result.stdout)
+            self.assertIn('已将', default_result.stdout)
 
     def test_help_includes_new_options(self):
         """Test that help includes new --add and --remove options"""

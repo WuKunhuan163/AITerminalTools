@@ -64,9 +64,9 @@ cd "/content/drive/MyDrive/REMOTE_ROOT/path" && {
     
     # 显示执行完成提示
     if [ "$EXIT_CODE" -eq 0 ]; then
-        clear && echo "✅ 执行完成"
+        clear && echo "执行完成"
     else
-        clear && echo "✅ 执行完成"
+        clear && echo "执行完成"
     fi
     
     # 生成JSON结果文件（使用Python脚本）

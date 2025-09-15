@@ -125,7 +125,7 @@ class TestWindowRobustness(unittest.TestCase):
             # 验证锁获取是串行的
             self.assertGreater(lock_acquired_count, 0, "应该有锁获取记录")
             
-        print("✅ 并发窗口请求测试完成")
+        print("并发窗口请求测试完成")
     
     def test_process_crash_recovery(self):
         """测试2: 进程崩溃恢复 - 验证锁能正确释放"""
@@ -148,7 +148,7 @@ class TestWindowRobustness(unittest.TestCase):
             proc.wait(timeout=5)
             print("💀 进程已强制终止")
         except subprocess.TimeoutExpired:
-            print("⚠️  进程终止超时")
+            print("Warning: 进程终止超时")
         
         # 等待锁释放
         time.sleep(1)
@@ -169,7 +169,7 @@ class TestWindowRobustness(unittest.TestCase):
         # 验证新命令能快速获得锁（不应该长时间等待）
         self.assertLess(duration, 8, "崩溃后新命令应该能快速获得锁")
         
-        print("✅ 进程崩溃恢复测试完成")
+        print("进程崩溃恢复测试完成")
     
     def test_timeout_handling(self):
         """测试3: 超时处理 - 验证超时后锁正确释放"""
@@ -184,7 +184,7 @@ class TestWindowRobustness(unittest.TestCase):
                 text=True,
                 timeout=5  # 5秒超时
             )
-            print("⚠️  命令意外完成，没有超时")
+            print("Warning: 命令意外完成，没有超时")
         except subprocess.TimeoutExpired:
             print("⏰ 命令按预期超时")
         
@@ -207,7 +207,7 @@ class TestWindowRobustness(unittest.TestCase):
         # 验证新命令能获得锁
         self.assertLess(duration, 7, "超时后新命令应该能获得锁")
         
-        print("✅ 超时处理测试完成")
+        print("超时处理测试完成")
     
     def test_lock_file_corruption(self):
         """测试4: 锁文件异常 - 验证系统在锁文件异常时的行为"""
@@ -223,7 +223,7 @@ class TestWindowRobustness(unittest.TestCase):
             os.chmod(self.LOCK_FILE, 0o000)  # 无权限
             print("🔒 设置锁文件为无权限")
         except OSError:
-            print("⚠️  无法设置文件权限")
+            print("Warning: 无法设置文件权限")
         
         # 尝试运行GDS命令
         try:
@@ -250,7 +250,7 @@ class TestWindowRobustness(unittest.TestCase):
         except OSError:
             pass
         
-        print("✅ 锁文件异常处理测试完成")
+        print("锁文件异常处理测试完成")
     
     def test_high_concurrency_stress(self):
         """测试5: 高并发压力测试"""
@@ -287,7 +287,7 @@ class TestWindowRobustness(unittest.TestCase):
         # 验证大部分命令成功
         self.assertGreaterEqual(success_count, 7, "大部分命令应该成功")
         
-        print("✅ 高并发压力测试完成")
+        print("高并发压力测试完成")
     
     def test_debug_log_integrity(self):
         """测试6: Debug日志完整性"""
@@ -341,9 +341,9 @@ class TestWindowRobustness(unittest.TestCase):
             self.assertGreater(len(valid_lines), 0, "应该有有效的debug日志")
             
         else:
-            print("⚠️  Debug日志文件不存在")
+            print("Warning: Debug日志文件不存在")
         
-        print("✅ Debug日志完整性测试完成")
+        print("Debug日志完整性测试完成")
     
     def tearDown(self):
         """每个测试后的清理"""

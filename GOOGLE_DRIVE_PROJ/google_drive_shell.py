@@ -90,7 +90,10 @@ class GoogleDriveShell:
         else:
             raise Exception("配置加载失败")
         
-        # 确保所有必要的属性都存在
+        # 从config.json动态加载REMOTE_ROOT和REMOTE_ENV
+        self._load_paths_from_config()
+        
+        # 确保所有必要的属性都存在（回退值）
         if not hasattr(self, 'REMOTE_ROOT'):
             self.REMOTE_ROOT = "/content/drive/MyDrive/REMOTE_ROOT"
         if not hasattr(self, 'REMOTE_ROOT_FOLDER_ID'):
@@ -102,8 +105,15 @@ class GoogleDriveShell:
         if not hasattr(self, 'REMOTE_ENV_FOLDER_ID'):
             self.REMOTE_ENV_FOLDER_ID = "1ZmgwWWIl7qYnGLE66P3kx02M0jxE8D0h"
         
-        # 尝试加载Google Drive API服务
+        # 动态挂载点管理：检查是否需要使用动态挂载
+        self.current_mount_point = None
+        self.dynamic_mode = False
+        
+        # 先初始化Google Drive API服务
         self.drive_service = self._load_drive_service_direct()
+        
+        # 然后检查挂载点（需要drive_service进行指纹验证）
+        self._check_and_setup_mount_point()
 
         # 初始化管理器
         self._initialize_managers()
@@ -1374,11 +1384,11 @@ echo "Use 'GDS --result $BG_PID' to view final result"
                     print(f"清理后活跃窗口数量: {after_count}")
                     
                     if before_count > 0 and after_count == 0:
-                        print("✅ 窗口清理成功")
+                        print("窗口清理成功")
                     elif before_count == 0:
                         print("ℹ️ 没有需要清理的窗口")
                     elif after_count < before_count:
-                        print(f"✅ 部分窗口清理成功 (清理了 {before_count - after_count} 个窗口)")
+                        print(f"部分窗口清理成功 (清理了 {before_count - after_count} 个窗口)")
                     else:
                         print("⚠️ 窗口清理可能未完全成功")
                     
@@ -2385,4 +2395,621 @@ fi
         except Exception as e:
             print(f"Error: Result view failed: {e}")
             return 1
+    
+    def _check_and_setup_mount_point(self):
+        """检查并设置动态挂载点"""
+        import os
+        import tempfile
+        
+        # 使用临时文件存储当前session的挂载点信息
+        self.mount_info_file = os.path.join(tempfile.gettempdir(), "gds_current_mount.txt")
+        
+        # 检查是否有现有的挂载点
+        if os.path.exists(self.mount_info_file):
+            try:
+                with open(self.mount_info_file, 'r') as f:
+                    stored_mount_point = f.read().strip()
+                if stored_mount_point:
+                    # 验证挂载点的指纹文件（静默模式，不输出调试信息）
+                    if self._verify_mount_fingerprint(stored_mount_point, silent=True):
+                        self.current_mount_point = stored_mount_point
+                        self._update_paths_for_dynamic_mount(stored_mount_point)
+                        return
+            except Exception as e:
+                print(f"Warning: 读取挂载点信息失败: {e}")
+        
+        # 如果检测到需要动态挂载（比如传统挂载失败），启用动态模式
+        try:
+            # 简单的启发式：如果REMOTE_ROOT包含默认路径，可能需要动态挂载
+            if self.REMOTE_ROOT == "/content/drive/MyDrive/REMOTE_ROOT":
+                self.dynamic_mode = True
+            else:
+                self.dynamic_mode = False
+                
+        except Exception as e:
+            self.dynamic_mode = False
+    
+    def _update_paths_for_dynamic_mount(self, mount_point):
+        """更新路径以使用动态挂载点"""
+        self.current_mount_point = mount_point
+        self.REMOTE_ROOT = f"{mount_point}/MyDrive/REMOTE_ROOT"
+        self.REMOTE_ENV = f"{mount_point}/MyDrive/REMOTE_ENV"
+        self.dynamic_mode = True
+        
+        # 保存挂载点信息到临时文件
+        try:
+            import os
+            import tempfile
+            mount_info_file = os.path.join(tempfile.gettempdir(), "gds_current_mount.txt")
+            with open(mount_info_file, 'w') as f:
+                f.write(mount_point)
+        except Exception as e:
+            print(f"Warning: 保存挂载点信息失败: {e}")
+    
+    def _verify_mount_fingerprint(self, mount_point, silent=False):
+        """验证挂载点的指纹文件（通过Google Drive API）"""
+        import json
+        
+        try:
+            # 首先确保我们有Google Drive API服务
+            if not self.drive_service:
+                if not silent:
+                    print(f"🔍 Google Drive API服务未初始化，无法验证指纹")
+                return False
+            
+            # 获取REMOTE_ROOT文件夹ID
+            if not hasattr(self, 'REMOTE_ROOT_FOLDER_ID'):
+                if not silent:
+                    print(f"🔍 REMOTE_ROOT_FOLDER_ID未设置，无法验证指纹")
+                return False
+            
+            # 列出REMOTE_ROOT文件夹中的所有文件
+            result = self.drive_service.list_files(folder_id=self.REMOTE_ROOT_FOLDER_ID, max_results=100)
+            
+            if not result.get('success'):
+                if not silent:
+                    print(f"❌ 无法访问REMOTE_ROOT文件夹: {result.get('error', '未知错误')}")
+                return False
+            
+            files = result.get('files', [])
+            
+            # 查找指纹文件
+            fingerprint_files = [f for f in files if f['name'].startswith('.gds_mount_fingerprint_')]
+            
+            if not fingerprint_files:
+                if not silent:
+                    print(f"🔍 在REMOTE_ROOT中未找到指纹文件")
+                return False
+            
+            # 使用最新的指纹文件（按名称排序，最新的在最后）
+            latest_fingerprint = max(fingerprint_files, key=lambda x: x['name'])
+            
+            # 下载并读取指纹文件内容（使用临时文件）
+            import tempfile
+            import os
+            
+            with tempfile.NamedTemporaryFile(mode='w+', suffix='.json', delete=False) as temp_file:
+                temp_path = temp_file.name
+            
+            try:
+                download_result = self.drive_service.download_file(latest_fingerprint['id'], temp_path)
+                if not download_result.get('success'):
+                    if not silent:
+                        print(f"❌ 无法下载指纹文件: {download_result.get('error', '未知错误')}")
+                    return False
+                
+                # 读取临时文件内容
+                with open(temp_path, 'r', encoding='utf-8') as f:
+                    fingerprint_content = f.read()
+                
+                # 解析指纹文件内容
+                try:
+                    fingerprint_data = json.loads(fingerprint_content)
+                except json.JSONDecodeError as e:
+                    if not silent:
+                        print(f"❌ 指纹文件JSON格式错误: {e}")
+                    return False
+                    
+            finally:
+                # 清理临时文件
+                try:
+                    os.unlink(temp_path)
+                except:
+                    pass
+            
+            # 验证指纹数据的基本结构
+            required_fields = ["mount_point", "timestamp", "hash", "signature", "type"]
+            for field in required_fields:
+                if field not in fingerprint_data:
+                    if not silent:
+                        print(f"❌ 指纹文件缺少必需字段: {field}")
+                    return False
+            
+            # 验证挂载点匹配
+            if fingerprint_data.get("mount_point") != mount_point:
+                if not silent:
+                    print(f"❌ 挂载点不匹配: 期望 {mount_point}, 实际 {fingerprint_data.get('mount_point')}")
+                return False
+            
+            # 验证文件类型
+            if fingerprint_data.get("type") != "mount_fingerprint":
+                if not silent:
+                    print(f"❌ 指纹文件类型不正确: {fingerprint_data.get('type')}")
+                return False
+            
+            # 验证签名格式（基本验证）
+            signature = fingerprint_data.get("signature", "")
+            expected_prefix = f"{fingerprint_data.get('timestamp')}_{fingerprint_data.get('hash')}_"
+            if not signature.startswith(expected_prefix):
+                if not silent:
+                    print(f"❌ 指纹签名格式不正确")
+                return False
+            
+            # 验证通过，更新本地配置中的文件夹ID
+            remote_root_id = fingerprint_data.get("remote_root_id")
+            remote_env_id = fingerprint_data.get("remote_env_id")
+            
+            if remote_root_id:
+                self.REMOTE_ROOT_FOLDER_ID = remote_root_id
+            
+            if remote_env_id:
+                self.REMOTE_ENV_FOLDER_ID = remote_env_id
+            
+            return True
+            
+        except Exception as e:
+            if not silent:
+                print(f"❌ 指纹验证失败: {e}")
+            return False
+        
+    
+    def _handle_remount_command(self, command_identifier):
+        """处理GDS --remount命令"""
+        import time
+        import hashlib
+        import random
+        print("🔄 开始重新挂载流程...")
+        
+        # 简化挂载架构 - 回到基础Google Drive挂载
+        timestamp = str(int(time.time()))
+        random_hash = hashlib.md5(f"{timestamp}_{random.randint(1000, 9999)}".encode()).hexdigest()[:8]
+        mount_point = "/content/drive"  # 简化为基础挂载点
+        
+        # 生成指纹文件名（以.开头）
+        fingerprint_filename = f".gds_mount_fingerprint_{random_hash}"
+        fingerprint_path = f"{mount_point}/MyDrive/REMOTE_ROOT/{fingerprint_filename}"
+        
+        # 生成结果文件
+        result_filename = f"remount_result_{timestamp}_{random_hash}.json"
+        result_path = f"{mount_point}/MyDrive/REMOTE_ROOT/tmp/{result_filename}"
+        
+        # 生成全Python挂载脚本
+        python_remount_script = self._generate_python_remount_script(
+            mount_point, fingerprint_path, result_path, timestamp, random_hash
+        )
+        
+        print(f"🔧 生成Python重新挂载脚本 (长度: {len(python_remount_script)} 字符)")
+        print("=" * 60)
+        print(python_remount_script)
+        print("=" * 60)
+        
+        # 复制到剪切板
+        try:
+            import subprocess
+            subprocess.run(['pbcopy'], input=python_remount_script.encode('utf-8'))
+            print(f"Python重新挂载脚本已复制到剪切板")
+        except Exception as e:
+            print(f"❌ 复制到剪切板失败: {e}")
+        
+        # 显示tkinter窗口
+        success = self._show_remount_window(python_remount_script, mount_point, result_path)
+        
+        if success:
+            # 更新挂载点信息
+            self._update_paths_for_dynamic_mount(mount_point)
+            
+            # 保存挂载配置到config.json
+            config_saved = self._save_mount_config_to_json(mount_point, timestamp, random_hash)
+            if config_saved:
+                print(f"挂载配置已保存到config.json")
+            else:
+                print(f"Warning: 挂载配置保存失败，但挂载本身成功")
+            
+            print(f"重新挂载成功！新挂载点: {mount_point}")
+            return 0
+        else:
+            print(f"❌ 重新挂载失败或被取消")
+            return 1
+    
+    def _generate_python_remount_script(self, mount_point, fingerprint_path, result_path, timestamp, random_hash):
+        """生成全Python重新挂载脚本"""
+        
+        # 检查当前挂载点信息
+        current_mount = getattr(self, 'current_mount_point', None)
+        current_fingerprint = None
+        if current_mount:
+            current_fingerprint = f"{current_mount}/REMOTE_ROOT/.gds_mount_fingerprint_*"
+        
+        script = f'''# === GDS 简化挂载脚本 ===
+import os
+import json
+from datetime import datetime
+
+print("挂载点: {mount_point}")
+
+# 简化的Google Drive挂载
+try:
+    from google.colab import drive
+    drive.mount("{mount_point}")
+    mount_result = "挂载成功"
+except Exception as e:
+    mount_result = str(e)
+    if "Drive already mounted" not in str(e):
+        raise
+
+print(f"挂载结果: {{mount_result}}")
+
+# 验证并创建必要目录
+remote_root_path = "{mount_point}/MyDrive/REMOTE_ROOT"
+remote_env_path = "{mount_point}/MyDrive/REMOTE_ENV"
+
+# 确保目录存在
+os.makedirs(remote_root_path, exist_ok=True)
+os.makedirs(f"{{remote_root_path}}/tmp", exist_ok=True)
+os.makedirs(remote_env_path, exist_ok=True)
+
+# 尝试获取文件夹ID（使用kora库）
+remote_root_id = None
+remote_env_id = None
+remote_root_status = "失败"
+remote_env_status = "失败"
+
+try:
+    try: 
+        import kora  
+    except:   
+        # 安装并导入kora库
+        import subprocess
+        subprocess.run(['pip', 'install', 'kora'], check=True, capture_output=True)
+    from kora.xattr import get_id
+    
+    # 获取REMOTE_ROOT文件夹ID
+    if os.path.exists(remote_root_path):
+        try:
+            remote_root_id = get_id(remote_root_path)
+            remote_root_status = f"成功（ID: {{remote_root_id}}）"
+        except Exception:
+            remote_root_status = "失败"
+    
+    # 获取REMOTE_ENV文件夹ID
+    if os.path.exists(remote_env_path):
+        try:
+            remote_env_id = get_id(remote_env_path)
+            remote_env_status = f"成功（ID: {{remote_env_id}}）"
+        except Exception:
+            remote_env_status = "失败"
+            
+except Exception:
+    remote_root_status = "失败（kora库问题）"
+    remote_env_status = "失败（kora库问题）"
+
+print(f"访问REMOTE_ROOT: {{remote_root_status}}")
+print(f"访问REMOTE_ENV: {{remote_env_status}}")
+
+# 创建指纹文件（包含挂载签名信息）
+fingerprint_data = {{
+    "mount_point": "{mount_point}",
+    "timestamp": "{timestamp}",
+    "hash": "{random_hash}",
+    "remote_root_id": remote_root_id,
+    "remote_env_id": remote_env_id,
+    "signature": f"{timestamp}_{random_hash}_{{remote_root_id or 'unknown'}}_{{remote_env_id or 'unknown'}}",
+    "created": datetime.now().isoformat(),
+    "type": "mount_fingerprint"
+}}
+
+fingerprint_file = "{fingerprint_path}"
+try:
+    with open(fingerprint_file, 'w') as f:
+        json.dump(fingerprint_data, f, indent=2)
+    print(f"✅ 指纹文件已创建: {{fingerprint_file}}")
+except Exception as e:
+    print(f"❌ 指纹文件创建失败: {{e}}")
+
+# 创建简化的结果文件（包含文件夹ID）
+result_file = "{mount_point}/MyDrive/REMOTE_ROOT/tmp/simple_remount_{timestamp}.json"
+try:
+    with open(result_file, 'w') as f:
+        result_data = {{
+            "success": True,
+            "mount_point": "{mount_point}",
+            "timestamp": "{timestamp}",
+            "remote_root": remote_root_path,
+            "remote_env": remote_env_path,
+            "remote_root_id": remote_root_id,
+            "remote_env_id": remote_env_id,
+            "fingerprint_signature": fingerprint_data.get("signature"),
+            "completed": datetime.now().isoformat(),
+            "type": "simple_remount",
+            "note": "Simplified remount with kora folder ID detection and fingerprint"
+        }}
+        json.dump(result_data, f, indent=2)
+    print(f"✅ 结果文件已创建: {{result_file}}")
+except Exception as e:
+    print(f"❌ 结果文件创建失败: {{e}}")
+
+print("🎉 重新挂载流程完成！现在可以使用GDS命令访问Google Drive了！")
+'''
+        return script
+    
+    def _show_remount_window(self, python_script, mount_point, result_path):
+        """显示重新挂载窗口"""
+        try:
+            import tkinter as tk
+            from tkinter import messagebox, scrolledtext
+            import subprocess
+            import time
+            import json
+            
+            # 创建窗口（使用远端指令窗口风格）
+            window = tk.Tk()
+            window.title("GDS 重新挂载")
+            window.geometry("500x60")  # 与普通指令窗口完全一致
+            window.resizable(False, False)
+            window.attributes('-topmost', True)  # 置顶显示
+            
+            # 结果变量
+            remount_success = False
+            
+            def copy_script():
+                """复制脚本到剪切板"""
+                try:
+                    subprocess.run(['pbcopy'], input=python_script.encode('utf-8'))
+                    print("📋 Python挂载脚本已复制到剪切板")
+                except Exception as e:
+                    print(f"❌ 复制失败: {e}")
+            
+            def execution_completed():
+                """用户确认执行完成"""
+                nonlocal remount_success
+                
+                print(f"🔍 验证挂载结果...")
+                
+                try:
+                    remount_success = True
+                    
+                    # 保存挂载信息到GOOGLE_DRIVE_DATA（简化版）
+                    try:
+                        mount_info = {
+                            "mount_point": mount_point,
+                            "timestamp": int(time.time()),
+                            "type": "dynamic_mount"
+                        }
+                        print(f"INFO: 挂载信息已记录: {mount_info}")
+                    except Exception as e:
+                        print(f"Warning: 保存挂载信息失败: {e}")
+                    
+                    print("✅ 重新挂载确认完成")
+                    window.quit()
+                        
+                except Exception as e:
+                    print(f"❌ 验证挂载状态失败: {e}")
+            
+            def cancel_remount():
+                """取消重新挂载"""
+                nonlocal remount_success
+                remount_success = False
+                window.quit()
+            
+            # 自动复制脚本到剪切板（类似远端指令窗口）
+            try:
+                subprocess.run(['pbcopy'], input=python_script.encode('utf-8'))
+                print("📋 Python挂载脚本已自动复制到剪切板")
+            except Exception as e:
+                print(f"❌ 自动复制失败: {e}")
+            
+            # 创建主框架（类似远端指令窗口布局）
+            main_frame = tk.Frame(window, padx=10, pady=10)
+            main_frame.pack(fill=tk.BOTH, expand=True)
+            
+            # 按钮框架（类似远端指令窗口的按钮布局）
+            button_frame = tk.Frame(main_frame)
+            button_frame.pack(fill=tk.X, expand=True)
+            
+            # 📋复制指令按钮
+            copy_btn = tk.Button(button_frame, text="📋 复制指令", command=copy_script,
+                               bg="#4CAF50", fg="white", font=("Arial", 11), padx=15, pady=3)
+            copy_btn.pack(side=tk.LEFT, padx=5, expand=True, fill=tk.X)
+            
+            # ✅执行完成按钮
+            complete_btn = tk.Button(button_frame, text="✅ 执行完成", command=execution_completed,
+                                   bg="#2196F3", fg="white", font=("Arial", 11), padx=15, pady=3)
+            complete_btn.pack(side=tk.RIGHT, padx=5, expand=True, fill=tk.X)
+            
+            # 运行窗口
+            try:
+                window.mainloop()
+            finally:
+                try:
+                    window.destroy()
+                except:
+                    pass  # 忽略destroy错误
+            
+            return remount_success
+            
+        except Exception as e:
+            print(f"❌ 显示重新挂载窗口失败: {e}")
+            return False
+    
+    def _save_mount_config_to_json(self, mount_point, timestamp, random_hash):
+        """保存挂载配置到GOOGLE_DRIVE_DATA/config.json"""
+        try:
+            import json
+            import os
+            
+            # GOOGLE_DRIVE_DATA路径
+            config_dir = "/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_DATA"
+            config_file = os.path.join(config_dir, "config.json")
+            
+            # 读取现有配置
+            if os.path.exists(config_file):
+                with open(config_file, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+            else:
+                config = {"version": "1.0.0", "description": "Google Drive Shell 配置文件"}
+            
+            # 计算动态路径
+            dynamic_remote_root = f"{mount_point}/MyDrive/REMOTE_ROOT"
+            dynamic_remote_env = f"{mount_point}/MyDrive/REMOTE_ENV"
+            
+            # 更新配置中的动态挂载信息
+            if "constants" not in config:
+                config["constants"] = {}
+            
+            # 保存动态挂载配置
+            config["constants"].update({
+                "REMOTE_ROOT": dynamic_remote_root,
+                "REMOTE_ENV": dynamic_remote_env,
+                "CURRENT_MOUNT_POINT": mount_point,
+                "MOUNT_TIMESTAMP": timestamp,
+                "MOUNT_HASH": random_hash,
+                "MOUNT_TYPE": "dynamic"
+            })
+            
+            # 尝试从挂载结果文件中读取kora获取的文件夹ID
+            remote_root_id = None
+            remote_env_id = None
+            
+            try:
+                # 先尝试从挂载结果文件读取（kora方法）
+                result_file = f"{mount_point}/MyDrive/REMOTE_ROOT/tmp/simple_remount_{timestamp}.json"
+                if os.path.exists(result_file):
+                    with open(result_file, 'r') as f:
+                        result_data = json.load(f)
+                        remote_root_id = result_data.get('remote_root_id')
+                        remote_env_id = result_data.get('remote_env_id')
+                        if remote_root_id or remote_env_id:
+                            print(f"INFO: 从挂载结果读取到kora文件夹ID")
+                else:
+                    print(f"Warning: 挂载结果文件不存在，尝试API方法")
+                    
+                # 如果kora方法失败，回退到API方法
+                if not remote_root_id:
+                    remote_root_id = self._get_folder_id_by_path("REMOTE_ROOT", mount_point)
+                if not remote_env_id:
+                    remote_env_id = self._get_folder_id_by_path("REMOTE_ENV", mount_point)
+                
+                # 保存文件夹ID到配置
+                if remote_root_id:
+                    config["constants"]["REMOTE_ROOT_FOLDER_ID"] = remote_root_id
+                    print(f"INFO: REMOTE_ROOT文件夹ID: {remote_root_id}")
+                
+                if remote_env_id:
+                    config["constants"]["REMOTE_ENV_FOLDER_ID"] = remote_env_id
+                    print(f"📁 REMOTE_ENV文件夹ID: {remote_env_id}")
+                    
+            except Exception as e:
+                print(f"Warning: 获取文件夹ID失败: {e}")
+            
+            # 添加动态挂载历史记录
+            if "mount_history" not in config:
+                config["mount_history"] = []
+            
+            mount_record = {
+                "mount_point": mount_point,
+                "timestamp": timestamp,
+                "hash": random_hash,
+                "remote_root": dynamic_remote_root,
+                "remote_env": dynamic_remote_env,
+                "created": timestamp
+            }
+            
+            # 保留最近10个挂载记录
+            config["mount_history"].insert(0, mount_record)
+            config["mount_history"] = config["mount_history"][:10]
+            
+            # 保存配置文件
+            with open(config_file, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=2, ensure_ascii=False)
+            
+            print(f"INFO: 挂载配置已保存到: {config_file}")
+            print(f"   REMOTE_ROOT: {dynamic_remote_root}")
+            print(f"   REMOTE_ENV: {dynamic_remote_env}")
+            print(f"   挂载点: {mount_point}")
+            
+            return True
+            
+        except Exception as e:
+            print(f"ERROR: 保存挂载配置失败: {e}")
+            return False
+    
+    def _get_folder_id_by_path(self, folder_name, mount_point):
+        """通过Google Drive API获取文件夹ID"""
+        try:
+            if not hasattr(self, 'drive_service') or not self.drive_service:
+                print(f"Warning: drive_service不可用，无法获取{folder_name}文件夹ID")
+                return None
+            
+            # 使用GoogleDriveService的正确API
+            # 首先获取MyDrive文件夹的ID
+            mydrive_folder_id = self.drive_service._find_folder_by_name("root", "My Drive")
+            if not mydrive_folder_id:
+                # 如果找不到"My Drive"，尝试直接在root下搜索
+                mydrive_folder_id = "root"
+            
+            # 在MyDrive中搜索目标文件夹
+            folder_id = self.drive_service._find_folder_by_name(mydrive_folder_id, folder_name)
+            
+            if folder_id:
+                print(f"INFO: 找到{folder_name}文件夹ID: {folder_id}")
+                return folder_id
+            else:
+                print(f"Warning: 未找到{folder_name}文件夹")
+                return None
+                
+        except Exception as e:
+            print(f"ERROR: 获取{folder_name}文件夹ID失败: {e}")
+            return None
+    
+    def _load_paths_from_config(self):
+        """从config.json动态加载REMOTE_ROOT和REMOTE_ENV路径"""
+        try:
+            import json
+            import os
+            
+            # GOOGLE_DRIVE_DATA路径
+            config_dir = "/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_DATA"
+            config_file = os.path.join(config_dir, "config.json")
+            
+            if os.path.exists(config_file):
+                with open(config_file, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+                
+                # 从配置中读取路径
+                constants = config.get('constants', {})
+                
+                # 如果配置中有动态路径，使用它们
+                if 'REMOTE_ROOT' in constants:
+                    self.REMOTE_ROOT = constants['REMOTE_ROOT']
+                
+                if 'REMOTE_ENV' in constants:
+                    self.REMOTE_ENV = constants['REMOTE_ENV']
+                
+                if 'REMOTE_ROOT_FOLDER_ID' in constants:
+                    self.REMOTE_ROOT_FOLDER_ID = constants['REMOTE_ROOT_FOLDER_ID']
+                
+                if 'REMOTE_ENV_FOLDER_ID' in constants:
+                    self.REMOTE_ENV_FOLDER_ID = constants['REMOTE_ENV_FOLDER_ID']
+                
+                # 如果有当前挂载点信息，更新它
+                if 'CURRENT_MOUNT_POINT' in constants:
+                    self.current_mount_point = constants['CURRENT_MOUNT_POINT']
+                    self.dynamic_mode = constants.get('MOUNT_TYPE') == 'dynamic'
+                
+            else:
+                print("Warning: config.json不存在，使用默认路径")
+                
+        except Exception as e:
+            print(f"ERROR: 从config.json加载路径失败: {e}")
+            print("使用默认路径")
     

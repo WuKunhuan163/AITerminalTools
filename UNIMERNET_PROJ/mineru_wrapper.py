@@ -1639,7 +1639,7 @@ Formula recognition is currently unavailable.
                 return "\n".join(error_details)
             else:
                 # Fallback: return the stderr output as is, but clean it up
-                clean_stderr = stderr_output.replace('⚠️  Warning: ', '').strip()
+                clean_stderr = stderr_output.replace('Warning: Warning: ', '').strip()
                 return clean_stderr if clean_stderr else "未知错误"
                 
         except Exception as e:

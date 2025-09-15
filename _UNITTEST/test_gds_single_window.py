@@ -37,7 +37,7 @@ class TestGDSSingleWindow(unittest.TestCase):
                 os.remove(f)
                 print(f"已清理: {f}")
         
-        print("✅ 测试环境清理完成")
+        print("测试环境清理完成")
         
     def detect_gds_windows(self):
         """检测当前GDS窗口数量"""
@@ -99,7 +99,7 @@ class TestGDSSingleWindow(unittest.TestCase):
                     # 记录第一个窗口出现时间
                     if current_count > 0 and self.first_window_time is None:
                         self.first_window_time = current_time
-                        print(f"✅ 第一个窗口在 {current_time - start_time:.1f}s 时出现")
+                        print(f"第一个窗口在 {current_time - start_time:.1f}s 时出现")
                     
                     if current_count > self.window_count:
                         for window in current_windows:
@@ -156,7 +156,7 @@ class TestGDSSingleWindow(unittest.TestCase):
                     # 进程已结束
                     stdout, stderr = self.test_process.communicate()
                     
-                    print("✅ 测试进程完成")
+                    print("测试进程完成")
                     print(f"   退出码: {self.test_process.returncode}")
                     
                     if stdout:
@@ -215,10 +215,10 @@ class TestGDSSingleWindow(unittest.TestCase):
             
             # 分析队列工作状态
             if slot_acquired_after_waiting > 0 or queue_waiting > 0 or slot_busy > 0:
-                print("   ✅ 队列控制正常工作 - 有命令被阻塞或等待")
+                print("   队列控制正常工作 - 有命令被阻塞或等待")
                 return True
             else:
-                print("   ⚠️  队列控制可能失效 - 所有命令都直接获得槽位")
+                print("   Warning: 队列控制可能失效 - 所有命令都直接获得槽位")
                 return False
         else:
             print("   ❌ 调试日志文件不存在")
@@ -229,7 +229,7 @@ class TestGDSSingleWindow(unittest.TestCase):
         print("\\n🎯 GDS单窗口控制测试")
         print("=" * 60)
         print("📋 测试条件:")
-        print("   ✅ 成功: 15秒内出现1个窗口，整个过程只有1个窗口")
+        print("   成功: 15秒内出现1个窗口，整个过程只有1个窗口")
         print("   ❌ 失败: 15秒内无窗口 OR 出现第二个窗口")
         print("   🤖 容忍性测试: 假设用户交互时间无限长")
         print("")
@@ -285,16 +285,16 @@ class TestGDSSingleWindow(unittest.TestCase):
             print(f"\\n❌ 测试失败: 没有窗口出现")
             self.fail("没有窗口出现，可能存在死锁")
         elif self.max_concurrent == 1:
-            print(f"\\n✅ 测试通过: 窗口控制正常")
-            print("   ✅ 只有1个窗口出现")
-            print("   ✅ 没有多窗口并发")
+            print(f"\\n测试通过: 窗口控制正常")
+            print("   只有1个窗口出现")
+            print("   没有多窗口并发")
             
             if queue_working:
-                print("\\n✅ 队列系统评估: 正常工作")
+                print("\\n队列系统评估: 正常工作")
                 print("   - 有命令被正确阻塞或等待")
                 print("   - 队列控制生效")
             else:
-                print("\\n⚠️  队列系统评估: 可能未充分测试")
+                print("\\nWarning: 队列系统评估: 可能未充分测试")
                 print("   - 建议检查是否有足够的并发命令测试")
             
             # 测试通过

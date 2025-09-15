@@ -4,14 +4,14 @@
 
 GOOGLE_DRIVE 是一个强大的 Google Drive 远程控制工具，支持通过命令行进行文件管理、上传下载、以及与 Google Colab 的集成。
 
-## ✅ 最新修复 (2024)
+## 最新修复 (2024)
 
 ### Google Drive Desktop 自动启动
 - **问题修复**: Upload功能现在会自动启动Google Drive Desktop，无需用户手动选择
 - **改进**: 简化了启动流程，提高用户体验
 - **状态检测**: 自动检测Google Drive Desktop运行状态
 
-### EDIT 功能全新发布 ✅ 已修复
+### EDIT 功能全新发布 已修复
 - **多段同步替换**: 支持行号替换和文本搜索替换的混合编辑
 - **插入模式**: 支持 `[line, null]` 语法在指定行后插入内容，不替换现有内容
 - **0-based 索引**: 行号使用 [a, b] 包含语法，与 read 命令对齐  
@@ -70,7 +70,7 @@ GDS cd <path>                                   # 在当前shell中切换目录
 ```bash
 # 创建一个用于项目A的shell
 GOOGLE_DRIVE --create-remote-shell
-# 输出: ✅ 远程shell创建成功，Shell ID: abc123
+# 输出: 远程shell创建成功，Shell ID: abc123
 
 # 在项目A的shell中工作
 GDS cd project_a
@@ -79,7 +79,7 @@ GDS ls
 
 # 创建另一个用于项目B的shell
 GOOGLE_DRIVE --create-remote-shell  
-# 输出: ✅ 远程shell创建成功，Shell ID: def456
+# 输出: 远程shell创建成功，Shell ID: def456
 
 # 切换到项目B的shell
 GOOGLE_DRIVE --checkout-remote-shell def456
@@ -172,14 +172,14 @@ GDS --cleanup
 ```
 
 #### Background 功能特点
-- ✅ **非阻塞执行**: 后台任务不会阻塞当前终端
-- ✅ **状态追踪**: 实时查看任务运行状态和PID
-- ✅ **日志管理**: 自动保存任务输出到日志文件
-- ✅ **结果保存**: 任务完成后保存完整的stdout和stderr输出
-- ✅ **多任务支持**: 同时运行多个后台任务
-- ✅ **智能清理**: 自动管理已完成任务的文件
-- ✅ **简洁输出**: 后台启动时只显示关键信息，不显示冗长的远程命令
-- ✅ **错误处理**: 完善的错误检测和报告机制
+- **非阻塞执行**: 后台任务不会阻塞当前终端
+- **状态追踪**: 实时查看任务运行状态和PID
+- **日志管理**: 自动保存任务输出到日志文件
+- **结果保存**: 任务完成后保存完整的stdout和stderr输出
+- **多任务支持**: 同时运行多个后台任务
+- **智能清理**: 自动管理已完成任务的文件
+- **简洁输出**: 后台启动时只显示关键信息，不显示冗长的远程命令
+- **错误处理**: 完善的错误检测和报告机制
 
 ## 🤖 AI Agent 使用指南
 
@@ -208,7 +208,7 @@ GDS read target_file.py 10 25             # 检查修改后的内容
 echo "new content" > local_file.py
 GDS upload --force local_file.py
 
-# ✅ 推荐：直接编辑远程文件
+# 推荐：直接编辑远程文件
 GDS edit remote_file.py '[["old_content", "new_content"]]'
 ```
 
@@ -724,13 +724,13 @@ Level 2: pytest (1.4MB), wheel (0.1MB), grpcio-tools (5.6MB), h5py (4.7MB), ml-d
 ```
 
 **功能特性**:
-- ✅ **多层依赖分析**: 支持 `--depth=1,2,3...` 参数控制分析深度
-- ✅ **逻辑大小计算**: 显示包的物理大小和包含所有依赖的逻辑大小
-- ✅ **智能API限制**: 自动限制分析1000个包，避免无限递归
-- ✅ **并发分析**: 每秒40个API调用，快速获取依赖信息
-- ✅ **层级汇总**: 按层级显示所有唯一依赖包，便于批量安装规划
-- ✅ **已安装标记**: 显示 `[√]` 标记已安装的包
-- ✅ **性能统计**: 显示API调用次数、分析包数和总时间
+- **多层依赖分析**: 支持 `--depth=1,2,3...` 参数控制分析深度
+- **逻辑大小计算**: 显示包的物理大小和包含所有依赖的逻辑大小
+- **智能API限制**: 自动限制分析1000个包，避免无限递归
+- **并发分析**: 每秒40个API调用，快速获取依赖信息
+- **层级汇总**: 按层级显示所有唯一依赖包，便于批量安装规划
+- **已安装标记**: 显示 `[√]` 标记已安装的包
+- **性能统计**: 显示API调用次数、分析包数和总时间
 
 **使用场景**:
 - 📦 **依赖规划**: 在安装前了解包的完整依赖树和存储需求
@@ -951,7 +951,7 @@ GDS pyenv --uninstall 3.8.10
 ### 概述
 UPLOAD 功能通过 Google Drive Desktop 实现文件上传，支持本地文件同步到远程 Google Drive。
 
-### ✅ 最新改进
+### 最新改进
 - **自动启动**: 自动检测并启动Google Drive Desktop，无需手动干预
 - **调试增强**: 检测失败时自动显示`GDS ls ~`输出，便于问题诊断
 - **超时优化**: 改进60秒超时机制，提供更详细的错误信息
@@ -1176,12 +1176,12 @@ linter [--language LANG] <file>  # 多语言语法和代码风格检查
 - **Shell**: shellcheck
 
 **功能特性**:
-- ✅ **自动语言检测**: 根据文件扩展名自动识别语言
-- ✅ **多linter支持**: 自动检测并使用可用的linter工具
-- ✅ **详细报告**: 提供错误、警告和信息级别的反馈
-- ✅ **语法验证**: 检查基本语法错误
-- ✅ **代码风格**: 检查代码风格和最佳实践
-- ✅ **集成编辑**: 在edit命令中自动运行linter检查
+- **自动语言检测**: 根据文件扩展名自动识别语言
+- **多linter支持**: 自动检测并使用可用的linter工具
+- **详细报告**: 提供错误、警告和信息级别的反馈
+- **语法验证**: 检查基本语法错误
+- **代码风格**: 检查代码风格和最佳实践
+- **集成编辑**: 在edit命令中自动运行linter检查
 
 **使用示例**:
 ```bash
@@ -1205,14 +1205,14 @@ GDS linter src/          # 检查目录中的文件
 ```
 🔍 Linter Results for main.py
 
-✅ Language: python (detected from .py extension)
+Language: python (detected from .py extension)
 🛠️  Linter: flake8
 
 🚫 Linter Errors:
   Line 15: E302 expected 2 blank lines, found 1
   Line 23: F401 'os' imported but unused
 
-⚠️  Linter Warnings:
+Warning: Linter Warnings:
   Line 8: W291 trailing whitespace
 
 📊 Summary: 2 errors, 1 warning, 0 info
@@ -1224,13 +1224,13 @@ GOOGLE_DRIVE --shell "command"  # 执行远程命令
 ```
 
 **功能特性**:
-- ✅ **完整输出保留**: 支持多行输出、特殊字符、stdout/stderr分离
-- ✅ **错误处理**: 完整显示语法错误、运行时错误和traceback信息  
-- ✅ **复杂脚本支持**: 可执行Python脚本、shell脚本等复杂程序
-- ✅ **JSON格式化**: 内部使用`\n`转义保持输出格式的同时确保数据完整性
-- ✅ **简化流程**: 无需额外清理步骤，减少用户交互
-- ✅ **超时处理**: 60秒等待超时后提供用户手动输入fallback机制
-- ✅ **长期运行支持**: 适用于http-server等需要持续运行的服务
+- **完整输出保留**: 支持多行输出、特殊字符、stdout/stderr分离
+- **错误处理**: 完整显示语法错误、运行时错误和traceback信息  
+- **复杂脚本支持**: 可执行Python脚本、shell脚本等复杂程序
+- **JSON格式化**: 内部使用`\n`转义保持输出格式的同时确保数据完整性
+- **简化流程**: 无需额外清理步骤，减少用户交互
+- **超时处理**: 60秒等待超时后提供用户手动输入fallback机制
+- **长期运行支持**: 适用于http-server等需要持续运行的服务
 
 **使用示例**:
 ```bash
@@ -1285,11 +1285,11 @@ GDS upload --target-dir projects/myproject file.txt
 ```
 
 **功能特性**:
-- ✅ **即时进度反馈**: "⏳ Waiting for upload" 立即显示，快速点显示
-- ✅ **自动目录创建**: 目标目录不存在时自动创建
-- ✅ **智能验证**: 使用ls-based validation确保准确的成功计数
-- ✅ **清晰语法**: 所有参数都是文件，除非使用 `--target-dir`
-- ✅ **双阶段进度**: "⏳ Waiting for upload" → "⏳ Validating the result"
+- **即时进度反馈**: "⏳ Waiting for upload" 立即显示，快速点显示
+- **自动目录创建**: 目标目录不存在时自动创建
+- **智能验证**: 使用ls-based validation确保准确的成功计数
+- **清晰语法**: 所有参数都是文件，除非使用 `--target-dir`
+- **双阶段进度**: "⏳ Waiting for upload" → "⏳ Validating the result"
 
 **示例输出**:
 ```bash
