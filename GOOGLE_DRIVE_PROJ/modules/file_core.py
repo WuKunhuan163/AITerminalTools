@@ -1147,10 +1147,19 @@ class FileCore:
             if force:
                 rm_flags += "f"
             
+            # 检查是否包含通配符，如果包含则不加引号以允许shell展开
+            has_wildcards = '*' in absolute_path or '?' in absolute_path or '[' in absolute_path
+            
             if rm_flags:
-                remote_command = f'rm -{rm_flags} "{absolute_path}"'
+                if has_wildcards:
+                    remote_command = f'rm -{rm_flags} {absolute_path}'
+                else:
+                    remote_command = f'rm -{rm_flags} "{absolute_path}"'
             else:
-                remote_command = f'rm "{absolute_path}"'
+                if has_wildcards:
+                    remote_command = f'rm {absolute_path}'
+                else:
+                    remote_command = f'rm "{absolute_path}"'
             
             # 执行远程命令
             result = self.main_instance.execute_generic_command("bash", ["-c", remote_command])

@@ -426,7 +426,10 @@ def _read_input_with_signal(lines, timeout_seconds):
                 try:
                     current_line = readline.get_line_buffer()
                     if current_line.strip():
-                        lines.append(current_line.strip())
+                        stripped_line = current_line.strip()
+                        # 避免重复添加已经存在的行
+                        if not lines or lines[-1] != stripped_line:
+                            lines.append(stripped_line)
                 except Exception:
                     pass
                 return True

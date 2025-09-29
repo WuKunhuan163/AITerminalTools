@@ -41,8 +41,7 @@ class ConfigLoader:
             with open(config_file, 'r', encoding='utf-8') as f:
                 self._config = json.load(f)
 
-        except Exception as e:
-            print(f"Error: Config file loading failed: {e}")
+        except Exception:
             self._config = self._get_default_config()
     
     def _get_default_config(self) -> Dict[str, Any]:

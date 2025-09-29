@@ -767,7 +767,7 @@ done'''
 {chr(10).join(retry_commands)}
 
 clear
-echo "执行完成"'''
+echo "✅执行完成"'''
             
             return script
             
@@ -1530,9 +1530,9 @@ fi
                 f'    \n'
                 f'    # 统一的执行完成提示（无论成功失败都显示完成）\n'
                 f'    if [ "$EXIT_CODE" -eq 0 ]; then\n'
-                f'        clear && echo "执行完成"\n'
+                f'        clear && echo "✅执行完成"\n'
                 f'    else\n'
-                f'        clear && echo "执行完成"\n'
+                f'        clear && echo "✅执行完成"\n'
                 f'    fi\n'
                 f'    \n'
             )
@@ -1735,7 +1735,7 @@ fi
             print(f"预期结果文件: {result_filename}")
             print(f"=" * 80)
             
-            # 复制指令到剪切板
+            #复制指令到剪切板
             try:
                 import subprocess
                 subprocess.run(['pbcopy'], input=remote_command.encode('utf-8'))
@@ -2251,17 +2251,17 @@ try:
             try:
                 clipboard_content = root.clipboard_get()
                 if clipboard_content == command_text:
-                    copy_btn.config(text="复制成功", bg="#4CAF50")
+                    copy_btn.config(text="✅复制成功", bg="#4CAF50")
                 else:
                     # 复制不完整，重试一次
                     root.clipboard_clear()
                     root.clipboard_append(command_text)
-                    copy_btn.config(text="⚠️ 已重试", bg="#FF9800")
+                    copy_btn.config(text="🔄重新复制", bg="#FF9800")
             except Exception as verify_error:
                 # 验证失败但复制可能成功，显示已复制
                 copy_btn.config(text="已复制", bg="#4CAF50")
             
-            root.after(1500, lambda: copy_btn.config(text="📋 复制指令", bg="#2196F3"))
+            root.after(1500, lambda: copy_btn.config(text="📋复制指令", bg="#2196F3"))
         except Exception as e:
             copy_btn.config(text="❌ 复制失败", bg="#f44336")
     
@@ -2307,10 +2307,10 @@ try:
             pass
         root.destroy()
     
-    # 复制指令按钮
+    #复制指令按钮
     copy_btn = tk.Button(
         button_frame, 
-        text="📋 复制指令", 
+        text="📋复制指令", 
         command=copy_command,
         font=("Arial", 9),
         bg="#2196F3",
@@ -2340,7 +2340,7 @@ try:
     # 执行完成按钮（最右边）
     complete_btn = tk.Button(
         button_frame, 
-        text="执行完成", 
+        text="✅执行完成", 
         command=execution_completed,
         font=("Arial", 9, "bold"),
         bg="#4CAF50",
@@ -2359,7 +2359,7 @@ try:
     def on_key_press(event):
         global button_clicked
         
-        # Command+C (Mac) 或 Ctrl+C (Windows/Linux) - 复制指令
+        # Command+C (Mac) 或 Ctrl+C (Windows/Linux) -复制指令
         if ((event.state & 0x8) and event.keysym == 'c') or ((event.state & 0x4) and event.keysym == 'c'):
             button_clicked = True
             copy_command()

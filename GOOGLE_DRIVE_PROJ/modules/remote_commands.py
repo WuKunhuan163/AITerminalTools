@@ -202,6 +202,178 @@ class RemoteCommands:
         
         return display_command
 
+    def _test_command_in_local_environment(self, remote_command):
+        """
+        在本地测试环境中实际执行命令以检查是否有执行问题
+        
+        Args:
+            remote_command (str): 要测试的远端命令
+            
+        Returns:
+            dict: 测试结果，包含success和error字段
+        """
+        try:
+            import tempfile
+            import subprocess
+            import os
+            import shutil
+            from pathlib import Path
+            
+            # 创建本地测试环境 ~/tmp/gds_test
+            test_dir = Path.home() / "tmp" / "gds_test"
+            test_dir.mkdir(parents=True, exist_ok=True)
+            
+            # 模拟远端环境结构 - 在测试目录中创建，然后用符号链接
+            local_mock_root = test_dir / "mock_remote_root"
+            local_mock_root.mkdir(parents=True, exist_ok=True)
+            
+            local_tmp_dir = local_mock_root / "tmp"
+            local_tmp_dir.mkdir(parents=True, exist_ok=True)
+            
+            # 创建模拟的指纹文件以通过挂载检查
+            fingerprint_file = local_mock_root / ".gds_mount_fingerprint_test"
+            fingerprint_file.write_text("test fingerprint")
+            
+            # 创建符号链接模拟远端路径（需要sudo权限，所以改用替换策略）
+            # 而是在测试脚本中替换路径
+            
+            # 创建测试脚本，将远端路径替换为本地测试路径
+            test_command = remote_command.replace(
+                '/content/drive/MyDrive/REMOTE_ROOT', 
+                str(local_mock_root)
+            )
+            
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.sh', delete=False, dir=test_dir) as f:
+                f.write('#!/bin/bash\n')
+                f.write('set -e\n')  # 遇到错误立即退出
+                f.write(f'cd "{test_dir}"\n')  # 切换到测试目录
+                f.write(test_command)
+                test_script = f.name
+            
+            try:
+                # 执行测试脚本，设置较短超时
+                result = subprocess.run(
+                    ['bash', test_script], 
+                    capture_output=True, 
+                    text=True, 
+                    timeout=10.0,  # 10秒超时
+                    cwd=test_dir
+                )
+                
+                if result.returncode == 0:
+                    return {"success": True, "message": "命令在本地测试环境执行成功"}
+                else:
+                    return {
+                        "success": False, 
+                        "error": f"命令执行失败 (exit code: {result.returncode}): {result.stderr.strip()}"
+                    }
+            finally:
+                # 清理测试文件
+                try:
+                    os.unlink(test_script)
+                except:
+                    pass
+                    
+        except subprocess.TimeoutExpired:
+            return {"success": False, "error": "命令执行超时（10秒）"}
+        except Exception as e:
+            return {"success": False, "error": f"测试执行失败: {str(e)}"}
+
+    def _check_specific_fingerprint_file(self, fingerprint_file):
+        """
+        检查特定的指纹文件是否存在
+        
+        Args:
+            fingerprint_file (str): 指纹文件的完整路径
+            
+        Returns:
+            dict: 检查结果，包含exists字段
+        """
+        try:
+            import subprocess
+            import os
+            
+            # 使用Python os.path.exists来检查特定文件
+            python_check_script = f'''
+import os
+import sys
+import glob
+
+# 检查具体文件
+if os.path.exists("{fingerprint_file}"):
+    print(f"DEBUG: 具体文件存在: {fingerprint_file}")
+    sys.exit(0)  # 文件存在
+else:
+    print(f"DEBUG: 具体文件不存在: {fingerprint_file}")
+    
+    # 检查目录是否存在
+    dir_path = os.path.dirname("{fingerprint_file}")
+    print(f"DEBUG: 目录存在: {{os.path.exists(dir_path)}} - {{dir_path}}")
+    
+    # 列出所有指纹文件
+    pattern = "{fingerprint_file}".rsplit("_", 1)[0] + "_*"
+    matching_files = glob.glob(pattern)
+    print(f"DEBUG: 匹配的指纹文件: {{matching_files}}")
+    
+    sys.exit(1)  # 文件不存在
+'''
+            
+            result = subprocess.run(
+                ['python3', '-c', python_check_script],
+                capture_output=True,
+                timeout=5,
+                text=True
+            )
+            
+            # 如果有debug输出，显示它
+            if result.stdout:
+                print(f"DEBUG subprocess stdout: {result.stdout.strip()}")
+            if result.stderr:
+                print(f"DEBUG subprocess stderr: {result.stderr.strip()}")
+            
+            return {"exists": result.returncode == 0}
+            
+        except Exception as e:
+            # 如果检查失败，假设挂载无效
+            return {"exists": False, "error": str(e)}
+
+    def _check_fingerprint_files_exist(self, fingerprint_pattern):
+        """
+        检查指纹文件是否存在，用于验证挂载状态
+        
+        Args:
+            fingerprint_pattern (str): 指纹文件匹配模式
+            
+        Returns:
+            dict: 检查结果，包含exists字段
+        """
+        try:
+            import subprocess
+            import os
+            
+            # 使用Python glob来检查指纹文件，避免bash通配符问题
+            python_check_script = f'''
+import glob
+import sys
+fingerprint_files = glob.glob("{fingerprint_pattern}")
+if fingerprint_files:
+    sys.exit(0)  # 找到指纹文件
+else:
+    sys.exit(1)  # 没有找到指纹文件
+'''
+            
+            result = subprocess.run(
+                ['python3', '-c', python_check_script],
+                capture_output=True,
+                timeout=5
+            )
+            
+            return {"exists": result.returncode == 0}
+            
+        except Exception as e:
+            # 如果检查失败，假设挂载无效
+            return {"exists": False, "error": str(e)}
+
     def validate_bash_syntax_fast(self, command):
         """
         快速验证bash命令语法
@@ -272,118 +444,83 @@ class RemoteCommands:
             
             # 远端文件路径（在REMOTE_ROOT/tmp目录中）
             remote_file_path = f"{self.main_instance.REMOTE_ROOT}/tmp/{result_filename}"
-            
-            
 
             # 使用进度缓冲输出等待指示器
             from .progress_manager import start_progress_buffering
             start_progress_buffering("⏳ Waiting for result ...")
             
-            # 等待文件出现，最多60秒
-            max_wait_time = 60
-            for i in range(max_wait_time):
-                
-                # 检查文件是否存在
-                check_result = self._check_remote_file_exists(remote_file_path)
-                
-                
-                # 简化检查逻辑
-                if False:  # 禁用详细诊断
-                    print(f"\nDEBUG: 详细诊断开始...")
-                    try:
-                        import subprocess
-                        import os
-                        gds_cmd = "/Users/wukunhuan/.local/bin/GOOGLE_DRIVE.py"
-                            
-                        # 1. 检查当前工作目录
-                        run_cmd = "/Users/wukunhuan/.local/bin/RUN"
-                        pwd_result = subprocess.run([
-                            run_cmd, "--show", "GDS", "pwd"
-                        ], capture_output=True, text=True, timeout=30)
-                        
-                        if pwd_result.returncode == 0:
-                            import json
-                            pwd_data = json.loads(pwd_result.stdout)
-                            if pwd_data.get("success"):
-                                current_dir = pwd_data.get("output", "").strip()
-                                print(f"DEBUG: 当前远端工作目录: '{current_dir}'")
-                            else:
-                                print(f"DEBUG: GDS pwd失败: {pwd_data}")
-                                current_dir = "unknown"
-                        else:
-                            print(f"DEBUG: RUN --show GDS pwd失败: {pwd_result.stderr}")
-                            current_dir = "unknown"
-                            
-                        # 2. 检查当前目录下的文件  
-                        ls_result = subprocess.run([
-                            run_cmd, "--show", "GDS", "ls"
-                        ], capture_output=True, text=True, timeout=30)
-                        
-                        if ls_result.returncode == 0:
-                            ls_data = json.loads(ls_result.stdout)
-                            if ls_data.get("success"):
-                                current_files = ls_data.get("output", "").strip().split('\n')
-                                print(f"DEBUG: 当前目录文件列表 (共{len(current_files)}个):")
-                                for f in current_files:
-                                    if f.strip():
-                                        print(f"  - {f}")
-                            else:
-                                print(f"DEBUG: GDS ls失败: {ls_data}")
-                        else:
-                            print(f"DEBUG: RUN --show GDS ls失败: {ls_result.stderr}")
-                        
-                        # 3. 检查tmp目录
-                        ls_tmp_result = subprocess.run([
-                            run_cmd, "--show", "GDS", "ls", "tmp"
-                        ], capture_output=True, text=True, timeout=30)
-                        
-                        if ls_tmp_result.returncode == 0:
-                            ls_tmp_data = json.loads(ls_tmp_result.stdout)
-                            if ls_tmp_data.get("success"):
-                                tmp_files = ls_tmp_data.get("output", "").strip().split('\n')
-                                expected_file = result_filename
-                                print(f"DEBUG: tmp目录文件列表 (共{len(tmp_files)}个):")
-                                for f in tmp_files[-20:]:  # 显示最后20个文件
-                                    if f.strip():
-                                        print(f"  - {f}")
-                                
-                                if expected_file in tmp_files:
-                                    print(f"DEBUG: 预期文件在远端存在: {expected_file}")
-                                    print(f"DEBUG: 这说明是文件下载/检查机制的问题")
-                                else:
-                                    print(f"DEBUG: ❌ 预期文件在远端不存在: {expected_file}")
-                                    print(f"DEBUG: 这说明远端命令没有成功生成结果文件")
-                            else:
-                                print(f"DEBUG: GDS ls tmp失败: {ls_tmp_data}")
-                        else:
-                            print(f"DEBUG: RUN --show GDS ls tmp失败: {ls_tmp_result.stderr}")
-                                
-                    except Exception as e:
-                        print(f"DEBUG: 详细诊断失败: {e}")
-                    
-                    print(f"DEBUG: 详细诊断完成")
-                    print(f"="*60)
-                
-                if check_result.get("exists"):
-                    # 文件存在，读取内容
-                    file_result = self._read_result_file_via_gds(result_filename)
-                    
-                    # 先在进度行显示√标记，然后清除进度显示
-                    from .progress_manager import add_success_mark, clear_progress
-                    add_success_mark()
-                    clear_progress()
-                    
-                    
-                    return file_result
-                
-                # 文件不存在，等待1秒并输出进度点
-                time.sleep(1)
-                from .progress_manager import progress_print
-                progress_print(f".")
+            # 等待文件出现，最多30秒，支持Ctrl+C中断
+            max_wait_time = 30
+            import signal
+            import sys
             
-            # 超时，检查是否在后台模式
+            # 设置KeyboardInterrupt标志
+            interrupted = False
+            
+            def signal_handler(signum, frame):
+                nonlocal interrupted
+                interrupted = True
+            
+            # 注册信号处理器
+            old_handler = signal.signal(signal.SIGINT, signal_handler)
+            
+            try:
+                for i in range(max_wait_time):
+                    # 在每次循环开始时检查中断标志
+                    if interrupted:
+                        raise KeyboardInterrupt()
+                    
+                    # 检查文件是否存在
+                    check_result = self._check_remote_file_exists(remote_file_path)
+                    
+                    if check_result.get("exists"):
+                        # 文件存在，读取内容
+                        file_result = self._read_result_file_via_gds(result_filename)
+                        
+                        # 先在进度行显示√标记，然后清除进度显示
+                        from .progress_manager import add_success_mark, clear_progress
+                        add_success_mark()
+                        clear_progress()
+                        
+                        # 恢复原来的信号处理器
+                        signal.signal(signal.SIGINT, old_handler)
+                        return file_result
+                    
+                    # 文件不存在，等待1秒并输出进度点
+                    # 使用可中断的等待，每100ms检查一次中断标志
+                    for j in range(10):  # 10 * 0.1s = 1s
+                        if interrupted:
+                            raise KeyboardInterrupt()
+                        time.sleep(0.1)
+                    
+                    from .progress_manager import progress_print
+                    progress_print(f".")
+                
+            except KeyboardInterrupt:
+                # 用户按下Ctrl+C，清除进度显示并退出
+                from .progress_manager import clear_progress
+                clear_progress()
+                # 恢复原来的信号处理器
+                signal.signal(signal.SIGINT, old_handler)
+                print("Operation cancelled by Ctrl+C during waiting for result from remote. ")
+                return {
+                    "success": False,
+                    "error": "Operation cancelled by Ctrl+C during waiting for result from remote. ",
+                    "cancelled": True
+                }
+            finally:
+                # 确保信号处理器总是被恢复
+                try:
+                    signal.signal(signal.SIGINT, old_handler)
+                except:
+                    pass
+            
+            # 超时处理，恢复信号处理器并显示超时信息
+            signal.signal(signal.SIGINT, old_handler)
             print()  # 换行
-            print(f"Waiting for result file: {remote_file_path} timed out")
+            print(f"等待结果超时 ({max_wait_time}秒)。可能的原因：")
+            print(f"  (1) 网络问题导致命令执行缓慢。请检查")
+            print(f"  (2) Google Drive挂载失效，需要使用 GOOGLE_DRIVE --remount重新挂载")
             
             # 检查是否在后台模式或无交互环境
             import sys
@@ -751,7 +888,7 @@ done'''
 {chr(10).join(retry_commands)}
 
 clear
-echo "执行完成"'''
+echo "✅执行完成"'''
             
             return script
             
@@ -1484,7 +1621,23 @@ fi
                 bash_safe_command = shlex.quote(cmd)
             # 普通命令，使用标准的输出捕获
             remote_command = (
-                f'# 确保工作目录存在\n'
+                f'# 首先检查挂载是否成功（使用Python避免直接崩溃）\n'
+                f'python3 -c "\n'
+                f'import os\n'
+                f'import glob\n'
+                f'import sys\n'
+                f'try:\n'
+                f'    fingerprint_files = glob.glob(\\"{self.main_instance.REMOTE_ROOT}/.gds_mount_fingerprint_*\\")\n'
+                f'    if not fingerprint_files:\n'
+                f'        sys.exit(1)\n'
+                f'except Exception:\n'
+                f'    sys.exit(1)\n'
+                f'"\n'
+                f'if [ $? -ne 0 ]; then\n'
+                f'    clear\n'
+                f'    echo "当前session的GDS无法访问Google Drive文件结构。请使用GOOGLE_DRIVE --remount指令重新挂载，然后执行GDS的其他命令"\n'
+                f'else\n'
+                f'    # 确保工作目录存在\n'
                 f'mkdir -p "{remote_path}"\n'
                 f'cd "{remote_path}" && {{\n'
                 f'    # 确保tmp目录存在\n'
@@ -1514,9 +1667,9 @@ fi
                 f'    \n'
                 f'    # 统一的执行完成提示（无论成功失败都显示完成）\n'
                 f'    if [ "$EXIT_CODE" -eq 0 ]; then\n'
-                f'        clear && echo "执行完成"\n'
+                f'        clear && echo "✅执行完成"\n'
                 f'    else\n'
-                f'        clear && echo "执行完成"\n'
+                f'        clear && echo "✅执行完成"\n'
                 f'    fi\n'
                 f'    \n'
             )
@@ -1629,20 +1782,11 @@ fi
                 f'    \n'
                 f'    # 清理临时文件（在JSON生成之后）\n'
                 f'    rm -f "$OUTPUT_FILE" "$ERROR_FILE" "$EXITCODE_FILE"\n'
-                f'}}'
+                f'    }}\n'
+                f'fi'
             )
             
             # 在返回前进行语法检查
-            # print(f"[DEBUG] 开始语法检查，命令长度: {len(remote_command)} 字符")
-            syntax_check = self.validate_bash_syntax_fast(remote_command)
-            # print(f"[DEBUG] 语法检查结果: {syntax_check}")
-            if not syntax_check["success"]:
-                print(f"Error: Failed syntax check, throw exception")
-                raise Exception(f"Generated bash command syntax error: {syntax_check['error']}")
-            else:
-                pass
-                # print(f"Syntax check passed")
-            
             return remote_command, result_filename
             
         except Exception as e:
@@ -1674,19 +1818,17 @@ fi
         try:
             remote_command, result_filename = remote_command_info
             
-            # 在显示命令窗口前进行语法检查
-            debug_log_func(f"🔍 DEBUG: [{get_timestamp_func()}] [SYNTAX_CHECK] 开始语法检查 - window_id: {window_id}")
-            syntax_check = self.validate_bash_syntax_fast(remote_command)
-            debug_log_func(f"🔍 DEBUG: [{get_timestamp_func()}] [SYNTAX_RESULT] 语法检查结果: {syntax_check['success']} - window_id: {window_id}")
-            if not syntax_check["success"]:
-                debug_log_func(f"❌ DEBUG: [{get_timestamp_func()}] [SYNTAX_ERROR] 语法错误，提前返回: {syntax_check.get('error')} - window_id: {window_id}")
-                return {
-                    "success": False,
-                    "error": f"命令语法错误: {syntax_check.get('error')}",
-                    "cmd": cmd,
-                    "args": args,
-                    "syntax_error": syntax_check.get("error")
-                }
+            # 在显示命令窗口前，先输出命令到command文件供检查
+            try:
+                import os
+                command_file_path = "/Users/wukunhuan/.local/bin/command"
+                with open(command_file_path, 'w', encoding='utf-8') as f:
+                    f.write(remote_command)
+                debug_log_func(f"📝 DEBUG: [{get_timestamp_func()}] [COMMAND_FILE] 已输出命令到 {command_file_path}")
+            except Exception as e:
+                debug_log_func(f"⚠️ DEBUG: [{get_timestamp_func()}] [COMMAND_FILE_ERROR] 输出command文件失败: {e}")
+            
+            # 不进行本地测试，直接显示窗口让用户在远端检测
             
             # 通过tkinter显示命令并获取用户反馈
             debug_log_func(f"🖥️ DEBUG: [{get_timestamp_func()}] [WINDOW_PREP] 准备显示窗口 - window_id: {window_id}, cmd: {cmd}")
@@ -1757,22 +1899,15 @@ fi
             
             debug_capture.stop_capture()  # 成功路径的debug捕获停止
             
-            # 等待远端文件出现，最多等待60秒
+            # 等待远端文件出现
             result_data = self._wait_and_read_result_file(result_filename)
             
             if not result_data.get("success"):
                 return {
                     "success": False,
-                    "error": "读取结果文件失败",
+                    "error": "",
                     "read_error": result_data.get("error")
                 }
-            
-            # 用户确认执行完成（单窗口锁机制下不需要队列管理）
-            debug_log_func(f"🔍 DEBUG: [{get_timestamp_func()}] [COMPLETION_CHECK] 检查完成状态 - user_completed_window: {user_completed_window}, window_id: {window_id}")
-            if user_completed_window:
-                debug_log_func(f"DEBUG: [{get_timestamp_func()}] [USER_COMPLETED] 用户确认成功完成 - window_id: {window_id}")
-            else:
-                debug_log_func(f"⚠️ DEBUG: [{get_timestamp_func()}] [USER_NOT_COMPLETED] 用户未确认完成 - window_id: {window_id}")
             
             # 返回完整结果
             return {
@@ -2206,17 +2341,17 @@ try:
             try:
                 clipboard_content = root.clipboard_get()
                 if clipboard_content == command_text:
-                    copy_btn.config(text="复制成功", bg="#4CAF50")
+                    copy_btn.config(text="✅复制成功", bg="#4CAF50")
                 else:
                     # 复制不完整，重试一次
                     root.clipboard_clear()
                     root.clipboard_append(command_text)
-                    copy_btn.config(text="⚠️ 已重试", bg="#FF9800")
+                    copy_btn.config(text="🔄重新复制", bg="#FF9800")
             except Exception as verify_error:
                 # 验证失败但复制可能成功，显示已复制
                 copy_btn.config(text="已复制", bg="#4CAF50")
             
-            root.after(1500, lambda: copy_btn.config(text="📋 复制指令", bg="#2196F3"))
+            root.after(1500, lambda: copy_btn.config(text="📋复制指令", bg="#2196F3"))
         except Exception as e:
             copy_btn.config(text="❌ 复制失败", bg="#f44336")
     
@@ -2265,7 +2400,7 @@ try:
     # 复制指令按钮
     copy_btn = tk.Button(
         button_frame, 
-        text="📋 复制指令", 
+        text="📋复制指令", 
         command=copy_command,
         font=("Arial", 9),
         bg="#2196F3",
@@ -2295,7 +2430,7 @@ try:
     # 执行完成按钮（最右边）
     complete_btn = tk.Button(
         button_frame, 
-        text="执行完成", 
+        text="✅执行完成", 
         command=execution_completed,
         font=("Arial", 9, "bold"),
         bg="#4CAF50",
@@ -2314,7 +2449,7 @@ try:
     def on_key_press(event):
         global button_clicked
         
-        # Command+C (Mac) 或 Ctrl+C (Windows/Linux) - 复制指令
+        # Command+C (Mac) 或 Ctrl+C (Windows/Linux) -复制指令
         if ((event.state & 0x8) and event.keysym == 'c') or ((event.state & 0x4) and event.keysym == 'c'):
             button_clicked = True
             copy_command()

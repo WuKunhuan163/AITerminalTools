@@ -774,7 +774,9 @@ class GoogleDriveShell:
                 print(f"Error: 没有活跃的shell会话")
                 return 1
             
-            # 构建background脚本，该脚本将作为普通命令执行
+            # 构建简化的background脚本
+            # 预处理命令以避免f-string中的反斜杠问题
+            escaped_shell_cmd = shell_cmd.replace('"', '\"')
             background_script = f'''
 # Background Task Setup
 BG_PID="{bg_pid}"
@@ -784,53 +786,57 @@ START_TIME="{datetime.now().isoformat()}"
 # 创建tmp目录
 mkdir -p ~/tmp
 
-# 保存命令和初始状态
-echo '{{"pid": "'$BG_PID'", "command": "'$USER_COMMAND'", "status": "starting", "start_time": "'$START_TIME'", "result_file": null}}' > ~/tmp/gds_bg_$BG_PID.status
-echo '$USER_COMMAND' > ~/tmp/gds_bg_$BG_PID.cmd
+# 直接创建状态文件，表示任务已开始  
+cat > ~/tmp/gds_bg_{bg_pid}.status << STATUS_EOF
+{{"pid": "{bg_pid}", "command": "{escaped_shell_cmd}", "status": "starting", "start_time": "{datetime.now().isoformat()}", "result_file": null}}
+STATUS_EOF
 
-# 创建后台执行脚本
-cat > ~/tmp/gds_bg_$BG_PID.sh << 'SCRIPT_EOF'
+# 创建简化的后台执行脚本
+cat > ~/tmp/gds_bg_{bg_pid}.sh << 'SCRIPT_EOF'
 #!/bin/bash
 set +e
 
 # 执行用户命令
-{{
-    {shell_cmd}
-}} > ~/tmp/gds_bg_$BG_PID.stdout 2> ~/tmp/gds_bg_$BG_PID.stderr
+{shell_cmd} > ~/tmp/gds_bg_{bg_pid}.stdout 2> ~/tmp/gds_bg_{bg_pid}.stderr
 EXIT_CODE=$?
 
-# 创建结果JSON - 使用与普通命令相同的格式
-cat > ~/tmp/gds_bg_$BG_PID.result.json << JSON_EOF
+# 创建结果JSON文件
+cat > ~/tmp/gds_bg_{bg_pid}.result.json << JSON_EOF
 {{
     "success": $([ $EXIT_CODE -eq 0 ] && echo "true" || echo "false"),
     "data": {{
         "exit_code": $EXIT_CODE,
-        "stdout": "$(cat ~/tmp/gds_bg_$BG_PID.stdout)",
-        "stderr": "$(cat ~/tmp/gds_bg_$BG_PID.stderr)",
+        "stdout": "$(cat ~/tmp/gds_bg_{bg_pid}.stdout 2>/dev/null || echo '')",
+        "stderr": "$(cat ~/tmp/gds_bg_{bg_pid}.stderr 2>/dev/null || echo '')",
         "working_dir": "$PWD",
-        "timestamp": "$(date -Iseconds)"
+        "timestamp": "$(date -Iseconds 2>/dev/null || date)"
     }}
 }}
 JSON_EOF
 
 # 更新状态文件
-echo '{{"pid": "'$BG_PID'", "real_pid": $$, "command": "'$USER_COMMAND'", "status": "completed", "start_time": "'$START_TIME'", "end_time": "'$(date -Iseconds)'", "exit_code": '$EXIT_CODE', "result_file": "gds_bg_'$BG_PID'.result.json"}}' > ~/tmp/gds_bg_$BG_PID.status
+cat > ~/tmp/gds_bg_{bg_pid}.status << STATUS_FINAL_EOF
+{{"pid": "{bg_pid}", "command": "{escaped_shell_cmd}", "status": "completed", "start_time": "{datetime.now().isoformat()}", "end_time": "'$(date -Iseconds 2>/dev/null || date)'", "exit_code": $EXIT_CODE, "result_file": "gds_bg_{bg_pid}.result.json"}}
+STATUS_FINAL_EOF
 
-echo "Background task $BG_PID completed with exit code $EXIT_CODE"
+echo "Background task {bg_pid} completed with exit code $EXIT_CODE" >> ~/tmp/gds_bg_{bg_pid}.log
 SCRIPT_EOF
 
-# 启动后台任务
-nohup bash ~/tmp/gds_bg_$BG_PID.sh > ~/tmp/gds_bg_$BG_PID.log 2>&1 &
+# 给脚本执行权限并启动后台任务
+chmod +x ~/tmp/gds_bg_{bg_pid}.sh
+nohup ~/tmp/gds_bg_{bg_pid}.sh > ~/tmp/gds_bg_{bg_pid}.log 2>&1 &
 REAL_PID=$!
 
 # 更新状态文件包含真实PID
-echo '{{"pid": "'$BG_PID'", "real_pid": '$REAL_PID', "command": "'$USER_COMMAND'", "status": "running", "start_time": "'$START_TIME'", "result_file": "gds_bg_'$BG_PID'.result.json"}}' > ~/tmp/gds_bg_$BG_PID.status
+cat > ~/tmp/gds_bg_{bg_pid}.status << STATUS_RUNNING_EOF
+{{"pid": "{bg_pid}", "real_pid": $REAL_PID, "command": "{escaped_shell_cmd}", "status": "running", "start_time": "{datetime.now().isoformat()}", "result_file": "gds_bg_{bg_pid}.result.json"}}
+STATUS_RUNNING_EOF
 
-echo "Background task started with ID: $BG_PID"
-echo "Result will be saved to: ~/tmp/gds_bg_$BG_PID.result.json"
-echo "Use 'GDS --status $BG_PID' to check status"
-echo "Use 'GDS --log $BG_PID' to view output"
-echo "Use 'GDS --result $BG_PID' to view final result"
+echo "Background task started with ID: {bg_pid}"
+echo "Result will be saved to: ~/tmp/gds_bg_{bg_pid}.result.json"
+echo "Use 'GDS --status {bg_pid}' to check status"
+echo "Use 'GDS --log {bg_pid}' to view output"
+echo "Use 'GDS --result {bg_pid}' to view final result"
 '''
             
             # 使用普通命令的机制执行background脚本
@@ -2563,17 +2569,49 @@ fi
             return False
         
     
+    def _generate_dynamic_mount_point(self):
+        """生成动态挂载点，避免挂载冲突"""
+        import os
+        import time
+        
+        # 基础挂载目录
+        base_mount_dir = "/content"
+        
+        # 首先尝试传统的挂载点
+        traditional_mount = "/content/drive"
+        if not os.path.exists(traditional_mount) or not os.listdir(traditional_mount):
+            return traditional_mount
+        
+        # 如果传统挂载点有文件，使用动态挂载点
+        timestamp = int(time.time())
+        dynamic_mount = f"/content/drive_{timestamp}"
+        
+        # 确保动态挂载点不存在
+        counter = 0
+        while os.path.exists(dynamic_mount):
+            counter += 1
+            dynamic_mount = f"/content/drive_{timestamp}_{counter}"
+            
+        return dynamic_mount
+    
     def _handle_remount_command(self, command_identifier):
-        """处理GDS --remount命令"""
+        """处理GOOGLE_DRIVE --remount命令"""
         import time
         import hashlib
         import random
-        print("🔄 开始重新挂载流程...")
         
-        # 简化挂载架构 - 回到基础Google Drive挂载
+        # 首先检查当前是否已有有效的指纹文件
+        current_mount_point = getattr(self, 'current_mount_point', None) or "/content/drive"
+        if self._verify_mount_fingerprint(current_mount_point, silent=True):
+            print("当前挂载已有效，无需重新挂载")
+            return 0
+        
+        # 生成动态挂载点（避免挂载点冲突）
+        mount_point = self._generate_dynamic_mount_point()
+        
+        # 需要重新挂载
         timestamp = str(int(time.time()))
         random_hash = hashlib.md5(f"{timestamp}_{random.randint(1000, 9999)}".encode()).hexdigest()[:8]
-        mount_point = "/content/drive"  # 简化为基础挂载点
         
         # 生成指纹文件名（以.开头）
         fingerprint_filename = f".gds_mount_fingerprint_{random_hash}"
@@ -2588,21 +2626,16 @@ fi
             mount_point, fingerprint_path, result_path, timestamp, random_hash
         )
         
-        print(f"🔧 生成Python重新挂载脚本 (长度: {len(python_remount_script)} 字符)")
-        print("=" * 60)
-        print(python_remount_script)
-        print("=" * 60)
-        
-        # 复制到剪切板
+        # 复制到剪切板（静默）
         try:
             import subprocess
-            subprocess.run(['pbcopy'], input=python_remount_script.encode('utf-8'))
-            print(f"Python重新挂载脚本已复制到剪切板")
+            subprocess.run(['pbcopy'], input=python_remount_script.encode('utf-8'), 
+                          capture_output=True)
         except Exception as e:
-            print(f"❌ 复制到剪切板失败: {e}")
+            pass
         
-        # 显示tkinter窗口
-        success = self._show_remount_window(python_remount_script, mount_point, result_path)
+        # 显示tkinter窗口（使用subprocess压制IMK信息）
+        success = self._show_remount_window_subprocess(python_remount_script, mount_point, result_path)
         
         if success:
             # 更新挂载点信息
@@ -2610,15 +2643,9 @@ fi
             
             # 保存挂载配置到config.json
             config_saved = self._save_mount_config_to_json(mount_point, timestamp, random_hash)
-            if config_saved:
-                print(f"挂载配置已保存到config.json")
-            else:
-                print(f"Warning: 挂载配置保存失败，但挂载本身成功")
             
-            print(f"重新挂载成功！新挂载点: {mount_point}")
             return 0
         else:
-            print(f"❌ 重新挂载失败或被取消")
             return 1
     
     def _generate_python_remount_script(self, mount_point, fingerprint_path, result_path, timestamp, random_hash):
@@ -2630,17 +2657,17 @@ fi
         if current_mount:
             current_fingerprint = f"{current_mount}/REMOTE_ROOT/.gds_mount_fingerprint_*"
         
-        script = f'''# === GDS 简化挂载脚本 ===
+        script = f'''# GDS 动态挂载脚本
 import os
 import json
 from datetime import datetime
 
 print("挂载点: {mount_point}")
 
-# 简化的Google Drive挂载
+# Google Drive挂载
 try:
     from google.colab import drive
-    drive.mount("{mount_point}")
+    drive.mount("{mount_point}", force_remount=True)
     mount_result = "挂载成功"
 except Exception as e:
     mount_result = str(e)
@@ -2712,12 +2739,12 @@ fingerprint_file = "{fingerprint_path}"
 try:
     with open(fingerprint_file, 'w') as f:
         json.dump(fingerprint_data, f, indent=2)
-    print(f"✅ 指纹文件已创建: {{fingerprint_file}}")
+    print(f"指纹文件已创建: {{fingerprint_file}}")
 except Exception as e:
-    print(f"❌ 指纹文件创建失败: {{e}}")
+    print(f"指纹文件创建失败: {{e}}")
 
-# 创建简化的结果文件（包含文件夹ID）
-result_file = "{mount_point}/MyDrive/REMOTE_ROOT/tmp/simple_remount_{timestamp}.json"
+# 创建结果文件（包含文件夹ID）
+result_file = "{mount_point}/MyDrive/REMOTE_ROOT/tmp/remount_{timestamp}.json"
 try:
     with open(result_file, 'w') as f:
         result_data = {{
@@ -2730,15 +2757,16 @@ try:
             "remote_env_id": remote_env_id,
             "fingerprint_signature": fingerprint_data.get("signature"),
             "completed": datetime.now().isoformat(),
-            "type": "simple_remount",
-            "note": "Simplified remount with kora folder ID detection and fingerprint"
+            "type": "remount",
+            "note": "Dynamic remount with kora folder ID detection and fingerprint"
         }}
         json.dump(result_data, f, indent=2)
-    print(f"✅ 结果文件已创建: {{result_file}}")
+    print(f"结果文件已创建: {{result_file}}")
+    print("重新挂载流程完成！现在可以使用GDS命令访问Google Drive了！")
+    print("✅执行完成")
 except Exception as e:
-    print(f"❌ 结果文件创建失败: {{e}}")
+    print(f"结果文件创建失败: {{e}}")
 
-print("🎉 重新挂载流程完成！现在可以使用GDS命令访问Google Drive了！")
 '''
         return script
     
@@ -2764,36 +2792,32 @@ print("🎉 重新挂载流程完成！现在可以使用GDS命令访问Google D
             def copy_script():
                 """复制脚本到剪切板"""
                 try:
-                    subprocess.run(['pbcopy'], input=python_script.encode('utf-8'))
-                    print("📋 Python挂载脚本已复制到剪切板")
+                    subprocess.run(['pbcopy'], input=python_script.encode('utf-8'), 
+                                  capture_output=True)
                 except Exception as e:
-                    print(f"❌ 复制失败: {e}")
+                    pass
             
             def execution_completed():
                 """用户确认执行完成"""
                 nonlocal remount_success
                 
-                print(f"🔍 验证挂载结果...")
-                
                 try:
-                    remount_success = True
-                    
-                    # 保存挂载信息到GOOGLE_DRIVE_DATA（简化版）
-                    try:
-                        mount_info = {
-                            "mount_point": mount_point,
-                            "timestamp": int(time.time()),
-                            "type": "dynamic_mount"
-                        }
-                        print(f"INFO: 挂载信息已记录: {mount_info}")
-                    except Exception as e:
-                        print(f"Warning: 保存挂载信息失败: {e}")
-                    
-                    print("✅ 重新挂载确认完成")
-                    window.quit()
+                        remount_success = True
+                        
+                        # 保存挂载信息到GOOGLE_DRIVE_DATA（简化版）
+                        try:
+                            mount_info = {
+                                "mount_point": mount_point,
+                                "timestamp": int(time.time()),
+                                "type": "dynamic_mount"
+                            }
+                        except Exception as e:
+                            pass
+                        
+                        window.quit()
                         
                 except Exception as e:
-                    print(f"❌ 验证挂载状态失败: {e}")
+                    pass
             
             def cancel_remount():
                 """取消重新挂载"""
@@ -2801,12 +2825,12 @@ print("🎉 重新挂载流程完成！现在可以使用GDS命令访问Google D
                 remount_success = False
                 window.quit()
             
-            # 自动复制脚本到剪切板（类似远端指令窗口）
+            # 自动复制脚本到剪切板（静默）
             try:
-                subprocess.run(['pbcopy'], input=python_script.encode('utf-8'))
-                print("📋 Python挂载脚本已自动复制到剪切板")
+                subprocess.run(['pbcopy'], input=python_script.encode('utf-8'), 
+                              capture_output=True)
             except Exception as e:
-                print(f"❌ 自动复制失败: {e}")
+                pass  # 静默处理复制失败
             
             # 创建主框架（类似远端指令窗口布局）
             main_frame = tk.Frame(window, padx=10, pady=10)
@@ -2816,15 +2840,17 @@ print("🎉 重新挂载流程完成！现在可以使用GDS命令访问Google D
             button_frame = tk.Frame(main_frame)
             button_frame.pack(fill=tk.X, expand=True)
             
-            # 📋复制指令按钮
-            copy_btn = tk.Button(button_frame, text="📋 复制指令", command=copy_script,
-                               bg="#4CAF50", fg="white", font=("Arial", 11), padx=15, pady=3)
-            copy_btn.pack(side=tk.LEFT, padx=5, expand=True, fill=tk.X)
+            # 复制Python代码按钮（使用与远端指令窗口一致的风格）
+            copy_btn = tk.Button(button_frame, text="📋复制指令", command=copy_script,
+                               bg="#2196F3", fg="white", font=("Arial", 9), 
+                               padx=10, pady=5, relief=tk.RAISED, bd=2)
+            copy_btn.pack(side=tk.LEFT, padx=(0, 5), fill=tk.X, expand=True)
             
-            # ✅执行完成按钮
-            complete_btn = tk.Button(button_frame, text="✅ 执行完成", command=execution_completed,
-                                   bg="#2196F3", fg="white", font=("Arial", 11), padx=15, pady=3)
-            complete_btn.pack(side=tk.RIGHT, padx=5, expand=True, fill=tk.X)
+            # 执行完成按钮（使用与远端指令窗口一致的风格）
+            complete_btn = tk.Button(button_frame, text="✅执行完成", command=execution_completed,
+                                   bg="#4CAF50", fg="white", font=("Arial", 9, "bold"), 
+                                   padx=10, pady=5, relief=tk.RAISED, bd=2)
+            complete_btn.pack(side=tk.LEFT, fill=tk.X, expand=True)
             
             # 运行窗口
             try:
@@ -2839,6 +2865,331 @@ print("🎉 重新挂载流程完成！现在可以使用GDS命令访问Google D
             
         except Exception as e:
             print(f"❌ 显示重新挂载窗口失败: {e}")
+            return False
+    
+    def _show_remount_window_subprocess(self, python_script, mount_point, result_path):
+        """使用subprocess显示重新挂载窗口，压制IMK信息"""
+        import subprocess
+        import sys
+        import base64
+        
+        try:
+            # 将脚本编码为base64以避免shell转义问题
+            script_b64 = base64.b64encode(python_script.encode('utf-8')).decode('ascii')
+            
+            # 创建subprocess脚本
+            subprocess_script = f'''
+import sys
+import os
+import base64
+import time
+
+# 抑制所有警告和IMK信息
+import warnings
+warnings.filterwarnings("ignore")
+
+# 设置环境变量抑制tkinter警告
+os.environ["TK_SILENCE_DEPRECATION"] = "1"
+
+try:
+    import tkinter as tk
+    from tkinter import messagebox
+    import subprocess
+    
+    result = False
+    
+    # 解码脚本
+    python_script = base64.b64decode("{script_b64}").decode('utf-8')
+    
+    root = tk.Tk()
+    root.title("GDS Remount")
+    root.geometry("500x60")
+    root.resizable(False, False)
+    root.attributes('-topmost', True)
+    
+    # 居中窗口
+    root.eval('tk::PlaceWindow . center')
+    
+    # 音频文件路径
+    audio_file_path = "/Users/wukunhuan/.local/bin/GOOGLE_DRIVE_PROJ/tkinter_bell.mp3"
+    
+    # 定义统一的聚焦函数
+    def force_focus():
+        try:
+            root.focus_force()
+            root.lift()
+            root.attributes('-topmost', True)
+            
+            # macOS特定的焦点获取方法
+            import platform
+            if platform.system() == 'Darwin':
+                import subprocess
+                try:
+                    # 尝试多个可能的应用程序名称
+                    app_names = ['Python', 'python3', 'tkinter', 'Tk']
+                    for app_name in app_names:
+                        try:
+                            subprocess.run(['osascript', '-e', 'tell application "' + app_name + '" to activate'], 
+                                          timeout=0.5, capture_output=True)
+                            break
+                        except:
+                            continue
+                    
+                    # 尝试使用系统事件来强制获取焦点
+                    applescript_code = "tell application \\"System Events\\"\\n    set frontmost of first process whose name contains \\"Python\\" to true\\nend tell"
+                    subprocess.run(['osascript', '-e', applescript_code], timeout=0.5, capture_output=True)
+                except:
+                    pass  # 如果失败就忽略
+        except:
+            pass
+    
+    # 全局focus计数器和按钮点击标志
+    focus_count = 0
+    button_clicked = False
+    
+    # 定义音频播放函数
+    def play_bell_in_subprocess():
+        try:
+            audio_path = audio_file_path
+            if os.path.exists(audio_path):
+                import platform
+                import subprocess
+                system = platform.system()
+                if system == "Darwin":  # macOS
+                    subprocess.run(["afplay", audio_path], 
+                                 capture_output=True, timeout=2)
+                elif system == "Linux":
+                    # 尝试多个Linux音频播放器
+                    players = ["paplay", "aplay", "mpg123", "mpv", "vlc"]
+                    for player in players:
+                        try:
+                            subprocess.run([player, audio_path], 
+                                         capture_output=True, timeout=2, check=True)
+                            break
+                        except (subprocess.CalledProcessError, FileNotFoundError):
+                            continue
+                elif system == "Windows":
+                    # Windows可以使用winsound模块或powershell
+                    try:
+                        subprocess.run(["powershell", "-c", 
+                                      "(New-Object Media.SoundPlayer '" + audio_path + "').PlaySync()"], 
+                                     capture_output=True, timeout=2)
+                    except:
+                        pass
+        except Exception:
+            pass  # 如果播放失败，忽略错误
+    
+    # 带focus计数的聚焦函数
+    def force_focus_with_count():
+        global focus_count, button_clicked
+        
+        focus_count += 1
+        force_focus()
+        
+        try:
+            import threading
+            threading.Thread(target=play_bell_in_subprocess, daemon=True).start()
+            root.after(100, lambda: trigger_copy_button())
+        except Exception:
+            pass
+    
+    # 设置窗口置顶并初始聚焦（第1次，会播放音效）
+    root.attributes('-topmost', True)
+    force_focus_with_count()
+    
+    # 自动复制脚本到剪切板
+    try:
+        root.clipboard_clear()
+        root.clipboard_append(python_script)
+    except:
+        pass
+    
+    def copy_script():
+        global button_clicked
+        button_clicked = True
+        try:
+            subprocess.run(['pbcopy'], input=python_script.encode('utf-8'), 
+                          capture_output=True)
+            
+            # 验证复制是否成功
+            try:
+                clipboard_content = root.clipboard_get()
+                if clipboard_content == python_script:
+                    copy_btn.config(text="✅复制成功", bg="#4CAF50")
+                else:
+                    # 复制不完整，重试一次
+                    root.clipboard_clear()
+                    root.clipboard_append(python_script)
+                    copy_btn.config(text="🔄重新复制", bg="#FF9800")
+            except Exception as verify_error:
+                # 验证失败但复制可能成功，显示已复制
+                copy_btn.config(text="已复制", bg="#4CAF50")
+            
+            root.after(1500, lambda: copy_btn.config(text="📋 复制指令", bg="#2196F3"))
+        except Exception as e:
+            copy_btn.config(text="❌ 复制失败", bg="#f44336")
+    
+    def trigger_copy_button():
+        """触发复制按钮的点击效果（用于音效播放时自动触发）"""
+        try:
+            # 模拟按钮点击效果
+            copy_btn.config(relief='sunken')
+            root.after(50, lambda: copy_btn.config(relief='raised'))
+            # 执行复制功能
+            copy_script()
+        except Exception:
+            pass
+    
+    def execution_completed():
+        global result, button_clicked
+        button_clicked = True
+        result = True
+        root.quit()
+    
+    # 定期重新获取焦点的函数
+    def refocus_window():
+        global button_clicked
+        if not button_clicked:  # 只有在用户未点击按钮时才重新获取焦点
+            try:
+                # 使用带focus计数的聚焦函数
+                force_focus_with_count()
+                # 每30秒重新获取焦点并播放音效
+                root.after(30000, refocus_window)
+            except:
+                pass  # 如果窗口已关闭，忽略错误
+    
+    # 开始定期重新获取焦点 - 每30秒播放音效
+    root.after(30000, refocus_window)
+    
+    # 主框架
+    main_frame = tk.Frame(root, padx=10, pady=10)
+    main_frame.pack(fill=tk.BOTH, expand=True)
+    
+    # 按钮框架
+    button_frame = tk.Frame(main_frame)
+    button_frame.pack(fill=tk.X, expand=True)
+    
+    # 复制Python代码按钮（使用与远端指令窗口一致的风格）
+    copy_btn = tk.Button(button_frame, text="📋 复制指令", command=copy_script,
+                       bg="#2196F3", fg="white", font=("Arial", 9), 
+                       padx=10, pady=5, relief=tk.RAISED, bd=2)
+    copy_btn.pack(side=tk.LEFT, padx=(0, 5), fill=tk.X, expand=True)
+    
+    # 执行完成按钮（使用与远端指令窗口一致的风格）
+    complete_btn = tk.Button(button_frame, text="✅执行完成", command=execution_completed,
+                           bg="#4CAF50", fg="white", font=("Arial", 9, "bold"), 
+                           padx=10, pady=5, relief=tk.RAISED, bd=2)
+    complete_btn.pack(side=tk.LEFT, fill=tk.X, expand=True)
+    
+    # 设置自动关闭定时器（5分钟）
+    def timeout_destroy():
+        global result
+        result = False
+        root.destroy()
+    
+    root.after(300000, timeout_destroy)  # 5分钟超时
+    
+    # 运行窗口
+    root.mainloop()
+    
+    # 返回结果
+    print("success" if result else "cancelled")
+    
+except Exception as e:
+    print("error")
+'''
+            
+            # 运行subprocess窗口，压制所有输出
+            result = subprocess.run(
+                [sys.executable, '-c', subprocess_script],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,  # 完全抑制stderr（包括IMK信息）
+                text=True,
+                timeout=300  # 5分钟超时
+            )
+            
+            # 检查结果
+            window_success = result.returncode == 0 and "success" in result.stdout
+            
+            # 如果用户点击了"✅执行完成"，尝试下载并显示执行结果
+            if window_success:
+                self._download_and_display_remount_result(result_path)
+            
+            return window_success
+            
+        except subprocess.TimeoutExpired:
+            return False
+        except Exception as e:
+            return False
+    
+    def _download_and_display_remount_result(self, result_path):
+        """下载并显示remount执行结果"""
+        try:
+            import time
+            import json
+            
+            # 从result_path推断结果文件名
+            # result_path格式: /content/drive/MyDrive/REMOTE_ROOT/tmp/remount_result_{timestamp}_{hash}.json
+            # 但实际生成的文件名是: remount_{timestamp}.json
+            import os
+            result_filename = os.path.basename(result_path)
+            
+            # 修正文件名：从remount_result_{timestamp}_{hash}.json转换为remount_{timestamp}.json
+            if "remount_result_" in result_filename:
+                # 提取timestamp部分
+                parts = result_filename.replace("remount_result_", "").replace(".json", "").split("_")
+                if len(parts) >= 2:
+                    timestamp = parts[0]
+                    result_filename = f"remount_{timestamp}.json"
+            
+            # 等待结果文件出现（最多30秒）
+            max_wait_time = 30
+            for i in range(max_wait_time):
+                try:
+                    # 使用GDS cat命令读取结果文件
+                    cat_result = self.cmd_cat(f"tmp/{result_filename}")
+                    
+                    if cat_result.get("success"):
+                        content = cat_result.get("output", "")
+                        
+                        # 尝试解析JSON并提取有用信息
+                        try:
+                            result_data = json.loads(content)
+                            
+                            # 显示关键信息
+                            if result_data.get("success"):
+                                print(f"挂载点: {result_data.get('mount_point', 'unknown')}")
+                                print(f"REMOTE_ROOT ID: {result_data.get('remote_root_id', 'unknown')}")
+                                print(f"REMOTE_ENV ID: {result_data.get('remote_env_id', 'unknown')}")
+                                print(f"指纹签名: {result_data.get('fingerprint_signature', 'unknown')}")
+                                print(f"完成时间: {result_data.get('completed', 'unknown')}")
+                                print("重新挂载流程完成！")
+                            else:
+                                print("挂载失败")
+                                if "error" in result_data:
+                                    print(f"错误: {result_data['error']}")
+                            
+                        except json.JSONDecodeError:
+                            lines = content.split('\n')
+                            filtered_lines = [line for line in lines if "✅执行完成" not in line and line.strip()]
+                            if filtered_lines:
+                                for line in filtered_lines:
+                                    print(line)
+                        
+                        return True
+                    
+                except Exception:
+                    pass
+                
+                # 等待1秒
+                time.sleep(1)
+            
+            # 超时未找到结果文件
+            print(f"等待远端执行结果超时（{max_wait_time}秒）")
+            return False
+            
+        except Exception as e:
+            print(f"下载执行结果时出错: {e}")
             return False
     
     def _save_mount_config_to_json(self, mount_point, timestamp, random_hash):
@@ -2882,27 +3233,28 @@ print("🎉 重新挂载流程完成！现在可以使用GDS命令访问Google D
             
             try:
                 # 先尝试从挂载结果文件读取（kora方法）
-                result_file = f"{mount_point}/MyDrive/REMOTE_ROOT/tmp/simple_remount_{timestamp}.json"
+                result_file = f"{mount_point}/MyDrive/REMOTE_ROOT/tmp/remount_{timestamp}.json"
                 if os.path.exists(result_file):
                     with open(result_file, 'r') as f:
                         result_data = json.load(f)
                         remote_root_id = result_data.get('remote_root_id')
                         remote_env_id = result_data.get('remote_env_id')
                         if remote_root_id or remote_env_id:
-                            print(f"INFO: 从挂载结果读取到kora文件夹ID")
+                            print(f"从挂载结果读取到kora文件夹ID")
                 else:
-                    print(f"Warning: 挂载结果文件不存在，尝试API方法")
+                    # 静默处理：kora方法的结果文件不存在时，不显示警告
+                    pass
                     
-                # 如果kora方法失败，回退到API方法
+                # 如果kora方法失败，回退到API方法（静默模式）
                 if not remote_root_id:
-                    remote_root_id = self._get_folder_id_by_path("REMOTE_ROOT", mount_point)
+                    remote_root_id = self._get_folder_id_by_path("REMOTE_ROOT", mount_point, silent=True)
                 if not remote_env_id:
-                    remote_env_id = self._get_folder_id_by_path("REMOTE_ENV", mount_point)
+                    remote_env_id = self._get_folder_id_by_path("REMOTE_ENV", mount_point, silent=True)
                 
                 # 保存文件夹ID到配置
                 if remote_root_id:
                     config["constants"]["REMOTE_ROOT_FOLDER_ID"] = remote_root_id
-                    print(f"INFO: REMOTE_ROOT文件夹ID: {remote_root_id}")
+                    print(f"REMOTE_ROOT文件夹ID: {remote_root_id}")
                 
                 if remote_env_id:
                     config["constants"]["REMOTE_ENV_FOLDER_ID"] = remote_env_id
@@ -2932,7 +3284,7 @@ print("🎉 重新挂载流程完成！现在可以使用GDS命令访问Google D
             with open(config_file, 'w', encoding='utf-8') as f:
                 json.dump(config, f, indent=2, ensure_ascii=False)
             
-            print(f"INFO: 挂载配置已保存到: {config_file}")
+            print(f"挂载配置已保存到: {config_file}")
             print(f"   REMOTE_ROOT: {dynamic_remote_root}")
             print(f"   REMOTE_ENV: {dynamic_remote_env}")
             print(f"   挂载点: {mount_point}")
@@ -2943,11 +3295,12 @@ print("🎉 重新挂载流程完成！现在可以使用GDS命令访问Google D
             print(f"ERROR: 保存挂载配置失败: {e}")
             return False
     
-    def _get_folder_id_by_path(self, folder_name, mount_point):
+    def _get_folder_id_by_path(self, folder_name, mount_point, silent=False):
         """通过Google Drive API获取文件夹ID"""
         try:
             if not hasattr(self, 'drive_service') or not self.drive_service:
-                print(f"Warning: drive_service不可用，无法获取{folder_name}文件夹ID")
+                if not silent:
+                    print(f"Warning: drive_service不可用，无法获取{folder_name}文件夹ID")
                 return None
             
             # 使用GoogleDriveService的正确API
@@ -2961,14 +3314,17 @@ print("🎉 重新挂载流程完成！现在可以使用GDS命令访问Google D
             folder_id = self.drive_service._find_folder_by_name(mydrive_folder_id, folder_name)
             
             if folder_id:
-                print(f"INFO: 找到{folder_name}文件夹ID: {folder_id}")
+                if not silent:
+                    print(f"找到{folder_name}文件夹ID: {folder_id}")
                 return folder_id
             else:
-                print(f"Warning: 未找到{folder_name}文件夹")
+                if not silent:
+                    print(f"Warning: 未找到{folder_name}文件夹")
                 return None
                 
         except Exception as e:
-            print(f"ERROR: 获取{folder_name}文件夹ID失败: {e}")
+            if not silent:
+                print(f"ERROR: 获取{folder_name}文件夹ID失败: {e}")
             return None
     
     def _load_paths_from_config(self):
@@ -3005,6 +3361,14 @@ print("🎉 重新挂载流程完成！现在可以使用GDS命令访问Google D
                 if 'CURRENT_MOUNT_POINT' in constants:
                     self.current_mount_point = constants['CURRENT_MOUNT_POINT']
                     self.dynamic_mode = constants.get('MOUNT_TYPE') == 'dynamic'
+                
+                # 加载挂载哈希值
+                if 'MOUNT_HASH' in constants:
+                    self.MOUNT_HASH = constants['MOUNT_HASH']
+                
+                # 加载挂载时间戳
+                if 'MOUNT_TIMESTAMP' in constants:
+                    self.MOUNT_TIMESTAMP = constants['MOUNT_TIMESTAMP']
                 
             else:
                 print("Warning: config.json不存在，使用默认路径")
