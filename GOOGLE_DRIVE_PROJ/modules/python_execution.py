@@ -130,8 +130,9 @@ except:
                 fi
             fi
             
-            # 执行Python代码
-            $PYTHON_EXEC -c "import base64; exec(base64.b64decode(open(\\"{temp_file_path}\\").read().strip()).decode(\\"utf-8\\"))"
+            # 执行Python代码 (修复版本：避免exec嵌套)
+            # 直接从base64文件解码并作为脚本执行，而不是通过exec
+            base64 -d "{temp_file_path}" | $PYTHON_EXEC
             PYTHON_EXIT_CODE=$?
             
             # 清理临时文件

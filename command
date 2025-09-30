@@ -22,13 +22,13 @@ cd "/content/drive/MyDrive/REMOTE_ROOT/Computer Vision/basic_cv_project" && {
     
     
     # 执行命令并捕获输出
-    OUTPUT_FILE="/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_stdout_1759273907_d83bfa3d"
-    ERROR_FILE="/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_stderr_1759273907_d83bfa3d"
-    EXITCODE_FILE="/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_exitcode_1759273907_d83bfa3d"
+    OUTPUT_FILE="/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_stdout_1759274517_a4b73866"
+    ERROR_FILE="/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_stderr_1759274517_a4b73866"
+    EXITCODE_FILE="/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_exitcode_1759274517_a4b73866"
     
     # 直接执行命令，捕获输出和错误
     set +e  # 允许命令失败
-    echo "bWtkaXIgLXAgL2NvbnRlbnQvZHJpdmUvTXlEcml2ZS9SRU1PVEVfUk9PVC90bXAgJiYgXAogICAgICAgICAgICBlY2hvICJkVzVrWldacGJtVmtYM1poY2c9PSIgPiAiL2NvbnRlbnQvZHJpdmUvTXlEcml2ZS9SRU1PVEVfUk9PVC90bXAvcHl0aG9uX2NvZGVfMTc1OTI3MzkwN18wNmNiLmI2NCIgJiYgXAogICAgICAgICAgICBzb3VyY2UgL2NvbnRlbnQvZHJpdmUvTXlEcml2ZS9SRU1PVEVfRU5WL3ZlbnYvdmVudl9weXRob25wYXRoLnNoIDI+L2Rldi9udWxsIHx8IHRydWUKICAgICAgICAgICAgCiAgICAgICAgICAgICMg5Zyo6L+c56iL546v5aKD5Lit5pm66IO96YCJ5oupUHl0aG9u5Y+v5omn6KGM5paH5Lu2CiAgICAgICAgICAgICMgMS4g5qOA5p+l5piv5ZCm5pyJcHllbnborr7nva7nmoRQeXRob27niYjmnKwKICAgICAgICAgICAgUFlUSE9OX0VYRUM9InB5dGhvbjMiICAjIOm7mOiupAogICAgICAgICAgICBQWVRIT05fQkFTRV9QQVRIPSIvY29udGVudC9kcml2ZS9NeURyaXZlL1JFTU9URV9FTlYvcHl0aG9uIgogICAgICAgICAgICBTVEFURV9GSUxFPSIkUFlUSE9OX0JBU0VfUEFUSC9weXRob25fc3RhdGVzLmpzb24iCiAgICAgICAgICAgIAogICAgICAgICAgICAjIOiOt+WPluW9k+WJjXNoZWxsIElEICjnroDljJbniYjmnKwpCiAgICAgICAgICAgIFNIRUxMX0lEPSJkZWZhdWx0IgogICAgICAgICAgICAKICAgICAgICAgICAgIyDlpoLmnpznirbmgIHmlofku7blrZjlnKjvvIzlsJ3or5Xor7vlj5ZQeXRob27niYjmnKzorr7nva4KICAgICAgICAgICAgaWYgWyAtZiAiJFNUQVRFX0ZJTEUiIF07IHRoZW4KICAgICAgICAgICAgICAgICMg5LyY5YWI5qOA5p+lbG9jYWzniYjmnKwKICAgICAgICAgICAgICAgIExPQ0FMX1ZFUlNJT049JChweXRob24zIC1jICIKaW1wb3J0IGpzb24sIHN5cwp0cnk6CiAgICB3aXRoIG9wZW4oJyRTVEFURV9GSUxFJywgJ3InKSBhcyBmOgogICAgICAgIHN0YXRlcyA9IGpzb24ubG9hZChmKQogICAgcHJpbnQoc3RhdGVzLmdldCgnc2hlbGxfJHtTSEVMTF9JRH0nLCAnJykpCmV4Y2VwdDoKICAgIHBhc3MKIiAyPi9kZXYvbnVsbCB8fCBlY2hvICIiKQogICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAjIOWmguaenOayoeaciWxvY2Fs54mI5pys77yM5qOA5p+lZ2xvYmFs54mI5pysCiAgICAgICAgICAgICAgICBpZiBbIC16ICIkTE9DQUxfVkVSU0lPTiIgXTsgdGhlbgogICAgICAgICAgICAgICAgICAgIEdMT0JBTF9WRVJTSU9OPSQocHl0aG9uMyAtYyAiCmltcG9ydCBqc29uLCBzeXMKdHJ5OgogICAgd2l0aCBvcGVuKCckU1RBVEVfRklMRScsICdyJykgYXMgZjoKICAgICAgICBzdGF0ZXMgPSBqc29uLmxvYWQoZikKICAgIHByaW50KHN0YXRlcy5nZXQoJ2dsb2JhbCcsICcnKSkKZXhjZXB0OgogICAgcGFzcwoiIDI+L2Rldi9udWxsIHx8IGVjaG8gIiIpCiAgICAgICAgICAgICAgICAgICAgQ1VSUkVOVF9WRVJTSU9OPSIkR0xPQkFMX1ZFUlNJT04iCiAgICAgICAgICAgICAgICBlbHNlCiAgICAgICAgICAgICAgICAgICAgQ1VSUkVOVF9WRVJTSU9OPSIkTE9DQUxfVkVSU0lPTiIKICAgICAgICAgICAgICAgIGZpCiAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICMg5aaC5p6c5om+5Yiw5LqG54mI5pys6K6+572u77yM5qOA5p+l5a+55bqU55qEUHl0aG9u5piv5ZCm5a2Y5ZyoCiAgICAgICAgICAgICAgICBpZiBbIC1uICIkQ1VSUkVOVF9WRVJTSU9OIiBdICYmIFsgIiRDVVJSRU5UX1ZFUlNJT04iICE9ICJzeXN0ZW0iIF07IHRoZW4KICAgICAgICAgICAgICAgICAgICBQWUVOVl9QWVRIT049IiRQWVRIT05fQkFTRV9QQVRILyRDVVJSRU5UX1ZFUlNJT04vYmluL3B5dGhvbjMiCiAgICAgICAgICAgICAgICAgICAgaWYgWyAtZiAiJFBZRU5WX1BZVEhPTiIgXSAmJiBbIC14ICIkUFlFTlZfUFlUSE9OIiBdOyB0aGVuCiAgICAgICAgICAgICAgICAgICAgICAgIFBZVEhPTl9FWEVDPSIkUFlFTlZfUFlUSE9OIgogICAgICAgICAgICAgICAgICAgIGZpCiAgICAgICAgICAgICAgICBmaQogICAgICAgICAgICBmaQogICAgICAgICAgICAKICAgICAgICAgICAgIyDmiafooYxQeXRob27ku6PnoIEKICAgICAgICAgICAgJFBZVEhPTl9FWEVDIC1jICJpbXBvcnQgYmFzZTY0OyBleGVjKGJhc2U2NC5iNjRkZWNvZGUob3BlbihcIi9jb250ZW50L2RyaXZlL015RHJpdmUvUkVNT1RFX1JPT1QvdG1wL3B5dGhvbl9jb2RlXzE3NTkyNzM5MDdfMDZjYi5iNjRcIikucmVhZCgpLnN0cmlwKCkpLmRlY29kZShcInV0Zi04XCIpKSIKICAgICAgICAgICAgUFlUSE9OX0VYSVRfQ09ERT0kPwogICAgICAgICAgICAKICAgICAgICAgICAgIyDmuIXnkIbkuLTml7bmlofku7YKICAgICAgICAgICAgcm0gLWYgIi9jb250ZW50L2RyaXZlL015RHJpdmUvUkVNT1RFX1JPT1QvdG1wL3B5dGhvbl9jb2RlXzE3NTkyNzM5MDdfMDZjYi5iNjQiCiAgICAgICAgICAgIAogICAgICAgICAgICAjIOi/lOWbnlB5dGhvbuiEmuacrOeahOmAgOWHuueggQogICAgICAgICAgICBleGl0ICRQWVRIT05fRVhJVF9DT0RF" | base64 -d | bash > "$OUTPUT_FILE" 2> "$ERROR_FILE"
+    echo "c291cmNlIC9jb250ZW50L2RyaXZlL015RHJpdmUvUkVNT1RFX0VOVi92ZW52L3ZlbnZfcHl0aG9ucGF0aC5zaCAyPi9kZXYvbnVsbCB8fCB0cnVlICYmIHB5dGhvbjMgbWFpbi5weQ==" | base64 -d | bash > "$OUTPUT_FILE" 2> "$ERROR_FILE"
     EXIT_CODE=$?
     echo "$EXIT_CODE" > "$EXITCODE_FILE"
     set -e
@@ -50,7 +50,7 @@ cd "/content/drive/MyDrive/REMOTE_ROOT/Computer Vision/basic_cv_project" && {
     
     # 设置环境变量并生成JSON结果文件
     export EXIT_CODE=$EXIT_CODE
-    PYTHON_SCRIPT="/content/drive/MyDrive/REMOTE_ROOT/tmp/json_generator_1759273907_d83bfa3d.py"
+    PYTHON_SCRIPT="/content/drive/MyDrive/REMOTE_ROOT/tmp/json_generator_1759274517_a4b73866.py"
     cat > "$PYTHON_SCRIPT" << 'SCRIPT_END'
 import json
 import os
@@ -64,9 +64,9 @@ raw_stdout = ""
 raw_stderr = ""
 
 # 文件路径
-stdout_file = "/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_stdout_1759273907_d83bfa3d"
-stderr_file = "/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_stderr_1759273907_d83bfa3d"
-exitcode_file = "/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_exitcode_1759273907_d83bfa3d"
+stdout_file = "/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_stdout_1759274517_a4b73866"
+stderr_file = "/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_stderr_1759274517_a4b73866"
+exitcode_file = "/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_exitcode_1759274517_a4b73866"
 
 # 调试信息
 if os.path.exists(stdout_file):
@@ -117,7 +117,7 @@ if os.path.exists(exitcode_file):
 # 构建结果JSON
 result = {
     "cmd": "bash",
-    "args": ["-c", "mkdir -p /content/drive/MyDrive/REMOTE_ROOT/tmp && \\\n            echo \"dW5kZWZpbmVkX3Zhcg==\" > \"/content/drive/MyDrive/REMOTE_ROOT/tmp/python_code_1759273907_06cb.b64\" && \\\n            source /content/drive/MyDrive/REMOTE_ENV/venv/venv_pythonpath.sh 2>/dev/null || true\n            \n            # \u5728\u8fdc\u7a0b\u73af\u5883\u4e2d\u667a\u80fd\u9009\u62e9Python\u53ef\u6267\u884c\u6587\u4ef6\n            # 1. \u68c0\u67e5\u662f\u5426\u6709pyenv\u8bbe\u7f6e\u7684Python\u7248\u672c\n            PYTHON_EXEC=\"python3\"  # \u9ed8\u8ba4\n            PYTHON_BASE_PATH=\"/content/drive/MyDrive/REMOTE_ENV/python\"\n            STATE_FILE=\"$PYTHON_BASE_PATH/python_states.json\"\n            \n            # \u83b7\u53d6\u5f53\u524dshell ID (\u7b80\u5316\u7248\u672c)\n            SHELL_ID=\"default\"\n            \n            # \u5982\u679c\u72b6\u6001\u6587\u4ef6\u5b58\u5728\uff0c\u5c1d\u8bd5\u8bfb\u53d6Python\u7248\u672c\u8bbe\u7f6e\n            if [ -f \"$STATE_FILE\" ]; then\n                # \u4f18\u5148\u68c0\u67e5local\u7248\u672c\n                LOCAL_VERSION=$(python3 -c \"\nimport json, sys\ntry:\n    with open('$STATE_FILE', 'r') as f:\n        states = json.load(f)\n    print(states.get('shell_${SHELL_ID}', ''))\nexcept:\n    pass\n\" 2>/dev/null || echo \"\")\n                \n                # \u5982\u679c\u6ca1\u6709local\u7248\u672c\uff0c\u68c0\u67e5global\u7248\u672c\n                if [ -z \"$LOCAL_VERSION\" ]; then\n                    GLOBAL_VERSION=$(python3 -c \"\nimport json, sys\ntry:\n    with open('$STATE_FILE', 'r') as f:\n        states = json.load(f)\n    print(states.get('global', ''))\nexcept:\n    pass\n\" 2>/dev/null || echo \"\")\n                    CURRENT_VERSION=\"$GLOBAL_VERSION\"\n                else\n                    CURRENT_VERSION=\"$LOCAL_VERSION\"\n                fi\n                \n                # \u5982\u679c\u627e\u5230\u4e86\u7248\u672c\u8bbe\u7f6e\uff0c\u68c0\u67e5\u5bf9\u5e94\u7684Python\u662f\u5426\u5b58\u5728\n                if [ -n \"$CURRENT_VERSION\" ] && [ \"$CURRENT_VERSION\" != \"system\" ]; then\n                    PYENV_PYTHON=\"$PYTHON_BASE_PATH/$CURRENT_VERSION/bin/python3\"\n                    if [ -f \"$PYENV_PYTHON\" ] && [ -x \"$PYENV_PYTHON\" ]; then\n                        PYTHON_EXEC=\"$PYENV_PYTHON\"\n                    fi\n                fi\n            fi\n            \n            # \u6267\u884cPython\u4ee3\u7801\n            $PYTHON_EXEC -c \"import base64; exec(base64.b64decode(open(\\\"/content/drive/MyDrive/REMOTE_ROOT/tmp/python_code_1759273907_06cb.b64\\\").read().strip()).decode(\\\"utf-8\\\"))\"\n            PYTHON_EXIT_CODE=$?\n            \n            # \u6e05\u7406\u4e34\u65f6\u6587\u4ef6\n            rm -f \"/content/drive/MyDrive/REMOTE_ROOT/tmp/python_code_1759273907_06cb.b64\"\n            \n            # \u8fd4\u56dePython\u811a\u672c\u7684\u9000\u51fa\u7801\n            exit $PYTHON_EXIT_CODE"],
+    "args": ["-c", "source /content/drive/MyDrive/REMOTE_ENV/venv/venv_pythonpath.sh 2>/dev/null || true && python3 main.py"],
     "working_dir": os.getcwd(),
     "timestamp": datetime.now().isoformat(),
     "exit_code": exit_code,
@@ -135,7 +135,7 @@ result = {
 
 print(json.dumps(result, indent=2, ensure_ascii=False))
 SCRIPT_END
-    python3 "$PYTHON_SCRIPT" > "/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_1759273907_d83bfa3d.json"
+    python3 "$PYTHON_SCRIPT" > "/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_1759274517_a4b73866.json"
     rm -f "$PYTHON_SCRIPT"
     
     # 清理临时文件（在JSON生成之后）
