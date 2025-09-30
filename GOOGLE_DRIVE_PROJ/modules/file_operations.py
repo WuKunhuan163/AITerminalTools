@@ -234,8 +234,6 @@ class FileOperations:
             if result.returncode == 0 and bool(result.stdout.strip()):
                 return True
             
-            # Try to start
-            print(f"Starting Google Drive Desktop...")
             if platform.system() == "Darwin":
                 subprocess.run(['open', '-a', 'Google Drive'], check=False)
             elif platform.system() == "Linux":

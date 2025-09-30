@@ -477,9 +477,8 @@ else:
                         # 文件存在，读取内容
                         file_result = self._read_result_file_via_gds(result_filename)
                         
-                        # 先在进度行显示√标记，然后清除进度显示
-                        from .progress_manager import add_success_mark, clear_progress
-                        add_success_mark()
+                        # 直接清除进度显示，不添加√标记（与upload validation保持一致）
+                        from .progress_manager import clear_progress
                         clear_progress()
                         
                         # 恢复原来的信号处理器
@@ -920,7 +919,7 @@ echo "✅执行完成"'''
                 found_count = len(validation_result.get("found_files", []))
                 return found_count == len(expected_files)
             
-            # 使用统一的验证接口
+            # 直接使用统一的验证接口，它会正确处理进度显示的切换
             from .progress_manager import validate_creation
             result = validate_creation(validate_all_files, file_display, 60, "upload")
             
@@ -1169,7 +1168,9 @@ fi
                     check_result = self._check_remote_file_exists(absolute_path)
                     return check_result.get("exists")
                 
-                from .progress_manager import validate_creation
+                from .progress_manager import validate_creation, clear_progress, is_progress_active
+                if is_progress_active():
+                    clear_progress()
                 validation_result = validate_creation(validate_mkdir, target_path, 60, "dir")
                 
                 if validation_result["success"]:
@@ -1232,7 +1233,9 @@ fi
                 check_result = self._check_remote_file_exists(absolute_path)
                 return check_result.get("exists")
             
-            from .progress_manager import validate_creation
+            from .progress_manager import validate_creation, clear_progress, is_progress_active
+            if is_progress_active():
+                clear_progress()
             validation_result = validate_creation(validate_touch, filename, 60, "file")
             
             if validation_result["success"]:
@@ -1893,7 +1896,7 @@ fi
                 
                 return {
                     "success": False,
-                    "error": f"User operation: Timeout or cancelled",
+                    "error": f"User operation timeout or cancelled",
                     "user_feedback": window_result
                 }
             
@@ -1915,8 +1918,8 @@ fi
                 "cmd": cmd,
                 "args": args,
                 "exit_code": result_data["data"].get("exit_code", -1),
-                "stdout": result_data["data"].get("stdout", "") + "\n" if result_data["data"].get("stdout", "").strip() else "",
-                "stderr": result_data["data"].get("stderr", "") + "\n" if result_data["data"].get("stderr", "").strip() else "",
+                "stdout": result_data["data"].get("stdout", "").strip() if result_data["data"].get("stdout", "").strip() else "",
+                "stderr": result_data["data"].get("stderr", "").strip() if result_data["data"].get("stderr", "").strip() else "",
                 "working_dir": result_data["data"].get("working_dir", ""),
                 "timestamp": result_data["data"].get("timestamp", ""),
                 "path": f"tmp/{result_filename}",  # 远端结果文件路径
@@ -2835,22 +2838,8 @@ def main():
             
             if is_run_environment(command_identifier):
                 write_to_json_output(result, command_identifier)
-            else:
-                if result["success"]:
-                    print(result["message"])
-                    if result.get("uploaded_files"):
-                        print(f"Successfully uploaded:")
-                        for file in result["uploaded_files"]:
-                            if file.get('url') and file['url'] != 'unavailable':
-                                print(f"  - {file['name']} (ID: {file.get('id', 'unknown')}, URL: {file['url']})")
-                            else:
-                                print(f"  - {file['name']} (ID: {file.get('id', 'unknown')})")
-                    if result.get("failed_files"):
-                        print(f"Failed to upload:")
-                        for file in result["failed_files"]:
-                            print(f"  - {file}")
-                else:
-                    print(f"Error: {result.get('error', 'Upload failed')}")
+            # 注意：不在这里调用result_print，因为GoogleDriveShell已经处理了输出
+            # 避免重复输出导致进度显示问题
             
             return 0 if result["success"] else 1
             

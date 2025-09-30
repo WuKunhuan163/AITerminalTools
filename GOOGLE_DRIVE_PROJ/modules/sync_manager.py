@@ -218,13 +218,94 @@ class SyncManager:
     def wait_for_file_sync(self, expected_files, file_moves):
         """
         等待文件同步到 DRIVE_EQUIVALENT 目录，使用GDS ls命令检测
+        支持Ctrl+C中断
         
         Args:
             expected_files (list): 期望同步的文件名列表
             file_moves (list): 文件移动信息列表（用于计算超时时间）
             
         Returns:
-            dict: 同步状态
+            dict: 同步状态，包含cancelled字段
+        """
+        try:
+            # 根据文件大小计算超时时间
+            timeout = self.calculate_timeout_from_file_sizes(file_moves)
+            max_attempts = int(timeout)  # 每秒检查一次
+            
+            # 定义检查函数
+            def check_sync_status():
+                # 直接使用Google Drive API检查DRIVE_EQUIVALENT目录
+                if hasattr(self.main_instance, 'drive_service') and self.main_instance.drive_service:
+                    ls_result = self.main_instance.drive_service.list_files(
+                        folder_id=self.main_instance.DRIVE_EQUIVALENT_FOLDER_ID, 
+                        max_results=100
+                    )
+                else:
+                    return False  # Drive service不可用，继续等待
+                
+                if ls_result.get("success"):
+                    files = ls_result.get("files", [])
+                    current_synced = []
+                    
+                    for filename in expected_files:
+                        # 检查文件名是否在DRIVE_EQUIVALENT中
+                        file_found = any(f.get("name") == filename for f in files)
+                        if file_found:
+                            current_synced.append(filename)
+                    
+                    # 如果所有文件都已同步，返回成功
+                    if len(current_synced) == len(expected_files):
+                        return True  # 同步完成
+                
+                return False  # 继续等待
+            
+            # 使用统一的可中断进度循环
+            from .progress_manager import interruptible_progress_loop
+            result = interruptible_progress_loop(
+                progress_message="⏳ Waiting for file sync ...",
+                loop_func=check_sync_status,
+                check_interval=1.0,
+                max_attempts=max_attempts
+            )
+            
+            if result["cancelled"]:
+                return {
+                    "success": False,
+                    "cancelled": True,
+                    "synced_files": [],
+                    "sync_time": 0,
+                    "error": "File sync cancelled by user"
+                }
+            elif result["success"]:
+                return {
+                    "success": True,
+                    "cancelled": False,
+                    "synced_files": expected_files,
+                    "sync_time": result["attempts"],  # 大约的同步时间
+                    "base_sync_time": result["attempts"]
+                }
+            else:
+                # 超时失败，但不是取消
+                return {
+                    "success": False,
+                    "cancelled": False,
+                    "synced_files": [],
+                    "sync_time": timeout,
+                    "error": f"File sync timeout after {timeout} seconds"
+                }
+                
+        except Exception as e:
+            return {
+                "success": False,
+                "cancelled": False,
+                "synced_files": [],
+                "sync_time": 0,
+                "error": f"File sync error: {str(e)}"
+            }
+    
+    def _old_wait_for_file_sync(self, expected_files, file_moves):
+        """
+        原始的等待文件同步实现（保留作为备份）
         """
         try:
             # 根据文件大小计算超时时间
@@ -276,7 +357,7 @@ class SyncManager:
                         # 如果所有文件都已同步，返回成功
                         if len(current_synced) == len(expected_files):
                             debug_print(f" ({elapsed_time:.1f}s)")
-                            print(f"√")  # Add empty line after detection ends
+                            # 不打印√标记，让上层的进度管理统一处理
                             return {
                                 "success": True,
                                 "synced_files": current_synced,

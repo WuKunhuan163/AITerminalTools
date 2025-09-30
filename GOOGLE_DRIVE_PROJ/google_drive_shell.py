@@ -983,52 +983,8 @@ echo "Use 'GDS --result {bg_pid}' to view final result"
             
             # 解析命令 - 对edit命令特殊处理
             if shell_cmd_clean.strip().startswith('edit '):
-                # edit命令特殊处理：使用正则表达式提取JSON部分，直接调用处理
-                import re
-                match = re.match(r'^(edit)\s+((?:--\w+\s+)*)([\w.]+)\s+(.+)$', shell_cmd_clean.strip())
-                if match:
-                    flags_str = match.group(2).strip()
-                    filename = match.group(3)
-                    json_spec = match.group(4)
-                    
-                    # 移除JSON参数外层的引号（如果存在）
-                    json_spec = json_spec.strip()
-                    if ((json_spec.startswith("'") and json_spec.endswith("'")) or 
-                        (json_spec.startswith('"') and json_spec.endswith('"'))):
-                        json_spec = json_spec[1:-1]
-                    
-                    # 解析选项参数
-                    preview = '--preview' in flags_str
-                    backup = '--backup' in flags_str
-                    
-                    # 直接调用edit命令，避免参数重新处理
-                    try:
-                        result = self.cmd_edit(filename, json_spec, preview=preview, backup=backup)
-                    except KeyboardInterrupt:
-                        result = {"success": False, "error": "Operation interrupted by user"}
-                    
-                    if result.get("success", False):
-                        # 显示diff比较（预览模式和正常模式都显示）
-                        diff_output = result.get("diff_output", "")
-                        
-                        if diff_output and diff_output != "No changes detected":
-                            print(f"\nEdit comparison: {filename}")
-                            print(f"=" * 50)
-                            print(diff_output)
-                            print(f"=" * 50)
-                        
-                        # 对于正常模式，显示成功信息
-                        if result.get("mode") != "preview":
-                            print(result.get("message", "\nFile edited successfully"))
-                        return 0
-                    else:
-                        print(result.get("error", "Failed to edit file"))
-                        return 1
-                else:
-                    # 回退到简单分割
-                    cmd_parts = shell_cmd_clean.strip().split()
-                    cmd = cmd_parts[0] if cmd_parts else ''
-                    args = cmd_parts[1:] if len(cmd_parts) > 1 else []
+                # 使用新的用户友好的edit命令解析器
+                return self._handle_edit_command(shell_cmd_clean.strip())
             else:
                 # 特殊处理python -c命令，避免shlex破坏Python代码中的引号
                 if shell_cmd_clean.strip().startswith('python -c '):
@@ -1625,21 +1581,26 @@ echo "Use 'GDS --result {bg_pid}' to view final result"
                 if result.get("success", False):
                     # 检查是否来自direct_feedback，如果是则不重复打印
                     if result.get("source") != "direct_feedback":
-                        # 统一在命令处理结束后打印输出
+                        # 按正确顺序显示输出：先stdout，后stderr，并确保立即刷新
                         stdout = result.get("stdout", "")
-                        if stdout:
-                            print(stdout, end="")
-                        
-                        # 显示stderr输出（如果有）
                         stderr = result.get("stderr", "")
+                        
+                        if stdout:
+                            print(stdout, end="", flush=True)
                         if stderr:
-                            print(stderr, end="", file=sys.stderr)
+                            print(stderr, end="", file=sys.stderr, flush=True)
                     
                     # 返回Python脚本的实际退出码（可能是非零）
-                    return result.get("return_code", result.get("returncode", 0))
+                    return_code = result.get("return_code", result.get("returncode", 0))
+                    
+                    return return_code
                 else:
                     # 远程执行本身失败（不是Python脚本失败）
                     print(result.get("error", "Python execution failed"))
+                    # 也显示stderr（如果有）
+                    stderr = result.get("stderr", "")
+                    if stderr:
+                        print(stderr, end="", file=sys.stderr)
                     return 1
             elif cmd == 'upload':
                 # 使用委托方法处理upload命令
@@ -1680,11 +1641,16 @@ echo "Use 'GDS --result {bg_pid}' to view final result"
                     return 1
                 
                 result = self.cmd_upload(source_files, target_path, force=force, remove_local=remove_local)
-                if result.get("success", False):
-                    print(result.get("message", "Upload completed"))
+                # 使用progress manager的result_print来正确处理进度显示
+                from GOOGLE_DRIVE_PROJ.modules.progress_manager import result_print
+                if result.get("cancelled"):
+                    result_print(result.get("error", "Upload cancelled by user"), success=False)
+                    return 130  # 标准的Ctrl+C退出码
+                elif result.get("success", False):
+                    result_print(result.get("message", "Upload completed"), success=True)
                     return 0
                 else:
-                    print(result.get("error", "Upload failed"))
+                    result_print(result.get("error", "Upload failed"), success=False)
                     return 1
             elif cmd == 'upload-folder':
                 # 使用委托方法处理upload-folder命令
@@ -2160,6 +2126,170 @@ done
                 
         except Exception as e:
             print(f"Error: Wait failed: {e}")
+            return 1
+
+    def _handle_edit_command(self, shell_cmd):
+        """
+        处理edit命令的用户友好接口
+        支持多种参数格式，避免复杂的JSON和引号嵌套
+        """
+        import shlex
+        import json
+        
+        try:
+            # 使用shlex正确解析命令行参数
+            parts = shlex.split(shell_cmd)
+            if len(parts) < 2:
+                print("Error: edit command requires a filename")
+                return 1
+                
+            cmd = parts[0]  # 'edit'
+            filename = None
+            preview = False
+            backup = False
+            replacements = []
+            content_mode = False
+            content = None
+            
+            i = 1
+            while i < len(parts):
+                arg = parts[i]
+                
+                if arg == '--preview':
+                    preview = True
+                elif arg == '--backup':
+                    backup = True
+                elif arg in ['--content', '-c']:
+                    if i + 1 >= len(parts):
+                        print("Error: --content requires a value")
+                        return 1
+                    content_mode = True
+                    # 处理转义字符，特别是\n
+                    content = parts[i + 1].replace('\\n', '\n').replace('\\t', '\t').replace('\\r', '\r')
+                    i += 1
+                elif arg in ['--replace', '-r']:
+                    if i + 2 >= len(parts):
+                        print("Error: --replace requires old and new values")
+                        return 1
+                    old_text = parts[i + 1].replace('\\n', '\n').replace('\\t', '\t').replace('\\r', '\r')
+                    new_text = parts[i + 2].replace('\\n', '\n').replace('\\t', '\t').replace('\\r', '\r')
+                    replacements.append([old_text, new_text])
+                    i += 2
+                elif arg in ['--line', '-l']:
+                    if i + 2 >= len(parts):
+                        print("Error: --line requires line number and content")
+                        return 1
+                    try:
+                        line_spec = parts[i + 1]
+                        line_content = parts[i + 2].replace('\\n', '\n').replace('\\t', '\t').replace('\\r', '\r')
+                        
+                        # 支持行号范围：5-10 或单个行号：5
+                        if '-' in line_spec and line_spec.count('-') == 1:
+                            # 行号范围模式
+                            start_str, end_str = line_spec.split('-', 1)
+                            start_line = int(start_str.strip())
+                            end_line = int(end_str.strip())
+                            if start_line > end_line:
+                                print(f"Error: Invalid line range: {line_spec}. Start line must be <= end line.")
+                                return 1
+                            replacements.append([[start_line, end_line], line_content])
+                        else:
+                            # 单个行号模式
+                            line_num = int(line_spec)
+                            replacements.append([[line_num, line_num], line_content])
+                        i += 2
+                    except ValueError:
+                        print(f"Error: Invalid line number or range: {parts[i + 1]}")
+                        return 1
+                elif arg in ['--insert', '-i']:
+                    if i + 2 >= len(parts):
+                        print("Error: --insert requires line number and content")
+                        return 1
+                    try:
+                        line_num = int(parts[i + 1])
+                        line_content = parts[i + 2].replace('\\n', '\n').replace('\\t', '\t').replace('\\r', '\r')
+                        replacements.append([[line_num, None], line_content])
+                        i += 2
+                    except ValueError:
+                        print(f"Error: Invalid line number: {parts[i + 1]}")
+                        return 1
+                elif not arg.startswith('-'):
+                    if filename is None:
+                        filename = arg
+                    else:
+                        print(f"Error: Unrecognized argument: {arg}")
+                        print("Use --content, --replace, --line, or --insert")
+                        return 1
+                else:
+                    print(f"Error: Unknown option: {arg}")
+                    return 1
+                    
+                i += 1
+            
+            if filename is None:
+                print("Error: No filename specified")
+                return 1
+            
+            # 构建替换规范
+            if content_mode:
+                # 内容模式：使用行号范围替换整个文件内容
+                try:
+                    read_result = self.cmd_read(filename)
+                    if read_result.get("success"):
+                        current_content = read_result.get("output", "")
+                        if current_content.strip():  # 文件有内容
+                            # 计算总行数
+                            lines = current_content.splitlines()
+                            total_lines = len(lines)
+                            if total_lines > 0:
+                                # 使用行号范围替换：替换从第0行到最后一行（包含）
+                                json_spec = json.dumps([[[0, total_lines - 1], content]])
+                            else:
+                                # 空文件，使用插入模式
+                                json_spec = json.dumps([[[0, None], content]])
+                        else:
+                            # 空文件，使用插入模式
+                            json_spec = json.dumps([[[0, None], content]])
+                    else:
+                        # 文件不存在，使用插入模式创建新文件
+                        json_spec = json.dumps([[[0, None], content]])
+                except Exception:
+                    # 出错时回退到插入模式
+                    json_spec = json.dumps([[[0, None], content]])
+            elif replacements:
+                # 替换模式：使用收集的替换规则
+                json_spec = json.dumps(replacements)
+            else:
+                print("Error: No edit operations specified")
+                print("Use --content, --replace, --line, or --insert")
+                return 1
+            
+            # 调用原有的edit方法
+            try:
+                result = self.cmd_edit(filename, json_spec, preview=preview, backup=backup)
+            except KeyboardInterrupt:
+                result = {"success": False, "error": "Operation interrupted by user"}
+            
+            if result.get("success", False):
+                # 显示diff比较（预览模式和正常模式都显示）
+                diff_output = result.get("diff_output", "")
+                
+                if diff_output and diff_output != "No changes detected":
+                    print(f"\nEdit comparison: {filename}")
+                    print(f"=" * 50)
+                    print(diff_output)
+                    print(f"=" * 50)
+                
+                # 对于正常模式，显示成功信息
+                if result.get("mode") != "preview":
+                    print(result.get("message", "\nFile edited successfully"))
+                return 0
+            else:
+                print(result.get("error", "Edit failed"))
+                return 1
+                
+        except Exception as e:
+            print(f"Error parsing edit command: {e}")
             return 1
 
     def _cleanup_background_tasks(self, command_identifier=None):

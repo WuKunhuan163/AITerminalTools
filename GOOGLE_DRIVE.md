@@ -11,14 +11,15 @@ GOOGLE_DRIVE 是一个强大的 Google Drive 远程控制工具，支持通过�
 - **改进**: 简化了启动流程，提高用户体验
 - **状态检测**: 自动检测Google Drive Desktop运行状态
 
-### EDIT 功能全新发布 已修复
-- **多段同步替换**: 支持行号替换和文本搜索替换的混合编辑
-- **插入模式**: 支持 `[line, null]` 语法在指定行后插入内容，不替换现有内容
-- **0-based 索引**: 行号使用 [a, b] 包含语法，与 read 命令对齐  
+### EDIT 功能用户友好界面重构 ✨
+- **简化语法**: 移除复杂的JSON格式，采用直观的命令行选项
+- **多行内容支持**: 原生支持 `\n` 换行符，轻松编辑多行内容
+- **直接内容模式**: `--content` 选项直接设置文件内容，无需复杂引号
+- **简单替换模式**: `--replace` 选项进行文本替换，支持多个替换
+- **行号编辑**: `--line` 和 `--insert` 选项按行号编辑
 - **预览模式**: `--preview` 选项查看修改结果而不保存
-- **备份功能**: `--backup` 选项创建修改前的备份文件，支持批量上传
-- **JSON解析修复**: 解决了shlex分割JSON字符串导致的解析失败问题
-- **路径重复修复**: 修复了多文件上传中文件名重复添加的路径错误
+- **备份功能**: `--backup` 选项创建修改前的备份文件
+- **转义字符支持**: 自动处理 `\n`, `\t`, `\r` 等转义字符
 
 ### Upload 功能优化
 - **文件名保持**: 修复了上传时文件名被错误重命名的问题
@@ -312,11 +313,12 @@ GDS [command]  # Shell 模式别名
 ## EDIT 功能详解
 
 ### 概述
-EDIT 功能提供强大的文件编辑能力，支持多段文本同步替换，类似 Cursor 的 file_edit 工具。整个编辑流程包括：下载、编辑、重新上传，并与现有的缓存系统完全集成。
+EDIT 功能提供用户友好的文件编辑能力，采用直观的命令行选项替代复杂的JSON格式。整个编辑流程包括：下载、编辑、重新上传，并与现有的缓存系统完全集成。
 
 ### ✨ 核心特性
-- **多段同步替换**: 支持同时替换多个文本段，避免行号变化导致的替换错误
-- **多种替换模式**: 支持行号替换、文本搜索替换、混合模式
+- **用户友好语法**: 使用直观的命令行选项，无需复杂的JSON格式
+- **多行内容支持**: 原生支持 `\n` 转义字符，轻松处理多行内容
+- **多种编辑模式**: 支持内容替换、文本替换、行号编辑
 - **预览功能**: 支持预览模式，查看修改结果而不实际保存
 - **备份机制**: 可选择性创建备份文件
 - **缓存集成**: 与现有下载/上传缓存系统完全集成
@@ -326,10 +328,14 @@ EDIT 功能提供强大的文件编辑能力，支持多段文本同步替换，
 
 #### 基本语法
 ```bash
-GDS edit [选项] <文件名> '<替换规范>'
+GDS edit [选项] <文件名>
 ```
 
 #### 选项参数
+- `--content, -c <内容>`: 直接设置文件内容
+- `--replace, -r <旧文本> <新文本>`: 文本替换（可多次使用）
+- `--line, -l <行号> <内容>`: 替换指定行
+- `--insert, -i <行号> <内容>`: 在指定行后插入
 - `--preview`: 预览模式，只显示修改结果不实际保存
 - `--backup`: 创建备份文件（格式：filename.backup.YYYYMMDD_HHMMSS）
 
@@ -1098,25 +1104,27 @@ read filename "[[0, 2], [5, 7]]"  # 显示第0-2行和第5-7行
 
 **EDIT 命令详细语法**:
 ```bash
-# 基本用法
-edit filename 'spec'                    # 编辑文件并保存
-edit --preview filename 'spec'          # 预览修改结果，不保存
-edit --backup filename 'spec'           # 编辑前创建备份文件
+# 直接内容模式 - 设置文件内容
+edit file.txt --content "Hello World"                    # 简单内容
+edit file.txt -c "Line 1\nLine 2\nLine 3"               # 多行内容
 
-# 行号替换模式 [a, b] 包含语法
-edit file.py '[[[1, 3], "new content"]]'              # 替换第1-3行
-edit file.py '[[[0, 0], "# Header"], [[5, 7], "..."]]' # 多段替换
+# 文本替换模式 - 替换文本内容  
+edit file.py --replace "old_text" "new_text"            # 单个替换
+edit file.py -r "hello" "hi" -r "world" "earth"         # 多个替换
+edit file.py -r "import os" "import os\nimport sys"     # 多行替换
 
-# 插入模式 [a, null] 语法  
-edit file.py '[[[2, null], "# Inserted comment"]]'    # 在第2行后插入
-edit file.py '[[[0, null], "import os"], [[5, null], "# Note"]]' # 多处插入
+# 行号编辑模式 - 按行号操作
+edit file.py --line 5 "new line content"                # 替换第5行
+edit file.py -l 3 "# This is line 3"                    # 替换第3行
+edit file.py --insert 2 "# Inserted after line 2"      # 在第2行后插入
+edit file.py -i 1 "import sys"                          # 在第1行后插入
 
-# 文本搜索替换
-edit file.py '[["old_text", "new_text"]]'             # 文本替换
-edit file.py '[["hello", "hi"], ["world", "earth"]]'  # 多个文本替换
+# 预览和备份
+edit --preview file.py -r "old" "new"                   # 预览修改结果
+edit --backup file.py -c "new content"                  # 创建备份后编辑
 
-# 混合模式（替换+插入+文本搜索）
-edit file.py '[[[1, 1], "new line"], [[3, null], "inserted"], ["old", "new"]]'
+# 组合使用
+edit file.py -r "TODO" "DONE" -l 1 "# Updated file" --backup
 
 # 注意事项
 # - 行号从0开始（0-based索引）
@@ -1294,8 +1302,6 @@ GDS upload --target-dir projects/myproject file.txt
 **示例输出**:
 ```bash
 $ GDS upload --target-dir backup file1.txt file2.txt
-⏳ Waiting for upload ........
-⏳ Validating the result....
 Upload completed: 2/2 files
 ```
 

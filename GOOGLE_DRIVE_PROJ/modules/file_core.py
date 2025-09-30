@@ -232,9 +232,12 @@ class FileCore:
         Returns:
             dict: 上传结果
         """
+        progress_started = False
         try:
-            # 立即显示进度消息
-            print(f"Waiting for upload ...", end="", flush=True)
+            # 使用进度管理器显示上传进度
+            from .progress_manager import start_progress_buffering
+            start_progress_buffering("⏳ Waiting for upload ...")
+            progress_started = True
             debug_capture.start_capture()
             
             # 延迟启动debug信息捕获，让重命名信息能够显示
@@ -242,10 +245,16 @@ class FileCore:
             
             # 0. 检查Google Drive Desktop是否运行
             if not self.main_instance.file_operations.ensure_google_drive_desktop_running():
+                if progress_started:
+                    from .progress_manager import stop_progress_buffering
+                    stop_progress_buffering()
                 return {"success": False, "error": "用户取消上传操作"}
             
             # 1. 验证输入参数
             if not source_files:
+                if progress_started:
+                    from .progress_manager import stop_progress_buffering
+                    stop_progress_buffering()
                 return {"success": False, "error": "请指定要上传的文件"}
             
             if isinstance(source_files, str):
@@ -265,7 +274,7 @@ class FileCore:
                 if large_files:
                     # 等待大文件手动上传完成
                     large_file_names = [Path(f["path"]).name for f in large_files]
-                    print(f"\n⏳ Waiting for large files manual upload ...")
+                    start_progress_buffering(f"⏳ Waiting for large files manual upload ...")
                     
                     # 创建虚拟file_moves用于计算超时时间
                     virtual_file_moves = [{"new_path": f["path"]} for f in large_files]
@@ -383,7 +392,16 @@ class FileCore:
             
             sync_result = self.wait_for_file_sync(expected_filenames, file_moves)
             
-            if not sync_result["success"]:
+            if sync_result.get("cancelled"):
+                # 用户取消了同步等待
+                return {
+                    "success": False,
+                    "cancelled": True,
+                    "error": "Upload cancelled by user during file sync",
+                    "file_moves": file_moves,
+                    "sync_time": sync_result.get("sync_time", 0)
+                }
+            elif not sync_result["success"]:
                 # 同步检测失败，但继续执行
                 print(f"Warning: File sync check failed: {sync_result.get('error', 'Unknown error')}")
                 print(f"Upload may have succeeded, please manually verify files have been uploaded")
@@ -552,12 +570,17 @@ class FileCore:
                     result["message"] += f" (failed to remove {len(failed_removals)} local files)"
             
             # 停止debug信息捕获
+            # 注意：不在这里清除进度显示，让调用方的result_print统一处理
             debug_capture.stop_capture()
             return result
             
         except Exception as e:
-            # 停止debug信息捕获
+            # 停止debug信息捕获和进度显示
             debug_capture.stop_capture()
+            if progress_started:
+                from .progress_manager import clear_progress, is_progress_active
+                if is_progress_active():
+                    clear_progress()
             import traceback
             traceback.print_exc()
             return {
@@ -605,7 +628,6 @@ class FileCore:
                 # 根目录
                 target_folder_id = self.main_instance.REMOTE_ROOT_FOLDER_ID
                 display_path = "~"
-                print(f"DEBUG: Using root directory - target_folder_id='{target_folder_id}'")
             else:
                 # print(f"DEBUG: Processing custom path '{path}'")
                 # 首先将本地路径转换为远程路径格式以便在错误消息中正确显示
@@ -1382,12 +1404,17 @@ class FileCore:
             
             # 简化版本：不进行复杂的冲突检查
             
-            # 构建远端mv命令 - 需要计算绝对路径
+            # 构建远端mv命令 - 需要计算绝对路径并进行shell转义
             source_absolute_path = self.main_instance.resolve_remote_absolute_path(source, current_shell)
             destination_absolute_path = self.main_instance.resolve_remote_absolute_path(destination, current_shell)
             
+            # 使用shlex.quote对路径进行shell转义，处理空格和特殊字符
+            import shlex
+            escaped_source = shlex.quote(source_absolute_path)
+            escaped_destination = shlex.quote(destination_absolute_path)
+            
             # 构建增强的远端命令，包含成功/失败提示
-            base_command = f"mv {source_absolute_path} {destination_absolute_path}"
+            base_command = f"mv {escaped_source} {escaped_destination}"
             remote_command = f"({base_command})"
             
             # 使用远端指令执行接口
@@ -1395,8 +1422,9 @@ class FileCore:
             
             if result.get("success"):
                 # 验证文件是否真的被移动了
+                # 使用绝对路径进行验证以确保正确性
                 verification_result = self.main_instance.verify_creation_with_ls(
-                    destination, current_shell, creation_type="file", max_attempts=30
+                    destination_absolute_path, current_shell, creation_type="file", max_attempts=30
                 )
                 
                 if verification_result.get("success", False):

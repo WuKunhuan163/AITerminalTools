@@ -1,0 +1,26 @@
+这是一个更大的测试文件，用于验证GDS upload命令的进度擦除功能。
+测试时间: 2025-09-29
+测试目标: 确保upload结束时不出现⏳开头的提示信息。
+
+文件内容：
+- 这是第一行测试内容，包含更多文本信息用于增加文件大小
+- 这是第二行测试内容，包含更多文本信息用于增加文件大小
+- 这是第三行测试内容，包含更多文本信息用于增加文件大小
+- 这是第四行测试内容，包含更多文本信息用于增加文件大小
+- 这是第五行测试内容，包含更多文本信息用于增加文件大小
+- 这是第六行测试内容，包含更多文本信息用于增加文件大小
+- 这是第七行测试内容，包含更多文本信息用于增加文件大小
+- 这是第八行测试内容，包含更多文本信息用于增加文件大小
+- 这是第九行测试内容，包含更多文本信息用于增加文件大小
+- 这是第十行测试内容，包含更多文本信息用于增加文件大小
+
+重复内容段落1:
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+
+重复内容段落2:
+Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.
+
+重复内容段落3:
+Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.
+
+测试结束标记

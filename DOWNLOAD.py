@@ -115,11 +115,13 @@ def download_file(url: str, destination: str, command_identifier=None):
                     downloaded_size += len(chunk)
                     
                     # 显示进度（仅在直接调用时）
+                    # 使用\r回到行首实现进度条覆盖更新，避免重复显示
                     if not is_run_environment(command_identifier) and total_size > 0:
                         progress = (downloaded_size / total_size) * 100
-                        print(f"Progress: {progress:.1f}% ({downloaded_size}/{total_size} bytes)", end='', flush=True)
+                        print(f"\rProgress: {progress:.1f}% ({downloaded_size}/{total_size} bytes)", end='', flush=True)
         
         if not is_run_environment(command_identifier):
+            print()  # 换行，确保进度显示结束
             print(f"Download completed successfully!")
             print(f"File saved to: {dest_path}")
             print(f"Size: {downloaded_size} bytes")

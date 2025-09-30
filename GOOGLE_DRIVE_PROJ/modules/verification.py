@@ -47,7 +47,9 @@ class Verification:
                 return ls_result["success"]
             
             # 使用统一的验证接口
-            from .progress_manager import validate_creation
+            from .progress_manager import validate_creation, clear_progress, is_progress_active
+            if is_progress_active():
+                clear_progress()
             result = validate_creation(validate, path, max_attempts, creation_type)
             
             # 转换返回格式以保持兼容性
@@ -56,6 +58,13 @@ class Verification:
                     "success": True,
                     "message": f"Creation verified: {path}",
                     "attempts": result["attempts"]
+                }
+            elif result.get("cancelled", False):
+                return {
+                    "success": False,
+                    "error": f"Verification of '{path}' cancelled by user (Ctrl+C)",
+                    "attempts": result["attempts"],
+                    "cancelled": True
                 }
             else:
                 return {
