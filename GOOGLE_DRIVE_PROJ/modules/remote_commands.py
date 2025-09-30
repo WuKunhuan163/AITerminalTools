@@ -1723,7 +1723,7 @@ fi
                 f'    try:\n'
                 f'        with open(stdout_file, "r", encoding="utf-8", errors="ignore") as f:\n'
                 f'            raw_stdout = f.read()\n'
-                f'        stdout_content = raw_stdout.strip()\n'
+                f'        stdout_content = raw_stdout\n'
                 # f'        print(f"DEBUG: 成功读取stdout，长度: {{len(raw_stdout)}}", file=sys.stderr)\n'
                 f'    except Exception as e:\n'
                 # f'        print(f"DEBUG: 读取stdout失败: {{e}}", file=sys.stderr)\n'
@@ -1739,7 +1739,7 @@ fi
                 f'    try:\n'
                 f'        with open(stderr_file, "r", encoding="utf-8", errors="ignore") as f:\n'
                 f'            raw_stderr = f.read()\n'
-                f'        stderr_content = raw_stderr.strip()\n'
+                f'        stderr_content = raw_stderr\n'
                 # f'        print(f"DEBUG: 成功读取stderr，长度: {{len(raw_stderr)}}", file=sys.stderr)\n'
                 f'    except Exception as e:\n'
                 # f'        print(f"DEBUG: 读取stderr失败: {{e}}", file=sys.stderr)\n'
@@ -1918,8 +1918,8 @@ fi
                 "cmd": cmd,
                 "args": args,
                 "exit_code": result_data["data"].get("exit_code", -1),
-                "stdout": result_data["data"].get("stdout", "").strip() if result_data["data"].get("stdout", "").strip() else "",
-                "stderr": result_data["data"].get("stderr", "").strip() if result_data["data"].get("stderr", "").strip() else "",
+                "stdout": result_data["data"].get("stdout", ""),
+                "stderr": result_data["data"].get("stderr", ""),
                 "working_dir": result_data["data"].get("working_dir", ""),
                 "timestamp": result_data["data"].get("timestamp", ""),
                 "path": f"tmp/{result_filename}",  # 远端结果文件路径
