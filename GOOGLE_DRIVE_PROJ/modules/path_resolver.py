@@ -182,6 +182,18 @@ class PathResolver:
                 else:
                     return None, None
             
+            # 处理其他绝对路径（如 /tmp, /usr, /home 等）
+            elif path.startswith("/"):
+                # 对于系统绝对路径，尝试将其映射到REMOTE_ROOT下的相应路径
+                # 例如 /tmp -> ~/tmp, /home -> ~/home 等
+                relative_path = path[1:]  # 去掉前导的 /
+                if relative_path:
+                    # 将绝对路径映射为相对于REMOTE_ROOT的路径
+                    return self._resolve_relative_path(relative_path, self.main_instance.REMOTE_ROOT_FOLDER_ID, "~")
+                else:
+                    # 如果是根路径 "/"，映射到REMOTE_ROOT
+                    return self.main_instance.REMOTE_ROOT_FOLDER_ID, "~"
+            
             # 处理相对路径
             elif path.startswith("./"):
                 relative_path = path[2:]
@@ -542,8 +554,10 @@ class PathResolver:
                     relative_part = path[len(local_home) + 1:]  # 去掉本地home路径和/
                     return f"{remote_root_path}/{relative_part}"
                 else:
-                    # 真正的绝对路径，直接返回
-                    return path
+                    # 真正的绝对路径，映射到REMOTE_ROOT下
+                    # 例如 /tmp/file.txt -> /content/drive/MyDrive/REMOTE_ROOT/tmp/file.txt
+                    relative_part = path[1:]  # 去掉前导的 /
+                    return f"{remote_root_path}/{relative_part}"
             
             # 处理特殊路径
             if path == "~":

@@ -1459,7 +1459,10 @@ fi
             # WindowManager自动管理窗口生命周期，无需手动释放
             
             # 如果命令执行成功且包含重定向，则验证文件创建
-            if result.get("success", False) and self._is_redirect_command(cmd, args):
+            # 但是跳过由内部方法（如_create_text_file）生成的重定向命令，因为它们有自己的验证逻辑
+            is_redirect = self._is_redirect_command(cmd, args)
+            is_internal_redirect = self._is_internal_redirect_command(cmd, args)
+            if result.get("success", False) and is_redirect and not is_internal_redirect:
                 redirect_file = self._extract_redirect_target(args)
                 if redirect_file:
                     verification_result = self.main_instance.verify_creation_with_ls(
@@ -1483,15 +1486,45 @@ fi
     def _is_redirect_command(self, cmd, args):
         """检测命令是否包含重定向操作"""
         # 检查参数中是否包含重定向符号
-        return '>' in args
+        if isinstance(args, list):
+            # 检查列表中的每个元素是否包含重定向符号
+            return any('>' in str(arg) for arg in args)
+        elif isinstance(args, str):
+            return '>' in args
+        return False
+    
+    def _is_internal_redirect_command(self, cmd, args):
+        """检测是否是内部方法生成的重定向命令"""
+        # 检测由_create_text_file等内部方法生成的base64重定向命令
+        if isinstance(args, list):
+            for arg in args:
+                arg_str = str(arg)
+                # 检测base64编码的重定向模式，这通常是内部方法生成的
+                if ('base64 -d' in arg_str and '>' in arg_str) or ('| base64 -d >' in arg_str):
+                    return True
+        elif isinstance(args, str):
+            if ('base64 -d' in args and '>' in args) or ('| base64 -d >' in args):
+                return True
+        return False
     
     def _extract_redirect_target(self, args):
         """从参数中提取重定向目标文件"""
         try:
-            if '>' in args:
-                redirect_index = args.index('>')
-                if redirect_index + 1 < len(args):
-                    return args[redirect_index + 1]
+            if isinstance(args, list):
+                # 在列表中查找包含重定向的参数
+                for arg in args:
+                    if '>' in str(arg):
+                        # 解析重定向目标
+                        parts = str(arg).split('>')
+                        if len(parts) > 1:
+                            target = parts[-1].strip().strip('"').strip("'")
+                            return target
+            elif isinstance(args, str):
+                if '>' in args:
+                    parts = args.split('>')
+                    if len(parts) > 1:
+                        target = parts[-1].strip().strip('"').strip("'")
+                        return target
             return None
         except (ValueError, IndexError):
             return None

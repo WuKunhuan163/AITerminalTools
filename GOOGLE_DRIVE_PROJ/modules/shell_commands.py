@@ -147,7 +147,7 @@ def _shell_ls_fallback(path, command_identifier, current_shell):
         drive_service = GoogleDriveService()
         
         # 列出文件
-        result = drive_service.list_files(folder_id=target_folder_id, max_results=50)
+        result = drive_service.list_files(folder_id=target_folder_id, max_results=None)
         
         if result['success']:
             files = result['files']
@@ -202,59 +202,8 @@ def _shell_ls_fallback(path, command_identifier, current_shell):
             print(error_msg)
         return 1
 
-def resolve_path(path, current_shell):
-    """解析路径，返回对应的Google Drive文件夹ID和逻辑路径"""
-    try:
-        if not current_shell:
-            return None, None
-        
-        current_path = current_shell.get("current_path", "~")
-        current_folder_id = current_shell.get("current_folder_id", REMOTE_ROOT_FOLDER_ID)
-        
-        # 处理绝对路径
-        if path.startswith("~"):
-            if path == "~":
-                return REMOTE_ROOT_FOLDER_ID, "~"
-            else:
-                # 处理所有其他以~开头的路径，如 ~/dir, ~/.. 等
-                if path.startswith("~/"):
-                    relative_path = path[2:]  # 去掉 ~/
-                else:
-                    # 处理形如 ~/.. 的情况（实际上这里不会到达，因为~/..也以~/开头）
-                    relative_path = path[1:]  # 去掉 ~
-                    if relative_path.startswith("/"):
-                        relative_path = relative_path[1:]  # 去掉前导 /
-                return resolve_relative_path(relative_path, REMOTE_ROOT_FOLDER_ID, "~")
-        
-        # 处理相对路径
-        elif path.startswith("./"):
-            # 当前目录的相对路径
-            relative_path = path[2:]
-            return resolve_relative_path(relative_path, current_folder_id, current_path)
-        
-        elif path == ".":
-            # 当前目录
-            return current_folder_id, current_path
-        
-        elif path == "..":
-            # 父目录
-            return resolve_parent_directory(current_folder_id, current_path)
-        
-        elif path.startswith("../"):
-            # 父目录的相对路径
-            parent_id, parent_path = resolve_parent_directory(current_folder_id, current_path)
-            if parent_id:
-                relative_path = path[3:]  # 去掉 ../
-                return resolve_relative_path(relative_path, parent_id, parent_path)
-            return None, None
-        
-        else:
-            # 相对于当前目录的路径
-            return resolve_relative_path(path, current_folder_id, current_path)
-            
-    except Exception as e:
-        print(f"Error resolving path: {e}")
-        return None, None
+# resolve_path函数已移动到path_resolver.py中
+# 旧的使用resolve_path的函数应该被重构或删除
 
 def resolve_relative_path(relative_path, base_folder_id, base_path):
     """解析相对路径"""
@@ -1088,7 +1037,7 @@ def shell_ls_with_id(folder_id, detailed=False, command_identifier=None):
         drive_service = GoogleDriveService()
         
         # 列出文件
-        result = drive_service.list_files(folder_id=folder_id, max_results=50)
+        result = drive_service.list_files(folder_id=folder_id, max_results=None)
         
         if result['success']:
             files = result['files']

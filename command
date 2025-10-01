@@ -22,13 +22,13 @@ cd "/content/drive/MyDrive/REMOTE_ROOT/Computer Vision/basic_cv_project" && {
     
     
     # 执行命令并捕获输出
-    OUTPUT_FILE="/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_stdout_1759274517_a4b73866"
-    ERROR_FILE="/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_stderr_1759274517_a4b73866"
-    EXITCODE_FILE="/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_exitcode_1759274517_a4b73866"
+    OUTPUT_FILE="/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_stdout_1759354869_6e470c38"
+    ERROR_FILE="/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_stderr_1759354869_6e470c38"
+    EXITCODE_FILE="/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_exitcode_1759354869_6e470c38"
     
     # 直接执行命令，捕获输出和错误
     set +e  # 允许命令失败
-    echo "c291cmNlIC9jb250ZW50L2RyaXZlL015RHJpdmUvUkVNT1RFX0VOVi92ZW52L3ZlbnZfcHl0aG9ucGF0aC5zaCAyPi9kZXYvbnVsbCB8fCB0cnVlICYmIHB5dGhvbjMgbWFpbi5weQ==" | base64 -d | bash > "$OUTPUT_FILE" 2> "$ERROR_FILE"
+    echo "ZWNobyAiWm1sdVlXd2dkR1Z6ZEE9PSIgfCBiYXNlNjQgLWQgPiAiL2NvbnRlbnQvZHJpdmUvTXlEcml2ZS9SRU1PVEVfUk9PVC90bXAvZmluYWxfdGVzdC50eHQi" | base64 -d | bash > "$OUTPUT_FILE" 2> "$ERROR_FILE"
     EXIT_CODE=$?
     echo "$EXIT_CODE" > "$EXITCODE_FILE"
     set -e
@@ -50,7 +50,7 @@ cd "/content/drive/MyDrive/REMOTE_ROOT/Computer Vision/basic_cv_project" && {
     
     # 设置环境变量并生成JSON结果文件
     export EXIT_CODE=$EXIT_CODE
-    PYTHON_SCRIPT="/content/drive/MyDrive/REMOTE_ROOT/tmp/json_generator_1759274517_a4b73866.py"
+    PYTHON_SCRIPT="/content/drive/MyDrive/REMOTE_ROOT/tmp/json_generator_1759354869_6e470c38.py"
     cat > "$PYTHON_SCRIPT" << 'SCRIPT_END'
 import json
 import os
@@ -64,9 +64,9 @@ raw_stdout = ""
 raw_stderr = ""
 
 # 文件路径
-stdout_file = "/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_stdout_1759274517_a4b73866"
-stderr_file = "/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_stderr_1759274517_a4b73866"
-exitcode_file = "/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_exitcode_1759274517_a4b73866"
+stdout_file = "/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_stdout_1759354869_6e470c38"
+stderr_file = "/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_stderr_1759354869_6e470c38"
+exitcode_file = "/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_exitcode_1759354869_6e470c38"
 
 # 调试信息
 if os.path.exists(stdout_file):
@@ -117,7 +117,7 @@ if os.path.exists(exitcode_file):
 # 构建结果JSON
 result = {
     "cmd": "bash",
-    "args": ["-c", "source /content/drive/MyDrive/REMOTE_ENV/venv/venv_pythonpath.sh 2>/dev/null || true && python3 main.py"],
+    "args": ["-c", "echo \"ZmluYWwgdGVzdA==\" | base64 -d > \"/content/drive/MyDrive/REMOTE_ROOT/tmp/final_test.txt\""],
     "working_dir": os.getcwd(),
     "timestamp": datetime.now().isoformat(),
     "exit_code": exit_code,
@@ -135,7 +135,7 @@ result = {
 
 print(json.dumps(result, indent=2, ensure_ascii=False))
 SCRIPT_END
-    python3 "$PYTHON_SCRIPT" > "/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_1759274517_a4b73866.json"
+    python3 "$PYTHON_SCRIPT" > "/content/drive/MyDrive/REMOTE_ROOT/tmp/cmd_1759354869_6e470c38.json"
     rm -f "$PYTHON_SCRIPT"
     
     # 清理临时文件（在JSON生成之后）
