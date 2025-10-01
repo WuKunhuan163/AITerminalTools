@@ -1002,37 +1002,32 @@ echo "Use 'GDS --result {bg_pid}' to view final result"
                     args = ['-c', python_code]
 
                 else:
-                    # 使用shlex进行智能分割，保留引号内的换行符
-                    import shlex
-                    try:
-                        # 在shlex.split之前保护~路径，防止本地路径展开
-                        protected_cmd = shell_cmd_clean.replace('~/', '__TILDE_SLASH__').replace(' ~', ' __TILDE__')
-                        
-                        cmd_parts = shlex.split(protected_cmd)
-                        
-                        # 恢复~路径
-                        cmd_parts = [part.replace('__TILDE_SLASH__', '~/').replace('__TILDE__', '~') for part in cmd_parts]
-                        
-                        if not cmd_parts:
-                            return 1
-                        cmd = cmd_parts[0]
-                        args = cmd_parts[1:] if len(cmd_parts) > 1 else []
-                    except ValueError as e:
-                        # 如果shlex解析失败，回退到简单分割
-                        print(f"Warning: Shell command parsing failed with shlex: {e}")
-                        print(f"Warning: Falling back to simple space splitting")
-                        cmd_parts = shell_cmd_clean.split()
-                        if not cmd_parts:
-                            return 1
-                        cmd = cmd_parts[0]
-                        args = cmd_parts[1:] if len(cmd_parts) > 1 else []
+                    # 使用接口化的命令解析
+                    parse_result = self._parse_shell_command(shell_cmd_clean)
+                    if not parse_result["success"]:
+                        print(f"Error: {parse_result['error']}")
+                        return 1
+                    cmd = parse_result["cmd"]
+                    args = parse_result["args"]
+                    
+                    # 显示警告信息（如果有）
+                    if "warning" in parse_result:
+                        print(f"Warning: {parse_result['warning']}")
             
             # 对所有命令应用通用引号和转义处理
             if args:
                 args = self._normalize_quotes_and_escapes(args)
             
-            # 检查是否包含多命令组合（&&、||或|）
-            if ' && ' in shell_cmd or ' || ' in shell_cmd or ' | ' in shell_cmd:
+            # 检查是否包含多命令组合（&&、||或|），但要避免引号内的操作符
+            has_multiple_ops = False
+            for op in [' && ', ' || ', ' | ']:
+                if op in shell_cmd:
+                    # 检查操作符是否在引号外
+                    if self._is_operator_outside_quotes(shell_cmd, op):
+                        has_multiple_ops = True
+                        break
+            
+            if has_multiple_ops:
                 # 导入shell_commands模块中的具体函数
                 current_dir = os.path.dirname(__file__)
                 modules_dir = os.path.join(current_dir, 'modules')
@@ -1042,8 +1037,8 @@ echo "Use 'GDS --result {bg_pid}' to view final result"
                 from shell_commands import handle_multiple_commands
                 return handle_multiple_commands(shell_cmd, command_identifier)
             
-            
-            # 路由到具体的命令处理函数
+            # 如果不是多命令，继续执行原来的单命令逻辑
+            # 这里应该继续原来execute_shell_command的逻辑
             if cmd == 'pwd':
                 # 导入shell_commands模块中的具体函数
                 current_dir = os.path.dirname(__file__)
@@ -2128,6 +2123,96 @@ done
             print(f"Error: Wait failed: {e}")
             return 1
 
+    def _is_operator_outside_quotes(self, shell_cmd, operator):
+        """
+        检查操作符是否在引号外
+        
+        Args:
+            shell_cmd (str): shell命令
+            operator (str): 要检查的操作符
+            
+        Returns:
+            bool: True如果操作符在引号外
+        """
+        in_single_quote = False
+        in_double_quote = False
+        i = 0
+        
+        while i < len(shell_cmd):
+            char = shell_cmd[i]
+            
+            if char == "'" and not in_double_quote:
+                in_single_quote = not in_single_quote
+            elif char == '"' and not in_single_quote:
+                in_double_quote = not in_double_quote
+            elif not in_single_quote and not in_double_quote:
+                # 检查是否匹配操作符
+                if shell_cmd[i:i+len(operator)] == operator:
+                    return True
+            
+            i += 1
+        
+        return False
+
+    def _parse_shell_command(self, shell_cmd):
+        """
+        接口化的shell命令解析方法
+        
+        Args:
+            shell_cmd (str): 要解析的shell命令
+            
+        Returns:
+            dict: 解析结果
+                - success (bool): 是否解析成功
+                - cmd (str): 命令名称
+                - args (list): 命令参数
+                - error (str): 错误信息（如果失败）
+        """
+        import shlex
+        
+        try:
+            # 在shlex.split之前保护~路径，防止本地路径展开
+            protected_cmd = shell_cmd.replace('~/', '__TILDE_SLASH__').replace(' ~', ' __TILDE__')
+            
+            cmd_parts = shlex.split(protected_cmd)
+            
+            # 恢复~路径
+            cmd_parts = [part.replace('__TILDE_SLASH__', '~/').replace('__TILDE__', '~') for part in cmd_parts]
+            
+            if not cmd_parts:
+                return {
+                    "success": False,
+                    "error": "Empty command"
+                }
+            
+            return {
+                "success": True,
+                "cmd": cmd_parts[0],
+                "args": cmd_parts[1:] if len(cmd_parts) > 1 else []
+            }
+            
+        except ValueError as e:
+            # 如果shlex解析失败，尝试简单分割作为fallback
+            try:
+                cmd_parts = shell_cmd.split()
+                if not cmd_parts:
+                    return {
+                        "success": False,
+                        "error": f"Command parsing failed: {e}"
+                    }
+                
+                return {
+                    "success": True,
+                    "cmd": cmd_parts[0],
+                    "args": cmd_parts[1:] if len(cmd_parts) > 1 else [],
+                    "warning": f"Used simple parsing due to shlex error: {e}"
+                }
+            except Exception as fallback_error:
+                return {
+                    "success": False,
+                    "error": f"Command parsing failed: {e}. Fallback also failed: {fallback_error}"
+                }
+
     def _handle_edit_command(self, shell_cmd):
         """
         处理edit命令的用户友好接口
@@ -2137,8 +2222,13 @@ done
         import json
         
         try:
-            # 使用shlex正确解析命令行参数
-            parts = shlex.split(shell_cmd)
+            # 使用统一的命令解析接口
+            parse_result = self._parse_shell_command(shell_cmd)
+            if not parse_result["success"]:
+                print(f"Error: {parse_result['error']}")
+                return 1
+            
+            parts = [parse_result["cmd"]] + parse_result["args"]
             if len(parts) < 2:
                 print("Error: edit command requires a filename")
                 return 1

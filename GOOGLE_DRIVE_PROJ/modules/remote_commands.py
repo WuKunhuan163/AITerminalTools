@@ -1854,15 +1854,41 @@ fi
         try:
             remote_command, result_filename = remote_command_info
             
-            # 在显示命令窗口前，先输出命令到command文件供检查
+            # 在显示命令窗口前，先输出命令到临时文件供检查
             try:
                 import os
-                command_file_path = "/Users/wukunhuan/.local/bin/command"
-                with open(command_file_path, 'w', encoding='utf-8') as f:
+                import tempfile
+                # 创建临时文件在GOOGLE_DRIVE_DATA目录中
+                google_drive_data = os.path.expanduser("~/.local/bin/GOOGLE_DRIVE_DATA")
+                os.makedirs(google_drive_data, exist_ok=True)
+                
+                # 使用临时文件，执行完成后自动删除
+                with tempfile.NamedTemporaryFile(
+                    mode='w', 
+                    suffix='.sh', 
+                    prefix='gds_command_', 
+                    dir=google_drive_data, 
+                    delete=False,
+                    encoding='utf-8'
+                ) as f:
                     f.write(remote_command)
-                debug_log_func(f"📝 DEBUG: [{get_timestamp_func()}] [COMMAND_FILE] 已输出命令到 {command_file_path}")
+                    command_file_path = f.name
+                
+                debug_log_func(f"📝 DEBUG: [{get_timestamp_func()}] [COMMAND_FILE] 已输出命令到临时文件 {command_file_path}")
+                
+                # 在函数结束时删除临时文件
+                def cleanup_command_file():
+                    try:
+                        if os.path.exists(command_file_path):
+                            os.remove(command_file_path)
+                            debug_log_func(f"🗑️ DEBUG: [{get_timestamp_func()}] [COMMAND_FILE_CLEANUP] 已删除临时文件 {command_file_path}")
+                    except Exception as cleanup_error:
+                        debug_log_func(f"⚠️ DEBUG: [{get_timestamp_func()}] [COMMAND_FILE_CLEANUP_ERROR] 删除临时文件失败: {cleanup_error}")
+                
             except Exception as e:
-                debug_log_func(f"⚠️ DEBUG: [{get_timestamp_func()}] [COMMAND_FILE_ERROR] 输出command文件失败: {e}")
+                debug_log_func(f"⚠️ DEBUG: [{get_timestamp_func()}] [COMMAND_FILE_ERROR] 创建临时文件失败: {e}")
+                command_file_path = None
+                cleanup_command_file = None
             
             # 不进行本地测试，直接显示窗口让用户在远端检测
             
@@ -1967,6 +1993,10 @@ fi
         finally:
             # 停止进度缓冲
             stop_progress_buffering()
+            
+            # 清理临时命令文件
+            if 'cleanup_command_file' in locals() and cleanup_command_file is not None:
+                cleanup_command_file()
             
             # 单窗口锁机制下不需要心跳线程
             debug_log_func(f"🏁 DEBUG: [{get_timestamp_func()}] [CLEANUP] 清理完成 - window_id: {window_id}")

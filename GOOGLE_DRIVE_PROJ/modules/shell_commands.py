@@ -688,14 +688,58 @@ exit                         - exit shell mode"""
             
             return 0
 
+def _split_pipe_command_with_quotes(shell_cmd):
+    """
+    正确分割管道命令，考虑引号内的管道符号
+    
+    Args:
+        shell_cmd (str): 要分割的shell命令
+        
+    Returns:
+        list: 分割后的命令部分
+    """
+    parts = []
+    current_part = ""
+    in_single_quote = False
+    in_double_quote = False
+    i = 0
+    
+    while i < len(shell_cmd):
+        char = shell_cmd[i]
+        
+        if char == "'" and not in_double_quote:
+            in_single_quote = not in_single_quote
+            current_part += char
+        elif char == '"' and not in_single_quote:
+            in_double_quote = not in_double_quote
+            current_part += char
+        elif char == '|' and not in_single_quote and not in_double_quote:
+            # 检查是否是管道符号（前后可能有空格）
+            if i + 1 < len(shell_cmd) and shell_cmd[i + 1] == ' ':
+                # 这是一个管道符号
+                parts.append(current_part.strip())
+                current_part = ""
+                i += 1  # 跳过管道符号后的空格
+            else:
+                current_part += char
+        else:
+            current_part += char
+        
+        i += 1
+    
+    if current_part.strip():
+        parts.append(current_part.strip())
+    
+    return parts
+
 def handle_pipe_commands(shell_cmd, command_identifier=None):
     """处理用|连接的pipe命令"""
     try:
-        # 解析pipe命令：支持 | 操作符
-        pipe_parts = shell_cmd.split(' | ')
+        # 解析pipe命令：支持 | 操作符，但要正确处理引号
+        pipe_parts = _split_pipe_command_with_quotes(shell_cmd)
         if len(pipe_parts) < 2:
-            # 不是pipe命令，不应该到这里
-            return handle_single_command(shell_cmd, command_identifier)
+            # 不是pipe命令，返回特殊值表示需要其他处理
+            return None
         
         # 获取GoogleDriveShell实例来执行命令
         try:
@@ -906,7 +950,10 @@ def handle_multiple_commands(shell_cmd, command_identifier=None):
     try:
         # 首先检查是否包含pipe操作符
         if ' | ' in shell_cmd:
-            return handle_pipe_commands(shell_cmd, command_identifier)
+            pipe_result = handle_pipe_commands(shell_cmd, command_identifier)
+            if pipe_result is not None:
+                return pipe_result
+            # 如果handle_pipe_commands返回None，说明不是真正的管道命令，继续处理
         
         # 解析命令：支持 && 和 || 操作符
         commands_with_operators = []
@@ -974,9 +1021,9 @@ def handle_multiple_commands(shell_cmd, command_identifier=None):
                     pass
                     # print(f"- Executing command {i+1}/{len(commands_with_operators)}: {cmd}")
                 
-                # 通过GoogleDriveShell执行单个命令
+                # 直接执行单个命令，避免递归调用
                 try:
-                    result = shell.execute_shell_command(cmd, command_identifier)
+                    result = shell._execute_single_command_direct(cmd, command_identifier)
                     
                     # 处理返回结果
                     if isinstance(result, dict):
