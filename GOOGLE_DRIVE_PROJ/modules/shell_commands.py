@@ -1021,10 +1021,21 @@ def handle_multiple_commands(shell_cmd, command_identifier=None):
                 rebuilt_cmd.append(cmd)
             compound_cmd = ''.join(rebuilt_cmd)
             
-            # 使用远程命令执行复合命令
+            # 直接使用远程命令执行复合命令，避免递归
             try:
-                result = shell.execute_shell_command(compound_cmd, command_identifier)
-                return result if isinstance(result, int) else (0 if result.get("success", True) else 1)
+                # 直接调用远程命令执行，绕过shell命令解析
+                current_shell = get_current_shell()
+                if not current_shell:
+                    error_msg = "No active shell found"
+                    if is_run_environment(command_identifier):
+                        write_to_json_output({"success": False, "error": error_msg}, command_identifier)
+                    else:
+                        print(error_msg)
+                    return 1
+                
+                # 使用远程命令模块直接执行
+                result = shell.execute_generic_command("bash", ["-c", compound_cmd])
+                return result.get("exit_code", 0) if isinstance(result, dict) else (result if isinstance(result, int) else 0)
             except Exception as e:
                 error_msg = f"Error executing compound command: {e}"
                 if is_run_environment(command_identifier):
