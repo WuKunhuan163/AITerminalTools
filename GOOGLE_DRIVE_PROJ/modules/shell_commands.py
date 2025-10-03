@@ -1005,14 +1005,18 @@ def handle_multiple_commands(shell_cmd, command_identifier=None):
         # 检查是否所有命令都可以作为一个复合远程命令执行
         # 这样可以避免目录状态不一致的问题
         can_execute_as_compound = True
+        contains_cd = False
         for cmd, operator in commands_with_operators:
             # 如果包含需要本地处理的命令，不能作为复合命令执行
             cmd_parts = cmd.split()
             if cmd_parts and cmd_parts[0] in ['help', 'exit', 'quit', 'shells', 'switch']:
                 can_execute_as_compound = False
                 break
+            # 如果包含cd命令，需要特殊处理以更新shell状态
+            if cmd_parts and cmd_parts[0] == 'cd':
+                contains_cd = True
         
-        if can_execute_as_compound and len(commands_with_operators) > 1:
+        if can_execute_as_compound and len(commands_with_operators) > 1 and not contains_cd:
             # 作为复合命令执行，重建原始命令字符串
             rebuilt_cmd = []
             for i, (cmd, operator) in enumerate(commands_with_operators):
