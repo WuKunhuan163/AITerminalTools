@@ -853,32 +853,23 @@ echo "Use 'GDS --bg --result {bg_pid}' to view final result"
 
 '''
             
-            print(f"DEBUG: Complete background script:")
-            print("=" * 80)
-            print(background_script)
-            print("=" * 80)
             
             # 使用普通命令的机制执行background脚本
             result = self.execute_generic_command("bash", ["-c", background_script])
-            
-            print(f"DEBUG: execute_generic_command result: {result}")
             
             if result.get("success", False):
                 # 显示stdout内容（包含background任务信息）
                 stdout = result.get("stdout", "").strip()
                 stderr = result.get("stderr", "").strip()
                 
-                print(f"DEBUG: stdout length: {len(stdout)}")
-                print(f"DEBUG: stderr length: {len(stderr)}")
-                
                 if stdout:
                     print(stdout)
                 if stderr:
-                    print(f"DEBUG stderr: {stderr}")
+                    import sys
+                    print(stderr, file=sys.stderr)
                 return 0
             else:
                 error_msg = result.get("error", "Background command execution failed")
-                print(f"DEBUG: Command failed with error: {error_msg}")
                 print(f"Error: {error_msg}")
                 return 1
                 
