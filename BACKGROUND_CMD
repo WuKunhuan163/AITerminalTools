@@ -129,21 +129,5 @@ if [[ $# -eq 0 ]]; then
     exit 0
 fi
 
-# 智能处理命令参数
-# 检查是否包含BACKGROUND_CMD的选项
-HAS_OPTIONS=false
-for arg in "$@"; do
-    if [[ "$arg" =~ ^--(list|kill|force-kill|cleanup|shell|max-processes|log-dir|no-alias|json|help)$ ]]; then
-        HAS_OPTIONS=true
-        break
-    fi
-done
-
-if [[ "$HAS_OPTIONS" == "false" && $# -gt 0 ]]; then
-    # 没有选项，将所有参数作为命令处理
-    COMMAND="$*"
-    exec python3 "$PYTHON_SCRIPT" "$COMMAND"
-else
-    # 有选项，传递所有参数给Python脚本
-    exec python3 "$PYTHON_SCRIPT" "$@"
-fi
+# 传递所有参数给Python脚本
+exec python3 "$PYTHON_SCRIPT" "$@"

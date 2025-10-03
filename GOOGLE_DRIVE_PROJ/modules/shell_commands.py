@@ -1002,6 +1002,38 @@ def handle_multiple_commands(shell_cmd, command_identifier=None):
         results = []
         last_result = 0
         
+        # 检查是否所有命令都可以作为一个复合远程命令执行
+        # 这样可以避免目录状态不一致的问题
+        can_execute_as_compound = True
+        for cmd, operator in commands_with_operators:
+            # 如果包含需要本地处理的命令，不能作为复合命令执行
+            cmd_parts = cmd.split()
+            if cmd_parts and cmd_parts[0] in ['help', 'exit', 'quit', 'shells', 'switch']:
+                can_execute_as_compound = False
+                break
+        
+        if can_execute_as_compound and len(commands_with_operators) > 1:
+            # 作为复合命令执行，重建原始命令字符串
+            rebuilt_cmd = []
+            for i, (cmd, operator) in enumerate(commands_with_operators):
+                if i > 0 and operator:
+                    rebuilt_cmd.append(f" {operator} ")
+                rebuilt_cmd.append(cmd)
+            compound_cmd = ''.join(rebuilt_cmd)
+            
+            # 使用远程命令执行复合命令
+            try:
+                result = shell.execute_shell_command(compound_cmd, command_identifier)
+                return result if isinstance(result, int) else (0 if result.get("success", True) else 1)
+            except Exception as e:
+                error_msg = f"Error executing compound command: {e}"
+                if is_run_environment(command_identifier):
+                    write_to_json_output({"success": False, "error": error_msg}, command_identifier)
+                else:
+                    print(error_msg)
+                return 1
+        
+        # 否则，逐个执行命令（原有逻辑）
         for i, (cmd, operator) in enumerate(commands_with_operators):
             if not cmd:
                 continue

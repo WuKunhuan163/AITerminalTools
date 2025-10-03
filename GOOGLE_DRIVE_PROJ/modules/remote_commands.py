@@ -1786,7 +1786,7 @@ fi
                 f'    clear\n'
                 f'    echo "当前session的GDS无法访问Google Drive文件结构。请使用GOOGLE_DRIVE --remount指令重新挂载，然后执行GDS的其他命令"\n'
                 f'else\n'
-                f'    # 确保工作目录存在\n'
+                f'    # 确保工作目录存在并切换到正确的基础目录\n'
                 f'mkdir -p "{remote_path}"\n'
                 f'cd "{remote_path}" && {{\n'
                 f'    # 确保tmp目录存在\n'

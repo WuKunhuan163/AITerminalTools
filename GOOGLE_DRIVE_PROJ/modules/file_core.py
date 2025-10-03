@@ -1349,10 +1349,14 @@ class FileCore:
                     if local_path:
                         # 如果指定了本地目标，也复制到目标位置（cp操作）
                         import shutil
-                        if os.path.isdir(local_path):
-                            target_path = os.path.join(local_path, actual_filename)
+                        
+                        # 展开本地路径中的~
+                        expanded_local_path = os.path.expanduser(local_path)
+                        
+                        if os.path.isdir(expanded_local_path):
+                            target_path = os.path.join(expanded_local_path, actual_filename)
                         else:
-                            target_path = local_path
+                            target_path = expanded_local_path
                         
                         # 确保目标目录存在
                         os.makedirs(os.path.dirname(os.path.abspath(target_path)), exist_ok=True)

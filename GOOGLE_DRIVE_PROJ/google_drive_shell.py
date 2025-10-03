@@ -899,8 +899,49 @@ echo "Use 'GDS --result {bg_pid}' to view final result"
                 if shell_cmd_clean.strip().startswith('echo ') and '>' in shell_cmd_clean:
                     return self._handle_quoted_echo_redirect(shell_cmd_clean)
 
-            # 首先检查独立的background管理命令
-            if shell_cmd_clean.startswith('--status'):
+            # 首先检查特殊命令（不需要远程执行）
+            if shell_cmd_clean in ['--help', '-h', 'help']:
+                # 显示本地帮助信息，不触发远程窗口
+                try:
+                    from modules.help_system import show_unified_help
+                    return show_unified_help(context="shell", command_identifier=command_identifier)
+                except ImportError:
+                    # 回退到基本帮助
+                    help_text = """GDS (Google Drive Shell) - Available Commands:
+
+Navigation:
+  pwd                         - Show current directory
+  ls [path] [--detailed] [-R] - List directory contents
+  cd <path>                   - Change directory
+
+File Operations:
+  mkdir [-p] <dir>            - Create directory
+  rm <file>                   - Remove file
+  rm -rf <dir>                - Remove directory recursively
+  cp <src> <dst>              - Copy file/directory
+  mv <src> <dst>              - Move/rename file/directory
+
+Text Operations:
+  cat <file>                  - Display file contents
+  echo <text>                 - Display text
+  edit <file> [options]       - Edit file content
+
+Background Tasks:
+  --bg <command>              - Run command in background
+  --status [task_id]          - Show task status
+  --log <task_id>             - Show task log
+  --result <task_id>          - Show task result
+
+Other:
+  help, --help, -h            - Show this help
+  exit                        - Exit shell mode
+
+For more information, visit: https://github.com/your-repo/gds"""
+                    print(help_text)
+                    return 0
+            
+            # 检查独立的background管理命令
+            elif shell_cmd_clean.startswith('--status'):
                 # GDS --status [task_id]
                 status_args = shell_cmd_clean[8:].strip()  # 移除--status
                 if status_args:
