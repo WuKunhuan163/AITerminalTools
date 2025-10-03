@@ -784,8 +784,19 @@ class GoogleDriveShell:
                 return 1
             
             # 构建简化的background脚本
-            # 预处理命令以避免f-string中的反斜杠问题
-            escaped_shell_cmd = shell_cmd.replace('"', '\"')
+            # 预处理命令以避免f-string中的反斜杠问题和本地shell展开
+            import re
+            
+            # 先转义命令替换，避免本地展开
+            processed_shell_cmd = re.sub(r'\$\(([^)]+)\)', r'\\$(\1)', shell_cmd)
+            
+            if processed_shell_cmd != shell_cmd:
+                print(f"Note: Escaped command substitutions to prevent local expansion")
+                print(f"Original: {shell_cmd}")
+                print(f"Escaped:  {processed_shell_cmd}")
+            
+            # 然后转义引号
+            escaped_shell_cmd = processed_shell_cmd.replace('"', '\"')
             
             # 获取REMOTE_ROOT路径，替换~
             remote_root = self.REMOTE_ROOT
@@ -818,51 +829,102 @@ EXIT_CODE=$?
 # 先获取退出码到环境变量
 export EXIT_CODE_VAR=$EXIT_CODE
 
+echo "DEBUG: Starting Python JSON generation script..."
+echo "DEBUG: EXIT_CODE_VAR=$EXIT_CODE_VAR"
+echo "DEBUG: STDOUT_FILE={tmp_path}/{BG_STDOUT_FILE}"
+echo "DEBUG: STDERR_FILE={tmp_path}/{BG_STDERR_FILE}"
+echo "DEBUG: RESULT_FILE={tmp_path}/{BG_RESULT_FILE}"
+
 python3 << PYTHON_EOF
 import json
 import os
+import sys
 from datetime import datetime
 
-# 从环境变量获取退出码
-exit_code = int(os.environ.get('EXIT_CODE_VAR', '1'))
-
-# 读取输出文件
-stdout_content = ""
-stderr_content = ""
+print("DEBUG: Python script started", file=sys.stderr)
 
 try:
-    with open("{tmp_path}/{BG_STDOUT_FILE}", "r", encoding="utf-8", errors="ignore") as f:
-        stdout_content = f.read()
-except:
+    # 从环境变量获取退出码
+    exit_code = int(os.environ.get('EXIT_CODE_VAR', '1'))
+    print(f"DEBUG: Got exit_code: {{exit_code}}", file=sys.stderr)
+
+    # 检查文件是否存在
+    stdout_file = "{tmp_path}/{BG_STDOUT_FILE}"
+    stderr_file = "{tmp_path}/{BG_STDERR_FILE}"
+    result_file = "{tmp_path}/{BG_RESULT_FILE}"
+    
+    print(f"DEBUG: Checking files...", file=sys.stderr)
+    print(f"DEBUG: stdout_file exists: {{os.path.exists(stdout_file)}}", file=sys.stderr)
+    print(f"DEBUG: stderr_file exists: {{os.path.exists(stderr_file)}}", file=sys.stderr)
+    
+    # 读取输出文件
     stdout_content = ""
-
-try:
-    with open("{tmp_path}/{BG_STDERR_FILE}", "r", encoding="utf-8", errors="ignore") as f:
-        stderr_content = f.read()
-except:
     stderr_content = ""
 
-# 创建结果JSON
-result = {{
-    "success": exit_code == 0,
-    "data": {{
-        "exit_code": exit_code,
-        "stdout": stdout_content,
-        "stderr": stderr_content,
-        "working_dir": os.getcwd(),
-        "timestamp": datetime.now().isoformat()
+    try:
+        with open(stdout_file, "r", encoding="utf-8", errors="ignore") as f:
+            stdout_content = f.read()
+        print(f"DEBUG: Read stdout, length: {{len(stdout_content)}}", file=sys.stderr)
+    except Exception as e:
+        print(f"DEBUG: Error reading stdout: {{e}}", file=sys.stderr)
+        stdout_content = ""
+
+    try:
+        with open(stderr_file, "r", encoding="utf-8", errors="ignore") as f:
+            stderr_content = f.read()
+        print(f"DEBUG: Read stderr, length: {{len(stderr_content)}}", file=sys.stderr)
+    except Exception as e:
+        print(f"DEBUG: Error reading stderr: {{e}}", file=sys.stderr)
+        stderr_content = ""
+
+    # 创建结果JSON
+    result = {{
+        "success": exit_code == 0,
+        "data": {{
+            "exit_code": exit_code,
+            "stdout": stdout_content,
+            "stderr": stderr_content,
+            "working_dir": os.getcwd(),
+            "timestamp": datetime.now().isoformat()
+        }}
     }}
-}}
+    
+    print(f"DEBUG: Created result dict", file=sys.stderr)
 
-# 确保结果目录存在
-result_dir = os.path.dirname("{tmp_path}/{BG_RESULT_FILE}")
-if result_dir:  # 只有当目录路径不为空时才创建
-    os.makedirs(result_dir, exist_ok=True)
+    # 确保结果目录存在
+    result_dir = os.path.dirname(result_file)
+    print(f"DEBUG: Result dir: {{result_dir}}", file=sys.stderr)
+    if result_dir:  # 只有当目录路径不为空时才创建
+        os.makedirs(result_dir, exist_ok=True)
+        print(f"DEBUG: Created result directory", file=sys.stderr)
 
-# 写入JSON文件
-with open("{tmp_path}/{BG_RESULT_FILE}", "w", encoding="utf-8") as f:
-    json.dump(result, f, indent=4, ensure_ascii=False)
+    # 写入JSON文件
+    print(f"DEBUG: About to write to: {{result_file}}", file=sys.stderr)
+    print(f"DEBUG: Result file parent dir exists: {{os.path.exists(os.path.dirname(result_file))}}", file=sys.stderr)
+    print(f"DEBUG: Current working directory: {{os.getcwd()}}", file=sys.stderr)
+    
+    try:
+        with open(result_file, "w", encoding="utf-8") as f:
+            json.dump(result, f, indent=4, ensure_ascii=False)
+        print(f"DEBUG: Successfully wrote JSON file", file=sys.stderr)
+    except Exception as write_error:
+        print(f"ERROR: Failed to write JSON file: {{write_error}}", file=sys.stderr)
+        print(f"DEBUG: Trying to write to absolute path...", file=sys.stderr)
+        # 尝试使用绝对路径
+        abs_result_file = os.path.abspath(result_file)
+        print(f"DEBUG: Absolute path: {{abs_result_file}}", file=sys.stderr)
+        with open(abs_result_file, "w", encoding="utf-8") as f:
+            json.dump(result, f, indent=4, ensure_ascii=False)
+        print(f"DEBUG: Successfully wrote JSON file to absolute path", file=sys.stderr)
+    
+except Exception as e:
+    print(f"ERROR: Python script failed: {{e}}", file=sys.stderr)
+    import traceback
+    traceback.print_exc(file=sys.stderr)
+    sys.exit(1)
 PYTHON_EOF
+
+echo "DEBUG: Python JSON generation script completed"
 
 # 更新状态文件
 cat > "{tmp_path}/{BG_STATUS_FILE}" << STATUS_FINAL_EOF
@@ -889,6 +951,8 @@ echo "Use 'GDS --bg --result {bg_pid}' to view final result"
 
 '''
             
+            
+            # 转义逻辑已经在background_script生成前处理了
             
             # 使用普通命令的机制执行background脚本，但跳过文件创建验证（后台任务不需要实时验证）
             result = self.remote_commands.execute_generic_command("bash", ["-c", background_script], _skip_queue_management=False, _original_user_command=("echo", []))
