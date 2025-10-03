@@ -767,6 +767,15 @@ class GoogleDriveShell:
         # 生成唯一的background PID
         bg_pid = f"{int(time.time())}_{random.randint(1000, 9999)}"
         
+        # 定义文件命名常量，确保一致性
+        BG_STATUS_FILE = f"gds_bg_{bg_pid}.status"
+        BG_SCRIPT_FILE = f"gds_bg_{bg_pid}.sh"
+        BG_LOG_FILE = f"gds_bg_{bg_pid}.log"
+        BG_RESULT_FILE = f"gds_bg_{bg_pid}.result.json"
+        BG_STDOUT_FILE = f"gds_bg_{bg_pid}.stdout"
+        BG_STDERR_FILE = f"gds_bg_{bg_pid}.stderr"
+        
+        
         try:
             # 获取当前shell
             current_shell = self.get_current_shell()
@@ -777,6 +786,11 @@ class GoogleDriveShell:
             # 构建简化的background脚本
             # 预处理命令以避免f-string中的反斜杠问题
             escaped_shell_cmd = shell_cmd.replace('"', '\"')
+            
+            # 获取REMOTE_ROOT路径，替换~
+            remote_root = self.REMOTE_ROOT
+            tmp_path = f"{remote_root}/tmp"
+            
             background_script = f'''
 # Background Task Setup
 BG_PID="{bg_pid}"
@@ -784,30 +798,30 @@ USER_COMMAND="{shell_cmd}"
 START_TIME="{datetime.now().isoformat()}"
 
 # 创建tmp目录
-mkdir -p ~/tmp
+mkdir -p "{tmp_path}"
 
 # 直接创建状态文件，表示任务已开始  
-cat > ~/tmp/gds_bg_{bg_pid}.status << STATUS_EOF
+cat > "{tmp_path}/{BG_STATUS_FILE}" << STATUS_EOF
 {{"pid": "{bg_pid}", "command": "{escaped_shell_cmd}", "status": "starting", "start_time": "{datetime.now().isoformat()}", "result_file": null}}
 STATUS_EOF
 
 # 创建简化的后台执行脚本
-cat > ~/tmp/gds_bg_{bg_pid}.sh << 'SCRIPT_EOF'
+cat > "{tmp_path}/{BG_SCRIPT_FILE}" << 'SCRIPT_EOF'
 #!/bin/bash
 set +e
 
 # 执行用户命令
-{shell_cmd} > ~/tmp/gds_bg_{bg_pid}.stdout 2> ~/tmp/gds_bg_{bg_pid}.stderr
+({shell_cmd}) > "{tmp_path}/{BG_STDOUT_FILE}" 2> "{tmp_path}/{BG_STDERR_FILE}"
 EXIT_CODE=$?
 
 # 创建结果JSON文件
-cat > ~/tmp/gds_bg_{bg_pid}.result.json << JSON_EOF
+cat > "{tmp_path}/{BG_RESULT_FILE}" << JSON_EOF
 {{
     "success": $([ $EXIT_CODE -eq 0 ] && echo "true" || echo "false"),
     "data": {{
         "exit_code": $EXIT_CODE,
-        "stdout": "$(cat ~/tmp/gds_bg_{bg_pid}.stdout 2>/dev/null || echo '')",
-        "stderr": "$(cat ~/tmp/gds_bg_{bg_pid}.stderr 2>/dev/null || echo '')",
+        "stdout": "$(cat "{tmp_path}/{BG_STDOUT_FILE}" 2>/dev/null || echo '')",
+        "stderr": "$(cat "{tmp_path}/{BG_STDERR_FILE}" 2>/dev/null || echo '')",
         "working_dir": "$PWD",
         "timestamp": "$(date -Iseconds 2>/dev/null || date)"
     }}
@@ -815,41 +829,56 @@ cat > ~/tmp/gds_bg_{bg_pid}.result.json << JSON_EOF
 JSON_EOF
 
 # 更新状态文件
-cat > ~/tmp/gds_bg_{bg_pid}.status << STATUS_FINAL_EOF
-{{"pid": "{bg_pid}", "command": "{escaped_shell_cmd}", "status": "completed", "start_time": "{datetime.now().isoformat()}", "end_time": "'$(date -Iseconds 2>/dev/null || date)'", "exit_code": $EXIT_CODE, "result_file": "gds_bg_{bg_pid}.result.json"}}
+cat > "{tmp_path}/{BG_STATUS_FILE}" << STATUS_FINAL_EOF
+{{"pid": "{bg_pid}", "command": "{escaped_shell_cmd}", "status": "completed", "start_time": "{datetime.now().isoformat()}", "end_time": "'$(date -Iseconds 2>/dev/null || date)'", "exit_code": $EXIT_CODE, "result_file": "{BG_RESULT_FILE}"}}
 STATUS_FINAL_EOF
-
-echo "Background task {bg_pid} completed with exit code $EXIT_CODE" >> ~/tmp/gds_bg_{bg_pid}.log
+echo "Background task {bg_pid} completed with exit code $EXIT_CODE" >> "{tmp_path}/{BG_LOG_FILE}"
 SCRIPT_EOF
 
 # 给脚本执行权限并启动后台任务
-chmod +x ~/tmp/gds_bg_{bg_pid}.sh
-nohup ~/tmp/gds_bg_{bg_pid}.sh > ~/tmp/gds_bg_{bg_pid}.log 2>&1 &
+chmod +x "{tmp_path}/{BG_SCRIPT_FILE}"
+nohup "{tmp_path}/{BG_SCRIPT_FILE}" > "{tmp_path}/{BG_LOG_FILE}" 2>&1 &
 REAL_PID=$!
 
 # 更新状态文件包含真实PID
-cat > ~/tmp/gds_bg_{bg_pid}.status << STATUS_RUNNING_EOF
-{{"pid": "{bg_pid}", "real_pid": $REAL_PID, "command": "{escaped_shell_cmd}", "status": "running", "start_time": "{datetime.now().isoformat()}", "result_file": "gds_bg_{bg_pid}.result.json"}}
+cat > "{tmp_path}/{BG_STATUS_FILE}" << STATUS_RUNNING_EOF
+{{"pid": "{bg_pid}", "real_pid": $REAL_PID, "command": "{escaped_shell_cmd}", "status": "running", "start_time": "{datetime.now().isoformat()}", "result_file": "{BG_RESULT_FILE}"}}
 STATUS_RUNNING_EOF
 
 echo "Background task started with ID: {bg_pid}"
-echo "Result will be saved to: ~/tmp/gds_bg_{bg_pid}.result.json"
-echo "Use 'GDS --status {bg_pid}' to check status"
-echo "Use 'GDS --log {bg_pid}' to view output"
-echo "Use 'GDS --result {bg_pid}' to view final result"
+echo "Result will be saved to: {tmp_path}/{BG_RESULT_FILE}"
+echo "Use 'GDS --bg --status {bg_pid}' to check status"
+echo "Use 'GDS --bg --log {bg_pid}' to view output"
+echo "Use 'GDS --bg --result {bg_pid}' to view final result"
+
 '''
+            
+            print(f"DEBUG: Complete background script:")
+            print("=" * 80)
+            print(background_script)
+            print("=" * 80)
             
             # 使用普通命令的机制执行background脚本
             result = self.execute_generic_command("bash", ["-c", background_script])
             
+            print(f"DEBUG: execute_generic_command result: {result}")
+            
             if result.get("success", False):
                 # 显示stdout内容（包含background任务信息）
                 stdout = result.get("stdout", "").strip()
+                stderr = result.get("stderr", "").strip()
+                
+                print(f"DEBUG: stdout length: {len(stdout)}")
+                print(f"DEBUG: stderr length: {len(stderr)}")
+                
                 if stdout:
                     print(stdout)
+                if stderr:
+                    print(f"DEBUG stderr: {stderr}")
                 return 0
             else:
                 error_msg = result.get("error", "Background command execution failed")
+                print(f"DEBUG: Command failed with error: {error_msg}")
                 print(f"Error: {error_msg}")
                 return 1
                 
@@ -940,33 +969,6 @@ For more information, visit: https://github.com/your-repo/gds"""
                     print(help_text)
                     return 0
             
-            # 检查独立的background管理命令
-            if shell_cmd_clean.startswith('--status'):
-                # GDS --status [task_id]
-                status_args = shell_cmd_clean[8:].strip()  # 移除--status
-                if status_args:
-                    return self._show_background_status(status_args, command_identifier)
-                else:
-                    return self._show_all_background_status(command_identifier)
-            elif shell_cmd_clean.startswith('--log '):
-                # GDS --log <task_id>
-                task_id = shell_cmd_clean[6:].strip()  # 移除--log 
-                return self._show_background_log(task_id, command_identifier)
-            elif shell_cmd_clean.startswith('--result '):
-                # GDS --result <task_id>
-                task_id = shell_cmd_clean[9:].strip()  # 移除--result 
-                return self._show_background_result(task_id, command_identifier)
-            elif shell_cmd_clean.startswith('--cleanup'):
-                # GDS --cleanup [task_id]
-                cleanup_args = shell_cmd_clean[9:].strip()  # 移除--cleanup
-                if cleanup_args:
-                    return self._cleanup_background_task(cleanup_args, command_identifier)
-                else:
-                    return self._cleanup_background_tasks(command_identifier)
-            elif shell_cmd_clean.startswith('--wait '):
-                # GDS --wait <task_id>
-                task_id = shell_cmd_clean[7:].strip()  # 移除--wait 
-                return self._wait_background_task(task_id, command_identifier)
 
             # 检查background选项
             background_mode = False
@@ -1931,10 +1933,13 @@ For more information, visit: https://github.com/your-repo/gds"""
                 print(f"Error: 没有活跃的shell会话")
                 return 1
             
+            # 获取REMOTE_ROOT路径
+            tmp_path = f"{self.REMOTE_ROOT}/tmp"
+            
             # 构建查询状态的远程命令
             status_cmd = f'''
-if [ -f ~/tmp/gds_bg_{bg_pid}.status ]; then
-    STATUS_DATA=$(cat ~/tmp/gds_bg_{bg_pid}.status)
+if [ -f "{tmp_path}/gds_bg_{bg_pid}.status" ]; then
+    STATUS_DATA=$(cat "{tmp_path}/gds_bg_{bg_pid}.status")
     REAL_PID=$(echo "$STATUS_DATA" | grep -o '"real_pid":[0-9]*' | cut -d':' -f2)
     
     if [ -n "$REAL_PID" ] && ps -p $REAL_PID > /dev/null 2>&1; then
@@ -1947,10 +1952,10 @@ if [ -f ~/tmp/gds_bg_{bg_pid}.status ]; then
         fi
     fi
     
-    echo "Command: $(echo "$STATUS_DATA" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('command', 'N/A'))" 2>/dev/null || echo "N/A")"
-    echo "Start time: $(echo "$STATUS_DATA" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('start_time', 'N/A'))" 2>/dev/null || echo "N/A")"
-    if [ -f ~/tmp/gds_bg_{bg_pid}.log ]; then
-        LOG_SIZE=$(wc -c < ~/tmp/gds_bg_{bg_pid}.log)
+    echo "Command: $(echo "$STATUS_DATA" | python3 -c 'import sys, json; data=json.load(sys.stdin); print(data.get("command", "N/A"))' 2>/dev/null || echo "N/A")"
+    echo "Start time: $(echo "$STATUS_DATA" | python3 -c 'import sys, json; data=json.load(sys.stdin); print(data.get("start_time", "N/A"))' 2>/dev/null || echo "N/A")"
+    if [ -f "{tmp_path}/gds_bg_{bg_pid}.log" ]; then
+        LOG_SIZE=$(wc -c < "{tmp_path}/gds_bg_{bg_pid}.log")
         echo "Log size: $LOG_SIZE bytes"
     fi
 else
@@ -1966,7 +1971,7 @@ fi
             result = self.remote_commands.show_command_window_subprocess(
                 title=f"GDS Status Check: {bg_pid}",
                 command_text=remote_command,
-                timeout_seconds=30
+                timeout_seconds=86400  # 24小时，实际上就是无timeout
             )
             
             if result["action"] == "success":
@@ -2045,7 +2050,7 @@ fi
             result = self.remote_commands.show_command_window_subprocess(
                 title="GDS All Background Tasks Status",
                 command_text=remote_command,
-                timeout_seconds=60
+                timeout_seconds=86400  # 24小时，实际上就是无timeout
             )
             
             if result["action"] == "success":
@@ -2074,11 +2079,14 @@ fi
                 print(f"Error: 没有活跃的shell会话")
                 return 1
             
+            # 获取REMOTE_ROOT路径
+            tmp_path = f"{self.REMOTE_ROOT}/tmp"
+            
             # 构建显示日志的远程命令
             log_cmd = f'''
-if [ -f ~/tmp/gds_bg_{bg_pid}.log ]; then
+if [ -f "{tmp_path}/gds_bg_{bg_pid}.log" ]; then
     echo "--------- Start of Log ---------"
-    cat ~/tmp/gds_bg_{bg_pid}.log
+    cat "{tmp_path}/gds_bg_{bg_pid}.log"
     echo ""
     echo "---------- End of Log ----------"
 else
@@ -2094,7 +2102,7 @@ fi
             result = self.remote_commands.show_command_window_subprocess(
                 title=f"GDS Log View: {bg_pid}",
                 command_text=remote_command,
-                timeout_seconds=60
+                timeout_seconds=86400  # 24小时，实际上就是无timeout
             )
             
             if result["action"] == "success":
@@ -2483,7 +2491,7 @@ echo "Cleaned up $CLEANED completed background tasks"
             result = self.remote_commands.show_command_window_subprocess(
                 title="GDS Cleanup Background Tasks",
                 command_text=remote_command,
-                timeout_seconds=60
+                timeout_seconds=86400  # 24小时，实际上就是无timeout
             )
             
             if result["action"] == "success":
@@ -2541,7 +2549,7 @@ fi
             result = self.remote_commands.show_command_window_subprocess(
                 title=f"GDS Cleanup Task: {bg_pid}",
                 command_text=remote_command,
-                timeout_seconds=30
+                timeout_seconds=86400  # 24小时，实际上就是无timeout
             )
             
             if result["action"] == "success":
@@ -2563,117 +2571,94 @@ fi
             return 1
 
     def _show_background_result(self, bg_pid, command_identifier=None):
-        """显示background任务的最终结果"""
+        """显示background任务的最终结果 - 使用与普通命令相同的处理逻辑"""
         try:
+            # 获取REMOTE_ROOT路径
+            tmp_path = f"{self.REMOTE_ROOT}/tmp"
+            result_file_path = f"{tmp_path}/gds_bg_{bg_pid}.result.json"
+            
+            # 为后台任务结果查看创建无timeout的执行方式
             current_shell = self.get_current_shell()
             if not current_shell:
                 print(f"Error: 没有活跃的shell会话")
                 return 1
             
-            # 构建查询结果的远程命令 - 使用新的文件格式
-            result_cmd = f'''
-if [ ! -f ~/tmp/gds_bg_{bg_pid}.status ]; then
-    echo "Error: Background task {bg_pid} not found" >&2
-    exit 1
-fi
-
-STATUS_DATA=$(cat ~/tmp/gds_bg_{bg_pid}.status)
-TASK_STATUS=$(echo "$STATUS_DATA" | python3 -c "import json,sys; data=json.load(sys.stdin); print(data.get('status','unknown'))" 2>/dev/null || echo "unknown")
-RESULT_FILE=$(echo "$STATUS_DATA" | python3 -c "import json,sys; data=json.load(sys.stdin); print(data.get('result_file',''))" 2>/dev/null || echo "")
-
-if [ "$TASK_STATUS" = "completed" ] && [ -n "$RESULT_FILE" ] && [ -f ~/tmp/$RESULT_FILE ]; then
-    # 读取并显示结果文件，格式与普通命令一致
-    RESULT_JSON=$(cat ~/tmp/$RESULT_FILE)
-    
-    # 只显示stdout内容，就像直接执行命令一样
-    STDOUT=$(echo "$RESULT_JSON" | python3 -c "
-import json,sys
-try:
-    data=json.load(sys.stdin)
-    stdout=data.get('data',{{}}).get('stdout','')
-    if stdout and not stdout.endswith('\\n'):
-        stdout += '\\n'
-    print(stdout, end='')
-except:
-    pass
-" 2>/dev/null)
-    
-    if [ -n "$STDOUT" ]; then
-        echo -n "$STDOUT"
-    fi
-    
-    # 如果有stderr，显示到stderr
-    STDERR=$(echo "$RESULT_JSON" | python3 -c "
-import json,sys
-try:
-    data=json.load(sys.stdin)
-    stderr=data.get('data',{{}}).get('stderr','')
-    print(stderr, end='')
-except:
-    pass
-" 2>/dev/null)
-    
-    if [ -n "$STDERR" ]; then
-        echo -n "$STDERR" >&2
-    fi
-    
-    # 返回实际的退出码
-    EXIT_CODE=$(echo "$RESULT_JSON" | python3 -c "
-import json,sys
-try:
-    data=json.load(sys.stdin)
-    print(data.get('data',{{}}).get('exit_code',1))
-except:
-    print(1)
-" 2>/dev/null)
-    
-    exit $EXIT_CODE
-elif [ "$TASK_STATUS" = "running" ]; then
-    echo "Task is still running. Use 'GDS --log {bg_pid}' to view current output." >&2
-    exit 1
-elif [ "$TASK_STATUS" = "starting" ]; then
-    echo "Task is starting. Please wait and try again." >&2
-    exit 1
-else
-    echo "Task status: $TASK_STATUS" >&2
-    echo "No result available yet" >&2
-    exit 1
-fi
-'''
-            
-            # 执行结果查询
-            remote_command_info = self.remote_commands._generate_command("bash", ["-c", result_cmd], current_shell)
+            # 生成读取文件的命令
+            bash_cmd = f'cat "{result_file_path}"'
+            remote_command_info = self.remote_commands._generate_command("bash", ["-c", bash_cmd], current_shell)
             remote_command, result_filename = remote_command_info
             
-            result = self.remote_commands.show_command_window_subprocess(
-                title=f"GDS Result View: {bg_pid}",
+            # 使用无timeout的窗口显示（设置为一个非常大的值，实际上就是无timeout）
+            window_result = self.remote_commands.show_command_window_subprocess(
+                title=f"GDS Background Result: {bg_pid}",
                 command_text=remote_command,
-                timeout_seconds=60
+                timeout_seconds=86400  # 24小时，实际上就是无timeout
             )
             
-            if result["action"] == "success":
+            if window_result["action"] == "success":
                 result_data = self.remote_commands._wait_and_read_result_file(result_filename)
                 if result_data.get("success"):
-                    stdout_content = result_data.get("data", {}).get("stdout", "")
-                    stderr_content = result_data.get("data", {}).get("stderr", "")
-                    
-                    # 显示stdout内容
-                    if stdout_content:
-                        print(stdout_content, end="")
-                    
-                    # 显示stderr内容到stderr
-                    if stderr_content:
-                        print(stderr_content, end="", file=sys.stderr)
-                    
-                    # 返回background命令的实际退出码
-                    return result_data.get("exit_code", result_data.get("returncode", 0))
+                    result = {
+                        "success": True,
+                        "stdout": result_data.get("data", {}).get("stdout", "")
+                    }
                 else:
-                    # 如果是background任务未完成或出错，显示错误信息到stderr
-                    error_msg = result_data.get("error", "Result view failed")
-                    print(f"Error: {error_msg}", file=sys.stderr)
+                    result = {
+                        "success": False,
+                        "error": result_data.get("error", "Failed to read file")
+                    }
+            elif window_result["action"] == "direct_feedback":
+                # 用户直接反馈的情况
+                user_feedback = window_result.get("user_feedback", "")
+                if user_feedback.strip():
+                    print(user_feedback.strip())
+                    return 0
+                else:
+                    print("No result provided via direct feedback.")
                     return 1
             else:
-                print(f"Error: Failed to view result: {result.get('error', 'Unknown error')}", file=sys.stderr)
+                result = {
+                    "success": False,
+                    "error": window_result.get("error", "Command execution failed")
+                }
+            
+            if result.get("success", False):
+                json_content = result.get("stdout", "").strip()
+                if json_content:
+                    try:
+                        import json
+                        # 处理可能的控制字符问题
+                        data = json.loads(json_content, strict=False)
+                        
+                        # 获取stdout内容
+                        stdout_content = data.get("data", {}).get("stdout", "")
+                        stderr_content = data.get("data", {}).get("stderr", "")
+                        exit_code = data.get("data", {}).get("exit_code", 0)
+                        
+                        # 显示stdout内容
+                        if stdout_content:
+                            print(stdout_content, end="")
+                        
+                        # 显示stderr内容到stderr
+                        if stderr_content:
+                            import sys
+                            print(stderr_content, end="", file=sys.stderr)
+                        
+                        return exit_code
+                        
+                    except json.JSONDecodeError as e:
+                        print(f"Error: Invalid JSON in result file: {e}")
+                        return 1
+                else:
+                    print(f"Error: Empty result file for task {bg_pid}")
+                    return 1
+            else:
+                error_msg = result.get("error", "Failed to read result file")
+                if "not found" in error_msg.lower() or "no such file" in error_msg.lower():
+                    print(f"Background task {bg_pid} result not available yet")
+                    print(f"Use 'GDS --bg --status {bg_pid}' to check if task is completed")
+                else:
+                    print(f"Error: {error_msg}")
                 return 1
                 
         except Exception as e:
