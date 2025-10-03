@@ -1035,7 +1035,17 @@ def handle_multiple_commands(shell_cmd, command_identifier=None):
                 
                 # 使用远程命令模块直接执行
                 result = shell.execute_generic_command("bash", ["-c", compound_cmd])
-                return result.get("exit_code", 0) if isinstance(result, dict) else (result if isinstance(result, int) else 0)
+                if isinstance(result, dict):
+                    # 显示输出
+                    if result.get("stdout"):
+                        if not is_run_environment(command_identifier):
+                            print(result["stdout"], end="")
+                    if result.get("stderr"):
+                        if not is_run_environment(command_identifier):
+                            print(result["stderr"], end="", file=sys.stderr)
+                    return result.get("exit_code", 0)
+                else:
+                    return result if isinstance(result, int) else 0
             except Exception as e:
                 error_msg = f"Error executing compound command: {e}"
                 if is_run_environment(command_identifier):
