@@ -941,7 +941,7 @@ For more information, visit: https://github.com/your-repo/gds"""
                     return 0
             
             # 检查独立的background管理命令
-            elif shell_cmd_clean.startswith('--status'):
+            if shell_cmd_clean.startswith('--status'):
                 # GDS --status [task_id]
                 status_args = shell_cmd_clean[8:].strip()  # 移除--status
                 if status_args:

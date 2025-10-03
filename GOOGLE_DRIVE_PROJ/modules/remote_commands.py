@@ -1359,6 +1359,32 @@ fi
 
 
 
+    def _remove_emoji_from_args(self, args):
+        """移除参数中的emoji字符，避免远程shell编码问题"""
+        def remove_emoji(text):
+            if not isinstance(text, str):
+                return text
+            # 移除emoji字符（Unicode范围）
+            import re
+            emoji_pattern = re.compile("["
+                u"\U0001F600-\U0001F64F"  # emoticons
+                u"\U0001F300-\U0001F5FF"  # symbols & pictographs
+                u"\U0001F680-\U0001F6FF"  # transport & map symbols
+                u"\U0001F1E0-\U0001F1FF"  # flags (iOS)
+                u"\U00002702-\U000027B0"
+                u"\U000024C2-\U0001F251"
+                u"\U0001F900-\U0001F9FF"  # Supplemental Symbols and Pictographs
+                u"\U0001FA70-\U0001FAFF"  # Symbols and Pictographs Extended-A
+                u"\U00002600-\U000026FF"  # Miscellaneous Symbols
+                u"\U0000FE00-\U0000FE0F"  # Variation Selectors
+                "]+", flags=re.UNICODE)
+            return emoji_pattern.sub('', text)
+        
+        cleaned_args = []
+        for arg in args:
+            cleaned_args.append(remove_emoji(arg))
+        return cleaned_args
+
     def execute_generic_command(self, cmd, args, _skip_queue_management=False, _original_user_command=None):
         """
         统一远端命令执行接口 - 处理除特殊命令外的所有命令
@@ -1371,6 +1397,9 @@ fi
         Returns:
             dict: 执行结果，包含stdout、stderr、path等字段
         """
+        # 移除emoji字符避免远程shell编码问题（暂时禁用，测试base64方案）
+        # cleaned_args = self._remove_emoji_from_args(args)
+        cleaned_args = args  # 使用原始args测试base64编码
         # 保存原始用户命令用于后续分析
         if _original_user_command:
             original_cmd, original_args = _original_user_command
@@ -1384,10 +1413,10 @@ fi
                 original_args = parts[1:] if len(parts) > 1 else []
             else:
                 original_cmd = cmd
-                original_args = args
+                original_args = cleaned_args
         else:
             original_cmd = cmd
-            original_args = args
+            original_args = cleaned_args
         
         # 调试日志已禁用
         # 导入正确的远程窗口队列管理器并生成唯一的窗口ID
@@ -1445,7 +1474,7 @@ fi
             
             # 生成远端命令（包含语法检查）
             try:
-                remote_command_info = self._generate_command(cmd, args, current_shell)
+                remote_command_info = self._generate_command(cmd, cleaned_args, current_shell)
                 remote_command, result_filename = remote_command_info
                 
                 # DEBUG: 显示生成的远端命令
@@ -1471,7 +1500,7 @@ fi
             # 正常执行流程：显示远端命令并通过tkinter获取用户执行结果
             debug_log(f"🖥️ DEBUG: [{get_relative_timestamp()}] [EXEC] 开始执行远端命令 - window_id: {window_id}, cmd: {cmd}")
             debug_log(f"🔧 DEBUG: [{get_relative_timestamp()}] [EXEC_CALL] 调用_execute_with_result_capture - window_id: {window_id}, remote_command_info: {len(remote_command_info) if isinstance(remote_command_info, (list, tuple)) else 'not_list'}")
-            result = self._execute_with_result_capture(remote_command_info, cmd, args, window_id, get_relative_timestamp, debug_log)
+            result = self._execute_with_result_capture(remote_command_info, cmd, cleaned_args, window_id, get_relative_timestamp, debug_log)
             debug_log(f"📋 DEBUG: [{get_relative_timestamp()}] [RESULT] 远端命令执行完成 - window_id: {window_id}, success: {result.get('success', False)}")
             
             # WindowManager自动管理窗口生命周期，无需手动释放
@@ -1716,8 +1745,12 @@ fi
             else:
                 full_command = cmd
             
-            # 将args转换为JSON格式
-            args_json = json.dumps(args)
+            # 将args转换为JSON格式，使用base64编码避免特殊字符问题
+            import base64
+            args_json_str = json.dumps(args, ensure_ascii=False)
+            args_base64 = base64.b64encode(args_json_str.encode('utf-8')).decode('ascii')
+            # 在Python脚本中解码
+            args_decode_code = f'json.loads(base64.b64decode("{args_base64}").decode("utf-8"))'
             
             # 生成结果文件名：时间戳+哈希，存储在REMOTE_ROOT/tmp目录
             timestamp = str(int(time.time()))
@@ -1832,6 +1865,7 @@ fi
                 f'import json\n'
                 f'import os\n'
                 f'import sys\n'
+                f'import base64\n'
                 f'from datetime import datetime\n'
                 f'\n'
                 f'# 读取输出文件\n'
@@ -1908,7 +1942,7 @@ fi
                 f'# 构建结果JSON\n'
                 f'result = {{\n'
                 f'    "cmd": "{cmd}",\n'
-                f'    "args": {args_json},\n'
+                f'    "args": {args_decode_code},\n'
                 f'    "working_dir": os.getcwd(),\n'
                 f'    "timestamp": datetime.now().isoformat(),\n'
                 f'    "exit_code": exit_code,\n'
