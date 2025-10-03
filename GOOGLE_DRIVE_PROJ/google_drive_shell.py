@@ -814,19 +814,55 @@ set +e
 ({shell_cmd}) > "{tmp_path}/{BG_STDOUT_FILE}" 2> "{tmp_path}/{BG_STDERR_FILE}"
 EXIT_CODE=$?
 
-# 创建结果JSON文件
-cat > "{tmp_path}/{BG_RESULT_FILE}" << JSON_EOF
-{{
-    "success": $([ $EXIT_CODE -eq 0 ] && echo "true" || echo "false"),
+# 使用Python生成正确的JSON文件（避免换行符问题）
+# 先获取退出码到环境变量
+export EXIT_CODE_VAR=$EXIT_CODE
+
+python3 << PYTHON_EOF
+import json
+import os
+from datetime import datetime
+
+# 从环境变量获取退出码
+exit_code = int(os.environ.get('EXIT_CODE_VAR', '1'))
+
+# 读取输出文件
+stdout_content = ""
+stderr_content = ""
+
+try:
+    with open("{tmp_path}/{BG_STDOUT_FILE}", "r", encoding="utf-8", errors="ignore") as f:
+        stdout_content = f.read()
+except:
+    stdout_content = ""
+
+try:
+    with open("{tmp_path}/{BG_STDERR_FILE}", "r", encoding="utf-8", errors="ignore") as f:
+        stderr_content = f.read()
+except:
+    stderr_content = ""
+
+# 创建结果JSON
+result = {{
+    "success": exit_code == 0,
     "data": {{
-        "exit_code": $EXIT_CODE,
-        "stdout": "$(cat "{tmp_path}/{BG_STDOUT_FILE}" 2>/dev/null || echo '')",
-        "stderr": "$(cat "{tmp_path}/{BG_STDERR_FILE}" 2>/dev/null || echo '')",
-        "working_dir": "$PWD",
-        "timestamp": "$(date -Iseconds 2>/dev/null || date)"
+        "exit_code": exit_code,
+        "stdout": stdout_content,
+        "stderr": stderr_content,
+        "working_dir": os.getcwd(),
+        "timestamp": datetime.now().isoformat()
     }}
 }}
-JSON_EOF
+
+# 确保结果目录存在
+result_dir = os.path.dirname("{tmp_path}/{BG_RESULT_FILE}")
+if result_dir:  # 只有当目录路径不为空时才创建
+    os.makedirs(result_dir, exist_ok=True)
+
+# 写入JSON文件
+with open("{tmp_path}/{BG_RESULT_FILE}", "w", encoding="utf-8") as f:
+    json.dump(result, f, indent=4, ensure_ascii=False)
+PYTHON_EOF
 
 # 更新状态文件
 cat > "{tmp_path}/{BG_STATUS_FILE}" << STATUS_FINAL_EOF
@@ -854,8 +890,8 @@ echo "Use 'GDS --bg --result {bg_pid}' to view final result"
 '''
             
             
-            # 使用普通命令的机制执行background脚本
-            result = self.execute_generic_command("bash", ["-c", background_script])
+            # 使用普通命令的机制执行background脚本，但跳过文件创建验证（后台任务不需要实时验证）
+            result = self.remote_commands.execute_generic_command("bash", ["-c", background_script], _skip_queue_management=False, _original_user_command=("echo", []))
             
             if result.get("success", False):
                 # 显示stdout内容（包含background任务信息）
@@ -2615,16 +2651,23 @@ fi
             
             if result.get("success", False):
                 json_content = result.get("stdout", "").strip()
+                print(f"DEBUG: Raw JSON content length: {len(json_content)}")
+                print(f"DEBUG: First 200 chars: {json_content[:200]}")
+                
                 if json_content:
                     try:
                         import json
                         # 处理可能的控制字符问题
                         data = json.loads(json_content, strict=False)
+                        print(f"DEBUG: Parsed JSON keys: {list(data.keys())}")
+                        print(f"DEBUG: Data keys: {list(data.get('data', {}).keys())}")
                         
                         # 获取stdout内容
                         stdout_content = data.get("data", {}).get("stdout", "")
                         stderr_content = data.get("data", {}).get("stderr", "")
                         exit_code = data.get("data", {}).get("exit_code", 0)
+                        
+                        print(f"DEBUG: stdout length: {len(stdout_content)}, stderr length: {len(stderr_content)}, exit_code: {exit_code}")
                         
                         # 显示stdout内容
                         if stdout_content:
@@ -2639,9 +2682,11 @@ fi
                         
                     except json.JSONDecodeError as e:
                         print(f"Error: Invalid JSON in result file: {e}")
+                        print(f"DEBUG: Problematic JSON content: {json_content}")
                         return 1
                 else:
                     print(f"Error: Empty result file for task {bg_pid}")
+                    print(f"DEBUG: result.get('stdout'): '{result.get('stdout', 'N/A')}'")
                     return 1
             else:
                 error_msg = result.get("error", "Failed to read result file")
