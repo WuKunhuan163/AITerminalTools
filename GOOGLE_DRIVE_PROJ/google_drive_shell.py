@@ -861,6 +861,9 @@ echo "Use 'GDS --result {bg_pid}' to view final result"
 
     def execute_shell_command(self, shell_cmd, command_identifier=None):
         """执行shell命令 - 使用WindowManager的新架构入口点"""
+        
+        # 保存原始用户命令，用于后续的文件验证分析
+        self._original_user_command = shell_cmd.strip()
         # 调试日志已禁用
         
         # ============ 简化架构：委托给execute_generic_command ============
@@ -1017,6 +1020,20 @@ echo "Use 'GDS --result {bg_pid}' to view final result"
             # 对所有命令应用通用引号和转义处理
             if args:
                 args = self._normalize_quotes_and_escapes(args)
+            
+            # 特殊处理BACKGROUND_CMD命令
+            if cmd == "BACKGROUND_CMD":
+                # 将BACKGROUND_CMD转换为GDS的--bg格式，自动引号包围
+                if args:
+                    # 自动将所有参数合并并引号包围
+                    bg_command = ' '.join(str(arg) for arg in args)
+                    # 如果命令包含特殊字符，确保正确处理
+                    return self.execute_shell_command(f"--bg {bg_command}", command_identifier)
+                else:
+                    print("Usage: BACKGROUND_CMD <command>")
+                    print("Example: BACKGROUND_CMD echo hello world")
+                    print("Note: No need to add quotes around the command")
+                    return 1
             
             # 检查是否包含多命令组合（&&、||或|），但要避免引号内的操作符
             has_multiple_ops = False
@@ -1889,8 +1906,8 @@ if [ -f ~/tmp/gds_bg_{bg_pid}.status ]; then
         fi
     fi
     
-    echo "Command: $(echo "$STATUS_DATA" | grep -o '"command":"[^"]*' | cut -d':' -f2- | sed 's/^"//')"
-    echo "Start time: $(echo "$STATUS_DATA" | grep -o '"start_time":"[^"]*' | cut -d':' -f2- | sed 's/^"//')"
+    echo "Command: $(echo "$STATUS_DATA" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('command', 'N/A'))" 2>/dev/null || echo "N/A")"
+    echo "Start time: $(echo "$STATUS_DATA" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('start_time', 'N/A'))" 2>/dev/null || echo "N/A")"
     if [ -f ~/tmp/gds_bg_{bg_pid}.log ]; then
         LOG_SIZE=$(wc -c < ~/tmp/gds_bg_{bg_pid}.log)
         echo "Log size: $LOG_SIZE bytes"

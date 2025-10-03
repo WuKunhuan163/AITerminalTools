@@ -287,8 +287,8 @@ def main():
         """
     )
     
-    # 位置参数
-    parser.add_argument('command', nargs='?', help='要在后台执行的命令')
+    # 位置参数 - 使用REMAINDER来捕获所有剩余参数
+    parser.add_argument('command_args', nargs=argparse.REMAINDER, help='要在后台执行的命令')
     
     # 可选参数
     parser.add_argument('--shell', choices=['zsh', 'bash'], default='zsh',
@@ -314,7 +314,7 @@ def main():
     parser.add_argument('--json', action='store_true',
                        help='以JSON格式输出结果')
     
-    args = parser.parse_args()
+    args, unknown_args = parser.parse_known_args()
     
     # 创建进程管理器
     manager = ProcessManager(
@@ -365,9 +365,17 @@ def main():
             else:
                 print(f"Cleaned up {count} processes")
         
-        elif args.command:
+        elif args.command_args or unknown_args:
+            # 合并command_args和unknown_args
+            all_args = (args.command_args or []) + (unknown_args or [])
+            if all_args:
+                full_command = ' '.join(all_args)
+            else:
+                parser.print_help()
+                return
+                
             result = manager.create_process(
-                args.command,
+                full_command,
                 shell=args.shell,
                 resolve_aliases=not args.no_alias
             )
@@ -380,7 +388,7 @@ def main():
                         'action': 'create',
                         'pid': pid,
                         'log_file': log_file,
-                        'command': args.command,
+                        'command': full_command,
                         'shell': args.shell
                     }))
                 else:

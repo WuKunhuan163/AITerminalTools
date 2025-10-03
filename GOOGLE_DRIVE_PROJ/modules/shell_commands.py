@@ -1023,7 +1023,7 @@ def handle_multiple_commands(shell_cmd, command_identifier=None):
                 
                 # 直接执行单个命令，避免递归调用
                 try:
-                    result = shell._execute_single_command_direct(cmd, command_identifier)
+                    result = shell.execute_shell_command(cmd, command_identifier)
                     
                     # 处理返回结果
                     if isinstance(result, dict):

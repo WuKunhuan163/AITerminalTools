@@ -1359,7 +1359,7 @@ fi
 
 
 
-    def execute_generic_command(self, cmd, args, _skip_queue_management=False):
+    def execute_generic_command(self, cmd, args, _skip_queue_management=False, _original_user_command=None):
         """
         统一远端命令执行接口 - 处理除特殊命令外的所有命令
         
@@ -1371,6 +1371,24 @@ fi
         Returns:
             dict: 执行结果，包含stdout、stderr、path等字段
         """
+        # 保存原始用户命令用于后续分析
+        if _original_user_command:
+            original_cmd, original_args = _original_user_command
+        elif hasattr(self.main_instance, '_original_user_command'):
+            # 从主实例获取原始用户命令
+            original_user_cmd = self.main_instance._original_user_command
+            # 简单解析原始命令
+            parts = original_user_cmd.split()
+            if parts:
+                original_cmd = parts[0]
+                original_args = parts[1:] if len(parts) > 1 else []
+            else:
+                original_cmd = cmd
+                original_args = args
+        else:
+            original_cmd = cmd
+            original_args = args
+        
         # 调试日志已禁用
         # 导入正确的远程窗口队列管理器并生成唯一的窗口ID
         import threading
@@ -1458,13 +1476,14 @@ fi
             
             # WindowManager自动管理窗口生命周期，无需手动释放
             
-            # 如果命令执行成功且包含重定向，则验证文件创建
-            # 但是跳过由内部方法（如_create_text_file）生成的重定向命令，因为它们有自己的验证逻辑
-            is_redirect = self._is_redirect_command(cmd, args)
-            is_internal_redirect = self._is_internal_redirect_command(cmd, args)
-            if result.get("success", False) and is_redirect and not is_internal_redirect:
+            # 基于原始用户命令判断是否需要文件验证
+            # 这里分析的是用户输入的原始命令，而不是生成的远程命令
+            should_verify_file_creation = self._should_verify_file_creation(original_cmd, original_args)
+            
+            
+            if result.get("success", False) and should_verify_file_creation:
                 redirect_file = self._extract_redirect_target(args)
-                if redirect_file:
+                if redirect_file and redirect_file.strip():
                     verification_result = self.main_instance.verify_creation_with_ls(
                         redirect_file, current_shell, creation_type="file", max_attempts=30
                     )
@@ -1484,13 +1503,107 @@ fi
             debug_log(f"🏗️ DEBUG: [{get_relative_timestamp()}] [COMMAND_END] 命令执行流程结束，WindowManager自动管理 - window_id: {window_id}, cmd: {cmd}")
     
     def _is_redirect_command(self, cmd, args):
-        """检测命令是否包含重定向操作"""
-        # 检查参数中是否包含重定向符号
+        """检测命令是否包含文件输出重定向操作"""
+        import re
+        
+        # 检查参数中是否包含文件输出重定向符号
+        # 排除stderr重定向（2>/dev/null等）、/dev/null重定向、以及命令替换中的重定向
         if isinstance(args, list):
-            # 检查列表中的每个元素是否包含重定向符号
-            return any('>' in str(arg) for arg in args)
+            for arg in args:
+                arg_str = str(arg)
+                # 更严格的重定向检测：
+                # 1. 排除stderr重定向 (2>)
+                # 2. 排除/dev/null重定向
+                # 3. 排除命令替换中的重定向 $(...)
+                # 4. 排除echo命令中的重定向
+                if re.search(r'(?<!2)>\s*(?!/dev/null)(?!\s*\$\()(?!.*echo\s+["\'].*["\'])\S+', arg_str):
+                    # 进一步检查：如果包含echo ""或echo "{}"，也排除
+                    if 'echo ""' in arg_str or 'echo "{}"' in arg_str:
+                        continue
+                    return True
         elif isinstance(args, str):
-            return '>' in args
+            # 同样的逻辑应用于字符串参数
+            if re.search(r'(?<!2)>\s*(?!/dev/null)(?!\s*\$\()(?!.*echo\s+["\'].*["\'])\S+', args):
+                if 'echo ""' in args or 'echo "{}"' in args:
+                    return False
+                return True
+        return False
+    
+    def _should_verify_file_creation(self, cmd, args):
+        """
+        基于原始用户命令智能判断是否需要文件创建验证
+        
+        这个方法分析用户输入的原始命令，而不是生成的远程命令
+        只有真正会创建用户文件的命令才需要验证
+        """
+        # 将参数转换为字符串进行分析
+        if isinstance(args, list):
+            command_str = f"{cmd} {' '.join(str(arg) for arg in args)}"
+        else:
+            command_str = f"{cmd} {args}" if args else cmd
+        
+        # 1. 明确的文件创建命令
+        file_creation_patterns = [
+            r'\btouch\s+\S+',           # touch filename
+            r'\bmkdir\s+\S+',           # mkdir dirname  
+            r'\bcp\s+\S+\s+\S+',        # cp source dest
+            r'\bmv\s+\S+\s+\S+',        # mv source dest
+            r'\becho\s+.*>\s*\S+',      # echo content > file
+            r'\bcat\s+.*>\s*\S+',       # cat content > file
+            r'>\s*[^/\s][^\s]*',        # general redirect to non-absolute path
+        ]
+        
+        import re
+        for pattern in file_creation_patterns:
+            if re.search(pattern, command_str):
+                return True
+        
+        # 2. 排除不会创建用户文件的命令
+        non_file_creation_commands = [
+            'ls', 'pwd', 'cd', 'find', 'grep', 'cat', 'head', 'tail',
+            'ps', 'top', 'df', 'du', 'whoami', 'date', 'uptime',
+            'python', 'python3', 'pip', 'pyenv', 'git status', 'git log',
+            'which', 'whereis', 'history', 'env', 'printenv'
+        ]
+        
+        # 检查命令是否在排除列表中
+        for excluded_cmd in non_file_creation_commands:
+            if command_str.strip().startswith(excluded_cmd):
+                return False
+        
+        # 3. 特殊情况：bash -c 命令需要分析内部命令
+        if cmd == 'bash' and isinstance(args, list) and len(args) >= 2 and args[0] == '-c':
+            inner_command = args[1]
+            # 递归分析bash -c内部的命令
+            return self._should_verify_file_creation('bash', inner_command)
+        
+        # 4. 默认情况：如果不确定，不进行验证（避免误报）
+        return False
+    
+    def _is_pyenv_related_command(self, cmd, args):
+        """检测是否是pyenv相关命令"""
+        if isinstance(args, list):
+            for arg in args:
+                arg_str = str(arg)
+                # 检查是否包含pyenv相关的路径或操作
+                if any(keyword in arg_str for keyword in [
+                    'REMOTE_ENV/python',
+                    'python_states.json',
+                    'INSTALLED_VERSIONS',
+                    'STATE_CONTENT',
+                    'ls -1 "/content/drive/MyDrive/REMOTE_ENV/python"'
+                ]):
+                    return True
+        elif isinstance(args, str):
+            # 同样的逻辑应用于字符串参数
+            if any(keyword in args for keyword in [
+                'REMOTE_ENV/python',
+                'python_states.json', 
+                'INSTALLED_VERSIONS',
+                'STATE_CONTENT',
+                'ls -1 "/content/drive/MyDrive/REMOTE_ENV/python"'
+            ]):
+                return True
         return False
     
     def _is_internal_redirect_command(self, cmd, args):
