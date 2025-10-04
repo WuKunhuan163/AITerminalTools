@@ -1000,22 +1000,58 @@ echo "Use 'GDS --bg --result {bg_pid}' to view final result"
             
             # 转义逻辑已经在background_script生成前处理了
             
-            # 使用普通命令的机制执行background脚本，但跳过文件创建验证（后台任务不需要实时验证）
-            result = self.remote_commands.execute_generic_command("bash", ["-c", background_script], _skip_queue_management=False, _original_user_command=("echo", []))
+            # 生成远程命令并使用show_command_window_subprocess显示远程窗口
+            current_shell = self.get_current_shell()
+            remote_command_info = self.remote_commands._generate_command("bash", ["-c", background_script], current_shell)
+            remote_command, result_filename = remote_command_info
             
-            if result.get("success", False):
+            
+            # 使用show_command_window_subprocess显示远程窗口，允许用户交互
+            window_result = self.remote_commands.show_command_window_subprocess(
+                title=f"GDS Background Task: {bg_pid}",
+                command_text=remote_command,
+                timeout_seconds=86400  # 24小时，实际上就是无timeout
+            )
+            
+            # 处理窗口结果
+            if window_result.get("success", False) or window_result.get("action") == "success":
                 # 显示stdout内容（包含background任务信息）
-                stdout = result.get("stdout", "").strip()
-                stderr = result.get("stderr", "").strip()
+                stdout = window_result.get("stdout", "").strip()
+                stderr = window_result.get("stderr", "").strip()
                 
                 if stdout:
                     print(stdout)
                 if stderr:
                     import sys
                     print(stderr, file=sys.stderr)
+                    
+                # 对于action=success的情况，显示成功消息
+                if window_result.get("action") == "success":
+                    print("✅ Background task setup completed successfully")
                 return 0
+            elif window_result.get("action") == "direct_feedback":
+                # 用户点击了直接反馈按钮，调用统一的直接反馈处理逻辑
+                feedback_result = self.remote_commands.direct_feedback(remote_command)
+                
+                # 处理直接反馈的结果
+                if feedback_result.get("success", False):
+                    # 直接反馈成功，显示结果
+                    stdout_content = feedback_result.get("stdout", "")
+                    stderr_content = feedback_result.get("stderr", "")
+                    
+                    if stdout_content:
+                        print(stdout_content, end="")
+                    if stderr_content:
+                        import sys
+                        print(stderr_content, end="", file=sys.stderr)
+                    return 0
+                else:
+                    # 直接反馈失败或无内容
+                    error_msg = feedback_result.get("error", "Direct feedback failed")
+                    print(f"Error: {error_msg}")
+                    return 1
             else:
-                error_msg = result.get("error", "Background command execution failed")
+                error_msg = window_result.get("error", "Failed to start background task")
                 print(f"Error: {error_msg}")
                 return 1
                 
@@ -2121,6 +2157,25 @@ fi
                 else:
                     print(f"Error: {result_data.get('error', 'Status check failed')}")
                     return 1
+            elif result["action"] == "direct_feedback":
+                # 用户直接反馈的情况 - 数据在data字段中
+                feedback_data = result.get("data", {})
+                if feedback_data.get("success", False):
+                    # 直接反馈成功，显示结果
+                    stdout_content = feedback_data.get("stdout", "")
+                    stderr_content = feedback_data.get("stderr", "")
+                    
+                    if stdout_content:
+                        print(stdout_content, end="")
+                    if stderr_content:
+                        import sys
+                        print(stderr_content, end="", file=sys.stderr)
+                    return 0
+                else:
+                    # 直接反馈失败或无内容
+                    error_msg = feedback_data.get("error", "No status provided via direct feedback.")
+                    print(error_msg)
+                    return 1
             else:
                 print(f"Error: Failed to check status: {result.get('error', 'Unknown error')}")
                 return 1
@@ -2745,13 +2800,23 @@ fi
                         "error": result_data.get("error", "Failed to read file")
                     }
             elif window_result["action"] == "direct_feedback":
-                # 用户直接反馈的情况
-                user_feedback = window_result.get("user_feedback", "")
-                if user_feedback.strip():
-                    print(user_feedback.strip())
+                # 用户直接反馈的情况 - 数据在data字段中
+                feedback_data = window_result.get("data", {})
+                if feedback_data.get("success", False):
+                    # 直接反馈成功，显示结果
+                    stdout_content = feedback_data.get("stdout", "")
+                    stderr_content = feedback_data.get("stderr", "")
+                    
+                    if stdout_content:
+                        print(stdout_content, end="")
+                    if stderr_content:
+                        import sys
+                        print(stderr_content, end="", file=sys.stderr)
                     return 0
                 else:
-                    print("No result provided via direct feedback.")
+                    # 直接反馈失败或无内容
+                    error_msg = feedback_data.get("error", "No result provided via direct feedback.")
+                    print(error_msg)
                     return 1
             else:
                 result = {
