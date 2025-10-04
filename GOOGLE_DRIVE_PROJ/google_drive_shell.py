@@ -2158,12 +2158,14 @@ fi
                     print(f"Error: {result_data.get('error', 'Status check failed')}")
                     return 1
             elif result["action"] == "direct_feedback":
-                # 用户直接反馈的情况 - 数据在data字段中
-                feedback_data = result.get("data", {})
-                if feedback_data.get("success", False):
+                # 用户点击了直接反馈按钮，调用统一的直接反馈处理逻辑
+                feedback_result = self.remote_commands.direct_feedback(remote_command)
+                
+                # 处理直接反馈的结果
+                if feedback_result.get("success", False):
                     # 直接反馈成功，显示结果
-                    stdout_content = feedback_data.get("stdout", "")
-                    stderr_content = feedback_data.get("stderr", "")
+                    stdout_content = feedback_result.get("stdout", "")
+                    stderr_content = feedback_result.get("stderr", "")
                     
                     if stdout_content:
                         print(stdout_content, end="")
@@ -2173,8 +2175,8 @@ fi
                     return 0
                 else:
                     # 直接反馈失败或无内容
-                    error_msg = feedback_data.get("error", "No status provided via direct feedback.")
-                    print(error_msg)
+                    error_msg = feedback_result.get("error", "Status check failed via direct feedback")
+                    print(f"Error: {error_msg}")
                     return 1
             else:
                 print(f"Error: Failed to check status: {result.get('error', 'Unknown error')}")
@@ -2254,6 +2256,27 @@ fi
                     return 0
                 else:
                     print(f"Error: {result_data.get('error', 'Status check failed')}")
+                    return 1
+            elif result["action"] == "direct_feedback":
+                # 用户点击了直接反馈按钮，调用统一的直接反馈处理逻辑
+                feedback_result = self.remote_commands.direct_feedback(remote_command)
+                
+                # 处理直接反馈的结果
+                if feedback_result.get("success", False):
+                    # 直接反馈成功，显示结果
+                    stdout_content = feedback_result.get("stdout", "")
+                    stderr_content = feedback_result.get("stderr", "")
+                    
+                    if stdout_content:
+                        print(stdout_content, end="")
+                    if stderr_content:
+                        import sys
+                        print(stderr_content, end="", file=sys.stderr)
+                    return 0
+                else:
+                    # 直接反馈失败或无内容
+                    error_msg = feedback_result.get("error", "All background status check failed via direct feedback")
+                    print(f"Error: {error_msg}")
                     return 1
             else:
                 print(f"Error: Failed to check status: {result.get('error', 'Unknown error')}")
@@ -2800,12 +2823,14 @@ fi
                         "error": result_data.get("error", "Failed to read file")
                     }
             elif window_result["action"] == "direct_feedback":
-                # 用户直接反馈的情况 - 数据在data字段中
-                feedback_data = window_result.get("data", {})
-                if feedback_data.get("success", False):
+                # 用户点击了直接反馈按钮，调用统一的直接反馈处理逻辑
+                feedback_result = self.remote_commands.direct_feedback(remote_command)
+                
+                # 处理直接反馈的结果
+                if feedback_result.get("success", False):
                     # 直接反馈成功，显示结果
-                    stdout_content = feedback_data.get("stdout", "")
-                    stderr_content = feedback_data.get("stderr", "")
+                    stdout_content = feedback_result.get("stdout", "")
+                    stderr_content = feedback_result.get("stderr", "")
                     
                     if stdout_content:
                         print(stdout_content, end="")
@@ -2815,8 +2840,8 @@ fi
                     return 0
                 else:
                     # 直接反馈失败或无内容
-                    error_msg = feedback_data.get("error", "No result provided via direct feedback.")
-                    print(error_msg)
+                    error_msg = feedback_result.get("error", "Background result check failed via direct feedback")
+                    print(f"Error: {error_msg}")
                     return 1
             else:
                 result = {
@@ -2826,8 +2851,6 @@ fi
             
             if result.get("success", False):
                 json_content = result.get("stdout", "").strip()
-                print(f"DEBUG: Raw JSON content length: {len(json_content)}")
-                print(f"DEBUG: First 200 chars: {json_content[:200]}")
                 
                 if json_content:
                     try:
