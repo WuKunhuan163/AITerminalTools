@@ -819,21 +819,92 @@ STATUS_EOF
 # 创建简化的后台执行脚本
 cat > "{tmp_path}/{BG_SCRIPT_FILE}" << 'SCRIPT_EOF'
 #!/bin/bash
-set +e
 
-# 执行用户命令
-({shell_cmd}) > "{tmp_path}/{BG_STDOUT_FILE}" 2> "{tmp_path}/{BG_STDERR_FILE}"
+# 设置错误处理函数
+handle_error() {{
+    local exit_code=$?
+    echo "Command failed with exit code: $exit_code" >&2
+    
+    # 确保即使出错也生成JSON结果文件
+    export EXIT_CODE_VAR=$exit_code
+    
+    # 生成错误结果JSON
+    python3 << 'ERROR_PYTHON_EOF'
+import json
+import os
+import sys
+from datetime import datetime
+
+try:
+    exit_code = int(os.environ.get('EXIT_CODE_VAR', '1'))
+    
+    stdout_file = "{tmp_path}/{BG_STDOUT_FILE}"
+    stderr_file = "{tmp_path}/{BG_STDERR_FILE}"
+    result_file = "{tmp_path}/{BG_RESULT_FILE}"
+    
+    # 读取已有的输出
+    stdout_content = ""
+    stderr_content = ""
+    
+    if os.path.exists(stdout_file):
+        try:
+            with open(stdout_file, "r", encoding="utf-8", errors="ignore") as f:
+                stdout_content = f.read()
+        except:
+            pass
+    
+    if os.path.exists(stderr_file):
+        try:
+            with open(stderr_file, "r", encoding="utf-8", errors="ignore") as f:
+                stderr_content = f.read()
+        except:
+            pass
+    
+    # 创建错误结果JSON
+    result = {{
+        "success": False,
+        "data": {{
+            "exit_code": exit_code,
+            "stdout": stdout_content,
+            "stderr": stderr_content,
+            "working_dir": os.getcwd(),
+            "timestamp": datetime.now().isoformat(),
+            "error_message": f"Command failed with exit code {{exit_code}}"
+        }}
+    }}
+    
+    # 确保结果目录存在
+    result_dir = os.path.dirname(result_file)
+    if result_dir:
+        os.makedirs(result_dir, exist_ok=True)
+    
+    # 写入错误结果
+    with open(result_file, "w", encoding="utf-8") as f:
+        json.dump(result, f, indent=4, ensure_ascii=False)
+        
+except Exception as e:
+    print(f"ERROR: Failed to generate error JSON: {{e}}", file=sys.stderr)
+ERROR_PYTHON_EOF
+    
+    exit $exit_code
+}}
+
+# 设置错误陷阱
+trap 'handle_error' ERR
+set -e  # 任何命令失败都会触发ERR陷阱
+
+# 执行用户命令，重定向输出
+exec 1>"{tmp_path}/{BG_STDOUT_FILE}" 2>"{tmp_path}/{BG_STDERR_FILE}"
+
+# 执行用户命令（在严格模式下）
+{shell_cmd}
 EXIT_CODE=$?
 
 # 使用Python生成正确的JSON文件（避免换行符问题）
 # 先获取退出码到环境变量
 export EXIT_CODE_VAR=$EXIT_CODE
 
-echo "DEBUG: Starting Python JSON generation script..."
-echo "DEBUG: EXIT_CODE_VAR=$EXIT_CODE_VAR"
-echo "DEBUG: STDOUT_FILE={tmp_path}/{BG_STDOUT_FILE}"
-echo "DEBUG: STDERR_FILE={tmp_path}/{BG_STDERR_FILE}"
-echo "DEBUG: RESULT_FILE={tmp_path}/{BG_RESULT_FILE}"
+# 生成JSON结果文件
 
 python3 << PYTHON_EOF
 import json
@@ -841,21 +912,14 @@ import os
 import sys
 from datetime import datetime
 
-print("DEBUG: Python script started", file=sys.stderr)
-
 try:
     # 从环境变量获取退出码
     exit_code = int(os.environ.get('EXIT_CODE_VAR', '1'))
-    print(f"DEBUG: Got exit_code: {{exit_code}}", file=sys.stderr)
 
     # 检查文件是否存在
     stdout_file = "{tmp_path}/{BG_STDOUT_FILE}"
     stderr_file = "{tmp_path}/{BG_STDERR_FILE}"
     result_file = "{tmp_path}/{BG_RESULT_FILE}"
-    
-    print(f"DEBUG: Checking files...", file=sys.stderr)
-    print(f"DEBUG: stdout_file exists: {{os.path.exists(stdout_file)}}", file=sys.stderr)
-    print(f"DEBUG: stderr_file exists: {{os.path.exists(stderr_file)}}", file=sys.stderr)
     
     # 读取输出文件
     stdout_content = ""
@@ -864,17 +928,13 @@ try:
     try:
         with open(stdout_file, "r", encoding="utf-8", errors="ignore") as f:
             stdout_content = f.read()
-        print(f"DEBUG: Read stdout, length: {{len(stdout_content)}}", file=sys.stderr)
-    except Exception as e:
-        print(f"DEBUG: Error reading stdout: {{e}}", file=sys.stderr)
+    except:
         stdout_content = ""
 
     try:
         with open(stderr_file, "r", encoding="utf-8", errors="ignore") as f:
             stderr_content = f.read()
-        print(f"DEBUG: Read stderr, length: {{len(stderr_content)}}", file=sys.stderr)
-    except Exception as e:
-        print(f"DEBUG: Error reading stderr: {{e}}", file=sys.stderr)
+    except:
         stderr_content = ""
 
     # 创建结果JSON
@@ -889,33 +949,19 @@ try:
         }}
     }}
     
-    print(f"DEBUG: Created result dict", file=sys.stderr)
-
     # 确保结果目录存在
     result_dir = os.path.dirname(result_file)
-    print(f"DEBUG: Result dir: {{result_dir}}", file=sys.stderr)
-    if result_dir:  # 只有当目录路径不为空时才创建
+    if result_dir:
         os.makedirs(result_dir, exist_ok=True)
-        print(f"DEBUG: Created result directory", file=sys.stderr)
-
-    # 写入JSON文件
-    print(f"DEBUG: About to write to: {{result_file}}", file=sys.stderr)
-    print(f"DEBUG: Result file parent dir exists: {{os.path.exists(os.path.dirname(result_file))}}", file=sys.stderr)
-    print(f"DEBUG: Current working directory: {{os.getcwd()}}", file=sys.stderr)
     
     try:
         with open(result_file, "w", encoding="utf-8") as f:
             json.dump(result, f, indent=4, ensure_ascii=False)
-        print(f"DEBUG: Successfully wrote JSON file", file=sys.stderr)
     except Exception as write_error:
-        print(f"ERROR: Failed to write JSON file: {{write_error}}", file=sys.stderr)
-        print(f"DEBUG: Trying to write to absolute path...", file=sys.stderr)
         # 尝试使用绝对路径
         abs_result_file = os.path.abspath(result_file)
-        print(f"DEBUG: Absolute path: {{abs_result_file}}", file=sys.stderr)
         with open(abs_result_file, "w", encoding="utf-8") as f:
             json.dump(result, f, indent=4, ensure_ascii=False)
-        print(f"DEBUG: Successfully wrote JSON file to absolute path", file=sys.stderr)
     
 except Exception as e:
     print(f"ERROR: Python script failed: {{e}}", file=sys.stderr)
@@ -924,7 +970,7 @@ except Exception as e:
     sys.exit(1)
 PYTHON_EOF
 
-echo "DEBUG: Python JSON generation script completed"
+# JSON生成完成
 
 # 更新状态文件
 cat > "{tmp_path}/{BG_STATUS_FILE}" << STATUS_FINAL_EOF
