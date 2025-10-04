@@ -501,7 +501,6 @@ else:
                 clear_progress()
                 # 恢复原来的信号处理器
                 signal.signal(signal.SIGINT, old_handler)
-                print("Operation cancelled by Ctrl+C during waiting for result from remote. ")
                 return {
                     "success": False,
                     "error": "Operation cancelled by Ctrl+C during waiting for result from remote. ",
@@ -1671,9 +1670,228 @@ fi
         except (ValueError, IndexError):
             return None
 
+    def _check_bash_syntax(self, script_content):
+        """
+        检查bash脚本语法
+        
+        Args:
+            script_content (str): 要检查的bash脚本内容
+            
+        Returns:
+            tuple: (is_valid, error_message)
+        """
+        try:
+            import subprocess
+            import tempfile
+            import os
+            
+            # 创建临时文件
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.sh', delete=False) as temp_file:
+                temp_file.write(script_content)
+                temp_file_path = temp_file.name
+            
+            try:
+                # 使用bash -n检查语法
+                result = subprocess.run(
+                    ['bash', '-n', temp_file_path],
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+                
+                if result.returncode == 0:
+                    return True, None
+                else:
+                    return False, result.stderr.strip()
+                    
+            finally:
+                # 清理临时文件
+                try:
+                    os.unlink(temp_file_path)
+                except:
+                    pass
+                    
+        except Exception as e:
+            return False, f"Syntax check failed: {str(e)}"
+
+    def _generate_unified_json_command(self, user_command, result_filename=None, current_shell=None):
+        """
+        统一的JSON结果生成接口 - 为任何用户命令生成包含JSON结果的远程脚本
+        
+        Args:
+            user_command (str): 用户要执行的完整命令
+            result_filename (str, optional): 指定的结果文件名，如果不提供则自动生成
+            current_shell (dict, optional): 当前shell信息，用于路径解析
+            
+        Returns:
+            tuple: (远端命令字符串, 结果文件名)
+        """
+        try:
+            import time
+            import hashlib
+            import json
+            from datetime import datetime
+            
+            # 获取当前路径
+            if current_shell:
+                current_path = current_shell.get("current_path", "~")
+            else:
+                current_path = "~"
+            
+            # 解析远端绝对路径
+            if current_path == "~":
+                remote_path = self.main_instance.REMOTE_ROOT
+            elif current_path.startswith("~/"):
+                remote_path = f"{self.main_instance.REMOTE_ROOT}/{current_path[2:]}"
+            else:
+                remote_path = current_path
+            
+            # 生成结果文件名（如果未提供）
+            if not result_filename:
+                timestamp = str(int(time.time()))
+                cmd_hash = hashlib.md5(f"{user_command}_{timestamp}".encode()).hexdigest()[:8]
+                result_filename = f"unified_cmd_{timestamp}_{cmd_hash}.json"
+            
+            result_path = f"{self.main_instance.REMOTE_ROOT}/tmp/{result_filename}"
+            
+            # 预计算所有需要的值，避免f-string中的复杂表达式
+            timestamp = str(int(time.time()))
+            cmd_hash = hashlib.md5(user_command.encode()).hexdigest()[:8]
+            
+            # 生成统一的远程命令脚本
+            remote_command = f'''
+# 统一JSON结果生成脚本
+# 首先检查挂载是否成功
+python3 -c "
+import os
+import glob
+import sys
+try:
+    fingerprint_files = glob.glob(\\"{self.main_instance.REMOTE_ROOT}/.gds_mount_fingerprint_*\\")
+    if not fingerprint_files:
+        sys.exit(1)
+except Exception:
+    sys.exit(1)
+"
+if [ $? -ne 0 ]; then
+    clear
+    echo "当前session的GDS无法访问Google Drive文件结构。请使用GOOGLE_DRIVE --remount指令重新挂载，然后执行GDS的其他命令"
+else
+    # 确保工作目录存在并切换到正确的基础目录
+    mkdir -p "{remote_path}"
+    cd "{remote_path}" && {{
+        # 确保tmp目录存在
+        mkdir -p "{self.main_instance.REMOTE_ROOT}/tmp"
+        
+        # 执行用户命令并捕获输出
+        TIMESTAMP="{timestamp}"
+        HASH="{cmd_hash}"
+        OUTPUT_FILE="{self.main_instance.REMOTE_ROOT}/tmp/cmd_stdout_${{TIMESTAMP}}_${{HASH}}"
+        ERROR_FILE="{self.main_instance.REMOTE_ROOT}/tmp/cmd_stderr_${{TIMESTAMP}}_${{HASH}}"
+        EXITCODE_FILE="{self.main_instance.REMOTE_ROOT}/tmp/cmd_exitcode_${{TIMESTAMP}}_${{HASH}}"
+        
+        # 直接执行用户命令，捕获输出和错误
+        set +e  # 允许命令失败
+        {user_command} > "$OUTPUT_FILE" 2> "$ERROR_FILE"
+        EXIT_CODE=$?
+        echo "$EXIT_CODE" > "$EXITCODE_FILE"
+        set -e
+        
+        # 显示stderr内容（如果有）
+        if [ -s "$ERROR_FILE" ]; then
+            cat "$ERROR_FILE" >&2
+        fi
+        
+        # 统一的执行完成提示
+        clear && echo "✅执行完成"
+        
+        # 生成JSON结果文件
+        export EXIT_CODE=$EXIT_CODE
+        export TIMESTAMP=$TIMESTAMP
+        export HASH=$HASH
+        python3 << 'JSON_SCRIPT_EOF'
+import json
+import os
+import sys
+from datetime import datetime
+
+# 从环境变量获取文件路径参数
+timestamp = os.environ.get('TIMESTAMP', '{timestamp}')
+hash_val = os.environ.get('HASH', '{cmd_hash}')
+
+# 构建文件路径
+stdout_file = f"{self.main_instance.REMOTE_ROOT}/tmp/cmd_stdout_{{timestamp}}_{{hash_val}}"
+stderr_file = f"{self.main_instance.REMOTE_ROOT}/tmp/cmd_stderr_{{timestamp}}_{{hash_val}}"
+exitcode_file = f"{self.main_instance.REMOTE_ROOT}/tmp/cmd_exitcode_{{timestamp}}_{{hash_val}}"
+
+# 读取输出文件
+stdout_content = ""
+stderr_content = ""
+
+if os.path.exists(stdout_file):
+    try:
+        with open(stdout_file, "r", encoding="utf-8", errors="ignore") as f:
+            stdout_content = f.read()
+    except Exception as e:
+        stdout_content = f"ERROR: 无法读取stdout文件: {{e}}"
+else:
+    stdout_content = ""
+
+if os.path.exists(stderr_file):
+    try:
+        with open(stderr_file, "r", encoding="utf-8", errors="ignore") as f:
+            stderr_content = f.read()
+    except Exception as e:
+        stderr_content = f"ERROR: 无法读取stderr文件: {{e}}"
+else:
+    stderr_content = ""
+
+# 读取退出码
+exit_code = int(os.environ.get('EXIT_CODE', '0'))
+
+# 构建统一的结果JSON格式
+result = {{
+    "cmd": "{user_command}",
+    "working_dir": os.getcwd(),
+    "timestamp": datetime.now().isoformat(),
+    "exit_code": exit_code,
+    "stdout": stdout_content,
+    "stderr": stderr_content
+}}
+
+# 写入结果文件
+result_file = "{result_path}"
+result_dir = os.path.dirname(result_file)
+if result_dir:
+    os.makedirs(result_dir, exist_ok=True)
+
+with open(result_file, "w", encoding="utf-8") as f:
+    json.dump(result, f, indent=2, ensure_ascii=False)
+
+JSON_SCRIPT_EOF
+        
+        # 清理临时文件
+        rm -f "$OUTPUT_FILE" "$ERROR_FILE" "$EXITCODE_FILE"
+    }}
+fi'''
+            
+            # 检查生成的脚本语法
+            is_valid, error_msg = self._check_bash_syntax(remote_command)
+            if not is_valid:
+                debug_print(f"⚠️  Bash syntax error detected:")
+                debug_print(f"Error: {error_msg}")
+                debug_print(f"Script content preview:")
+                debug_print(remote_command[:500] + "..." if len(remote_command) > 500 else remote_command)
+                raise Exception(f"Generated script has syntax errors: {error_msg}")
+            
+            return remote_command, result_filename
+            
+        except Exception as e:
+            raise Exception(f"Generate unified JSON command failed: {str(e)}")
+
     def _generate_command(self, cmd, args, current_shell):
         """
-        生成远端执行命令
+        生成远端执行命令 - 现在使用统一的JSON生成接口
         
         Args:
             cmd (str): 命令名称
@@ -1684,36 +1902,23 @@ fi
             tuple: (远端命令字符串, 结果文件名)
         """
         try:
-            # 获取当前路径
-            current_path = current_shell.get("current_path", "~")
-            
-            # 解析远端绝对路径
-            if current_path == "~":
-                remote_path = self.main_instance.REMOTE_ROOT
-            elif current_path.startswith("~/"):
-                remote_path = f"{self.main_instance.REMOTE_ROOT}/{current_path[2:]}"
-            else:
-                remote_path = current_path
-            
-            # 构建基础命令 - 避免双重转义
-            import shlex
-            import json
-            import time
-            import hashlib
-            
-            # 重新构建命令，避免双重转义问题
+            # 构建完整的用户命令
             if args:
-                # 正确处理命令参数，特别是bash -c的情况
+                # 处理特殊命令格式
                 if cmd == "bash" and len(args) >= 2 and args[0] == "-c":
-                    # 对于bash -c命令，第二个参数需要用引号包围
-                    script_content = args[1]
-                    full_command = f'bash -c "{script_content}"'
+                    user_command = f'bash -c "{args[1]}"'
                 elif cmd == "sh" and len(args) >= 2 and args[0] == "-c":
-                    # 对于sh -c命令，第二个参数需要用引号包围
-                    script_content = args[1]
-                    full_command = f'sh -c "{script_content}"'
+                    user_command = f'sh -c "{args[1]}"'
+                elif cmd == "python" and len(args) >= 2 and args[0] == "-c":
+                    # 对于python -c命令，需要正确转义
+                    python_code = args[1]
+                    escaped_python_code = (python_code.replace('\\', '\\\\')
+                                                     .replace('"', '\\"')
+                                                     .replace('$', '\\$'))
+                    user_command = f'python -c "{escaped_python_code}"'
                 else:
-                    # 检查是否包含重定向符号
+                    # 处理重定向和其他参数
+                    import shlex
                     if '>' in args:
                         # 处理重定向：将参数分为命令部分和重定向部分
                         redirect_index = args.index('>')
@@ -1721,259 +1926,134 @@ fi
                         target_file = args[redirect_index + 1] if redirect_index + 1 < len(args) else None
                         
                         if target_file:
-                            # 构建重定向命令
                             if cmd_args:
-                                full_command = f"{cmd} {' '.join(cmd_args)} > {target_file}"
+                                user_command = f"{cmd} {' '.join(cmd_args)} > {target_file}"
                             else:
-                                full_command = f"{cmd} > {target_file}"
+                                user_command = f"{cmd} > {target_file}"
                         else:
-                            # 没有目标文件，回退到普通拼接
-                            full_command = f"{cmd} {' '.join(args)}"
+                            user_command = f"{cmd} {' '.join(args)}"
                     else:
-                        # 其他命令直接拼接，但需要处理~路径展开
+                        # 处理~路径展开
                         processed_args = []
                         for arg in args:
                             if arg == "~":
-                                # 将~替换为远程根目录路径
                                 processed_args.append(f'"{self.main_instance.REMOTE_ROOT}"')
                             elif arg.startswith("~/"):
-                                # 将~/path替换为远程路径
                                 processed_args.append(f'"{self.main_instance.REMOTE_ROOT}/{arg[2:]}"')
                             else:
                                 processed_args.append(arg)
-                        full_command = f"{cmd} {' '.join(processed_args)}"
+                        user_command = f"{cmd} {' '.join(processed_args)}"
             else:
-                full_command = cmd
+                user_command = cmd
             
-            # 将args转换为JSON格式，使用base64编码避免特殊字符问题
-            import base64
-            args_json_str = json.dumps(args, ensure_ascii=False)
-            args_base64 = base64.b64encode(args_json_str.encode('utf-8')).decode('ascii')
-            # 在Python脚本中解码
-            args_decode_code = f'json.loads(base64.b64decode("{args_base64}").decode("utf-8"))'
-            
-            # 生成结果文件名：时间戳+哈希，存储在REMOTE_ROOT/tmp目录
-            timestamp = str(int(time.time()))
-            cmd_hash = hashlib.md5(f"{cmd}_{' '.join(args)}_{timestamp}".encode()).hexdigest()[:8]
-            result_filename = f"cmd_{timestamp}_{cmd_hash}.json"
-            result_path = f"{self.main_instance.REMOTE_ROOT}/tmp/{result_filename}"
-            
-            # 正确处理命令转义：分别转义命令和参数，然后重新组合
-            if args:
-                # 特殊处理python -c命令，避免内部引号转义问题
-                if cmd == "python" and len(args) >= 2 and args[0] == "-c":
-                    # 对于python -c命令，将整个python代码作为一个参数进行转义
-                    python_code = args[1]
-                    # 使用双引号包围python代码，并转义内部的双引号、反斜杠和美元符号
-                    escaped_python_code = (python_code.replace('\\', '\\\\')
-                                                     .replace('"', '\\"')
-                                                     .replace('$', '\\$'))
-                    bash_safe_command = f'python -c "{escaped_python_code}"'
-                    # 对于python -c命令，也需要更新显示命令
-                    full_command = bash_safe_command
-                elif cmd in ("bash", "sh") and len(args) >= 2 and args[0] == "-c":
-                    # 对于bash/sh -c命令，分离进度显示和工作脚本
-                    script_content = args[1]
-                    
-                    import base64
-                    # 统一使用base64编码处理所有复杂脚本，简化逻辑
-                    # 确保base64编码不包含换行符和空格
-                    encoded_script = base64.b64encode(script_content.encode('utf-8')).decode('ascii').replace('\n', '').replace('\r', '').replace(' ', '')
-                    
-
-                    bash_safe_command = f'echo "{encoded_script}" | base64 -d | {cmd}'
-                else:
-                    # 分别转义命令和每个参数，但特殊处理重定向符号和~路径
-                    escaped_cmd = shlex.quote(cmd)
-                    escaped_args = []
-                    for arg in args:
-                        # 重定向符号不需要引号转义
-                        if arg in ['>', '>>', '<', '|', '&&', '||']:
-                            escaped_args.append(arg)
-                        elif arg == "~":
-                            # 将~替换为远程根目录路径（已带引号）
-                            escaped_args.append(f'"{self.main_instance.REMOTE_ROOT}"')
-                        elif arg.startswith("~/"):
-                            # 将~/path替换为远程路径（已带引号）
-                            escaped_args.append(f'"{self.main_instance.REMOTE_ROOT}/{arg[2:]}"')
-                        else:
-                            escaped_args.append(shlex.quote(arg))
-                    bash_safe_command = f"{escaped_cmd} {' '.join(escaped_args)}"
-            else:
-                bash_safe_command = shlex.quote(cmd)
-            # 普通命令，使用标准的输出捕获
-            remote_command = (
-                f'# 首先检查挂载是否成功（使用Python避免直接崩溃）\n'
-                f'python3 -c "\n'
-                f'import os\n'
-                f'import glob\n'
-                f'import sys\n'
-                f'try:\n'
-                f'    fingerprint_files = glob.glob(\\"{self.main_instance.REMOTE_ROOT}/.gds_mount_fingerprint_*\\")\n'
-                f'    if not fingerprint_files:\n'
-                f'        sys.exit(1)\n'
-                f'except Exception:\n'
-                f'    sys.exit(1)\n'
-                f'"\n'
-                f'if [ $? -ne 0 ]; then\n'
-                f'    clear\n'
-                f'    echo "当前session的GDS无法访问Google Drive文件结构。请使用GOOGLE_DRIVE --remount指令重新挂载，然后执行GDS的其他命令"\n'
-                f'else\n'
-                f'    # 确保工作目录存在并切换到正确的基础目录\n'
-                f'mkdir -p "{remote_path}"\n'
-                f'cd "{remote_path}" && {{\n'
-                f'    # 确保tmp目录存在\n'
-                f'    mkdir -p "{self.main_instance.REMOTE_ROOT}/tmp"\n'
-                f'    \n'
-
-                f'    \n'
-                f'    # 执行命令并捕获输出\n'
-                f'    OUTPUT_FILE="{self.main_instance.REMOTE_ROOT}/tmp/cmd_stdout_{timestamp}_{cmd_hash}"\n'
-                f'    ERROR_FILE="{self.main_instance.REMOTE_ROOT}/tmp/cmd_stderr_{timestamp}_{cmd_hash}"\n'
-                f'    EXITCODE_FILE="{self.main_instance.REMOTE_ROOT}/tmp/cmd_exitcode_{timestamp}_{cmd_hash}"\n'
-                f'    \n'
-                f'    # 直接执行命令，捕获输出和错误\n'
-                f'    set +e  # 允许命令失败\n'
-                f'    {bash_safe_command} > "$OUTPUT_FILE" 2> "$ERROR_FILE"\n'
-                f'    EXIT_CODE=$?\n'
-                f'    echo "$EXIT_CODE" > "$EXITCODE_FILE"\n'
-                f'    set -e\n'
-                f'    \n'
-                f'    # stdout内容将通过JSON结果文件传递，不在这里显示\n'
-                f'    # 这样避免重复输出问题\n'
-                f'    \n'
-                f'    # 显示stderr内容（如果有）\n'
-                f'    if [ -s "$ERROR_FILE" ]; then\n'
-                f'        cat "$ERROR_FILE" >&2\n'
-                f'    fi\n'
-                f'    \n'
-                f'    # 统一的执行完成提示（无论成功失败都显示完成）\n'
-                f'    if [ "$EXIT_CODE" -eq 0 ]; then\n'
-                f'        clear && echo "✅执行完成"\n'
-                f'    else\n'
-                f'        clear && echo "✅执行完成"\n'
-                f'    fi\n'
-                f'    \n'
-            )
-            
-            # 添加JSON结果文件生成部分（对于所有命令）
-            remote_command += (
-                f'    # 设置环境变量并生成JSON结果文件\n'
-                f'    export EXIT_CODE=$EXIT_CODE\n'
-                f'    PYTHON_SCRIPT="{self.main_instance.REMOTE_ROOT}/tmp/json_generator_{timestamp}_{cmd_hash}.py"\n'
-                f'    cat > "$PYTHON_SCRIPT" << \'SCRIPT_END\'\n'
-                f'import json\n'
-                f'import os\n'
-                f'import sys\n'
-                f'import base64\n'
-                f'from datetime import datetime\n'
-                f'\n'
-                f'# 读取输出文件\n'
-                f'stdout_content = ""\n'
-                f'stderr_content = ""\n'
-                f'raw_stdout = ""\n'
-                f'raw_stderr = ""\n'
-                f'\n'
-                f'# 文件路径\n'
-                f'stdout_file = "{self.main_instance.REMOTE_ROOT}/tmp/cmd_stdout_{timestamp}_{cmd_hash}"\n'
-                f'stderr_file = "{self.main_instance.REMOTE_ROOT}/tmp/cmd_stderr_{timestamp}_{cmd_hash}"\n'
-                f'exitcode_file = "{self.main_instance.REMOTE_ROOT}/tmp/cmd_exitcode_{timestamp}_{cmd_hash}"\n'
-                f'\n'
-                f'# 调试信息\n'
-                # f'print(f"DEBUG: 检查stdout文件: {{stdout_file}}", file=sys.stderr)\n'
-                # f'print(f"DEBUG: stdout文件存在: {{os.path.exists(stdout_file)}}", file=sys.stderr)\n'
-                f'if os.path.exists(stdout_file):\n'
-                f'    stdout_size = os.path.getsize(stdout_file)\n'
-                # f'    print(f"DEBUG: stdout文件大小: {{stdout_size}} bytes", file=sys.stderr)\n'
-                f'else:\n'
-                f'    pass\n'
-                # f'    print(f"DEBUG: stdout文件不存在！", file=sys.stderr)\n'
-                f'\n'
-                # f'print(f"DEBUG: 检查stderr文件: {{stderr_file}}", file=sys.stderr)\n'
-                # f'print(f"DEBUG: stderr文件存在: {{os.path.exists(stderr_file)}}", file=sys.stderr)\n'
-                f'if os.path.exists(stderr_file):\n'
-                f'    stderr_size = os.path.getsize(stderr_file)\n'
-                # f'    print(f"DEBUG: stderr文件大小: {{stderr_size}} bytes", file=sys.stderr)\n'
-                f'else:\n'
-                f'    pass\n'
-                # f'    print(f"DEBUG: stderr文件不存在！", file=sys.stderr)\n'
-                f'\n'
-                f'# 读取stdout文件\n'
-                f'if os.path.exists(stdout_file):\n'
-                f'    try:\n'
-                f'        with open(stdout_file, "r", encoding="utf-8", errors="ignore") as f:\n'
-                f'            raw_stdout = f.read()\n'
-                f'        stdout_content = raw_stdout\n'
-                # f'        print(f"DEBUG: 成功读取stdout，长度: {{len(raw_stdout)}}", file=sys.stderr)\n'
-                f'    except Exception as e:\n'
-                # f'        print(f"DEBUG: 读取stdout失败: {{e}}", file=sys.stderr)\n'
-                f'        raw_stdout = f"ERROR: 无法读取stdout文件: {{e}}"\n'
-                f'        stdout_content = raw_stdout\n'
-                f'else:\n'
-                f'    raw_stdout = "ERROR: stdout文件不存在"\n'
-                f'    stdout_content = ""\n'
-                # f'    print(f"DEBUG: stdout文件不存在，无法读取内容", file=sys.stderr)\n'
-                f'\n'
-                f'# 读取stderr文件\n'
-                f'if os.path.exists(stderr_file):\n'
-                f'    try:\n'
-                f'        with open(stderr_file, "r", encoding="utf-8", errors="ignore") as f:\n'
-                f'            raw_stderr = f.read()\n'
-                f'        stderr_content = raw_stderr\n'
-                # f'        print(f"DEBUG: 成功读取stderr，长度: {{len(raw_stderr)}}", file=sys.stderr)\n'
-                f'    except Exception as e:\n'
-                # f'        print(f"DEBUG: 读取stderr失败: {{e}}", file=sys.stderr)\n'
-                f'        raw_stderr = f"ERROR: 无法读取stderr文件: {{e}}"\n'
-                f'        stderr_content = raw_stderr\n'
-                f'else:\n'
-                f'    raw_stderr = ""\n'
-                f'    stderr_content = ""\n'
-                # f'    print(f"DEBUG: stderr文件不存在（正常情况）", file=sys.stderr)\n'
-                f'\n'
-                f'# 读取退出码\n'
-                f'exit_code = 0\n'
-                f'if os.path.exists(exitcode_file):\n'
-                f'    try:\n'
-                f'        with open(exitcode_file, "r") as f:\n'
-                f'            exit_code = int(f.read().strip())\n'
-                f'    except:\n'
-                f'        exit_code = -1\n'
-                f'\n'
-                f'# 构建结果JSON\n'
-                f'result = {{\n'
-                f'    "cmd": "{cmd}",\n'
-                f'    "args": {args_decode_code},\n'
-                f'    "working_dir": os.getcwd(),\n'
-                f'    "timestamp": datetime.now().isoformat(),\n'
-                f'    "exit_code": exit_code,\n'
-                f'    "stdout": stdout_content,\n'
-                f'    "stderr": stderr_content,\n'
-                f'    "raw_output": raw_stdout,\n'
-                f'    "raw_error": raw_stderr,\n'
-                f'    "debug_info": {{\n'
-                f'        "stdout_file_exists": os.path.exists(stdout_file),\n'
-                f'        "stderr_file_exists": os.path.exists(stderr_file),\n'
-                f'        "stdout_file_size": os.path.getsize(stdout_file) if os.path.exists(stdout_file) else 0,\n'
-                f'        "stderr_file_size": os.path.getsize(stderr_file) if os.path.exists(stderr_file) else 0\n'
-                f'    }}\n'
-                f'}}\n'
-                f'\n'
-                f'print(json.dumps(result, indent=2, ensure_ascii=False))\n'
-                f'SCRIPT_END\n'
-                f'    python3 "$PYTHON_SCRIPT" > "{result_path}"\n'
-                f'    rm -f "$PYTHON_SCRIPT"\n'
-                f'    \n'
-                f'    # 清理临时文件（在JSON生成之后）\n'
-                f'    rm -f "$OUTPUT_FILE" "$ERROR_FILE" "$EXITCODE_FILE"\n'
-                f'    }}\n'
-                f'fi'
-            )
-            
-            # 在返回前进行语法检查
-            return remote_command, result_filename
+            # 使用统一的JSON生成接口
+            return self._generate_unified_json_command(user_command, None, current_shell)
             
         except Exception as e:
             raise Exception(f"Generate remote command failed: {str(e)}")
+
+    def execute_unified_command(self, user_command, result_filename=None, current_shell=None):
+        """
+        统一的命令执行接口 - 支持任何用户命令，自动生成JSON结果
+        
+        Args:
+            user_command (str): 用户要执行的完整命令
+            result_filename (str, optional): 指定的结果文件名
+            current_shell (dict, optional): 当前shell信息
+            
+        Returns:
+            dict: 执行结果
+        """
+        try:
+            # 使用统一的JSON生成接口（包含语法检查）
+            try:
+                remote_command, actual_result_filename = self._generate_unified_json_command(
+                    user_command, result_filename, current_shell
+                )
+            except Exception as e:
+                # 如果是语法错误，直接返回错误，不弹出窗口
+                if "syntax errors" in str(e).lower():
+                    print(f"❌ Bash syntax error detected:")
+                    print(f"   {str(e)}")
+                    print(f"   Please fix the syntax error in your command and try again.")
+                    return {
+                        "success": False,
+                        "action": "syntax_error",
+                        "data": {
+                            "error": str(e),
+                            "source": "syntax_check"
+                        }
+                    }
+                else:
+                    # 其他错误继续抛出
+                    raise
+            
+            # 显示远程窗口
+            title = f"GDS Unified Command: {user_command[:50]}..."
+            window_result = self.show_command_window_subprocess(
+                title=title,
+                command_text=remote_command
+            )
+            
+            # 处理窗口结果
+            if window_result["action"] == "success":
+                # 用户点击了执行完成，等待并读取结果
+                result_file_path = f"{self.main_instance.REMOTE_ROOT}/tmp/{actual_result_filename}"
+                result = self._wait_and_read_result_file(actual_result_filename)
+                
+                if result.get("success", False):
+                    data = result.get("data", {})
+                    return {
+                        "success": True,
+                        "action": "success",
+                        "data": data,
+                        "source": "unified_command"
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "action": "execution_failed",
+                        "data": {
+                            "error": result.get("error", "Command execution failed"),
+                            "source": "unified_command"
+                        }
+                    }
+                    
+            elif window_result["action"] == "direct_feedback":
+                # 用户选择直接反馈，使用enhanced_direct_feedback
+                print()  # 换行
+                feedback_result = self.enhanced_direct_feedback(remote_command, actual_result_filename)
+                return feedback_result
+                
+            elif window_result["action"] == "copy":
+                return {
+                    "success": True,
+                    "action": "copy",
+                    "data": {
+                        "message": "Command copied to clipboard",
+                        "source": "unified_command"
+                    }
+                }
+                
+            else:  # timeout, cancel, failure, error
+                return {
+                    "success": False,
+                    "action": window_result["action"],
+                    "data": {
+                        "error": window_result.get("error", "Operation cancelled or failed"),
+                        "source": "unified_command"
+                    }
+                }
+                
+        except Exception as e:
+            return {
+                "success": False,
+                "action": "error",
+                "data": {
+                    "error": f"Unified command execution failed: {str(e)}",
+                    "source": "unified_command"
+                }
+            }
 
     def _execute_with_result_capture(self, remote_command_info, cmd, args, window_id, get_timestamp_func, debug_log_func):
         """
@@ -2066,7 +2146,7 @@ fi
             final_remote_command, result_filename = remote_command_info
             
             # 显示命令窗口
-            window_result = self._show_command_window(cmd, args, final_remote_command)
+            window_result = self._show_command_window(cmd, args, final_remote_command, result_filename)
             debug_print(f"_show_command_window返回结果: {window_result}")
             
             # 检查用户窗口操作结果，并在适当时机释放槽位
@@ -2151,7 +2231,7 @@ fi
             # print(f"DEBUG: [{get_timestamp_func()}] [CAPTURE_EXIT] _execute_with_result_capture 结束 - window_id: {window_id}")
         # 注意：窗口槽位的释放由execute_generic_command的finally块统一处理
 
-    def _show_command_window(self, cmd, args, remote_command, debug_info=None):
+    def _show_command_window(self, cmd, args, remote_command, result_filename=None, debug_info=None):
         """
         显示远端命令的窗口（使用subprocess方法，完全抑制IMK信息）
         
@@ -2159,6 +2239,7 @@ fi
             cmd (str): 命令名称
             args (list): 命令参数
             remote_command (str): 远端命令内容
+            result_filename (str, optional): 结果文件名，用于enhanced_direct_feedback
             debug_info (str): debug信息，仅在直接反馈时输出
         
         Returns:
@@ -2197,12 +2278,13 @@ fi
                 debug_print(f"remote_command存在: {remote_command is not None}")
                 debug_print(f"debug_info存在: {debug_info is not None}")
                 try:
-                    feedback_result = self.direct_feedback(remote_command, debug_info)
+                    feedback_result = self.enhanced_direct_feedback(remote_command, result_filename, debug_info)
                     return {
                         "success": feedback_result.get("success", False),
-                        "action": "direct_feedback",
+                        "action": feedback_result.get("action", "direct_feedback"),
                         "data": feedback_result.get("data", {}),
-                        "source": "direct_feedback"
+                        "user_feedback": feedback_result.get("user_feedback", {}),
+                        "source": feedback_result.get("source", "enhanced_direct_feedback")
                     }
                 except Exception as e:
                     debug_print(f"direct_feedback调用异常: {e}")
@@ -2332,6 +2414,215 @@ fi
             }
         }
         return feedback_result
+    
+    def enhanced_direct_feedback(self, remote_command, result_filename=None, debug_info=None):
+        """
+        增强的直接反馈功能 - 在收集用户反馈后，尝试等待并获取实际的执行结果
+        
+        Args:
+            remote_command (str): 远端命令内容
+            result_filename (str): 结果文件名（如果有的话）
+            debug_info (str): debug信息，仅在直接反馈时输出
+        
+        Returns:
+            dict: 包含直接反馈和实际结果的综合结果
+        """
+        debug_print(f"进入enhanced_direct_feedback方法")
+        
+        # 首先调用原来的direct_feedback方法收集用户反馈
+        feedback_result = self.direct_feedback(remote_command, debug_info)
+        
+        # 添加分隔符
+        print(f"=" * 20)
+        
+        # 如果提供了result_filename，尝试等待并读取实际的执行结果
+        if result_filename:
+            try:
+                # 等待并读取结果文件
+                actual_result = self._wait_and_read_result_file(result_filename)
+                
+                if actual_result.get("success", False):
+                    actual_data = actual_result.get("data", {})
+                    actual_stdout = actual_data.get("stdout", "").strip()
+                    actual_stderr = actual_data.get("stderr", "").strip()
+                    actual_exit_code = actual_data.get("exit_code", 0)
+                    
+                    if actual_stdout:
+                        print(actual_stdout)
+                    
+                    if actual_stderr:
+                        import sys
+                        print(actual_stderr, file=sys.stderr)
+                    
+                    # 返回实际的执行结果，但保留用户反馈信息
+                    return {
+                        "success": actual_result.get("success", False),
+                        "action": "enhanced_direct_feedback",
+                        "data": actual_data,
+                        "user_feedback": feedback_result.get("data", {}),
+                        "source": "enhanced_direct_feedback"
+                    }
+                else:
+                    error_msg = actual_result.get("error", "Failed to get actual result")
+                    print(f"⚠️  Could not get actual execution result: {error_msg}")
+                    print(f"Using direct feedback result instead")
+                    
+            except Exception as e:
+                print(f"⚠️  Error waiting for actual result: {e}")
+                print(f"Using direct feedback result instead")
+        
+        # 如果没有result_filename或获取实际结果失败，返回用户反馈结果
+        return feedback_result
+    
+    def wait_and_read_background_result(self, bg_result_file_path):
+        """
+        等待并读取后台任务结果文件，使用与普通命令相同的等待逻辑
+        
+        Args:
+            bg_result_file_path (str): 后台任务结果文件的完整路径
+            
+        Returns:
+            dict: 读取结果，格式与_wait_and_read_result_file一致
+        """
+        try:
+            import time
+            import os
+            
+            # 使用进度缓冲输出等待指示器
+            from .progress_manager import start_progress_buffering
+            start_progress_buffering("⏳ Waiting for background task result ...")
+            
+            # 等待文件出现，最多60秒，支持Ctrl+C中断
+            max_wait_time = 60  # 后台任务可能需要更长时间
+            import signal
+            import sys
+            
+            # 设置KeyboardInterrupt标志
+            interrupted = False
+            
+            def signal_handler(signum, frame):
+                nonlocal interrupted
+                interrupted = True
+            
+            # 注册信号处理器
+            old_handler = signal.signal(signal.SIGINT, signal_handler)
+            
+            try:
+                for i in range(max_wait_time):
+                    # 在每次循环开始时检查中断标志
+                    if interrupted:
+                        raise KeyboardInterrupt()
+                    
+                    # 检查文件是否存在
+                    check_result = self._check_remote_file_exists(bg_result_file_path)
+                    
+                    if check_result.get("exists"):
+                        # 文件存在，读取内容
+                        try:
+                            # 提取文件名用于_read_result_file_via_gds
+                            result_filename = os.path.basename(bg_result_file_path)
+                            file_result = self._read_result_file_via_gds(result_filename)
+                            
+                            # 直接清除进度显示
+                            from .progress_manager import clear_progress
+                            clear_progress()
+                            
+                            # 恢复原来的信号处理器
+                            signal.signal(signal.SIGINT, old_handler)
+                            
+                            # 解析后台任务的JSON结果格式
+                            if file_result.get("success", False):
+                                data = file_result.get("data", {})
+                                stdout = data.get("stdout", "").strip()
+                                
+                                if stdout:
+                                    try:
+                                        import json
+                                        bg_result = json.loads(stdout)
+                                        
+                                        # 后台任务的JSON格式是 {"success": bool, "data": {...}}
+                                        # 直接返回，因为格式已经正确
+                                        bg_result["data"]["source"] = "background_task"
+                                        return bg_result
+                                    except json.JSONDecodeError:
+                                        # JSON解析失败，返回原始内容
+                                        return {
+                                            "success": True,
+                                            "data": {
+                                                "exit_code": 0,
+                                                "stdout": stdout,
+                                                "stderr": "",
+                                                "source": "background_task_raw"
+                                            }
+                                        }
+                                else:
+                                    return {
+                                        "success": True,
+                                        "data": {
+                                            "exit_code": 0,
+                                            "stdout": "",
+                                            "stderr": "",
+                                            "source": "background_task_empty"
+                                        }
+                                    }
+                            else:
+                                return file_result
+                                
+                        except Exception as e:
+                            # 清除进度显示
+                            from .progress_manager import clear_progress
+                            clear_progress()
+                            # 恢复信号处理器
+                            signal.signal(signal.SIGINT, old_handler)
+                            return {
+                                "success": False,
+                                "error": f"Error reading background result file: {str(e)}"
+                            }
+                    
+                    # 文件不存在，等待1秒并输出进度点
+                    # 使用可中断的等待，每100ms检查一次中断标志
+                    for j in range(10):  # 10 * 0.1s = 1s
+                        if interrupted:
+                            raise KeyboardInterrupt()
+                        time.sleep(0.1)
+                    
+                    from .progress_manager import progress_print
+                    progress_print(f".")
+                
+            except KeyboardInterrupt:
+                # 用户按下Ctrl+C，清除进度显示并退出
+                from .progress_manager import clear_progress
+                clear_progress()
+                # 恢复原来的信号处理器
+                signal.signal(signal.SIGINT, old_handler)
+                return {
+                    "success": False,
+                    "error": "Operation cancelled by Ctrl+C during waiting for background result",
+                    "cancelled": True
+                }
+            finally:
+                # 确保信号处理器总是被恢复
+                try:
+                    signal.signal(signal.SIGINT, old_handler)
+                except:
+                    pass
+            
+            # 超时处理
+            signal.signal(signal.SIGINT, old_handler)
+            from .progress_manager import clear_progress
+            clear_progress()
+            
+            return {
+                "success": False,
+                "error": f"Background task result not available after {max_wait_time} seconds. Task may still be running.",
+                "timeout": True
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Error waiting for background result: {str(e)}"
+            }
     
     # ==================== 从core_utils.py迁移的方法 ====================
     
