@@ -241,7 +241,7 @@ class TestWindowRobustness(unittest.TestCase):
         except subprocess.TimeoutExpired:
             print("⏰ 命令超时")
         except Exception as e:
-            print(f"❌ 命令执行异常: {e}")
+            print(f"Error: 命令执行异常: {e}")
         
         # 恢复锁文件权限
         try:

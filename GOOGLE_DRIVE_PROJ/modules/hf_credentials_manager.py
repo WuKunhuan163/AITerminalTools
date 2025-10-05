@@ -110,7 +110,7 @@ if [ -f ~/.cache/huggingface/token ]; then
     echo "Token length: {len(token)}"
     echo "Token prefix: {token[:8]}..."
 else
-    echo "❌ Failed to configure HuggingFace token"
+    echo "Error: Failed to configure HuggingFace token"
     exit 1
 fi
 
@@ -153,7 +153,7 @@ try:
     exit(0)
     
 except Exception as e:
-    print(f'❌ HuggingFace authentication failed: {{e}}')
+    print(f'Error: HuggingFace authentication failed: {{e}}')
     print('💡 Please check your token and try again')
     exit(1)
 "
@@ -163,7 +163,7 @@ except Exception as e:
         clear
         echo "Setup completed"
     else
-        echo "❌ Setup failed"
+        echo "Error: Setup failed"
         exit 1
     fi
 else
@@ -249,7 +249,7 @@ if [ -f ~/.cache/huggingface/token ]; then
     token_content=$(cat ~/.cache/huggingface/token)
     echo "  Token file: Exists (${#token_content} chars)"
 else
-    echo "  Token file: ❌ Missing"
+    echo "  Token file: Error: Missing"
 fi
 
 # Test Python integration
@@ -271,13 +271,13 @@ try:
     print(f'  Model Access: Can access public models')
     
 except ImportError:
-    print('  HuggingFace Hub: ❌ Not installed')
+    print('  HuggingFace Hub: Error: Not installed')
     print('  Run: pip install huggingface_hub')
 except Exception as e:
-    print(f'  Authentication: ❌ Failed - {e}')
+    print(f'  Authentication: Error: Failed - {e}')
 "
 else
-    echo "Python: ❌ Not available"
+    echo "Python: Error: Not available"
 fi
 
 echo "🏁 HuggingFace configuration test completed"

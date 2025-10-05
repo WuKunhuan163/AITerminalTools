@@ -266,8 +266,8 @@ def test_authentication():
                 "success": False,
                 "error": "Authentication test failed",
                 "details": {
-                    "user_test": "❌ Failed",
-                    "api_test": "❌ Failed",
+                    "user_test": "Error: Failed",
+                    "api_test": "Error: Failed",
                     "error_details": str(e)
                 }
             }

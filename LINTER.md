@@ -87,7 +87,7 @@ LINTER --version
 
 ```
 Language: python
-Status: ❌ FAIL
+Status: Error: FAIL
 Linter: Python linting completed with flake8
 
 22 linter warnings or errors found:
@@ -202,7 +202,7 @@ LINTER my_script.py
 
 # Output:
 # Language: python
-# Status: ❌ FAIL
+# Status: Error: FAIL
 # Linter: Python linting completed with flake8
 #
 # 3 linter warnings or errors found:
@@ -232,7 +232,7 @@ LINTER config.json
 
 # Output:
 # Language: json
-# Status: ❌ FAIL
+# Status: Error: FAIL
 # Linter: JSON syntax error
 #
 # 1 linter warnings or errors found:

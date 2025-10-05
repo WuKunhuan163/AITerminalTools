@@ -278,20 +278,20 @@ class UnifiedImageProcessor:
                             else:
                                 logger.warning("Warning: No result in RUN IMG2TEXT output")
                         
-                        logger.error(f"❌ RUN IMG2TEXT failed: {run_output.get('message', 'Unknown error')}")
+                        logger.error(f"Error: RUN IMG2TEXT failed: {run_output.get('message', 'Unknown error')}")
                         return {
                             "success": False,
                             "error": f"RUN IMG2TEXT failed: {run_output}"
                         }
                     except json.JSONDecodeError as e:
-                        logger.error(f"❌ Failed to parse RUN output: {e}")
+                        logger.error(f"Error: Failed to parse RUN output: {e}")
                         logger.error(f"   Raw output: {result.stdout[:500]}...")
                         return {
                             "success": False,
                             "error": f"Failed to parse RUN output: {result.stdout[:200]}..."
                         }
                 else:
-                    logger.error(f"❌ RUN IMG2TEXT execution failed with code {result.returncode}")
+                    logger.error(f"Error: RUN IMG2TEXT execution failed with code {result.returncode}")
                     logger.error(f"   stderr: {result.stderr}")
                     return {
                         "success": False,
@@ -493,10 +493,10 @@ class UnifiedImageProcessor:
                                     logger.warning(f"Warning:  UNIMERNET returned success=false")
                                     return unimernet_result
                             except json.JSONDecodeError as e:
-                                logger.error(f"❌ JSON decode error: {e}")
+                                logger.error(f"Error: JSON decode error: {e}")
                                 logger.error(f"   JSON string: {json_str[:200]}...")
                         
-                        logger.error(f"❌ No valid JSON found in output")
+                        logger.error(f"Error: No valid JSON found in output")
                         logger.error(f"   Output lines: {len(lines)}")
                         for i, line in enumerate(lines[:5]):  # Show first 5 lines
                             logger.error(f"   Line {i}: {repr(line)}")

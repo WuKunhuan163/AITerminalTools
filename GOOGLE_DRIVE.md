@@ -205,7 +205,7 @@ GDS read target_file.py 10 25             # 检查修改后的内容
 #### 避免的做法
 
 ```bash
-# ❌ 不推荐：创建本地文件 + 强制上传替换
+# Error: 不推荐：创建本地文件 + 强制上传替换
 echo "new content" > local_file.py
 GDS upload --force local_file.py
 

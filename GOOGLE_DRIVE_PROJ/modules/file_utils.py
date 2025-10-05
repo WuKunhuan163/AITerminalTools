@@ -213,7 +213,7 @@ class FileUtils:
             )
             
             # 生成包含两个同步检测的远程命令
-            sync_and_move_part = f"""(mkdir -p {remote_target_path} && echo -n "⏳"; for i in $(seq 1 60); do     if mv {source_path} {target_zip_path} 2>/dev/null; then         echo "";         break;     else         if [ "$i" -eq 60 ]; then             echo " ❌ (已重试60次失败)";             exit 1;         else             echo -n ".";             sleep 1;         fi;     fi; done) && (cd {remote_target_path} && echo -n "⏳"; for i in $(seq 1 30); do     if [ -f "{zip_filename}" ]; then         echo "";         break;     else         if [ "$i" -eq 30 ]; then             echo " ❌ (zip文件检测失败)";             exit 1;         else             echo -n ".";             sleep 1;         fi;     fi; done)"""
+            sync_and_move_part = f"""(mkdir -p {remote_target_path} && echo -n "⏳"; for i in $(seq 1 60); do     if mv {source_path} {target_zip_path} 2>/dev/null; then         echo "";         break;     else         if [ "$i" -eq 60 ]; then             echo " Error: (已重试60次失败)";             exit 1;         else             echo -n ".";             sleep 1;         fi;     fi; done) && (cd {remote_target_path} && echo -n "⏳"; for i in $(seq 1 30); do     if [ -f "{zip_filename}" ]; then         echo "";         break;     else         if [ "$i" -eq 30 ]; then             echo " Error: (zip文件检测失败)";             exit 1;         else             echo -n ".";             sleep 1;         fi;     fi; done)"""
             
             # 组合完整命令
             remote_command = f"""{sync_and_move_part} && ({unzip_part})"""

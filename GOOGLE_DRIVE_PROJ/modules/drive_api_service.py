@@ -249,7 +249,7 @@ def test_api_connection(command_identifier=None):
         # 导入API服务
         api_service_path = Path(__file__).parent.parent / "google_drive_api.py"
         if not api_service_path.exists():
-            error_msg = "❌ API service file not found, please run GOOGLE_DRIVE --console-setup"
+            error_msg = "Error: API service file not found, please run GOOGLE_DRIVE --console-setup"
             if is_run_environment(command_identifier):
                 write_to_json_output({"success": False, "error": error_msg}, command_identifier)
             else:
@@ -274,7 +274,7 @@ def test_api_connection(command_identifier=None):
                 print(result.stdout)
             return 0
         else:
-            error_msg = f"❌ API connection test failed: {result.stderr}"
+            error_msg = f"Error: API connection test failed: {result.stderr}"
             if is_run_environment(command_identifier):
                 write_to_json_output({"success": False, "error": error_msg}, command_identifier)
             else:
@@ -289,7 +289,7 @@ def test_api_connection(command_identifier=None):
             print(timeout_msg)
         return 1
     except Exception as e:
-        error_msg = f"❌ Error testing API connection: {e}"
+        error_msg = f"Error: Error testing API connection: {e}"
         if is_run_environment(command_identifier):
             write_to_json_output({"success": False, "error": error_msg}, command_identifier)
         else:
@@ -303,7 +303,7 @@ def list_drive_files(command_identifier=None, max_results=10):
         import sys
         api_service_path = Path(__file__).parent.parent / "google_drive_api.py"
         if not api_service_path.exists():
-            error_msg = "❌ API service file not found, please run GOOGLE_DRIVE --console-setup"
+            error_msg = "Error: API service file not found, please run GOOGLE_DRIVE --console-setup"
             if is_run_environment(command_identifier):
                 write_to_json_output({"success": False, "error": error_msg}, command_identifier)
             else:
@@ -341,7 +341,7 @@ def list_drive_files(command_identifier=None, max_results=10):
                     print()
             return 0
         else:
-            error_msg = f"❌ Listing files failed: {result['error']}"
+            error_msg = f"Error: Listing files failed: {result['error']}"
             if is_run_environment(command_identifier):
                 write_to_json_output({"success": False, "error": error_msg}, command_identifier)
             else:
@@ -349,7 +349,7 @@ def list_drive_files(command_identifier=None, max_results=10):
             return 1
             
     except Exception as e:
-        error_msg = f"❌ Error listing Drive files: {e}"
+        error_msg = f"Error: Error listing Drive files: {e}"
         if is_run_environment(command_identifier):
             write_to_json_output({"success": False, "error": error_msg}, command_identifier)
         else:
@@ -363,7 +363,7 @@ def download_file_from_drive(file_id, command_identifier=None):
         import sys
         api_service_path = Path(__file__).parent.parent / "google_drive_api.py"
         if not api_service_path.exists():
-            error_msg = "❌ API service file not found, please run GOOGLE_DRIVE --console-setup"
+            error_msg = "Error: API service file not found, please run GOOGLE_DRIVE --console-setup"
             if is_run_environment(command_identifier):
                 write_to_json_output({"success": False, "error": error_msg}, command_identifier)
             else:
@@ -404,7 +404,7 @@ def download_file_from_drive(file_id, command_identifier=None):
                 print(f"Local path: {result['local_path']}")
             return 0
         else:
-            error_msg = f"❌ File download failed: {result['error']}"
+            error_msg = f"Error: File download failed: {result['error']}"
             if is_run_environment(command_identifier):
                 write_to_json_output({"success": False, "error": error_msg}, command_identifier)
             else:
@@ -412,7 +412,7 @@ def download_file_from_drive(file_id, command_identifier=None):
             return 1
             
     except Exception as e:
-        error_msg = f"❌ Error downloading file: {e}"
+        error_msg = f"Error: Error downloading file: {e}"
         if is_run_environment(command_identifier):
             write_to_json_output({"success": False, "error": error_msg}, command_identifier)
         else:
@@ -426,7 +426,7 @@ def delete_drive_file(file_id, command_identifier=None):
         import sys
         api_service_path = Path(__file__).parent.parent / "google_drive_api.py"
         if not api_service_path.exists():
-            error_msg = "❌ API service file not found, please run GOOGLE_DRIVE --console-setup"
+            error_msg = "Error: API service file not found, please run GOOGLE_DRIVE --console-setup"
             if is_run_environment(command_identifier):
                 write_to_json_output({"success": False, "error": error_msg}, command_identifier)
             else:
@@ -456,7 +456,7 @@ def delete_drive_file(file_id, command_identifier=None):
                 print(f"Deleted file ID: {file_id}")
             return 0
         else:
-            error_msg = f"❌ File delete failed: {result['error']}"
+            error_msg = f"Error: File delete failed: {result['error']}"
             if is_run_environment(command_identifier):
                 write_to_json_output({"success": False, "error": error_msg}, command_identifier)
             else:
@@ -464,7 +464,7 @@ def delete_drive_file(file_id, command_identifier=None):
             return 1
             
     except Exception as e:
-        error_msg = f"❌ Error deleting file: {e}"
+        error_msg = f"Error: Error deleting file: {e}"
         if is_run_environment(command_identifier):
             write_to_json_output({"success": False, "error": error_msg}, command_identifier)
         else:

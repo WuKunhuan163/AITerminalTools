@@ -56,7 +56,7 @@ class TestOpenRouter(BaseTest):
                 sys.executable, str(self.openrouter_py), '--test-connection'
             ])
             self.assertIn('🔍 OpenRouter API连接测试结果:', result.stdout)
-            self.assertIn('❌ 连接测试失败：未设置API密钥', result.stdout)
+            self.assertIn('Error: 连接测试失败：未设置API密钥', result.stdout)
 
     def test_connection_test_with_fake_key(self):
         """Test --test-connection with fake API key"""
@@ -67,11 +67,11 @@ class TestOpenRouter(BaseTest):
             self.assertIn('🔍 OpenRouter API连接测试结果:', result.stdout)
             # Should show connection attempt results (even if failed due to fake key)
             self.assertTrue(
-                '❌ API密钥无效或已过期' in result.stdout or 
-                '❌ API调用失败' in result.stdout or
-                '❌ 连接超时' in result.stdout or
+                'Error: API密钥无效或已过期' in result.stdout or 
+                'Error: API调用失败' in result.stdout or
+                'Error: 连接超时' in result.stdout or
                 'No auth credentials found' in result.stdout or
-                '❌ 总结: 连接测试失败' in result.stdout
+                'Error: 总结: 连接测试失败' in result.stdout
             )
 
     def test_connection_test_with_custom_key(self):
@@ -82,10 +82,10 @@ class TestOpenRouter(BaseTest):
         self.assertIn('🔍 OpenRouter API连接测试结果:', result.stdout)
         # Should attempt connection with custom key
         self.assertTrue(
-            '❌ API密钥无效或已过期' in result.stdout or 
-            '❌ API请求失败' in result.stdout or
-            '❌ 连接超时' in result.stdout or
-            '❌ API调用失败: No auth credentials found' in result.stdout
+            'Error: API密钥无效或已过期' in result.stdout or 
+            'Error: API请求失败' in result.stdout or
+            'Error: 连接超时' in result.stdout or
+            'Error: API调用失败: No auth credentials found' in result.stdout
         )
 
     def test_connection_test_with_model(self):
@@ -499,7 +499,7 @@ class TestOpenRouterIntegration(APITest):
             result = self.assertCommandFail([
                 sys.executable, str(self.openrouter_py), '--add', 'test/model:free'
             ])
-            self.assertIn('❌ 需要API密钥来测试模型', result.stdout)
+            self.assertIn('Error: 需要API密钥来测试模型', result.stdout)
 
     def test_add_model_success(self):
         """Test successful model addition (simplified test)"""
@@ -535,7 +535,7 @@ class TestOpenRouterIntegration(APITest):
         result = self.assertCommandFail([
             sys.executable, str(self.openrouter_py), '--remove', 'nonexistent/model'
         ])
-        self.assertIn('❌ 模型 \'nonexistent/model\' 不存在于列表中', result.stdout)
+        self.assertIn('Error: 模型 \'nonexistent/model\' 不存在于列表中', result.stdout)
 
     def test_remove_existing_model(self):
         """Test removing an existing model"""

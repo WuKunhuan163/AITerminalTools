@@ -2968,7 +2968,7 @@ if "REMOTE_ENV/python" in sys.executable:
             if actual_version == expected_version:
                 print("Version verification PASSED")
             else:
-                print(f"❌ Version mismatch: expected {expected_version}, got {actual_version}")
+                print(f"Error: Version mismatch: expected {expected_version}, got {actual_version}")
             break
 else:
     print("ℹ️ Using system Python (no pyenv version set)")
@@ -3155,7 +3155,7 @@ class ParallelTestRunner:
                 
                 # 显示进度
                 elapsed = time.time() - self.start_time if self.start_time else 0
-                print(f"\r进度: {success_count}{failed_count}❌ {pending_count}⏳ | "
+                print(f"\r进度: {success_count}{failed_count}Error: {pending_count}⏳ | "
                       f"GDS命令: {self.completed_gds_commands}/{self.total_gds_commands} ({progress_percent:.1f}%) | "
                       f"用时: {elapsed:.0f}s", end="", flush=True)
             
@@ -3236,7 +3236,7 @@ class ParallelTestRunner:
         print(f"\nWorker statistics:")
         for worker_id in sorted(worker_stats.keys()):
             stats = worker_stats[worker_id]
-            print(f"Worker-{worker_id}: {stats['success']}{stats['failed']}❌ ({stats['time']:.1f}s)")
+            print(f"Worker-{worker_id}: {stats['success']}{stats['failed']}Error: ({stats['time']:.1f}s)")
         
         print(f"=" * 80)
         

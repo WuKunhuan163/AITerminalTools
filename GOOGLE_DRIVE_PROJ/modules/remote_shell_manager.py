@@ -238,7 +238,7 @@ def create_shell(name=None, folder_id=None, command_identifier=None):
                 print(f"🕐 Created time: {created_time}")
             return 0
         else:
-            error_msg = "❌ Save remote shell config failed"
+            error_msg = "Error: Save remote shell config failed"
             if is_run_environment(command_identifier):
                 write_to_json_output({"success": False, "error": error_msg}, command_identifier)
             else:
@@ -246,7 +246,7 @@ def create_shell(name=None, folder_id=None, command_identifier=None):
             return 1
             
     except Exception as e:
-        error_msg = f"❌ Create remote shell failed: {e}"
+        error_msg = f"Error: Create remote shell failed: {e}"
         if is_run_environment(command_identifier):
             write_to_json_output({"success": False, "error": error_msg}, command_identifier)
         else:
@@ -320,7 +320,7 @@ def checkout_shell(shell_id, command_identifier=None):
         pass # Placeholder for actual shell checkout logic
             
     except Exception as e:
-        error_msg = f"❌ Switch remote shell failed: {e} (shell_id: {shell_id})"
+        error_msg = f"Error: Switch remote shell failed: {e} (shell_id: {shell_id})"
         if is_run_environment(command_identifier):
             write_to_json_output({"success": False, "error": error_msg}, command_identifier)
         else:
@@ -393,7 +393,7 @@ def exit_shell(command_identifier=None):
         current_shell = get_current_shell()
         
         if not current_shell:
-            error_msg = "❌ No active remote shell"
+            error_msg = "Error: No active remote shell"
             if is_run_environment(command_identifier):
                 write_to_json_output({"success": False, "error": error_msg}, command_identifier)
             else:
@@ -419,7 +419,7 @@ def exit_shell(command_identifier=None):
                 print(success_msg)
             return 0
         else:
-            error_msg = "❌ Save shell state failed"
+            error_msg = "Error: Save shell state failed"
             if is_run_environment(command_identifier):
                 write_to_json_output({"success": False, "error": error_msg}, command_identifier)
             else:
@@ -427,7 +427,7 @@ def exit_shell(command_identifier=None):
             return 1
             
     except Exception as e:
-        error_msg = f"❌ Execute exit-remote-shell command failed: {e}"
+        error_msg = f"Error: Execute exit-remote-shell command failed: {e}"
         if is_run_environment(command_identifier):
             write_to_json_output({"success": False, "error": error_msg}, command_identifier)
         else:
@@ -503,7 +503,7 @@ def enter_shell_mode(command_identifier=None):
             print(f"No active remote shell, creating default shell...")
             create_result = create_shell("default_shell", None, None)
             if create_result != 0:
-                error_msg = "❌ Failed to create default shell"
+                error_msg = "Error: Failed to create default shell"
                 if is_run_environment(command_identifier):
                     write_to_json_output({"success": False, "error": error_msg}, command_identifier)
                 else:
@@ -604,7 +604,7 @@ def enter_shell_mode(command_identifier=None):
             return 0
         
     except Exception as e:
-        error_msg = f"❌ Error starting shell mode: {e}"
+        error_msg = f"Error: Error starting shell mode: {e}"
         if is_run_environment(command_identifier):
             write_to_json_output({"success": False, "error": error_msg}, command_identifier)
         else:

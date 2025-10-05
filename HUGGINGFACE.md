@@ -111,7 +111,7 @@ HuggingFace authentication active
 
 **Output (Not Authenticated):**
 ```
-❌ Not authenticated
+Error: Not authenticated
 ```
 
 ### `--whoami` - User Information
@@ -304,7 +304,7 @@ if RUN --show HUGGINGFACE --status | jq -r '.success' | grep -q true; then
     echo "HuggingFace authenticated, proceeding..."
     python train_model.py
 else
-    echo "❌ Not authenticated, please run: HUGGINGFACE --login"
+    echo "Error: Not authenticated, please run: HUGGINGFACE --login"
     exit 1
 fi
 ```

@@ -84,7 +84,7 @@ class TestGDSSingleWindow(unittest.TestCase):
                     if self.first_window_time is None:
                         self.test_failed = True
                         self.failure_reason = "15秒内没有窗口出现（可能死锁）"
-                        print(f"❌ 自动失败: {self.failure_reason}")
+                        print(f"Error: 自动失败: {self.failure_reason}")
                     else:
                         # 有窗口出现，15秒后根据窗口个数结束测试
                         print(f"⏰ 15秒测试时间到，根据窗口个数结束测试")
@@ -120,7 +120,7 @@ class TestGDSSingleWindow(unittest.TestCase):
                     if current_count > 1:
                         self.test_failed = True
                         self.failure_reason = f"检测到 {current_count} 个窗口同时存在（多窗口并发问题）"
-                        print(f"❌ 自动失败: {self.failure_reason}")
+                        print(f"Error: 自动失败: {self.failure_reason}")
                         
                         for i, window in enumerate(current_windows):
                             print(f"     窗口{i+1}: PID={window['pid']}, 创建时间={time.strftime('%H:%M:%S.%f', time.localtime(window['create_time']))[:-3]}")
@@ -129,7 +129,7 @@ class TestGDSSingleWindow(unittest.TestCase):
                 time.sleep(0.3)  # 更频繁的检测
                 
             except Exception as e:
-                print(f"❌ 监控出错: {e}")
+                print(f"Error: 监控出错: {e}")
                 self.test_failed = True
                 self.failure_reason = f"监控异常: {e}"
                 break
@@ -180,7 +180,7 @@ class TestGDSSingleWindow(unittest.TestCase):
             return True
                 
         except Exception as e:
-            print(f"❌ 启动测试失败: {e}")
+            print(f"Error: 启动测试失败: {e}")
             self.test_failed = True
             self.failure_reason = f"测试启动异常: {e}"
             return False
@@ -221,7 +221,7 @@ class TestGDSSingleWindow(unittest.TestCase):
                 print("   Warning: 队列控制可能失效 - 所有命令都直接获得槽位")
                 return False
         else:
-            print("   ❌ 调试日志文件不存在")
+            print("   Error: 调试日志文件不存在")
             return False
     
     def test_single_window_control(self):
@@ -230,7 +230,7 @@ class TestGDSSingleWindow(unittest.TestCase):
         print("=" * 60)
         print("📋 测试条件:")
         print("   成功: 15秒内出现1个窗口，整个过程只有1个窗口")
-        print("   ❌ 失败: 15秒内无窗口 OR 出现第二个窗口")
+        print("   Error: 失败: 15秒内无窗口 OR 出现第二个窗口")
         print("   🤖 容忍性测试: 假设用户交互时间无限长")
         print("")
         
@@ -279,10 +279,10 @@ class TestGDSSingleWindow(unittest.TestCase):
         
         # 最终判断
         if self.test_failed:
-            print(f"\\n❌ 测试失败: {self.failure_reason}")
+            print(f"\\nError: 测试失败: {self.failure_reason}")
             self.fail(f"单窗口控制测试失败: {self.failure_reason}")
         elif self.max_concurrent == 0:
-            print(f"\\n❌ 测试失败: 没有窗口出现")
+            print(f"\\nError: 测试失败: 没有窗口出现")
             self.fail("没有窗口出现，可能存在死锁")
         elif self.max_concurrent == 1:
             print(f"\\n测试通过: 窗口控制正常")
@@ -300,7 +300,7 @@ class TestGDSSingleWindow(unittest.TestCase):
             # 测试通过
             self.assertTrue(True, "单窗口控制测试通过")
         else:
-            print(f"\\n❌ 测试失败: 最大并发窗口数 {self.max_concurrent} > 1")
+            print(f"\\nError: 测试失败: 最大并发窗口数 {self.max_concurrent} > 1")
             self.fail(f"检测到多个窗口并发: {self.max_concurrent} 个窗口")
 
 if __name__ == '__main__':

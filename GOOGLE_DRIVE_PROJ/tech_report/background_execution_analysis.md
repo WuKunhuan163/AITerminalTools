@@ -51,10 +51,10 @@ def _execute_background_command(self, shell_cmd, command_identifier=None):
     # 2. 创建远程background脚本
     remote_bg_cmd = f'''
     # 清除旧状态文件
-    rm -f ~/tmp/gds_bg_{bg_pid}.*
+    rm -f ~/tmp/cmd_bg_{bg_pid}.*
     
     # 创建后台执行脚本
-    cat > ~/tmp/gds_bg_{bg_pid}.sh << 'SCRIPT_EOF'
+    cat > ~/tmp/cmd_bg_{bg_pid}.sh << 'SCRIPT_EOF'
     #!/bin/bash
     # 执行用户命令并保存结果到JSON文件
     {{
@@ -76,7 +76,7 @@ def _execute_background_command(self, shell_cmd, command_identifier=None):
     SCRIPT_EOF
     
     # 启动后台任务
-    nohup bash ~/tmp/gds_bg_{bg_pid}.sh > ~/tmp/gds_bg_{bg_pid}.log 2>&1 &
+    nohup bash ~/tmp/cmd_bg_{bg_pid}.sh > ~/tmp/cmd_bg_{bg_pid}.log 2>&1 &
     '''
     
     # 3. 通过远程命令窗口执行
@@ -88,8 +88,8 @@ def _execute_background_command(self, shell_cmd, command_identifier=None):
 def _show_background_status(self, bg_pid, command_identifier=None):
     # 构建查询状态的远程命令
     status_cmd = f'''
-    if [ -f ~/tmp/gds_bg_{bg_pid}.status ]; then
-        STATUS_DATA=$(cat ~/tmp/gds_bg_{bg_pid}.status)
+    if [ -f ~/tmp/cmd_bg_{bg_pid}.status ]; then
+        STATUS_DATA=$(cat ~/tmp/cmd_bg_{bg_pid}.status)
         REAL_PID=$(echo "$STATUS_DATA" | grep -o '"real_pid":[0-9]*' | cut -d':' -f2)
         
         if [ -n "$REAL_PID" ] && ps -p $REAL_PID > /dev/null 2>&1; then

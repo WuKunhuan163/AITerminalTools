@@ -110,7 +110,7 @@ class WindowManager:
                         process.wait(timeout=2)
                     cleanup_count += 1
             except Exception as e:
-                self._debug_log(f"❌ DEBUG: [CLEANUP_ERROR] 清理进程失败: {e}")
+                self._debug_log(f"Error: DEBUG: [CLEANUP_ERROR] 清理进程失败: {e}")
             
             # 从活跃进程列表中移除
             self.active_processes.pop(window_id, None)
@@ -138,7 +138,7 @@ class WindowManager:
                         pass
                     cleanup_count += 1
             except Exception as e:
-                self._debug_log(f"❌ DEBUG: [FORCE_CLEANUP_ERROR] 强制清理进程失败: {e}")
+                self._debug_log(f"Error: DEBUG: [FORCE_CLEANUP_ERROR] 强制清理进程失败: {e}")
             
             # 从活跃进程列表中移除
             self.active_processes.pop(window_id, None)
@@ -171,7 +171,7 @@ class WindowManager:
                 self._debug_log(f"🚨 DEBUG: [SYSTEM_CLEANUP_COMPLETE] 系统级清理了 {killed_count} 个tkinter进程")
                 
         except Exception as e:
-            self._debug_log(f"❌ DEBUG: [SYSTEM_CLEANUP_ERROR] 系统级清理失败: {e}")
+            self._debug_log(f"Error: DEBUG: [SYSTEM_CLEANUP_ERROR] 系统级清理失败: {e}")
         
         if cleanup_count > 0:
             self._debug_log(f"🚨 DEBUG: [FORCE_CLEANUP_COMPLETE] 强制清理了 {cleanup_count} 个子进程")
@@ -208,7 +208,7 @@ class WindowManager:
             if self.pid_file_path.exists():
                 self.pid_file_path.unlink()
         except Exception as e:
-            self._debug_log(f"❌ DEBUG: [FORCE_CLEANUP_ERROR] 强制清理锁失败: {e}")
+            self._debug_log(f"Error: DEBUG: [FORCE_CLEANUP_ERROR] 强制清理锁失败: {e}")
     
     def _acquire_lock(self, request_id, timeout_seconds=30):
         """
@@ -290,7 +290,7 @@ class WindowManager:
                 time.sleep(0.1)
                 continue
             except Exception as e:
-                self._debug_log(f"❌ DEBUG: [LOCK_ERROR] 获取锁时出错: {e}")
+                self._debug_log(f"Error: DEBUG: [LOCK_ERROR] 获取锁时出错: {e}")
                 time.sleep(0.5)
                 continue
         
@@ -325,7 +325,7 @@ class WindowManager:
                     self._debug_log(f"⚠️ DEBUG: [LOCK_RELEASE_WARNING] 进程 {current_pid} 尝试释放不属于自己的锁")
             
         except Exception as e:
-            self._debug_log(f"❌ DEBUG: [LOCK_RELEASE_ERROR] 释放锁时出错: {e}")
+            self._debug_log(f"Error: DEBUG: [LOCK_RELEASE_ERROR] 释放锁时出错: {e}")
     
     def start_manager(self):
         """跨进程窗口管理器，无需启动线程"""
@@ -371,7 +371,7 @@ class WindowManager:
             
         except Exception as e:
             error_msg = f"窗口创建失败: {str(e)}"
-            self._debug_log(f"❌ DEBUG: [WINDOW_ERROR] 进程 {os.getpid()} 窗口错误: {request_id}, error: {str(e)}")
+            self._debug_log(f"Error: DEBUG: [WINDOW_ERROR] 进程 {os.getpid()} 窗口错误: {request_id}, error: {str(e)}")
             return {"action": "error", "message": error_msg}
         finally:
             # 确保释放锁
@@ -561,7 +561,7 @@ try:
             
             root.after(1500, lambda: copy_btn.config(text="📋复制指令", bg="#2196F3"))
         except Exception as e:
-            copy_btn.config(text="❌ 复制失败", bg="#f44336")
+            copy_btn.config(text="Error: 复制失败", bg="#f44336")
     
     def trigger_copy_button():
         """触发复制按钮的点击效果（用于音效播放时自动触发）"""
@@ -749,7 +749,7 @@ except Exception as e:
                     process.wait(timeout=3)
                     self._debug_log(f"💀 DEBUG: [SUBPROCESS_KILLED] 窗口子进程已强制杀死: PID={process.pid}")
                 except Exception as cleanup_error:
-                    self._debug_log(f"❌ DEBUG: [SUBPROCESS_CLEANUP_ERROR] 清理子进程失败: {cleanup_error}")
+                    self._debug_log(f"Error: DEBUG: [SUBPROCESS_CLEANUP_ERROR] 清理子进程失败: {cleanup_error}")
                 
                 # 从活跃进程列表中移除
                 self.active_processes.pop(window_id, None)
@@ -830,7 +830,7 @@ except Exception as e:
                 except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                     continue
                 except Exception as e:
-                    self._debug_log(f"❌ DEBUG: [CROSS_PROCESS_ERROR] 清理进程失败: {e}")
+                    self._debug_log(f"Error: DEBUG: [CROSS_PROCESS_ERROR] 清理进程失败: {e}")
             
             if cleaned_count > 0:
                 self._debug_log(f"🌐 DEBUG: [CROSS_PROCESS_COMPLETE] 跨进程清理了 {cleaned_count} 个tkinter进程")
@@ -838,7 +838,7 @@ except Exception as e:
                 self._debug_log("🌐 DEBUG: [CROSS_PROCESS_NONE] 没有找到需要清理的tkinter进程")
                 
         except Exception as e:
-            self._debug_log(f"❌ DEBUG: [CROSS_PROCESS_CLEANUP_ERROR] 跨进程清理失败: {e}")
+            self._debug_log(f"Error: DEBUG: [CROSS_PROCESS_CLEANUP_ERROR] 跨进程清理失败: {e}")
     
     def get_active_windows_count(self):
         """获取当前活跃窗口数量 - 跨进程统计"""

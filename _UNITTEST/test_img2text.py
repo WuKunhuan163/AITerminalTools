@@ -57,7 +57,7 @@ class TestImg2Text(unittest.TestCase):
                 sys.executable, IMG2TEXT_PY, '--test-connection'
             ], capture_output=True, text=True, timeout=10)
             self.assertEqual(result.returncode, 0)
-            self.assertIn('❌ 连接测试失败：未设置API密钥', result.stdout)
+            self.assertIn('Error: 连接测试失败：未设置API密钥', result.stdout)
 
     def test_connection_test_with_fake_key(self):
         """Test --test-connection with fake API key"""

@@ -23,6 +23,8 @@ try:
 except ImportError:
     from GOOGLE_DRIVE_PROJ.google_drive_api import GoogleDriveService
 
+from .constants import get_bg_status_file, get_bg_script_file, get_bg_log_file, get_bg_result_file
+
 import threading
 import time
 import json
@@ -516,7 +518,7 @@ else:
             # 超时处理，恢复信号处理器并显示超时信息
             signal.signal(signal.SIGINT, old_handler)
             print()  # 换行
-            print(f"等待结果超时 ({max_wait_time}秒)。可能的原因：")
+            print(f"等待结果超时。可能的原因：")
             print(f"  (1) 网络问题导致命令执行缓慢。请检查")
             print(f"  (2) Google Drive挂载失效，需要使用 GOOGLE_DRIVE --remount重新挂载")
             
@@ -531,19 +533,13 @@ else:
             )
             
             if is_background_mode:
-                print(f"🤖 后台模式检测：自动返回超时错误")
+                print(f"后台模式检测：自动返回超时错误")
                 return {
                     "success": False,
                     "error": f"Result file timeout after 60 seconds: {remote_file_path}",
                     "timeout": True,
                     "background_mode": True
                 }
-            
-            print(f"This may be because:")
-            print(f"  1. The command is running in the background (e.g. http-server service)")
-            print(f"  2. The command execution time exceeds 60 seconds")
-            print(f"  3. The remote encountered an unexpected error")
-            print()
             print(f"Please provide the execution result:")
             print(f"- Enter multiple lines to describe the command execution")
             print(f"- Press Ctrl+D to end input")
@@ -868,7 +864,7 @@ for attempt in $(seq 1 60); do
     if {cmd} 2>/dev/null; then
         break
     elif [ "$attempt" -eq 60 ]; then
-        echo "❌ Error: {filename} move failed, still failed after 60 retries" >&2
+        echo "Error: Error: {filename} move failed, still failed after 60 retries" >&2
         exit 1
     else
         sleep 1
@@ -891,7 +887,7 @@ echo "✅执行完成"'''
             return script
             
         except Exception as e:
-            return f'echo "❌ 生成命令失败: {e}"'
+            return f'echo "Error: 生成命令失败: {e}"'
     
     def _verify_upload_with_progress(self, expected_files, target_path, current_shell):
         """
@@ -994,7 +990,7 @@ total_files={len(file_info_list)}
             break
         else
             if [ "$attempt" -eq 60 ]; then
-                echo "❌ (已重试60次失败)"
+                echo "Error: (已重试60次失败)"
                 completed[{file_info['index']}]=0
             else
                 echo -n "."
@@ -1038,7 +1034,7 @@ fi
             return full_command
             
         except Exception as e:
-            return f"echo '❌ 生成多文件mv命令失败: {e}'"
+            return f"echo 'Error: 生成多文件mv命令失败: {e}'"
 
     def generate_mkdir_commands(self, target_path):
         """
@@ -1474,18 +1470,7 @@ fi
             # 生成远端命令（包含语法检查）
             try:
                 remote_command_info = self._generate_command(cmd, cleaned_args, current_shell)
-                remote_command, result_filename = remote_command_info
-                
-                # DEBUG: 显示生成的远端命令
-                # print(f"DEBUG: Generated remote command for '{cmd} {' '.join(args)}':")
-                # print(f"=" * 60)
-                # print(remote_command)
-                # print(f"=" * 60)
-                # print(f"DEBUG: Expected result filename: {result_filename}")
-                # print(f"=" * 60)
-                
             except Exception as e:
-                # 如果语法检查失败，直接返回错误，不弹出窗口
                 if "语法错误" in str(e):
                     return {
                         "success": False,
@@ -1735,8 +1720,15 @@ fi
             # 获取当前路径
             if current_shell:
                 current_path = current_shell.get("current_path", "~")
+                # 检查是否为background模式
+                is_background = current_shell.get("_background_mode", False)
+                bg_pid = current_shell.get("_background_pid", "")
+                bg_original_cmd = current_shell.get("_background_original_cmd", "")
             else:
                 current_path = "~"
+                is_background = False
+                bg_pid = ""
+                bg_original_cmd = ""
             
             # 解析远端绝对路径
             if current_path == "~":
@@ -1748,9 +1740,14 @@ fi
             
             # 生成结果文件名（如果未提供）
             if not result_filename:
-                timestamp = str(int(time.time()))
-                cmd_hash = hashlib.md5(f"{user_command}_{timestamp}".encode()).hexdigest()[:8]
-                result_filename = f"unified_cmd_{timestamp}_{cmd_hash}.json"
+                if is_background:
+                    # Background模式使用常量定义的结果文件名格式
+                    result_filename = get_bg_result_file(bg_pid)
+                else:
+                    # 普通模式使用统一的结果文件名格式
+                    timestamp = str(int(time.time()))
+                    cmd_hash = hashlib.md5(f"{user_command}_{timestamp}".encode()).hexdigest()[:8]
+                    result_filename = f"cmd_{timestamp}_{cmd_hash}.json"
             
             result_path = f"{self.main_instance.REMOTE_ROOT}/tmp/{result_filename}"
             
@@ -1758,8 +1755,119 @@ fi
             timestamp = str(int(time.time()))
             cmd_hash = hashlib.md5(user_command.encode()).hexdigest()[:8]
             
-            # 生成统一的远程命令脚本
-            remote_command = f'''
+            # 预处理user_command以避免JSON转义问题
+            user_command_escaped = user_command.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t')
+            
+            # 根据是否为background模式生成不同的远程命令脚本
+            if is_background:
+                # Background模式：生成后台任务脚本
+                import shlex
+                quoted_user_cmd = shlex.quote(bg_original_cmd)
+                start_time = datetime.now().isoformat()
+                
+                # 使用常量定义background文件名
+                BG_STATUS_FILE = get_bg_status_file(bg_pid)
+                BG_SCRIPT_FILE = get_bg_script_file(bg_pid)
+                BG_LOG_FILE = get_bg_log_file(bg_pid)
+                BG_RESULT_FILE = get_bg_result_file(bg_pid)
+                
+                # 使用字符串拼接而不是复杂的f-string来避免转义问题
+                escaped_bg_cmd = bg_original_cmd.replace('"', '\\"')
+                
+                remote_command = f'''# Background任务启动脚本
+# 首先检查挂载是否成功
+python3 -c "
+import os
+import glob
+import sys
+try:
+    fingerprint_files = glob.glob(\\"{self.main_instance.REMOTE_ROOT}/.gds_mount_fingerprint_*\\")
+    if not fingerprint_files:
+        sys.exit(1)
+except Exception:
+    sys.exit(1)
+"
+if [ $? -ne 0 ]; then
+    clear
+    echo "当前session的GDS无法访问Google Drive文件结构。请使用GOOGLE_DRIVE --remount指令重新挂载，然后执行GDS的其他命令"
+else
+    # 确保工作目录存在并切换到正确的基础目录
+    mkdir -p "{remote_path}"
+    cd "{remote_path}" && {{
+        # 确保tmp目录存在
+        mkdir -p "{self.main_instance.REMOTE_ROOT}/tmp"
+        
+        # 创建状态文件，表示任务已开始
+        cat > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_STATUS_FILE}" << STATUS_EOF
+{{"pid": "{bg_pid}", "command": "{escaped_bg_cmd}", "status": "starting", "start_time": "{start_time}", "result_file": null}}
+STATUS_EOF
+
+        # 创建后台执行脚本
+        cat > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_SCRIPT_FILE}" << 'SCRIPT_EOF'
+#!/bin/bash
+set -e
+
+# 执行用户命令
+bash -c {quoted_user_cmd}
+EXIT_CODE=$?
+
+# 生成后台任务的JSON结果文件
+python3 << 'PYTHON_EOF'
+            import json
+import os
+from datetime import datetime
+
+try:
+    exit_code = int(os.environ.get('EXIT_CODE', '0'))
+    
+    result = {{
+        "success": exit_code == 0,
+        "data": {{
+            "exit_code": exit_code,
+            "stdout": "Background task {bg_pid} completed",
+            "stderr": "",
+            "working_dir": os.getcwd(),
+            "timestamp": datetime.now().isoformat()
+        }}
+    }}
+    
+    with open("{self.main_instance.REMOTE_ROOT}/tmp/{BG_RESULT_FILE}", "w", encoding="utf-8") as f:
+        json.dump(result, f, indent=2, ensure_ascii=False)
+        
+except Exception as e:
+    print(f"ERROR: Failed to generate JSON result: {{e}}", file=sys.stderr)
+    sys.exit(1)
+PYTHON_EOF
+
+# 更新状态文件
+cat > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_STATUS_FILE}" << STATUS_FINAL_EOF
+{{"pid": "{bg_pid}", "command": "{escaped_bg_cmd}", "status": "completed", "start_time": "{start_time}", "end_time": "$(date -Iseconds 2>/dev/null || date)", "exit_code": $EXIT_CODE, "result_file": "{BG_RESULT_FILE}"}}
+STATUS_FINAL_EOF
+SCRIPT_EOF
+
+        # 给脚本执行权限并启动后台任务
+        chmod +x "{self.main_instance.REMOTE_ROOT}/tmp/{BG_SCRIPT_FILE}"
+        nohup "{self.main_instance.REMOTE_ROOT}/tmp/{BG_SCRIPT_FILE}" > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_LOG_FILE}" 2>&1 &
+        REAL_PID=$!
+
+        # 更新状态文件包含真实PID
+        cat > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_STATUS_FILE}" << STATUS_RUNNING_EOF
+{{"pid": "{bg_pid}", "real_pid": $REAL_PID, "command": "{escaped_bg_cmd}", "status": "running", "start_time": "{start_time}", "result_file": "{BG_RESULT_FILE}"}}
+STATUS_RUNNING_EOF
+
+        echo "Background task started with ID: {bg_pid}"
+        echo "Result will be saved to: {self.main_instance.REMOTE_ROOT}/tmp/{BG_RESULT_FILE}"
+        echo "Use GDS --bg --status {bg_pid} to check status"
+        echo "Use GDS --bg --log {bg_pid} to view output"
+        echo "Use GDS --bg --result {bg_pid} to view final result"
+        
+        # 统一的执行完成提示
+        clear && echo "✅执行完成"
+    }}
+fi'''
+            else:
+                # 普通模式：使用原有的统一JSON生成脚本
+                remote_command = f'''
 # 统一JSON结果生成脚本
 # 首先检查挂载是否成功
 python3 -c "
@@ -1851,7 +1959,7 @@ exit_code = int(os.environ.get('EXIT_CODE', '0'))
 
 # 构建统一的结果JSON格式
 result = {{
-    "cmd": "{user_command}",
+    "cmd": "remote_command_executed",
     "working_dir": os.getcwd(),
     "timestamp": datetime.now().isoformat(),
     "exit_code": exit_code,
@@ -1875,14 +1983,16 @@ JSON_SCRIPT_EOF
     }}
 fi'''
             
-            # 检查生成的脚本语法
+            # 检查生成的完整脚本语法（包括wrapper部分）
             is_valid, error_msg = self._check_bash_syntax(remote_command)
+            
             if not is_valid:
-                debug_print(f"⚠️  Bash syntax error detected:")
-                debug_print(f"Error: {error_msg}")
-                debug_print(f"Script content preview:")
-                debug_print(remote_command[:500] + "..." if len(remote_command) > 500 else remote_command)
-                raise Exception(f"Generated script has syntax errors: {error_msg}")
+                print(f"Error: Bash syntax error detected in generated remote script:")
+                print(f"Error: {error_msg}")
+                print(f"Script content preview:")
+                print(remote_command[:500] + "..." if len(remote_command) > 500 else remote_command)
+                print(f"Full script length: {len(remote_command)} characters")
+                raise Exception(f"Generated remote script has syntax errors: {error_msg}")
             
             return remote_command, result_filename
             
@@ -1973,7 +2083,7 @@ fi'''
             except Exception as e:
                 # 如果是语法错误，直接返回错误，不弹出窗口
                 if "syntax errors" in str(e).lower():
-                    print(f"❌ Bash syntax error detected:")
+                    print(f"Error: Bash syntax error detected:")
                     print(f"   {str(e)}")
                     print(f"   Please fix the syntax error in your command and try again.")
                     return {
@@ -1987,6 +2097,12 @@ fi'''
                 else:
                     # 其他错误继续抛出
                     raise
+            
+            # DEBUG: 显示生成的远端指令 (暂时禁用)
+            # print(f"DEBUG: Generated remote command for '{user_command}':")
+            # print(f"=" * 60)
+            # print(remote_command)
+            # print(f"=" * 60)
             
             # 显示远程窗口
             title = f"GDS Unified Command: {user_command[:50]}..."
@@ -2020,9 +2136,9 @@ fi'''
                     }
                     
             elif window_result["action"] == "direct_feedback":
-                # 用户选择直接反馈，使用enhanced_direct_feedback
+                # 用户选择直接反馈，使用direct_feedback_interface
                 print()  # 换行
-                feedback_result = self.enhanced_direct_feedback(remote_command, actual_result_filename)
+                feedback_result = self.direct_feedback_interface(remote_command, actual_result_filename)
                 return feedback_result
                 
             elif window_result["action"] == "copy":
@@ -2044,7 +2160,7 @@ fi'''
                         "source": "unified_command"
                     }
                 }
-                
+            
         except Exception as e:
             return {
                 "success": False,
@@ -2212,7 +2328,7 @@ fi'''
             }
             
         except Exception as e:
-            debug_log_func(f"❌ DEBUG: [{get_timestamp_func()}] [CAPTURE_ERROR] _execute_with_result_capture 异常 - window_id: {window_id}, error: {str(e)}")
+            debug_log_func(f"Error: DEBUG: [{get_timestamp_func()}] [CAPTURE_ERROR] _execute_with_result_capture 异常 - window_id: {window_id}, error: {str(e)}")
             return {
                 "success": False,
                 "error": f"执行结果捕获失败: {str(e)}"
@@ -2239,7 +2355,7 @@ fi'''
             cmd (str): 命令名称
             args (list): 命令参数
             remote_command (str): 远端命令内容
-            result_filename (str, optional): 结果文件名，用于enhanced_direct_feedback
+            result_filename (str, optional): 结果文件名，用于direct_feedback_interface
             debug_info (str): debug信息，仅在直接反馈时输出
         
         Returns:
@@ -2278,13 +2394,13 @@ fi'''
                 debug_print(f"remote_command存在: {remote_command is not None}")
                 debug_print(f"debug_info存在: {debug_info is not None}")
                 try:
-                    feedback_result = self.enhanced_direct_feedback(remote_command, result_filename, debug_info)
+                    feedback_result = self.direct_feedback_interface(remote_command, result_filename, debug_info)
                     return {
                         "success": feedback_result.get("success", False),
                         "action": feedback_result.get("action", "direct_feedback"),
                         "data": feedback_result.get("data", {}),
                         "user_feedback": feedback_result.get("user_feedback", {}),
-                        "source": feedback_result.get("source", "enhanced_direct_feedback")
+                        "source": feedback_result.get("source", "direct_feedback_interface")
                     }
                 except Exception as e:
                     debug_print(f"direct_feedback调用异常: {e}")
@@ -2415,7 +2531,7 @@ fi'''
         }
         return feedback_result
     
-    def enhanced_direct_feedback(self, remote_command, result_filename=None, debug_info=None):
+    def direct_feedback_interface(self, remote_command, result_filename=None, debug_info=None):
         """
         增强的直接反馈功能 - 在收集用户反馈后，尝试等待并获取实际的执行结果
         
@@ -2427,9 +2543,6 @@ fi'''
         Returns:
             dict: 包含直接反馈和实际结果的综合结果
         """
-        debug_print(f"进入enhanced_direct_feedback方法")
-        
-        # 首先调用原来的direct_feedback方法收集用户反馈
         feedback_result = self.direct_feedback(remote_command, debug_info)
         
         # 添加分隔符
@@ -2445,8 +2558,6 @@ fi'''
                     actual_data = actual_result.get("data", {})
                     actual_stdout = actual_data.get("stdout", "").strip()
                     actual_stderr = actual_data.get("stderr", "").strip()
-                    actual_exit_code = actual_data.get("exit_code", 0)
-                    
                     if actual_stdout:
                         print(actual_stdout)
                     
@@ -2457,19 +2568,17 @@ fi'''
                     # 返回实际的执行结果，但保留用户反馈信息
                     return {
                         "success": actual_result.get("success", False),
-                        "action": "enhanced_direct_feedback",
+                        "action": "direct_feedback_interface",
                         "data": actual_data,
                         "user_feedback": feedback_result.get("data", {}),
-                        "source": "enhanced_direct_feedback"
+                        "source": "direct_feedback_interface"
                     }
                 else:
                     error_msg = actual_result.get("error", "Failed to get actual result")
-                    print(f"⚠️  Could not get actual execution result: {error_msg}")
-                    print(f"Using direct feedback result instead")
+                    print(f"Could not get actual execution result: {error_msg}")
                     
             except Exception as e:
-                print(f"⚠️  Error waiting for actual result: {e}")
-                print(f"Using direct feedback result instead")
+                print(f"Error waiting for actual result: {e}")
         
         # 如果没有result_filename或获取实际结果失败，返回用户反馈结果
         return feedback_result
@@ -2857,7 +2966,7 @@ try:
             
             root.after(1500, lambda: copy_btn.config(text="📋复制指令", bg="#2196F3"))
         except Exception as e:
-            copy_btn.config(text="❌ 复制失败", bg="#f44336")
+            copy_btn.config(text="Error: 复制失败", bg="#f44336")
     
     def trigger_copy_button():
         """触发复制按钮的点击效果（用于音效播放时自动触发）"""
@@ -3226,7 +3335,7 @@ def main():
                     print(f"Error:  GoogleDriveShell missing execute_shell_command method")
                     return 1
             except Exception as e:
-                error_msg = f"❌ Execute shell command failed: {e}"
+                error_msg = f"Error: Execute shell command failed: {e}"
                 print(error_msg)
                 return 1
     elif args[0] == '--desktop':
@@ -3345,7 +3454,7 @@ def main():
             return 0 if result["success"] else 1
             
         except Exception as e:
-            error_msg = f"❌ Execute upload command failed: {e}"
+            error_msg = f"Error: Execute upload command failed: {e}"
             print(error_msg)
             return 1
     elif args[0] == '-my':
@@ -3379,5 +3488,5 @@ def handle_remount_command(command_identifier):
         return shell._handle_remount_command(command_identifier)
         
     except Exception as e:
-        print(f"❌ 重新挂载命令失败: {e}")
+        print(f"Error: 重新挂载命令失败: {e}")
         return 1

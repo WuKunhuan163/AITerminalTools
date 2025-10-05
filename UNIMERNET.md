@@ -157,7 +157,7 @@ Common error scenarios and solutions:
 
 ### UnimerNet Not Available
 ```bash
-❌ UnimerNet is not available
+Error: UnimerNet is not available
 Please ensure UnimerNet dependencies are installed
 ```
 **Solution**: Install UnimerNet dependencies or check installation
