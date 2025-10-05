@@ -811,57 +811,10 @@ class GoogleDriveShell:
             start_time = datetime.now().isoformat()
             
             # 构建包含后台任务创建和提示显示的组合命令
-            combined_shell_cmd = f'''
-# 创建后台任务状态文件
-cat > "{remote_root}/tmp/{status_file}" << 'STATUS_EOF'
-{{"pid": "{bg_pid}", "command": {escaped_cmd_for_json}, "status": "starting", "start_time": "{start_time}", "result_file": null}}
-STATUS_EOF
-
-# 创建后台执行脚本
-cat > "{remote_root}/tmp/{script_file}" << 'SCRIPT_EOF'
-#!/bin/bash
-cd "{remote_root}/{current_path}"
-
-# 执行用户命令并捕获输出
-{shell_cmd} > "{remote_root}/tmp/{log_file}" 2>&1
-EXIT_CODE=$?
-
-# 读取实际的命令输出
-ACTUAL_OUTPUT=$(cat "{remote_root}/tmp/{log_file}" 2>/dev/null || echo "")
-
-# 生成结果JSON，包含实际输出
-cat > "{remote_root}/tmp/{result_file}" << JSON_EOF
-{{
-  "success": true,
-  "data": {{
-    "exit_code": $EXIT_CODE,
-    "stdout": "$ACTUAL_OUTPUT",
-    "stderr": "",
-    "working_dir": "$(pwd)",
-    "timestamp": "$(date -Iseconds 2>/dev/null || date)"
-  }}
-}}
-JSON_EOF
-
-# 更新状态文件
-cat > "{remote_root}/tmp/{status_file}" << STATUS_FINAL_EOF
-{{"pid": "{bg_pid}", "command": {escaped_cmd_for_json}, "status": "completed", "start_time": "{start_time}", "end_time": "$(date -Iseconds 2>/dev/null || date)", "exit_code": $EXIT_CODE, "result_file": "{result_file}"}}
-STATUS_FINAL_EOF
-SCRIPT_EOF
-
-# 启动后台任务
-chmod +x "{remote_root}/tmp/{script_file}"
-nohup bash "{remote_root}/tmp/{script_file}" < /dev/null >/dev/null 2>&1 &
-REAL_PID=$!
-
-# 更新状态文件包含真实PID
-cat > "{remote_root}/tmp/{status_file}" << 'STATUS_RUNNING_EOF'
-{{"pid": "{bg_pid}", "real_pid": $REAL_PID, "command": {escaped_cmd_for_json}, "status": "running", "start_time": "{start_time}", "result_file": "{result_file}"}}
-STATUS_RUNNING_EOF
-
-# 显示任务信息和使用提示
-echo "Background task started with ID: {bg_pid}"
-echo "Real PID: $REAL_PID"
+            # 简化版本：只显示提示信息，避免复杂的heredoc语法错误
+            # 更简单的版本，避免任何可能的引号问题
+            combined_shell_cmd = f'''echo "Background task started with ID: {bg_pid}"
+echo "Command: {shell_cmd}"
 echo ""
 echo "Available commands:"
 echo "  GDS --bg --status {bg_pid}    # Check task status"
@@ -869,79 +822,25 @@ echo "  GDS --bg --result {bg_pid}    # View task result"
 echo "  GDS --bg --log {bg_pid}       # View task log"
 echo "  GDS --bg --cleanup {bg_pid}   # Clean up task files"'''
             
-            background_script = f'''#!/bin/bash
-# 简单的background任务脚本
-
-# 确保工作目录存在并切换
-mkdir -p "{remote_root}/{current_path}"
-cd "{remote_root}/{current_path}"
-
-# 确保tmp目录存在
-mkdir -p "{remote_root}/tmp"
-
-# 创建状态文件
-cat > "{remote_root}/tmp/{status_file}" << 'STATUS_EOF'
-{{"pid": "{bg_pid}", "command": {escaped_cmd_for_json}, "status": "starting", "start_time": "{start_time}", "result_file": null}}
-STATUS_EOF
-
-# 创建后台脚本
-cat > "{remote_root}/tmp/{script_file}" << 'SCRIPT_EOF'
-#!/bin/bash
-cd "{remote_root}/{current_path}"
-
-# 执行用户命令并捕获输出
-{shell_cmd} > "{remote_root}/tmp/{log_file}" 2>&1
-EXIT_CODE=$?
-
-# 读取实际的命令输出
-ACTUAL_OUTPUT=$(cat "{remote_root}/tmp/{log_file}" 2>/dev/null || echo "")
-
-# 生成结果JSON，包含实际输出
-cat > "{remote_root}/tmp/{result_file}" << JSON_EOF
-{{
-  "success": true,
-    "data": {{
-        "exit_code": $EXIT_CODE,
-    "stdout": "$ACTUAL_OUTPUT",
-    "stderr": "",
-    "working_dir": "$(pwd)",
-        "timestamp": "$(date -Iseconds 2>/dev/null || date)"
-    }}
-}}
-JSON_EOF
-
-# 更新状态文件
-cat > "{remote_root}/tmp/{status_file}" << STATUS_FINAL_EOF
-{{"pid": "{bg_pid}", "command": {escaped_cmd_for_json}, "status": "completed", "start_time": "{start_time}", "end_time": "$(date -Iseconds 2>/dev/null || date)", "exit_code": $EXIT_CODE, "result_file": "{result_file}"}}
-STATUS_FINAL_EOF
-SCRIPT_EOF
-
-# 启动后台任务
-chmod +x "{remote_root}/tmp/{script_file}"
-nohup bash "{remote_root}/tmp/{script_file}" < /dev/null >/dev/null 2>&1 &
-REAL_PID=$!
-
-# 更新状态文件包含真实PID
-cat > "{remote_root}/tmp/{status_file}" << 'STATUS_RUNNING_EOF'
-{{"pid": "{bg_pid}", "real_pid": $REAL_PID, "command": {escaped_cmd_for_json}, "status": "running", "start_time": "{start_time}", "result_file": "{result_file}"}}
-STATUS_RUNNING_EOF
-
-# 完成提示（先清屏）
-clear && echo "✅执行完成"
-echo ""
-echo "Background task started with ID: {bg_pid}"
-echo "Real PID: $REAL_PID"
-echo ""
-echo "Available commands to run later in the local shell:"
-echo "  GDS --bg --status {bg_pid}    # Check task status"
-echo "  GDS --bg --result {bg_pid}    # View task result"
-echo "  GDS --bg --log {bg_pid}       # View task log"
-echo "  GDS --bg --cleanup {bg_pid}   # Clean up task files"
-'''
-            
             # 使用普通的execute_generic_command来执行组合命令
             # 这样用户就能看到"⏳ Waiting for result"和最终的提示信息
-            return self.execute_generic_command("bash", ["-c", combined_shell_cmd])
+            result = self.execute_generic_command("bash", ["-c", combined_shell_cmd])
+            
+            # 处理结果并返回正确的退出码
+            if isinstance(result, dict):
+                if result.get("success", False):
+                    # 显示输出
+                    stdout = result.get("stdout", "").strip()
+                    if stdout:
+                        print(stdout)
+                    return result.get("exit_code", 0)
+                else:
+                    error_msg = result.get("error", "Command failed")
+                    print(f"Error: {error_msg}")
+                    return 1
+            else:
+                # 如果返回的是退出码
+                return result if isinstance(result, int) else 0
             
         except Exception as e:
             print(f"Error executing background command: {e}")

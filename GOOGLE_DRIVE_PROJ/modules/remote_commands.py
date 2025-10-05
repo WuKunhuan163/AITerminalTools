@@ -1715,6 +1715,7 @@ fi
             import time
             import hashlib
             import json
+            import shlex
             from datetime import datetime
             
             # 获取当前路径
@@ -1781,7 +1782,7 @@ import os
 import glob
 import sys
 try:
-    fingerprint_files = glob.glob(\\"{self.main_instance.REMOTE_ROOT}/.gds_mount_fingerprint_*\\")
+    fingerprint_files = glob.glob(\"{self.main_instance.REMOTE_ROOT}/.gds_mount_fingerprint_*\")
     if not fingerprint_files:
         sys.exit(1)
 except Exception:
@@ -1875,7 +1876,7 @@ import os
 import glob
 import sys
 try:
-    fingerprint_files = glob.glob(\\"{self.main_instance.REMOTE_ROOT}/.gds_mount_fingerprint_*\\")
+    fingerprint_files = glob.glob(\"{self.main_instance.REMOTE_ROOT}/.gds_mount_fingerprint_*\")
     if not fingerprint_files:
         sys.exit(1)
 except Exception:
@@ -1900,7 +1901,7 @@ else
         
         # 直接执行用户命令，捕获输出和错误
         set +e  # 允许命令失败
-        {user_command} > "$OUTPUT_FILE" 2> "$ERROR_FILE"
+        bash -c {shlex.quote(user_command)} > "$OUTPUT_FILE" 2> "$ERROR_FILE"
         EXIT_CODE=$?
         echo "$EXIT_CODE" > "$EXITCODE_FILE"
         set -e
