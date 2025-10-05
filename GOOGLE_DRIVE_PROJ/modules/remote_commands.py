@@ -1827,20 +1827,24 @@ fi
                 except Exception as e:
                     pass
                 
-                remote_command = f'''# Background任务启动脚本
+                # 创建后台管理脚本内容
+                background_manager_content = f'''#!/bin/bash
+# Background Task Manager for {bg_pid}
+
 # 确保工作目录存在并切换到正确的基础目录
 mkdir -p "{remote_path}"
-cd "{remote_path}" && {{
-    # 确保tmp目录存在
-    mkdir -p "{self.main_instance.REMOTE_ROOT}/tmp"
-        
-        # 创建状态文件，表示任务已开始
-        cat > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_STATUS_FILE}" << STATUS_EOF
+cd "{remote_path}"
+
+# 确保tmp目录存在
+mkdir -p "{self.main_instance.REMOTE_ROOT}/tmp"
+
+# 创建状态文件，表示任务已开始
+cat > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_STATUS_FILE}" << STATUS_EOF
 {starting_json_template}
 STATUS_EOF
 
-        # 创建后台执行脚本
-        cat > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_SCRIPT_FILE}" << 'SCRIPT_EOF'
+# 创建后台执行脚本
+cat > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_SCRIPT_FILE}" << 'SCRIPT_EOF'
 #!/bin/bash
 set -e
 
@@ -1882,35 +1886,84 @@ cat > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_STATUS_FILE}" << STATUS_FINAL_EO
 STATUS_FINAL_EOF
 SCRIPT_EOF
 
-        # 给脚本执行权限并启动后台任务
-        chmod +x "{self.main_instance.REMOTE_ROOT}/tmp/{BG_SCRIPT_FILE}"
-        nohup "{self.main_instance.REMOTE_ROOT}/tmp/{BG_SCRIPT_FILE}" < /dev/null > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_LOG_FILE}" 2>&1 &
-        REAL_PID=$!
+# 给脚本执行权限并启动后台任务
+chmod +x "{self.main_instance.REMOTE_ROOT}/tmp/{BG_SCRIPT_FILE}"
+nohup "{self.main_instance.REMOTE_ROOT}/tmp/{BG_SCRIPT_FILE}" < /dev/null > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_LOG_FILE}" 2>&1 &
+REAL_PID=$!
 
-        # 更新状态文件包含真实PID
-        cat > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_STATUS_FILE}" << STATUS_RUNNING_EOF
+# 更新状态文件包含真实PID
+cat > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_STATUS_FILE}" << STATUS_RUNNING_EOF
 {running_json_template}
 STATUS_RUNNING_EOF
 
-        # 验证background任务文件是否被正确创建
-        sleep 1  # 等待文件系统同步
-        if [ -f "{self.main_instance.REMOTE_ROOT}/tmp/{BG_STATUS_FILE}" ]; then
-            echo "Background task started with ID: {bg_pid}"
-            echo "Command: {bg_original_cmd}"
-            echo ""
-            echo "Run the following commands to track the background task status:"
-            echo "  GDS --bg --status {bg_pid}    # Check task status"
-            echo "  GDS --bg --result {bg_pid}    # View task result"
-            echo "  GDS --bg --log {bg_pid}       # View task log"
-            echo "  GDS --bg --cleanup {bg_pid}   # Clean up task files"
-        else
-            echo "Error: Background task creation failed - status file not found"
-            exit 1
-        fi
-        
-    # 统一的执行完成提示
-    clear && echo "✅执行完成"
-}}'''
+# 验证background任务文件是否被正确创建
+sleep 1  # 等待文件系统同步
+if [ -f "{self.main_instance.REMOTE_ROOT}/tmp/{BG_STATUS_FILE}" ]; then
+    echo "Background task started with ID: {bg_pid}"
+    echo "Command: {bg_original_cmd}"
+    echo ""
+    echo "Run the following commands to track the background task status:"
+    echo "  GDS --bg --status {bg_pid}    # Check task status"
+    echo "  GDS --bg --result {bg_pid}    # View task result"
+    echo "  GDS --bg --log {bg_pid}       # View task log"
+    echo "  GDS --bg --cleanup {bg_pid}   # Clean up task files"
+else
+    echo "Error: Background task creation failed - status file not found"
+    exit 1
+fi
+'''
+
+                # 主程序：创建后台管理进程并立即返回，同时生成主程序的JSON结果
+                remote_command = f'''# Background任务启动脚本 - 主程序立即返回
+# 确保基础目录存在
+mkdir -p "{self.main_instance.REMOTE_ROOT}/tmp"
+
+# 创建后台任务管理脚本
+cat > "{self.main_instance.REMOTE_ROOT}/tmp/bg_manager_{bg_pid}.sh" << 'MANAGER_EOF'
+{background_manager_content}
+MANAGER_EOF
+
+# 给管理脚本执行权限
+chmod +x "{self.main_instance.REMOTE_ROOT}/tmp/bg_manager_{bg_pid}.sh"
+
+# 启动后台管理进程
+nohup "{self.main_instance.REMOTE_ROOT}/tmp/bg_manager_{bg_pid}.sh" > "{self.main_instance.REMOTE_ROOT}/tmp/bg_manager_{bg_pid}.log" 2>&1 &
+
+# 主程序立即返回消息
+echo "Background task manager started for ID: {bg_pid}"
+echo "Task creation is proceeding in background..."
+
+# 统一的执行完成提示
+clear && echo "✅执行完成"
+
+# 立即生成主程序的JSON结果文件（用于本地wait and read）
+cd "{self.main_instance.REMOTE_ROOT}"
+export TIMESTAMP="{timestamp}"
+export HASH="{cmd_hash}"
+python3 << 'MAIN_JSON_EOF'
+import json
+import os
+from datetime import datetime
+
+# 构建主程序执行结果
+result = {{
+    "cmd": "background_task_created",
+    "working_dir": os.getcwd(),
+    "timestamp": datetime.now().isoformat(),
+    "exit_code": 0,
+    "stdout": "Background task manager started for ID: {bg_pid}\\nTask creation is proceeding in background...\\n✅执行完成",
+    "stderr": ""
+}}
+
+# 写入主程序结果文件（注意：这是主程序的结果文件，不是背景任务的结果文件）
+result_file = "{self.main_instance.REMOTE_ROOT}/tmp/{result_filename}"
+result_dir = os.path.dirname(result_file)
+if result_dir:
+    os.makedirs(result_dir, exist_ok=True)
+
+with open(result_file, "w", encoding="utf-8") as f:
+    json.dump(result, f, indent=2, ensure_ascii=False)
+MAIN_JSON_EOF'''
             else:
                 # 普通模式：使用原有的统一JSON生成脚本
                 remote_command = f'''
@@ -1933,7 +1986,7 @@ except Exception:
     sys.exit(1)
 "
 if [ $? -ne 0 ]; then
-    echo "当前session的GDS无法访问Google Drive文件结构。请使用GOOGLE_DRIVE --remount指令重新挂载，然后执行GDS的其他命令"
+    clear && echo "当前session的GDS无法访问Google Drive文件结构。请使用GOOGLE_DRIVE --remount指令重新挂载，然后执行GDS的其他命令"
 else
     # 确保工作目录存在并切换到正确的基础目录
     mkdir -p "{remote_path}"
