@@ -932,70 +932,17 @@ echo ""
 echo "Background task started with ID: {bg_pid}"
 echo "Real PID: $REAL_PID"
 echo ""
-echo "Available commands:"
+echo "Available commands to run later in the local shell:"
 echo "  GDS --bg --status {bg_pid}    # Check task status"
 echo "  GDS --bg --result {bg_pid}    # View task result"
 echo "  GDS --bg --log {bg_pid}       # View task log"
 echo "  GDS --bg --cleanup {bg_pid}   # Clean up task files"
-echo ""
-
-# 生成统一的结果JSON文件，用于本地下载
-cat > "{remote_root}/tmp/{unified_result_filename}" << UNIFIED_JSON_EOF
-{{
-  "cmd": "background_task_created",
-  "working_dir": "$(pwd)",
-  "timestamp": "$(date -Iseconds 2>/dev/null || date)",
-  "exit_code": 0,
-  "stdout": "✅执行完成\\n\\nBackground task started with ID: {bg_pid}\\nReal PID: $REAL_PID\\n\\nAvailable commands:\\n  GDS --bg --status {bg_pid}    # Check task status\\n  GDS --bg --result {bg_pid}    # View task result\\n  GDS --bg --log {bg_pid}       # View task log\\n  GDS --bg --cleanup {bg_pid}   # Clean up task files\\n",
-  "stderr": ""
-}}
-UNIFIED_JSON_EOF
 '''
             
-            # 显示远程窗口执行background脚本
-            window_result = self.remote_commands.show_command_window_subprocess(
-                title=f"GDS Background Command: {shell_cmd[:50]}...",
-                command_text=background_script
-            )
+            # 使用普通的execute_generic_command来执行组合命令
+            # 这样用户就能看到"⏳ Waiting for result"和最终的提示信息
+            return self.execute_generic_command("bash", ["-c", combined_shell_cmd])
             
-            # 处理窗口结果
-            if window_result["action"] == "success":
-                
-                # 等待并读取结果（使用之前生成的统一结果文件名）
-                result = self.remote_commands._wait_and_read_result_file(unified_result_filename)
-                
-                if result.get("success", False):
-                    # 显示远程执行的输出（包含background任务信息和提示）
-                    stdout = result.get("stdout", "").strip()
-                    stderr = result.get("stderr", "").strip()
-                    
-                    if stdout:
-                        print(stdout)
-                    if stderr:
-                        import sys
-                        print(stderr, file=sys.stderr)
-                    
-                    return 0
-                else:
-                    print(f"Error: Failed to get background task result")
-                    return 1
-            elif window_result["action"] == "direct_feedback":
-                # 对于background命令，直接反馈就是提供任务信息
-                print(f"Please provide background task execution result:")
-                print(f"Task ID: {bg_pid}")
-                print(f"Command: {shell_cmd}")
-                
-                user_feedback = self.remote_commands.direct_feedback(background_script)
-                if user_feedback:
-                    print(f"Background task {bg_pid} feedback received")
-                    return 0
-                else:
-                    print(f"Background task {bg_pid} cancelled")
-                    return 1
-            else:
-                print(f"Background task {bg_pid} cancelled or failed")
-                return 1
-                
         except Exception as e:
             print(f"Error executing background command: {e}")
             return 1
@@ -1005,27 +952,10 @@ UNIFIED_JSON_EOF
         
         # 保存原始用户命令，用于后续的文件验证分析
         self._original_user_command = shell_cmd.strip()
-        # 调试日志已禁用
-        
-        # ============ 简化架构：委托给execute_generic_command ============
-        # 队列管理由execute_generic_command统一处理，避免双重管理
-        # 调试日志已禁用
-        # ========== 简化架构结束 ==========
-        
         try:
-            # 检测引号命令标记
             is_quoted_command = shell_cmd.startswith("__QUOTED_COMMAND__")
             if is_quoted_command:
-                shell_cmd = shell_cmd[len("__QUOTED_COMMAND__"):]  # 移除标记
-            # 显示命令
-            # print(f"=" * 13)
-            # display_cmd = shell_cmd.replace('\n', ' ')
-            import os
-            # local_home = os.path.expanduser("~")
-            # if local_home in display_cmd:
-            #     display_cmd = display_cmd.replace(local_home, "~")
-            # print(f"GDS {display_cmd}")
-            # print(f"=" * 13)
+                shell_cmd = shell_cmd[len("__QUOTED_COMMAND__"):]
             
             # 首先检测引号包围的完整命令（在命令解析之前）
             shell_cmd_clean = shell_cmd.strip()
