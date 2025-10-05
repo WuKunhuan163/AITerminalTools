@@ -611,12 +611,10 @@ class FileCore:
         try:
             
             if not self.drive_service:
-                print(f"DEBUG: Google Drive API服务未初始化")
                 return {"success": False, "error": "Google Drive API服务未初始化"}
                 
             current_shell = self.main_instance.get_current_shell()
             if not current_shell:
-                print(f"DEBUG: 没有活跃的远程shell")
                 return {"success": False, "error": "没有活跃的远程shell，请先创建或切换到一个shell"}
             
             

@@ -165,11 +165,7 @@ class PipOperations:
     def _load_all_venv_states(self):
         """Load venv states using VenvApiManager"""
         try:
-            try:
-                from .venv_manager import VenvApiManager
-            except ImportError:
-                from venv_manager import VenvApiManager
-            
+            from venv_manager import VenvApiManager
             api_manager = VenvApiManager(self.drive_service, self.main_instance)
             result = api_manager.read_venv_states()
             if result.get('success') and 'data' in result:

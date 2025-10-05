@@ -303,20 +303,13 @@ import glob
 
 # 检查具体文件
 if os.path.exists("{fingerprint_file}"):
-    print(f"DEBUG: 具体文件存在: {fingerprint_file}")
     sys.exit(0)  # 文件存在
 else:
-    print(f"DEBUG: 具体文件不存在: {fingerprint_file}")
-    
     # 检查目录是否存在
     dir_path = os.path.dirname("{fingerprint_file}")
-    print(f"DEBUG: 目录存在: {{os.path.exists(dir_path)}} - {{dir_path}}")
-    
     # 列出所有指纹文件
     pattern = "{fingerprint_file}".rsplit("_", 1)[0] + "_*"
     matching_files = glob.glob(pattern)
-    print(f"DEBUG: 匹配的指纹文件: {{matching_files}}")
-    
     sys.exit(1)  # 文件不存在
 '''
             
@@ -326,12 +319,6 @@ else:
                 timeout=5,
                 text=True
             )
-            
-            # 如果有debug输出，显示它
-            if result.stdout:
-                print(f"DEBUG subprocess stdout: {result.stdout.strip()}")
-            if result.stderr:
-                print(f"DEBUG subprocess stderr: {result.stderr.strip()}")
             
             return {"exists": result.returncode == 0}
             
@@ -1699,7 +1686,7 @@ fi
         except Exception as e:
             return False, f"Syntax check failed: {str(e)}"
 
-    def _generate_unified_json_command(self, user_command, result_filename=None, current_shell=None):
+    def _generate_unified_json_command(self, user_command, result_filename=None, current_shell=None, skip_quote_escaping=False):
         """
         统一的JSON结果生成接口 - 为任何用户命令生成包含JSON结果的远程脚本
         
@@ -1707,6 +1694,7 @@ fi
             user_command (str): 用户要执行的完整命令
             result_filename (str, optional): 指定的结果文件名，如果不提供则自动生成
             current_shell (dict, optional): 当前shell信息，用于路径解析
+            skip_quote_escaping (bool, optional): 跳过引号转义处理，用于已经处理过的命令
             
         Returns:
             tuple: (远端命令字符串, 结果文件名)
@@ -1715,8 +1703,28 @@ fi
             import time
             import hashlib
             import json
+            
+            # DEBUG: 超级大量debug print开始
+            print(f"DEBUG: _generate_unified_json_command called")
+            print(f"DEBUG: user_command type: {type(user_command)}")
+            print(f"DEBUG: user_command length: {len(user_command)}")
+            print(f"DEBUG: user_command (first 200 chars): {user_command[:200]}...")
+            print(f"DEBUG: skip_quote_escaping: {skip_quote_escaping}")
+            print(f"DEBUG: result_filename: {result_filename}")
+            print(f"DEBUG: current_shell: {current_shell}")
             import shlex
             from datetime import datetime
+            
+            # 检测和处理感叹号问题（只对简单用户命令进行检测）
+            # 如果用户命令很短且包含感叹号，可能是shell历史扩展问题
+            if '!' in user_command and len(user_command) < 200 and not user_command.strip().startswith('#'):
+                print(f"Warning: Command contains exclamation marks which may cause shell history expansion issues.")
+                print(f"Original command: {user_command}")
+                # 自动移除感叹号
+                cleaned_command = user_command.replace('!', '')
+                print(f"Cleaned command: {cleaned_command}")
+                print(f"Suggestion: Avoid using '!' in commands to prevent shell history expansion errors.")
+                user_command = cleaned_command
             
             # 获取当前路径
             if current_shell:
@@ -1756,6 +1764,7 @@ fi
             cmd_hash = hashlib.md5(user_command.encode()).hexdigest()[:8]
             
             # 根据是否为background模式生成不同的远程命令脚本
+            print(f"DEBUG: About to check is_background: {is_background}")
             if is_background:
                 # Background模式：生成后台任务脚本
                 import shlex
@@ -1768,8 +1777,34 @@ fi
                 BG_LOG_FILE = get_bg_log_file(bg_pid)
                 BG_RESULT_FILE = get_bg_result_file(bg_pid)
                 
-                # 使用字符串拼接而不是复杂的f-string来避免转义问题
-                escaped_bg_cmd = bg_original_cmd.replace('"', '\\"')
+                # 创建统一的JSON状态生成函数
+                def generate_status_json(pid, command, status, start_time, end_time=None, exit_code=None, result_file=None, real_pid=None):
+                    """统一的状态JSON生成函数"""
+                    status_obj = {
+                        "pid": pid,
+                        "command": command,
+                        "status": status,
+                        "start_time": start_time
+                    }
+                    if end_time:
+                        status_obj["end_time"] = end_time
+                    if exit_code is not None:
+                        status_obj["exit_code"] = exit_code
+                    if result_file:
+                        status_obj["result_file"] = result_file
+                    if real_pid:
+                        status_obj["real_pid"] = real_pid
+                    return json.dumps(status_obj, ensure_ascii=False)
+                
+                
+                # 为JSON生成正确转义的命令字符串
+                escaped_bg_cmd = json.dumps(bg_original_cmd)
+                
+                # 测试shlex.quote的结果
+                quoted_bg_cmd = shlex.quote(bg_original_cmd)
+                
+                # 测试统一JSON生成函数
+                test_json = generate_status_json(bg_pid, bg_original_cmd, "starting", start_time)
                 
                 # 获取当前挂载的特定指纹文件名
                 mount_hash = getattr(self.main_instance, 'MOUNT_HASH', None)
@@ -1778,6 +1813,26 @@ fi
                 else:
                     # 回退到通配符模式
                     fingerprint_file = f"{self.main_instance.REMOTE_ROOT}/tmp/.gds_mount_fingerprint_*"
+                
+                # 生成各种状态的JSON - 使用python3 -c方式，传递原始命令让python处理转义
+                # 为了避免shell转义问题，将命令作为环境变量传递
+                starting_json_template = f'$(BG_ORIGINAL_CMD={shlex.quote(bg_original_cmd)} python3 -c "import json, os; print(json.dumps({{\\"pid\\": \\"{bg_pid}\\", \\"command\\": os.environ[\\"BG_ORIGINAL_CMD\\"], \\"status\\": \\"starting\\", \\"start_time\\": \\"{start_time}\\"}}, ensure_ascii=False))")'
+                completed_json_template = f'$(BG_ORIGINAL_CMD={shlex.quote(bg_original_cmd)} python3 -c "import json, os; print(json.dumps({{\\"pid\\": \\"{bg_pid}\\", \\"command\\": os.environ[\\"BG_ORIGINAL_CMD\\"], \\"status\\": \\"completed\\", \\"start_time\\": \\"{start_time}\\", \\"end_time\\": \\"$(date -Iseconds 2>/dev/null || date)\\", \\"exit_code\\": $EXIT_CODE, \\"result_file\\": \\"{BG_RESULT_FILE}\\"}}, ensure_ascii=False))")'
+                running_json_template = f'$(BG_ORIGINAL_CMD={shlex.quote(bg_original_cmd)} python3 -c "import json, os; print(json.dumps({{\\"pid\\": \\"{bg_pid}\\", \\"command\\": os.environ[\\"BG_ORIGINAL_CMD\\"], \\"status\\": \\"running\\", \\"start_time\\": \\"{start_time}\\", \\"result_file\\": \\"{BG_RESULT_FILE}\\", \\"real_pid\\": $REAL_PID}}, ensure_ascii=False))")'
+                
+                # 测试模板实际执行结果（模拟）
+                import subprocess
+                try:
+                    test_env = os.environ.copy()
+                    test_env['BG_ORIGINAL_CMD'] = bg_original_cmd
+                    test_result = subprocess.run([
+                        'python3', '-c', 
+                        f'import json, os; print(json.dumps({{"pid": "{bg_pid}", "command": os.environ["BG_ORIGINAL_CMD"], "status": "starting", "start_time": "{start_time}"}}, ensure_ascii=False))'
+                    ], env=test_env, capture_output=True, text=True)
+                    if test_result.stderr:
+                        print (test_result.stderr)
+                except Exception as e:
+                    pass
                 
                 remote_command = f'''# Background任务启动脚本
 # 确保工作目录存在并切换到正确的基础目录
@@ -1788,7 +1843,7 @@ cd "{remote_path}" && {{
         
         # 创建状态文件，表示任务已开始
         cat > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_STATUS_FILE}" << STATUS_EOF
-{{"pid": "{bg_pid}", "command": "{escaped_bg_cmd}", "status": "starting", "start_time": "{start_time}", "result_file": null}}
+{starting_json_template}
 STATUS_EOF
 
         # 创建后台执行脚本
@@ -1797,7 +1852,7 @@ STATUS_EOF
 set -e
 
 # 执行用户命令
-bash -c {quoted_user_cmd}
+bash -c {bg_original_cmd}
 EXIT_CODE=$?
 
 # 生成后台任务的JSON结果文件
@@ -1830,7 +1885,7 @@ PYTHON_EOF
 
 # 更新状态文件
 cat > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_STATUS_FILE}" << STATUS_FINAL_EOF
-{{"pid": "{bg_pid}", "command": "{escaped_bg_cmd}", "status": "completed", "start_time": "{start_time}", "end_time": "$(date -Iseconds 2>/dev/null || date)", "exit_code": $EXIT_CODE, "result_file": "{BG_RESULT_FILE}"}}
+{completed_json_template}
 STATUS_FINAL_EOF
 SCRIPT_EOF
 
@@ -1841,14 +1896,14 @@ SCRIPT_EOF
 
         # 更新状态文件包含真实PID
         cat > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_STATUS_FILE}" << STATUS_RUNNING_EOF
-{{"pid": "{bg_pid}", "real_pid": $REAL_PID, "command": "{escaped_bg_cmd}", "status": "running", "start_time": "{start_time}", "result_file": "{BG_RESULT_FILE}"}}
+{running_json_template}
 STATUS_RUNNING_EOF
 
         # 验证background任务文件是否被正确创建
         sleep 1  # 等待文件系统同步
         if [ -f "{self.main_instance.REMOTE_ROOT}/tmp/{BG_STATUS_FILE}" ]; then
             echo "Background task started with ID: {bg_pid}"
-            echo "Command: {escaped_bg_cmd}"
+            echo "Command: {bg_original_cmd}"
             echo ""
             echo "Run the following commands to track the background task status:"
             echo "  GDS --bg --status {bg_pid}    # Check task status"
@@ -1985,6 +2040,7 @@ JSON_SCRIPT_EOF
     }}
 fi'''
             
+            
             # 检查生成的完整脚本语法（包括wrapper部分）
             is_valid, error_msg = self._check_bash_syntax(remote_command)
             
@@ -1995,6 +2051,12 @@ fi'''
                 print(remote_command[:500] + "..." if len(remote_command) > 500 else remote_command)
                 print(f"Full script length: {len(remote_command)} characters")
                 raise Exception(f"Generated remote script has syntax errors: {error_msg}")
+            
+            # DEBUG: 最终生成的remote_command
+            print(f"DEBUG: Final remote_command generated successfully")
+            print(f"DEBUG: Final remote_command length: {len(remote_command)}")
+            print(f"DEBUG: Final remote_command (first 500 chars): {remote_command[:500]}...")
+            print(f"DEBUG: Final result_filename: {result_filename}")
             
             return remote_command, result_filename
             
@@ -2059,12 +2121,12 @@ fi'''
                 user_command = cmd
             
             # 使用统一的JSON生成接口
-            return self._generate_unified_json_command(user_command, None, current_shell)
+            return self._generate_unified_json_command(user_command, None, current_shell, False)
             
         except Exception as e:
             raise Exception(f"Generate remote command failed: {str(e)}")
 
-    def execute_unified_command(self, user_command, result_filename=None, current_shell=None):
+    def execute_unified_command(self, user_command, result_filename=None, current_shell=None, skip_quote_escaping=False):
         """
         统一的命令执行接口 - 支持任何用户命令，自动生成JSON结果
         
@@ -2072,6 +2134,7 @@ fi'''
             user_command (str): 用户要执行的完整命令
             result_filename (str, optional): 指定的结果文件名
             current_shell (dict, optional): 当前shell信息
+            skip_quote_escaping (bool, optional): 跳过引号转义处理，用于已经处理过的命令
             
         Returns:
             dict: 执行结果
@@ -2080,7 +2143,7 @@ fi'''
             # 使用统一的JSON生成接口（包含语法检查）
             try:
                 remote_command, actual_result_filename = self._generate_unified_json_command(
-                    user_command, result_filename, current_shell
+                    user_command, result_filename, current_shell, skip_quote_escaping
                 )
             except Exception as e:
                 # 如果是语法错误，直接返回错误，不弹出窗口
@@ -2367,6 +2430,24 @@ fi'''
             dict: 用户操作结果
         """
         try:
+            # 保存远端命令到文件以便调试
+            try:
+                import os
+                import time
+                from pathlib import Path
+                data_dir = Path(__file__).parent.parent / "GOOGLE_DRIVE_DATA"
+                cmd_file_path = os.path.join(data_dir, 'remote_window_cmd.sh')
+                
+                # 创建命令文件内容
+                cmd_content = f"#!/bin/bash\n# Generated at {time.strftime('%Y-%m-%d %H:%M:%S')}\n# Command: {cmd} {' '.join(args)}\n\n{remote_command}\n"
+                
+                with open(cmd_file_path, 'w', encoding='utf-8') as f:
+                    f.write(cmd_content)
+                
+                # 设置执行权限
+                os.chmod(cmd_file_path, 0o755)
+            except Exception as e:
+                print(f"Warning: Failed to save remote command: {e}")
             
             # show_command_window_subprocess现在是类方法
             title = f"GDS Remote Command: {cmd}"
@@ -3325,10 +3406,6 @@ def main():
                 shell_cmd = ' '.join(shell_cmd_parts_quoted)
                 quoted_parts = shell_cmd_parts  # 为调试信息设置
             debug_capture.start_capture()
-            debug_print(f"DEBUG: args[1:] = {args[1:]}")
-            debug_print(f"DEBUG: shell_cmd_parts = {shell_cmd_parts}")
-            debug_print(f"DEBUG: quoted_parts = {quoted_parts}")
-            debug_print(f"DEBUG: final shell_cmd = {repr(shell_cmd)}")
             debug_capture.stop_capture()
             
             try:

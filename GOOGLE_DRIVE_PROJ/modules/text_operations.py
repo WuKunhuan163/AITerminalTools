@@ -1074,7 +1074,6 @@ class TextOperations:
         except Exception as e:
             # 输出debug信息用于异常诊断
             if debug_info:
-                print(f"DEBUG INFO (due to exception):")
                 for i, info in enumerate(debug_info, 1):
                     print(f"  {i}. {info}")
             return {"success": False, "error": f"Edit operation failed: {str(e)}"}

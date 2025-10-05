@@ -759,16 +759,19 @@ class GoogleDriveShell:
             pass
     
     def _execute_background_command(self, shell_cmd, command_identifier=None):
-        """执行background命令 - 简化版本，不使用统一接口"""
+        """执行background命令 - 使用echo命令构建，完全避免f-string嵌套引号"""
         import time
         import random
-        import shlex
+        import base64
         from datetime import datetime
         from modules.constants import get_bg_status_file, get_bg_script_file, get_bg_log_file, get_bg_result_file
+        
+        # 开始调试后台任务创建
         
         try:
             # 获取当前shell
             current_shell = self.get_current_shell()
+            print(f"DEBUG: current_shell={current_shell}")
             if not current_shell:
                 print(f"Error: 没有活跃的shell会话")
                 return 1
@@ -792,192 +795,174 @@ class GoogleDriveShell:
             except Exception as e:
                 print(f"Warning: Could not check syntax: {e}")
             
-            # 先生成一个临时的background PID用于初始化
-            temp_bg_pid = f"{int(time.time())}_{random.randint(1000, 9999)}"
-            
-            # 初始化bg_pid
-            bg_pid = temp_bg_pid
-            
-            # 获取远程路径信息
-            current_path = current_shell.get("current_path", "~")
-            remote_root = self.remote_commands.main_instance.REMOTE_ROOT
-            
-            # 创建包含提示信息的组合命令
-            import json
-            escaped_cmd_for_json = json.dumps(shell_cmd)  # 正确的JSON转义
+            # 生成background PID
+            bg_pid = f"{int(time.time())}_{random.randint(1000, 9999)}"
             start_time = datetime.now().isoformat()
             
-            # 构建包含后台任务创建和提示显示的组合命令
-            # 简化版本：只显示提示信息，避免复杂的heredoc语法错误
-            # 更简单的版本，避免任何可能的引号问题
-            # 构建background任务创建的远程命令，像_show_background_status一样
-            try:
-                # 获取REMOTE_ROOT路径
-                tmp_path = f"{self.REMOTE_ROOT}/tmp"
-                
-                # 使用常量构建文件名
-                from modules.constants import get_bg_status_file, get_bg_script_file, get_bg_log_file, get_bg_result_file
-                status_file = get_bg_status_file(bg_pid)
-                script_file = get_bg_script_file(bg_pid)
-                log_file = get_bg_log_file(bg_pid)
-                result_file = get_bg_result_file(bg_pid)
-                
-                # 转义命令中的引号
-                import shlex
-                import json
-                escaped_cmd = json.dumps(shell_cmd)  # 使用JSON转义，更可靠
-                
-                # 检查命令是否已经被引号包围，如果是，则移除外层引号再处理
-                if shell_cmd.startswith('"') and shell_cmd.endswith('"'):
-                    # 命令已经被引号包围，移除外层引号
-                    inner_cmd = shell_cmd[1:-1]
-                    quoted_cmd = shlex.quote(inner_cmd)
-                else:
-                    quoted_cmd = shlex.quote(shell_cmd)
-                
-                # 构建background任务创建命令
-                from datetime import datetime
-                start_time = datetime.now().isoformat()
-                
-                bg_create_cmd = f'''
-# 确保tmp目录存在
-mkdir -p "{tmp_path}"
-
-# 创建状态文件，表示任务已开始
-cat > "{tmp_path}/{status_file}" << STATUS_EOF
-{{"pid": "{bg_pid}", "command": "{escaped_cmd}", "status": "starting", "start_time": "{start_time}", "result_file": null}}
-STATUS_EOF
-
-# 创建后台执行脚本
-cat > "{tmp_path}/{script_file}" << 'SCRIPT_EOF'
-#!/bin/bash
-set -e
-
-# 执行用户命令并捕获输出
-STDOUT_FILE="/tmp/bg_stdout_{bg_pid}"
-STDERR_FILE="/tmp/bg_stderr_{bg_pid}"
-bash -c {quoted_cmd} > "$STDOUT_FILE" 2> "$STDERR_FILE"
-EXIT_CODE=$?
-
-# 生成后台任务的JSON结果文件
-export STDOUT_FILE STDERR_FILE
-python3 << 'PYTHON_EOF'
-import json
-import os
-from datetime import datetime
-
-try:
-    exit_code = int(os.environ.get('EXIT_CODE', '0'))
-    
-    # 读取实际的命令输出
-    stdout_file = os.environ.get('STDOUT_FILE', '')
-    stderr_file = os.environ.get('STDERR_FILE', '')
-    
-    stdout_content = ""
-    stderr_content = ""
-    
-    if stdout_file and os.path.exists(stdout_file):
-        with open(stdout_file, 'r', encoding='utf-8', errors='ignore') as f:
-            stdout_content = f.read()
-    
-    if stderr_file and os.path.exists(stderr_file):
-        with open(stderr_file, 'r', encoding='utf-8', errors='ignore') as f:
-            stderr_content = f.read()
-    
-    result = {{
-        "success": exit_code == 0,
-    "data": {{
-            "exit_code": exit_code,
-            "stdout": stdout_content,
-            "stderr": stderr_content,
-            "working_dir": os.getcwd(),
-            "timestamp": datetime.now().isoformat()
-        }}
-    }}
-    
-    with open("{tmp_path}/{result_file}", "w", encoding="utf-8") as f:
-        json.dump(result, f, indent=2, ensure_ascii=False)
-    
-    # 清理临时文件
-    if stdout_file and os.path.exists(stdout_file):
-        os.remove(stdout_file)
-    if stderr_file and os.path.exists(stderr_file):
-        os.remove(stderr_file)
-        
-except Exception as e:
-    print(f"ERROR: Failed to generate JSON result: {{e}}", file=sys.stderr)
-    sys.exit(1)
-PYTHON_EOF
-
-# 更新状态文件
-cat > "{tmp_path}/{status_file}" << STATUS_FINAL_EOF
-{{"pid": "{bg_pid}", "command": "{escaped_cmd}", "status": "completed", "start_time": "{start_time}", "end_time": "$(date -Iseconds 2>/dev/null || date)", "exit_code": $EXIT_CODE, "result_file": "{result_file}"}}
-STATUS_FINAL_EOF
-SCRIPT_EOF
-
-# 给脚本执行权限并启动后台任务
-chmod +x "{tmp_path}/{script_file}"
-nohup "{tmp_path}/{script_file}" < /dev/null > "{tmp_path}/{log_file}" 2>&1 &
-REAL_PID=$!
-
-# 更新状态文件包含真实PID
-cat > "{tmp_path}/{status_file}" << STATUS_RUNNING_EOF
-{{"pid": "{bg_pid}", "real_pid": $REAL_PID, "command": "{escaped_cmd}", "status": "running", "start_time": "{start_time}", "result_file": "{result_file}"}}
-STATUS_RUNNING_EOF
-
-# 验证background任务文件是否被正确创建
-sleep 1  # 等待文件系统同步
-if [ -f "{tmp_path}/{status_file}" ]; then
-echo "Background task started with ID: {bg_pid}"
-    echo "Command: {escaped_cmd}"
-    echo ""
-    echo "Run the following commands to track the background task status:"
-    echo "  GDS --bg --status {bg_pid}    # Check task status"
-    echo "  GDS --bg --result {bg_pid}    # View task result"
-    echo "  GDS --bg --log {bg_pid}       # View task log"
-    echo "  GDS --bg --cleanup {bg_pid}   # Clean up task files"
-else
-    echo "Error: Background task creation failed - status file not found"
-    exit 1
-fi'''
-                
-                # 使用统一的命令执行接口，像_show_background_status一样
-                result = self.remote_commands.execute_unified_command(
-                    user_command=bg_create_cmd,
-                    result_filename=None,
-                    current_shell=current_shell
-                )
-                
-                # 处理统一接口的结果
-                if result.get("success", False):
-                    data = result.get("data", {})
-                    stdout = data.get("stdout", "").strip()
-                    stderr = data.get("stderr", "").strip()
-                    
-                    if stdout:
-                        print(stdout)
-                    if stderr:
-                        import sys
-                        print(stderr, file=sys.stderr)
-                    
-                    return 0
-                else:
-                    error_msg = result.get("error", "Background task creation failed")
-                    print(f"Error: {error_msg}")
-                    return 1
-                
-            except Exception as e:
-                print(f"Error creating background task: {e}")
-                print(f"Background task started with ID: {bg_pid}")
-                print(f"Command: {shell_cmd}")
-                print("")
-                print("Run the following commands to track the background task status:")
-                print(f"  GDS --bg --status {bg_pid}    # Check task status")
-                print(f"  GDS --bg --result {bg_pid}    # View task result")
-                print(f"  GDS --bg --log {bg_pid}       # View task log")
-                print(f"  GDS --bg --cleanup {bg_pid}   # Clean up task files")
-                return 1
+            # 获取路径信息
+            tmp_path = f"{self.REMOTE_ROOT}/tmp"
             
+            # 使用常量构建文件名
+            status_file = get_bg_status_file(bg_pid)
+            script_file = get_bg_script_file(bg_pid)
+            log_file = get_bg_log_file(bg_pid)
+            result_file = get_bg_result_file(bg_pid)
+            
+            # 使用base64编码来安全传递命令，避免引号问题
+            cmd_b64 = base64.b64encode(shell_cmd.encode('utf-8')).decode('ascii')
+            
+            # 构建命令使用简单字符串拼接 - 完全避免f-string嵌套引号
+            cmd_parts = []
+            
+            # Part 1: Setup
+            cmd_parts.append("# Final solution - NO quote escaping issues")
+            cmd_parts.append(f"mkdir -p {tmp_path}")
+            cmd_parts.append("")
+            
+            # Part 2: Create status helper script using simple echo commands
+            cmd_parts.append("# Create status helper script using echo (no heredoc)")
+            cmd_parts.append(f"echo 'import json, base64, sys' > {tmp_path}/status_helper_{bg_pid}.py")
+            cmd_parts.append(f"echo 'cmd = base64.b64decode(sys.argv[1]).decode(\"utf-8\")' >> {tmp_path}/status_helper_{bg_pid}.py")
+            cmd_parts.append(f"echo 'pid = sys.argv[2]' >> {tmp_path}/status_helper_{bg_pid}.py")
+            cmd_parts.append(f"echo 'status_type = sys.argv[3]' >> {tmp_path}/status_helper_{bg_pid}.py")
+            cmd_parts.append(f"echo 'start_time = sys.argv[4]' >> {tmp_path}/status_helper_{bg_pid}.py")
+            cmd_parts.append(f"echo 'status_file = sys.argv[5]' >> {tmp_path}/status_helper_{bg_pid}.py")
+            cmd_parts.append(f"echo 'if status_type == \"starting\":' >> {tmp_path}/status_helper_{bg_pid}.py")
+            cmd_parts.append(f"echo '    data = {{\"pid\": pid, \"command\": cmd, \"status\": \"starting\", \"start_time\": start_time, \"result_file\": None}}' >> {tmp_path}/status_helper_{bg_pid}.py")
+            cmd_parts.append(f"echo 'elif status_type == \"running\":' >> {tmp_path}/status_helper_{bg_pid}.py")
+            cmd_parts.append(f"echo '    real_pid = int(sys.argv[6])' >> {tmp_path}/status_helper_{bg_pid}.py")
+            cmd_parts.append(f"echo '    result_file = sys.argv[7]' >> {tmp_path}/status_helper_{bg_pid}.py")
+            cmd_parts.append(f"echo '    data = {{\"pid\": pid, \"real_pid\": real_pid, \"command\": cmd, \"status\": \"running\", \"start_time\": start_time, \"result_file\": result_file}}' >> {tmp_path}/status_helper_{bg_pid}.py")
+            cmd_parts.append(f"echo 'elif status_type == \"completed\":' >> {tmp_path}/status_helper_{bg_pid}.py")
+            cmd_parts.append(f"echo '    end_time = sys.argv[6]' >> {tmp_path}/status_helper_{bg_pid}.py")
+            cmd_parts.append(f"echo '    exit_code = int(sys.argv[7])' >> {tmp_path}/status_helper_{bg_pid}.py")
+            cmd_parts.append(f"echo '    result_file = sys.argv[8]' >> {tmp_path}/status_helper_{bg_pid}.py")
+            cmd_parts.append(f"echo '    data = {{\"pid\": pid, \"command\": cmd, \"status\": \"completed\", \"start_time\": start_time, \"end_time\": end_time, \"exit_code\": exit_code, \"result_file\": result_file}}' >> {tmp_path}/status_helper_{bg_pid}.py")
+            cmd_parts.append(f"echo 'with open(status_file, \"w\") as f:' >> {tmp_path}/status_helper_{bg_pid}.py")
+            cmd_parts.append(f"echo '    json.dump(data, f, ensure_ascii=False)' >> {tmp_path}/status_helper_{bg_pid}.py")
+            cmd_parts.append("")
+            
+            # Part 3: Create initial status
+            cmd_parts.append("# Create initial status")
+            cmd_parts.append(f"python3 {tmp_path}/status_helper_{bg_pid}.py {cmd_b64} {bg_pid} starting {start_time} {tmp_path}/{status_file}")
+            cmd_parts.append("")
+            
+            # Part 4: Create execution script using echo commands
+            cmd_parts.append("# Create execution script using echo (no heredoc)")
+            cmd_parts.append(f"echo '#!/bin/bash' > {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo 'set -e' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo 'echo {cmd_b64} | base64 -d > /tmp/bg_cmd_{bg_pid}.sh' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo 'chmod +x /tmp/bg_cmd_{bg_pid}.sh' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo 'bash /tmp/bg_cmd_{bg_pid}.sh > /tmp/bg_stdout_{bg_pid} 2> /tmp/bg_stderr_{bg_pid}' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo 'EXIT_CODE=$?' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo 'rm -f /tmp/bg_cmd_{bg_pid}.sh' >> {tmp_path}/{script_file}")
+            
+            # Add result generation using a separate Python script to avoid quote escaping
+            cmd_parts.append(f"echo 'cat > {tmp_path}/create_result_{bg_pid}.py << \"RESULT_PYTHON_EOF\"' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo 'import json, os, sys' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo 'from datetime import datetime' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo 'exit_code = int(sys.argv[1])' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo 'stdout_file = \"/tmp/bg_stdout_{bg_pid}\"' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo 'stderr_file = \"/tmp/bg_stderr_{bg_pid}\"' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo 'stdout_content = \"\"' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo 'stderr_content = \"\"' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo 'if os.path.exists(stdout_file):' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo '    with open(stdout_file, \"r\") as f:' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo '        stdout_content = f.read()' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo 'if os.path.exists(stderr_file):' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo '    with open(stderr_file, \"r\") as f:' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo '        stderr_content = f.read()' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo 'result = {{' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo '    \"success\": exit_code == 0,' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo '    \"data\": {{' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo '        \"exit_code\": exit_code,' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo '        \"stdout\": stdout_content,' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo '        \"stderr\": stderr_content,' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo '        \"working_dir\": os.getcwd(),' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo '        \"timestamp\": datetime.now().isoformat()' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo '    }}' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo '}}' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo 'with open(\"{tmp_path}/{result_file}\", \"w\") as f:' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo '    json.dump(result, f, indent=2, ensure_ascii=False)' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo 'RESULT_PYTHON_EOF' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo 'python3 {tmp_path}/create_result_{bg_pid}.py $EXIT_CODE' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo 'rm -f {tmp_path}/create_result_{bg_pid}.py' >> {tmp_path}/{script_file}")
+            
+            # Clean up and update status
+            cmd_parts.append(f"echo 'rm -f /tmp/bg_stdout_{bg_pid} /tmp/bg_stderr_{bg_pid}' >> {tmp_path}/{script_file}")
+            cmd_parts.append(f"echo 'python3 {tmp_path}/status_helper_{bg_pid}.py {cmd_b64} {bg_pid} completed {start_time} {tmp_path}/{status_file} \"$(date -Iseconds 2>/dev/null || date)\" $EXIT_CODE {result_file}' >> {tmp_path}/{script_file}")
+            cmd_parts.append("")
+            
+            # Part 5: Execute
+            cmd_parts.append("# Execute background task")
+            cmd_parts.append(f"chmod +x {tmp_path}/{script_file}")
+            cmd_parts.append(f"({tmp_path}/{script_file} > {tmp_path}/{log_file} 2>&1) &")
+            cmd_parts.append("REAL_PID=$!")
+            cmd_parts.append("")
+            
+            # Part 6: Update status with real PID
+            cmd_parts.append("# Update status with real PID")
+            cmd_parts.append(f"python3 {tmp_path}/status_helper_{bg_pid}.py {cmd_b64} {bg_pid} running {start_time} {tmp_path}/{status_file} $REAL_PID {result_file}")
+            cmd_parts.append("")
+            
+            # Part 7: Clean up and show message
+            cmd_parts.append("# Clean up helper script")
+            cmd_parts.append(f"rm -f {tmp_path}/status_helper_{bg_pid}.py")
+            cmd_parts.append("")
+            cmd_parts.append("# Show success message")
+            cmd_parts.append(f"echo 'Background task started with ID: {bg_pid}'")
+            cmd_parts.append(f"echo 'Command: {shell_cmd}'")
+            cmd_parts.append("echo ''")
+            cmd_parts.append("echo 'Run the following commands to track the background task status:'")
+            cmd_parts.append(f"echo '  GDS --bg --status {bg_pid}    # Check task status'")
+            cmd_parts.append(f"echo '  GDS --bg --result {bg_pid}    # View task result'")
+            cmd_parts.append(f"echo '  GDS --bg --log {bg_pid}       # View task log'")
+            cmd_parts.append(f"echo '  GDS --bg --cleanup {bg_pid}   # Clean up task files'")
+            
+            bg_create_cmd = '\n'.join(cmd_parts)
+            
+            # DEBUG: 显示生成的命令
+            print(f"DEBUG: Generated background command (first 500 chars):")
+            print(f"DEBUG: {bg_create_cmd[:500]}...")
+            print(f"DEBUG: Command length: {len(bg_create_cmd)} characters")
+            
+            # 设置后台模式标志
+            current_shell_copy = current_shell.copy()
+            current_shell_copy["_background_mode"] = True
+            current_shell_copy["_background_pid"] = bg_pid
+            current_shell_copy["_background_original_cmd"] = shell_cmd
+            
+            # 使用统一的命令执行接口
+            print(f"DEBUG: Executing background command...")
+            print(f"DEBUG: current_shell_copy with background flags: {current_shell_copy}")
+            result = self.remote_commands.execute_unified_command(
+                user_command=bg_create_cmd,
+                result_filename=None,
+                current_shell=current_shell_copy,
+                skip_quote_escaping=True
+            )
+            
+            # DEBUG: 显示执行结果
+            print(f"DEBUG: Background command execution result: {result}")
+            
+            # 处理统一接口的结果
+            if result.get("success", False):
+                data = result.get("data", {})
+                stdout = data.get("stdout", "").strip()
+                stderr = data.get("stderr", "").strip()
+                
+                if stdout:
+                    print(stdout)
+                if stderr:
+                    import sys
+                    print(stderr, file=sys.stderr)
+                
+                return 0
+            else:
+                error_msg = result.get("error", "Unknown error")
+                print(f"Error: Failed to create background task: {error_msg}")
+                return 1
+                
         except Exception as e:
             print(f"Error executing background command: {e}")
             return 1
@@ -2074,82 +2059,101 @@ For more information, visit: https://github.com/your-repo/gds"""
             pass
 
     def _show_background_status(self, bg_pid, command_identifier=None):
-        """显示特定background任务状态 - 使用统一接口"""
+        """显示background任务状态 - 使用统一接口"""
         try:
-            current_shell = self.get_current_shell()
-            if not current_shell:
-                print(f"Error: 没有活跃的shell会话")
-                return 1
-            
-            # 获取REMOTE_ROOT路径
-            tmp_path = f"{self.REMOTE_ROOT}/tmp"
-            
-            # 使用常量构建查询状态的命令
+            # 读取状态文件和日志大小 - 合并到一个远程命令中避免第二个窗口
             from modules.constants import get_bg_status_file, get_bg_log_file
             status_file = get_bg_status_file(bg_pid)
             log_file = get_bg_log_file(bg_pid)
+            status_file_path = f"{self.REMOTE_ROOT}/tmp/{status_file}"
+            log_file_path = f"{self.REMOTE_ROOT}/tmp/{log_file}"
             
-            status_cmd = f'''
-if [ -f "{tmp_path}/{status_file}" ]; then
-    STATUS_DATA=$(cat "{tmp_path}/{status_file}")
-    
-    REAL_PID=$(echo "$STATUS_DATA" | grep -o '"real_pid": *[0-9]*' | grep -o '[0-9]*')
-    
-    if [ -n "$REAL_PID" ]; then
-        if ps -p $REAL_PID > /dev/null 2>&1; then
-        echo "Status: running"
-        echo "PID: $REAL_PID"
-    else
-        echo "Status: completed"
-            echo "PID: $REAL_PID (finished)"
-        fi
-    else
-        STATUS_FIELD=$(echo "$STATUS_DATA" | python3 -c 'import sys, json; data=json.load(sys.stdin); print(data.get("status", "unknown"))' 2>/dev/null || echo "unknown")
-        echo "Status: $STATUS_FIELD"
-    fi
-    
-    echo "Command: $(echo "$STATUS_DATA" | python3 -c 'import sys, json; data=json.load(sys.stdin); print(data.get("command", "N/A"))' 2>/dev/null || echo "N/A")"
-    echo "Start time: $(echo "$STATUS_DATA" | python3 -c 'import sys, json; data=json.load(sys.stdin); print(data.get("start_time", "N/A"))' 2>/dev/null || echo "N/A")"
-    END_TIME=$(echo "$STATUS_DATA" | python3 -c 'import sys, json; data=json.load(sys.stdin); print(data.get("end_time", ""))' 2>/dev/null || echo "")
-    if [ -n "$END_TIME" ]; then
-        echo "End time: $END_TIME"
-    fi
-    if [ -f "{tmp_path}/{log_file}" ]; then
-        LOG_SIZE=$(wc -c < "{tmp_path}/{log_file}")
-        echo "Log size: $LOG_SIZE bytes"
-    fi
-else
-    echo "Error: Background task {bg_pid} not found"
-    exit 1
-fi'''
+            # 构建合并的命令：读取status文件 + 获取日志大小
+            combined_cmd = f'cat "{status_file_path}" && echo "LOG_SIZE_SEPARATOR" && if [ -f "{log_file_path}" ]; then wc -c < "{log_file_path}"; else echo "0"; fi'
             
-            # 使用统一的命令执行接口
+            current_shell = self.get_current_shell()
+            if not current_shell:
+                print("Error: No active shell session")
+                return 1
+                
             result = self.remote_commands.execute_unified_command(
-                user_command=status_cmd,
+                user_command=combined_cmd,
                 result_filename=None,
                 current_shell=current_shell
             )
             
-            # 处理统一接口的结果
-            if result.get("success", False):
-                data = result.get("data", {})
-                stdout = data.get("stdout", "").strip()
-                stderr = data.get("stderr", "").strip()
+            if not result.get("success", False):
+                error_msg = result.get("error", "Failed to read status file")
+                print(f"Error: Background task {bg_pid} not found")
+                return 1
+            
+            # 解析合并的输出：status JSON + 分隔符 + 日志大小
+            data = result.get("data", {})
+            stdout = data.get("stdout", "").strip()
+            
+            if not stdout:
+                print(f"Error: Background task {bg_pid} status file is empty")
+                return 1
+            
+            # 分离status内容和日志大小
+            log_size = 0
+            status_content = stdout
+            
+            if "LOG_SIZE_SEPARATOR" in stdout:
+                parts = stdout.split("LOG_SIZE_SEPARATOR")
+                if len(parts) >= 2:
+                    status_content = parts[0].strip()
+                    log_size_str = parts[1].strip()
+                    try:
+                        log_size = int(log_size_str)
+                    except ValueError:
+                        log_size = 0
+            
+            try:
+                import json
+                status_data = json.loads(status_content)
                 
-                if stdout:
-                    print(stdout)
-                if stderr:
-                    import sys
-                    print(stderr, file=sys.stderr)
+                # 提取状态信息
+                status = status_data.get("status", "unknown")
+                command = status_data.get("command", "N/A")
+                start_time = status_data.get("start_time", "N/A")
+                end_time = status_data.get("end_time", "")
+                real_pid = status_data.get("real_pid", None)
+                
+                # 显示状态信息
+                if real_pid and status == "running":
+                    # 检查进程是否还在运行
+                    import subprocess
+                    try:
+                        subprocess.check_call(['ps', '-p', str(real_pid)], 
+                                            stdout=subprocess.DEVNULL, 
+                                            stderr=subprocess.DEVNULL)
+                        print(f"Status: running")
+                        print(f"PID: {real_pid}")
+                    except subprocess.CalledProcessError:
+                        print(f"Status: completed")
+                        print(f"PID: {real_pid} (finished)")
+                else:
+                    print(f"Status: {status}")
+                
+                print(f"Command: {command}")
+                print(f"Start time: {start_time}")
+                
+                if end_time:
+                    print(f"End time: {end_time}")
+                
+                # 显示日志大小信息（已在合并命令中获取）
+                print(f"Log size: {log_size} bytes")
                 
                 return 0
-            else:
-                error_msg = result.get("error", "Failed to check status")
-                print(f"Error: {error_msg}")
+                
+            except json.JSONDecodeError as e:
+                print(f"Error: Invalid status file format for task {bg_pid}")
+                print(f"JSON parse error: {e}")
                 return 1
                 
         except Exception as e:
-            print(f"Error: Status check failed: {e}")
+            print(f"Error: Failed to check status: {e}")
             return 1
 
     def _show_all_background_status(self, command_identifier=None):
@@ -2282,7 +2286,7 @@ fi
                 else:
                     error_msg = result.get("error", "Log view failed")
                     print(f"Error: {error_msg}")
-                    return 1
+                return 1
                 
         except Exception as e:
             print(f"Error: Log view failed: {e}")
@@ -2727,32 +2731,58 @@ fi
                     import sys
                     print(stderr, file=sys.stderr)
                 
-                return 0
-            else:
-                error_msg = result.get("error", "Cleanup failed")
-                print(f"Error: {error_msg}")
+                    return 0
+                else:
+                    error_msg = result.get("error", "Cleanup failed")
+                    print(f"Error: {error_msg}")
                 return 1
                 
         except Exception as e:
             print(f"Error: Cleanup failed: {e}")
             return 1
 
-    def _show_background_result(self, bg_pid, command_identifier=None):
-        """显示background任务的最终结果 - 使用统一接口"""
+    def _read_background_file(self, bg_pid, file_type, command_identifier=None):
+        """通用的后台任务文件读取接口
+        
+        Args:
+            bg_pid: 后台任务ID
+            file_type: 文件类型 ('status', 'result', 'log')
+            command_identifier: 命令标识符
+            
+        Returns:
+            dict: 包含文件内容的结果字典
+        """
         try:
             # 获取REMOTE_ROOT路径
             tmp_path = f"{self.REMOTE_ROOT}/tmp"
-            from modules.constants import get_bg_result_file
-            result_file = get_bg_result_file(bg_pid)
-            result_file_path = f"{tmp_path}/{result_file}"
+            
+            # 根据文件类型选择相应的文件
+            if file_type == 'status':
+                from modules.constants import get_bg_status_file
+                target_file = get_bg_status_file(bg_pid)
+            elif file_type == 'result':
+                from modules.constants import get_bg_result_file
+                target_file = get_bg_result_file(bg_pid)
+            elif file_type == 'log':
+                from modules.constants import get_bg_log_file
+                target_file = get_bg_log_file(bg_pid)
+            else:
+                return {"success": False, "error": f"Unknown file type: {file_type}"}
+            
+            file_path = f"{tmp_path}/{target_file}"
             
             current_shell = self.get_current_shell()
             if not current_shell:
-                print(f"Error: 没有活跃的shell会话")
-                return 1
+                return {"success": False, "error": "没有活跃的shell会话"}
             
-            # 构建读取结果文件的命令
-            read_cmd = f'cat "{result_file_path}"'
+            # 构建读取文件的命令
+            read_cmd = f'cat "{file_path}"'
+            
+            # DEBUG: 添加调试信息
+            print(f"DEBUG: _read_background_file - bg_pid={bg_pid}, file_type={file_type}")
+            print(f"DEBUG: target_file={target_file}")
+            print(f"DEBUG: file_path={file_path}")
+            print(f"DEBUG: read_cmd={read_cmd}")
             
             # 使用统一的命令执行接口
             result = self.remote_commands.execute_unified_command(
@@ -2760,6 +2790,31 @@ fi
                 result_filename=None,
                 current_shell=current_shell
             )
+            
+            # DEBUG: 显示执行结果
+            print(f"DEBUG: execute_unified_command result: {result}")
+            if result.get('data'):
+                data = result['data']
+                print(f"DEBUG: stdout length: {len(data.get('stdout', ''))}")
+                print(f"DEBUG: stderr: {data.get('stderr', '')}")
+                print(f"DEBUG: exit_code: {data.get('exit_code', 'N/A')}")
+            
+            return result
+            
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    def _show_background_result(self, bg_pid, command_identifier=None):
+        """显示background任务的最终结果 - 使用统一接口"""
+        try:
+            # DEBUG: 开始调试
+            print(f"DEBUG: _show_background_result called with bg_pid={bg_pid}")
+            
+            # 使用通用的文件读取接口
+            result = self._read_background_file(bg_pid, 'result', command_identifier)
+            
+            # DEBUG: 显示文件读取结果
+            print(f"DEBUG: _read_background_file returned: {result}")
             
             # 处理统一接口的结果
             if result.get("success", False):

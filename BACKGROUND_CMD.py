@@ -56,8 +56,8 @@ class ProcessManager:
             json.dump(data, f, indent=2)
     
     def _cleanup_dead_processes(self):
-        """清理已死亡的进程"""
-        dead_pids = []
+        """更新已死亡进程的状态，但保留记录"""
+        updated = False
         for pid_str, proc_info in self.processes.items():
             try:
                 pid = int(pid_str)
@@ -67,22 +67,20 @@ class ProcessManager:
                     if abs(proc.create_time() - proc_info['start_time']) < 1.0:
                         continue  # 进程仍然有效
                 
-                # 进程已死亡或PID被重用
-                dead_pids.append(pid_str)
-                
-                # 清理日志文件（可选）
-                log_file = Path(proc_info.get('log_file', ''))
-                if log_file.exists() and log_file.stat().st_size == 0:
-                    log_file.unlink(missing_ok=True)
+                # 进程已死亡或PID被重用，标记为已完成但保留记录
+                if proc_info.get('status') != 'completed':
+                    proc_info['status'] = 'completed'
+                    proc_info['end_time'] = datetime.now().isoformat()
+                    updated = True
                     
             except (psutil.NoSuchProcess, psutil.AccessDenied, ValueError):
-                dead_pids.append(pid_str)
+                # 进程已死亡，标记为已完成但保留记录
+                if proc_info.get('status') != 'completed':
+                    proc_info['status'] = 'completed'
+                    proc_info['end_time'] = datetime.now().isoformat()
+                    updated = True
         
-        # 移除死亡进程
-        for pid_str in dead_pids:
-            del self.processes[pid_str]
-        
-        if dead_pids:
+        if updated:
             self._save_state()
     
     def _resolve_shell_aliases(self, command: str, shell: str) -> str:
@@ -162,7 +160,8 @@ class ProcessManager:
                 'start_time': start_time,
                 'log_file': str(log_file),
                 'cwd': os.getcwd(),
-                'created_at': datetime.now().isoformat()
+                'created_at': datetime.now().isoformat(),
+                'status': 'running'  # 初始状态为运行中
             }
             
             # 保存状态
@@ -180,13 +179,37 @@ class ProcessManager:
             return None
     
     def list_processes(self) -> List[Dict]:
-        """列出所有活跃进程"""
+        """列出所有进程（包括已完成的）"""
         self._cleanup_dead_processes()
         
-        active_processes = []
+        all_processes = []
         for pid_str, proc_info in self.processes.items():
+            pid = int(pid_str)
+            
+            # 如果进程已标记为完成，直接使用保存的信息
+            if proc_info.get('status') == 'completed':
+                start_time = datetime.fromtimestamp(proc_info['start_time'])
+                end_time_str = proc_info.get('end_time')
+                if end_time_str:
+                    end_time = datetime.fromisoformat(end_time_str)
+                    runtime = end_time - start_time
+                else:
+                    runtime = datetime.now() - start_time
+                
+                all_processes.append({
+                    'pid': pid,
+                    'command': proc_info['command'],
+                    'shell': proc_info['shell'],
+                    'status': 'completed',
+                    'cpu_percent': 0.0,
+                    'memory_mb': 0.0,
+                    'runtime': str(runtime).split('.')[0],  # 去掉微秒
+                    'log_file': proc_info['log_file'],
+                    'cwd': proc_info['cwd']
+                })
+                continue
+            
             try:
-                pid = int(pid_str)
                 proc = psutil.Process(pid)
                 
                 # 获取当前状态
@@ -198,7 +221,7 @@ class ProcessManager:
                 start_time = datetime.fromtimestamp(proc_info['start_time'])
                 runtime = datetime.now() - start_time
                 
-                active_processes.append({
+                all_processes.append({
                     'pid': pid,
                     'command': proc_info['command'],
                     'shell': proc_info['shell'],
@@ -211,9 +234,27 @@ class ProcessManager:
                 })
                 
             except (psutil.NoSuchProcess, psutil.AccessDenied, ValueError):
-                continue
+                # 进程不存在，标记为完成
+                proc_info['status'] = 'completed'
+                proc_info['end_time'] = datetime.now().isoformat()
+                self._save_state()
+                
+                start_time = datetime.fromtimestamp(proc_info['start_time'])
+                runtime = datetime.now() - start_time
+                
+                all_processes.append({
+                    'pid': pid,
+                    'command': proc_info['command'],
+                    'shell': proc_info['shell'],
+                    'status': 'completed',
+                    'cpu_percent': 0.0,
+                    'memory_mb': 0.0,
+                    'runtime': str(runtime).split('.')[0],  # 去掉微秒
+                    'log_file': proc_info['log_file'],
+                    'cwd': proc_info['cwd']
+                })
         
-        return active_processes
+        return all_processes
     
     def kill_process(self, pid: int, force: bool = False) -> bool:
         """终止指定进程"""
@@ -261,14 +302,130 @@ class ProcessManager:
     
     def cleanup_all(self) -> int:
         """清理所有管理的进程"""
-        count = 0
         pids = list(self.processes.keys())
         
         for pid_str in pids:
-            if self.kill_process(int(pid_str)):
-                count += 1
+            pid = int(pid_str)
+            proc_info = self.processes[pid_str]
+            
+            # 只对仍在运行的进程尝试终止
+            if proc_info.get('status') != 'completed':
+                try:
+                    if psutil.pid_exists(pid):
+                        proc = psutil.Process(pid)
+                        # 检查进程是否匹配（防止PID重用）
+                        if abs(proc.create_time() - proc_info['start_time']) < 1.0:
+                            self.kill_process(pid)
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    pass  # 进程已经不存在，无需终止
+            
+            # 删除记录
+            if pid_str in self.processes:
+                del self.processes[pid_str]
         
-        return count
+        # 保存状态
+        self._save_state()
+        return len(pids)  # 返回清理的总记录数
+    
+    def get_process_status(self, pid: int) -> Optional[Dict]:
+        """获取指定进程的详细状态"""
+        pid_str = str(pid)
+        if pid_str not in self.processes:
+            return None
+        
+        proc_info = self.processes[pid_str]
+        
+        # 如果进程已标记为完成，直接返回完成状态
+        if proc_info.get('status') == 'completed':
+            start_time = datetime.fromtimestamp(proc_info['start_time'])
+            end_time_str = proc_info.get('end_time')
+            if end_time_str:
+                end_time = datetime.fromisoformat(end_time_str)
+                runtime = end_time - start_time
+            else:
+                runtime = datetime.now() - start_time
+            
+            return {
+                'pid': pid,
+                'command': proc_info['command'],
+                'shell': proc_info['shell'],
+                'status': 'completed',
+                'cpu_percent': 0.0,
+                'memory_mb': 0.0,
+                'runtime': str(runtime).split('.')[0],  # 去掉微秒
+                'start_time': start_time.isoformat(),
+                'end_time': end_time_str,
+                'log_file': proc_info['log_file'],
+                'cwd': proc_info['cwd'],
+                'is_running': False
+            }
+        
+        try:
+            proc = psutil.Process(pid)
+            
+            # 检查进程是否匹配（防止PID重用）
+            if abs(proc.create_time() - proc_info['start_time']) > 1.0:
+                # PID被重用，标记为完成
+                proc_info['status'] = 'completed'
+                proc_info['end_time'] = datetime.now().isoformat()
+                self._save_state()
+                return self.get_process_status(pid)  # 递归调用返回完成状态
+            
+            # 获取当前状态
+            status = proc.status()
+            cpu_percent = proc.cpu_percent()
+            memory_mb = proc.memory_info().rss / (1024 * 1024)
+            
+            # 计算运行时间
+            start_time = datetime.fromtimestamp(proc_info['start_time'])
+            runtime = datetime.now() - start_time
+            
+            return {
+                'pid': pid,
+                'command': proc_info['command'],
+                'shell': proc_info['shell'],
+                'status': status,
+                'cpu_percent': cpu_percent,
+                'memory_mb': memory_mb,
+                'runtime': str(runtime).split('.')[0],  # 去掉微秒
+                'start_time': start_time.isoformat(),
+                'log_file': proc_info['log_file'],
+                'cwd': proc_info['cwd'],
+                'is_running': status in ['running', 'sleeping']
+            }
+            
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            # 进程已死亡，标记为完成
+            proc_info['status'] = 'completed'
+            proc_info['end_time'] = datetime.now().isoformat()
+            self._save_state()
+            return self.get_process_status(pid)  # 递归调用返回完成状态
+    
+    def get_process_result(self, pid: int) -> Optional[str]:
+        """获取进程的执行结果（从日志文件）"""
+        status = self.get_process_status(pid)
+        if not status:
+            return None
+        
+        log_file = Path(status['log_file'])
+        if not log_file.exists():
+            return "Log file not found"
+        
+        try:
+            with open(log_file, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+                if not content.strip():
+                    if status['is_running']:
+                        return "Process is still running, no output yet"
+                    else:
+                        return "Process completed with no output"
+                return content
+        except Exception as e:
+            return f"Error reading log file: {e}"
+    
+    def get_process_log(self, pid: int) -> Optional[str]:
+        """获取进程的日志内容（与get_process_result相同，但语义不同）"""
+        return self.get_process_result(pid)
 
 
 def main():
@@ -303,6 +460,12 @@ def main():
     # 操作参数
     parser.add_argument('--list', action='store_true',
                        help='列出所有活跃的后台进程')
+    parser.add_argument('--status', type=int, metavar='PID',
+                       help='查询指定PID进程的状态')
+    parser.add_argument('--result', type=int, metavar='PID',
+                       help='获取指定PID进程的执行结果')
+    parser.add_argument('--log', type=int, metavar='PID',
+                       help='查看指定PID进程的日志')
     parser.add_argument('--kill', type=int, metavar='PID',
                        help='终止指定PID的进程')
     parser.add_argument('--force-kill', type=int, metavar='PID',
@@ -337,14 +500,13 @@ def main():
                     print(f"\nActive processes ({len(processes)}):")
                     print(f"-" * 80)
                     for proc in processes:
+                        # 截断命令显示，只显示前20个字符
+                        cmd_display = proc['command'][:20] + "..." if len(proc['command']) > 20 else proc['command']
                         print(f"PID: {proc['pid']:<8} | "
                               f"Status: {proc['status']:<10} | "
-                              f"CPU: {proc['cpu_percent']:>5.1f}% | "
-                              f"Memory: {proc['memory_mb']:>6.1f}MB | "
-                              f"Runtime: {proc['runtime']}")
-                        print(f"Command: {proc['command']}")
-                        print(f"Log: {proc['log_file']}")
-                        print(f"-" * 80)
+                              f"Runtime: {proc['runtime']:<10} | "
+                              f"Command: {cmd_display}")
+                    print(f"-" * 80)
                 else:
                     print(f"No active processes")
         
@@ -358,12 +520,68 @@ def main():
             if args.json:
                 print(json.dumps({'success': success, 'action': 'force_kill', 'pid': args.force_kill}))
         
+        elif args.status is not None:
+            status = manager.get_process_status(args.status)
+            if status:
+                if args.json:
+                    print(json.dumps({'success': True, 'action': 'status', 'status': status}))
+                else:
+                    print(f"Process {args.status} Status:")
+                    print(f"  Command: {status['command']}")
+                    print(f"  Status: {status['status']}")
+                    if status['is_running']:
+                        print(f"  CPU: {status['cpu_percent']:.1f}%")
+                        print(f"  Memory: {status['memory_mb']:.1f}MB")
+                        print(f"  Runtime: {status['runtime']}")
+                    else:
+                        print(f"  Total runtime: {status['runtime']}")
+                        if status.get('end_time'):
+                            print(f"  Completed at: {status['end_time']}")
+                    print(f"  Log file: {status['log_file']}")
+            else:
+                if args.json:
+                    print(json.dumps({'success': False, 'action': 'status', 'error': f'Process {args.status} not found'}))
+                else:
+                    print(f"Error: Process {args.status} not found or has terminated")
+                sys.exit(1)
+        
+        elif args.result is not None:
+            result = manager.get_process_result(args.result)
+            if result is not None:
+                if args.json:
+                    print(json.dumps({'success': True, 'action': 'result', 'pid': args.result, 'output': result}))
+                else:
+                    print(result)
+            else:
+                if args.json:
+                    print(json.dumps({'success': False, 'action': 'result', 'error': f'Process {args.result} not found'}))
+                else:
+                    print(f"Error: Process {args.result} not found")
+                sys.exit(1)
+        
+        elif args.log is not None:
+            log_content = manager.get_process_log(args.log)
+            if log_content is not None:
+                if args.json:
+                    print(json.dumps({'success': True, 'action': 'log', 'pid': args.log, 'content': log_content}))
+                else:
+                    print(log_content)
+            else:
+                if args.json:
+                    print(json.dumps({'success': False, 'action': 'log', 'error': f'Process {args.log} not found'}))
+                else:
+                    print(f"Error: Process {args.log} not found")
+                sys.exit(1)
+        
         elif args.cleanup:
             count = manager.cleanup_all()
             if args.json:
-                print(json.dumps({'success': True, 'action': 'cleanup', 'killed_count': count}))
+                print(json.dumps({'success': True, 'action': 'cleanup', 'cleaned_count': count}))
             else:
-                print(f"Cleaned up {count} processes")
+                if count > 0:
+                    print(f"Cleaned up {count} process records")
+                else:
+                    print("No processes to clean up")
         
         elif args.command_args or unknown_args:
             # 合并command_args和unknown_args
