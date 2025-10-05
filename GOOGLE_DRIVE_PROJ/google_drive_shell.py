@@ -823,8 +823,17 @@ class GoogleDriveShell:
                 result_file = get_bg_result_file(bg_pid)
                 
                 # 转义命令中的引号
-                escaped_cmd = shell_cmd.replace('"', '\\"')
-                quoted_cmd = shell_cmd.replace("'", "'\"'\"'")
+                import shlex
+                import json
+                escaped_cmd = json.dumps(shell_cmd)  # 使用JSON转义，更可靠
+                
+                # 检查命令是否已经被引号包围，如果是，则移除外层引号再处理
+                if shell_cmd.startswith('"') and shell_cmd.endswith('"'):
+                    # 命令已经被引号包围，移除外层引号
+                    inner_cmd = shell_cmd[1:-1]
+                    quoted_cmd = shlex.quote(inner_cmd)
+                else:
+                    quoted_cmd = shlex.quote(shell_cmd)
                 
                 # 构建background任务创建命令
                 from datetime import datetime
@@ -847,7 +856,7 @@ set -e
 # 执行用户命令并捕获输出
 STDOUT_FILE="/tmp/bg_stdout_{bg_pid}"
 STDERR_FILE="/tmp/bg_stderr_{bg_pid}"
-bash -c '{quoted_cmd}' > "$STDOUT_FILE" 2> "$STDERR_FILE"
+bash -c {quoted_cmd} > "$STDOUT_FILE" 2> "$STDERR_FILE"
 EXIT_CODE=$?
 
 # 生成后台任务的JSON结果文件
