@@ -3311,9 +3311,15 @@ def main():
                 shell_cmd = f"__QUOTED_COMMAND__{shell_cmd}"
 
             else:
-                # 正常的多参数命令，直接组合，不进行额外的引号转义
-                # 因为参数已经由shell正确解析过了
-                shell_cmd = ' '.join(shell_cmd_parts)
+                # 正常的多参数命令，需要正确处理带空格的参数
+                # 对包含空格的参数添加引号
+                shell_cmd_parts_quoted = []
+                for part in shell_cmd_parts:
+                    if ' ' in part:
+                        shell_cmd_parts_quoted.append(f'"{part}"')
+                    else:
+                        shell_cmd_parts_quoted.append(part)
+                shell_cmd = ' '.join(shell_cmd_parts_quoted)
                 quoted_parts = shell_cmd_parts  # 为调试信息设置
             debug_capture.start_capture()
             debug_print(f"DEBUG: args[1:] = {args[1:]}")

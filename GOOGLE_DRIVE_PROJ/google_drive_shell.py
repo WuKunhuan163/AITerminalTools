@@ -973,6 +973,75 @@ fi'''
             print(f"Error executing background command: {e}")
             return 1
 
+    def execute_shell_command_with_args(self, args, command_identifier=None):
+        """执行shell命令 - 直接使用参数列表，避免双重解析"""
+        if not args:
+            return 0
+        
+        cmd = args[0]
+        cmd_args = args[1:]
+        
+        # 直接处理命令，跳过字符串解析
+        if cmd == 'ls':
+            # 解析ls命令的参数
+            recursive = False
+            detailed = False
+            force_mode = False  # -f选项
+            directory_mode = False  # -d选项：显示目录本身而不是内容
+            paths = []  # 支持多个路径
+            
+            for arg in cmd_args:
+                if arg == '-R':
+                    recursive = True
+                elif arg == '--detailed':
+                    detailed = True
+                elif arg == '-f':
+                    force_mode = True
+                elif arg == '-d':
+                    directory_mode = True
+                elif not arg.startswith('-'):
+                    paths.append(arg)
+            
+            # 单个路径或无路径的情况，直接使用cmd_ls
+            if len(paths) <= 1 and not recursive and not force_mode and not directory_mode:
+                path = paths[0] if paths else None
+                result = self.cmd_ls(path=path, detailed=detailed, recursive=recursive, show_hidden=False)
+                
+                if result.get("success"):
+                    files = result.get("files", [])
+                    folders = result.get("folders", [])
+                    all_items = folders + files
+                    
+                    if all_items:
+                        # 按名称排序，文件夹优先
+                        sorted_folders = sorted(folders, key=lambda x: x.get('name', '').lower())
+                        sorted_files = sorted(files, key=lambda x: x.get('name', '').lower())
+                        
+                        # 合并列表，文件夹在前
+                        all_sorted_items = sorted_folders + sorted_files
+                        
+                        # 简单的列表格式，类似bash ls
+                        for item in all_sorted_items:
+                            name = item.get('name', 'Unknown')
+                            if item.get('mimeType') == 'application/vnd.google-apps.folder':
+                                print(f"{name}/")
+                            else:
+                                print(name)
+                    
+                    return 0
+                else:
+                    error_msg = result.get('error', 'Unknown error')
+                    print(f"Failed to list files: {error_msg}")
+                    return 1
+            else:
+                # 多路径或特殊选项，回退到字符串命令
+                shell_cmd = cmd + ' ' + ' '.join(f'"{arg}"' if ' ' in arg else arg for arg in cmd_args)
+                return self.execute_shell_command(shell_cmd, command_identifier)
+        else:
+            # 其他命令，回退到字符串命令
+            shell_cmd = cmd + ' ' + ' '.join(f'"{arg}"' if ' ' in arg else arg for arg in cmd_args)
+            return self.execute_shell_command(shell_cmd, command_identifier)
+
     def execute_shell_command(self, shell_cmd, command_identifier=None):
         """执行shell命令 - 使用WindowManager的新架构入口点"""
         

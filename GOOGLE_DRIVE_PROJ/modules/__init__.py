@@ -92,8 +92,8 @@ class CoreUtils:
                     print("Interactive mode not implemented")
                     return 0
                 else:
-                    command = ' '.join(args[1:])
-                    return shell.execute_shell_command(command)
+                    # 直接传递参数列表，避免双重解析
+                    return shell.execute_shell_command_with_args(args[1:])
             elif args[0] == '--list-remote-shell':
                 return shell.list_shells()
             elif args[0] == '--create-remote-shell':
