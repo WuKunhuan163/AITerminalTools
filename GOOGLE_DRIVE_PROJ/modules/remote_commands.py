@@ -2271,8 +2271,8 @@ fi'''
             user_completed_window = False
             
             if window_result.get("action") == "direct_feedback":
-                # 直接反馈已经在_show_command_window中处理完毕，直接返回结果
-                debug_print(f"_execute_with_result_capture: 检测到direct_feedback，直接返回window_result")
+                # 用户选择直接反馈，使用direct_feedback_interface（照搬--bg指令的逻辑）
+                debug_print(f"_execute_with_result_capture: 检测到direct_feedback，使用direct_feedback_interface")
                 debug_print(f"window_result: {window_result}")
                 user_completed_window = True  # 用户完成了窗口操作
                 debug_log_func(f"👤 DEBUG: [{get_timestamp_func()}] [USER_COMPLETED] 设置user_completed_window=True (direct_feedback) - window_id: {window_id}")
@@ -2281,7 +2281,10 @@ fi'''
                 # WindowManager自动处理窗口生命周期
                 debug_log_func(f"🏗️ DEBUG: [{get_timestamp_func()}] [USER_FEEDBACK] 用户完成直接反馈 - window_id: {window_id}")
                 
-                return window_result
+                # 照搬execute_unified_command的逻辑：使用direct_feedback_interface
+                print()  # 换行
+                feedback_result = self.direct_feedback_interface(remote_command, result_filename)
+                return feedback_result
             elif window_result.get("action") == "success":
                 # 用户确认执行完成
                 user_completed_window = True
