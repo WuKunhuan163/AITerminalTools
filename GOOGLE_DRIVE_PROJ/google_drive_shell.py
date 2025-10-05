@@ -2760,9 +2760,35 @@ fi
             return {"success": False, "error": str(e)}
     
     def _show_background_result(self, bg_pid, command_identifier=None):
-        """显示background任务的最终结果 - 使用统一接口"""
+        """显示background任务的最终结果 - 先检查状态，再读取结果"""
         try:
-            # 使用通用的文件读取接口
+            # 先检查任务状态
+            status_result = self._read_background_file(bg_pid, 'status', command_identifier)
+            
+            if status_result.get("success", False):
+                status_data = status_result.get("data", {})
+                status_content = status_data.get("stdout", "").strip()
+                
+                if status_content:
+                    try:
+                        import json
+                        status_json = json.loads(status_content)
+                        task_status = status_json.get("status", "unknown")
+                        
+                        # 如果任务还在运行，提示用户
+                        if task_status in ["running", "starting"]:
+                            print(f"Task {bg_pid} is still {task_status}.")
+                            print(f"Use 'GDS --bg --status {bg_pid}' to check current status")
+                            if task_status == "running":
+                                print(f"Use 'GDS --bg --log {bg_pid}' to view current output")
+                            return 1
+                        elif task_status != "completed":
+                            print(f"Task {bg_pid} has status: {task_status}")
+                            return 1
+                    except json.JSONDecodeError:
+                        pass  # Continue to try reading result file
+            
+            # 如果状态是 completed，读取结果文件
             result = self._read_background_file(bg_pid, 'result', command_identifier)
             
             # 处理统一接口的结果
