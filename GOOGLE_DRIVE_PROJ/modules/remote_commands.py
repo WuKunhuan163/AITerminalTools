@@ -1838,15 +1838,32 @@ cd "{remote_path}"
 # 确保tmp目录存在
 mkdir -p "{self.main_instance.REMOTE_ROOT}/tmp"
 
-# 创建状态文件，表示任务已开始
-cat > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_STATUS_FILE}" << STATUS_EOF
-{starting_json_template}
-STATUS_EOF
-
 # 创建后台执行脚本
 cat > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_SCRIPT_FILE}" << 'SCRIPT_EOF'
 #!/bin/bash
 set -e
+
+# 首先创建初始的result.json文件，状态为running
+python3 << 'INITIAL_RESULT_EOF'
+import json
+import os
+from datetime import datetime
+
+result = {{
+    "status": "running",
+    "pid": "{bg_pid}",
+    "command": {shlex.quote(bg_original_cmd)},
+    "start_time": "{start_time}",
+    "stdout": "",
+    "stderr": "",
+    "exit_code": None,
+    "working_dir": os.getcwd(),
+    "timestamp": datetime.now().isoformat()
+}}
+
+with open("{self.main_instance.REMOTE_ROOT}/tmp/{BG_RESULT_FILE}", "w", encoding="utf-8") as f:
+    json.dump(result, f, indent=2, ensure_ascii=False)
+INITIAL_RESULT_EOF
 
 # 执行用户命令并捕获输出（同时写入log文件以便实时查看）
 STDOUT_FILE="{self.main_instance.REMOTE_ROOT}/tmp/{bg_pid}_stdout.tmp"
@@ -1881,26 +1898,28 @@ try:
     if os.path.exists(stdout_file):
         try:
             with open(stdout_file, "r", encoding="utf-8", errors="ignore") as f:
-                stdout_content = f.read().rstrip('\n')
+                stdout_content = f.read().rstrip('\\n')
         except Exception:
             stdout_content = ""
     
     if os.path.exists(stderr_file):
         try:
             with open(stderr_file, "r", encoding="utf-8", errors="ignore") as f:
-                stderr_content = f.read().rstrip('\n')
+                stderr_content = f.read().rstrip('\\n')
         except Exception:
             stderr_content = ""
     
     result = {{
-        "success": exit_code == 0,
-        "data": {{
-            "exit_code": exit_code,
-            "stdout": stdout_content,
-            "stderr": stderr_content,
-            "working_dir": os.getcwd(),
-            "timestamp": datetime.now().isoformat()
-        }}
+        "status": "completed",
+        "pid": "{bg_pid}",
+        "command": {shlex.quote(bg_original_cmd)},
+        "start_time": "{start_time}",
+        "end_time": datetime.now().isoformat(),
+        "stdout": stdout_content,
+        "stderr": stderr_content,
+        "exit_code": exit_code,
+        "working_dir": os.getcwd(),
+        "timestamp": datetime.now().isoformat()
     }}
     
     with open("{self.main_instance.REMOTE_ROOT}/tmp/{BG_RESULT_FILE}", "w", encoding="utf-8") as f:
@@ -1916,11 +1935,6 @@ except Exception as e:
     print(f"ERROR: Failed to generate JSON result: {{e}}", file=sys.stderr)
     sys.exit(1)
 PYTHON_EOF
-
-# 更新状态文件
-cat > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_STATUS_FILE}" << STATUS_FINAL_EOF
-{completed_json_template}
-STATUS_FINAL_EOF
 SCRIPT_EOF
 
 # 给脚本执行权限并启动后台任务
@@ -1928,14 +1942,9 @@ chmod +x "{self.main_instance.REMOTE_ROOT}/tmp/{BG_SCRIPT_FILE}"
 nohup "{self.main_instance.REMOTE_ROOT}/tmp/{BG_SCRIPT_FILE}" < /dev/null > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_LOG_FILE}" 2>&1 &
 REAL_PID=$!
 
-# 更新状态文件包含真实PID
-cat > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_STATUS_FILE}" << STATUS_RUNNING_EOF
-{running_json_template}
-STATUS_RUNNING_EOF
-
 # 验证background任务文件是否被正确创建
 sleep 1  # 等待文件系统同步
-if [ -f "{self.main_instance.REMOTE_ROOT}/tmp/{BG_STATUS_FILE}" ]; then
+if [ -f "{self.main_instance.REMOTE_ROOT}/tmp/{BG_RESULT_FILE}" ]; then
     echo "Background task started with ID: {bg_pid}"
     echo "Command: {bg_original_cmd}"
     echo ""

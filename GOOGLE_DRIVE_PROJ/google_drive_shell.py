@@ -2053,75 +2053,49 @@ For more information, visit: https://github.com/your-repo/gds"""
             pass
 
     def _show_background_status(self, bg_pid, command_identifier=None):
-        """显示background任务状态 - 使用统一接口"""
+        """显示background任务状态 - 从result文件读取"""
         try:
-            # 使用通用的文件读取接口读取状态
-            status_result = self._read_background_file(bg_pid, 'status', command_identifier)
+            # 从result文件读取状态信息
+            result_data = self._read_background_file(bg_pid, 'result', command_identifier)
             
-            if not status_result.get("success", False):
-                error_msg = status_result.get("error", "Failed to read status file")
+            if not result_data.get("success", False):
+                error_msg = result_data.get("error", "Failed to read result file")
                 print(f"Error: Background task {bg_pid} not found")
                 return 1
             
-            # 获取状态文件内容
-            status_data = status_result.get("data", {})
-            status_content = status_data.get("stdout", "").strip()
+            # 获取result文件内容并解析JSON
+            data = result_data.get("data", {})
+            result_content = data.get("stdout", "").strip()
             
-            # 同时获取日志大小
-            log_result = self._read_background_file(bg_pid, 'log', command_identifier)
-            log_size = 0
-            if log_result.get("success", False):
-                log_data = log_result.get("data", {})
-                log_content = log_data.get("stdout", "")
-                log_size = len(log_content.encode('utf-8'))
-            
-            result = {"success": True, "data": {"stdout": f"{status_content}\nLOG_SIZE_SEPARATOR\n{log_size}", "stderr": ""}}
-            
-            if not result.get("success", False):
-                error_msg = result.get("error", "Failed to read status file")
-                print(f"Error: Background task {bg_pid} not found")
+            if not result_content:
+                print(f"Error: Background task {bg_pid} result file is empty")
                 return 1
-            
-            # 解析合并的输出：status JSON + 分隔符 + 日志大小
-            data = result.get("data", {})
-            stdout = data.get("stdout", "").strip()
-            
-            if not stdout:
-                print(f"Error: Background task {bg_pid} status file is empty")
-                return 1
-            
-            # 分离status内容和日志大小
-            log_size = 0
-            status_content = stdout
-            
-            if "LOG_SIZE_SEPARATOR" in stdout:
-                parts = stdout.split("LOG_SIZE_SEPARATOR")
-                if len(parts) >= 2:
-                    status_content = parts[0].strip()
-                    log_size_str = parts[1].strip()
-                    try:
-                        log_size = int(log_size_str)
-                    except ValueError:
-                        log_size = 0
             
             try:
                 import json
-                status_data = json.loads(status_content)
+                result_json = json.loads(result_content)
                 
                 # 提取状态信息
-                status = status_data.get("status", "unknown")
-                command = status_data.get("command", "N/A")
-                start_time = status_data.get("start_time", "N/A")
-                end_time = status_data.get("end_time", "")
-                real_pid = status_data.get("real_pid", None)
+                status = result_json.get("status", "unknown")
+                command = result_json.get("command", "N/A")
+                start_time = result_json.get("start_time", "N/A")
+                end_time = result_json.get("end_time", "")
+                pid = result_json.get("pid", bg_pid)
                 
-                # 显示状态信息 - 直接信任远程状态文件
+                # 获取日志大小
+                log_result = self._read_background_file(bg_pid, 'log', command_identifier)
+                log_size = 0
+                if log_result.get("success", False):
+                    log_data = log_result.get("data", {})
+                    log_content = log_data.get("stdout", "")
+                    log_size = len(log_content.encode('utf-8'))
+                
+                # 显示状态信息
                 print(f"Status: {status}")
-                if real_pid:
-                    if status == "running":
-                        print(f"PID: {real_pid}")
-                    else:
-                        print(f"PID: {real_pid} (finished)")
+                if status == "running":
+                    print(f"PID: {pid}")
+                else:
+                    print(f"PID: {pid} (finished)")
                 
                 print(f"Command: {command}")
                 print(f"Start time: {start_time}")
@@ -2129,14 +2103,12 @@ For more information, visit: https://github.com/your-repo/gds"""
                 if end_time:
                     print(f"End time: {end_time}")
                 
-                # 显示日志大小信息（已在合并命令中获取）
                 print(f"Log size: {log_size} bytes")
                 
                 return 0
                 
             except json.JSONDecodeError as e:
-                print(f"Error: Invalid status file format for task {bg_pid}")
-                print(f"JSON parse error: {e}")
+                print(f"Error: Invalid JSON in result file: {e}")
                 return 1
                 
         except Exception as e:
@@ -2762,56 +2734,39 @@ fi
     def _show_background_result(self, bg_pid, command_identifier=None):
         """显示background任务的最终结果 - 先检查状态，再读取结果"""
         try:
-            # 先检查任务状态
-            status_result = self._read_background_file(bg_pid, 'status', command_identifier)
-            
-            if status_result.get("success", False):
-                status_data = status_result.get("data", {})
-                status_content = status_data.get("stdout", "").strip()
-                
-                if status_content:
-                    try:
-                        import json
-                        status_json = json.loads(status_content)
-                        task_status = status_json.get("status", "unknown")
-                        
-                        # 如果任务还在运行，提示用户
-                        if task_status in ["running", "starting"]:
-                            print(f"Task {bg_pid} is still {task_status}.")
-                            print(f"Use 'GDS --bg --status {bg_pid}' to check current status")
-                            if task_status == "running":
-                                print(f"Use 'GDS --bg --log {bg_pid}' to view current output")
-                            return 1
-                        elif task_status != "completed":
-                            print(f"Task {bg_pid} has status: {task_status}")
-                            return 1
-                    except json.JSONDecodeError:
-                        pass  # Continue to try reading result file
-            
-            # 如果状态是 completed，读取结果文件
+            # 从result文件读取状态和结果信息
             result = self._read_background_file(bg_pid, 'result', command_identifier)
             
             # 处理统一接口的结果
             if result.get("success", False):
                 data = result.get("data", {})
-                stdout = data.get("stdout", "").strip()
-                stderr = data.get("stderr", "").strip()
+                result_content = data.get("stdout", "").strip()
                 
-                if stdout:
+                if result_content:
                     try:
                         import json
-                        # 解析后台任务的JSON结果
-                        bg_data = json.loads(stdout, strict=False)
+                        # 解析result文件的JSON内容
+                        result_json = json.loads(result_content)
                         
-                        # 获取后台任务的实际输出
-                        task_data = bg_data.get("data", {})
-                        stdout_content = task_data.get("stdout", "")
-                        stderr_content = task_data.get("stderr", "")
-                        exit_code = task_data.get("exit_code", 0)
+                        status = result_json.get("status", "unknown")
+                        
+                        # 如果任务还在运行，提示用户
+                        if status == "running":
+                            print(f"Task {bg_pid} is still running.")
+                            print(f"Use 'GDS --bg --status {bg_pid}' to check current status")
+                            print(f"Use 'GDS --bg --log {bg_pid}' to view current output")
+                            return 1
+                        elif status != "completed":
+                            print(f"Task {bg_pid} has status: {status}")
+                            return 1
+                        
+                        # 任务已完成，显示输出
+                        stdout_content = result_json.get("stdout", "")
+                        stderr_content = result_json.get("stderr", "")
+                        exit_code = result_json.get("exit_code", 0)
                         
                         # 显示后台任务的输出
                         if stdout_content:
-                            # 使用end=""避免额外的换行符，因为stdout_content可能已经包含换行符
                             print(stdout_content, end="")
                         
                         if stderr_content:
