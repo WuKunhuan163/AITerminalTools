@@ -1721,7 +1721,6 @@ fi
             # 获取当前路径
             if current_shell:
                 current_path = current_shell.get("current_path", "~")
-                # 检查是否为background模式
                 is_background = current_shell.get("_background_mode", False)
                 bg_pid = current_shell.get("_background_pid", "")
                 bg_original_cmd = current_shell.get("_background_original_cmd", "")
@@ -1756,9 +1755,6 @@ fi
             timestamp = str(int(time.time()))
             cmd_hash = hashlib.md5(user_command.encode()).hexdigest()[:8]
             
-            # 预处理user_command以避免JSON转义问题
-            user_command_escaped = user_command.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t')
-            
             # 根据是否为background模式生成不同的远程命令脚本
             if is_background:
                 # Background模式：生成后台任务脚本
@@ -1782,7 +1778,7 @@ import os
 import glob
 import sys
 try:
-    fingerprint_files = glob.glob(\"{self.main_instance.REMOTE_ROOT}/.gds_mount_fingerprint_*\")
+    fingerprint_files = glob.glob(\"{self.main_instance.REMOTE_ROOT}/tmp/.gds_mount_fingerprint_*\")
     if not fingerprint_files:
         sys.exit(1)
 except Exception:
@@ -1876,7 +1872,7 @@ import os
 import glob
 import sys
 try:
-    fingerprint_files = glob.glob(\"{self.main_instance.REMOTE_ROOT}/.gds_mount_fingerprint_*\")
+    fingerprint_files = glob.glob(\"{self.main_instance.REMOTE_ROOT}/tmp/.gds_mount_fingerprint_*\")
     if not fingerprint_files:
         sys.exit(1)
 except Exception:

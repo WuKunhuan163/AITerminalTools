@@ -1030,6 +1030,7 @@ For more information, visit: https://github.com/your-repo/gds"""
             
             if has_multiple_ops:
                 # 导入shell_commands模块中的具体函数
+                import os
                 current_dir = os.path.dirname(__file__)
                 modules_dir = os.path.join(current_dir, 'modules')
                 if modules_dir not in sys.path:
@@ -1042,6 +1043,7 @@ For more information, visit: https://github.com/your-repo/gds"""
             # 这里应该继续原来execute_shell_command的逻辑
             if cmd == 'pwd':
                 # 导入shell_commands模块中的具体函数
+                import os
                 current_dir = os.path.dirname(__file__)
                 modules_dir = os.path.join(current_dir, 'modules')
                 if modules_dir not in sys.path:
@@ -1218,6 +1220,7 @@ For more information, visit: https://github.com/your-repo/gds"""
                     print(f"Error: mkdir command needs a directory name")
                     return 1
                 # 导入shell_commands模块中的具体函数
+                import os
                 current_dir = os.path.dirname(__file__)
                 modules_dir = os.path.join(current_dir, 'modules')
                 if modules_dir not in sys.path:
@@ -1296,6 +1299,7 @@ For more information, visit: https://github.com/your-repo/gds"""
                 return self._handle_unified_echo_command(args)
             elif cmd == 'help':
                 # 导入shell_commands模块中的具体函数
+                import os
                 current_dir = os.path.dirname(__file__)
                 modules_dir = os.path.join(current_dir, 'modules')
                 if modules_dir not in sys.path:
@@ -2661,12 +2665,26 @@ fi
                     print(f"🔍 REMOTE_ROOT_FOLDER_ID未设置，无法验证指纹")
                 return False
             
-            # 列出REMOTE_ROOT文件夹中的所有文件
-            result = self.drive_service.list_files(folder_id=self.REMOTE_ROOT_FOLDER_ID, max_results=100)
+            # 首先获取tmp文件夹ID
+            tmp_folder_result = self.drive_service.list_files(
+                folder_id=self.REMOTE_ROOT_FOLDER_ID, 
+                query="name='tmp' and mimeType='application/vnd.google-apps.folder'",
+                max_results=1
+            )
+            
+            if not tmp_folder_result.get('success') or not tmp_folder_result.get('files'):
+                if not silent:
+                    print(f"🔍 tmp文件夹不存在，无法验证指纹")
+                return False
+            
+            tmp_folder_id = tmp_folder_result['files'][0]['id']
+            
+            # 列出tmp文件夹中的所有文件
+            result = self.drive_service.list_files(folder_id=tmp_folder_id, max_results=100)
             
             if not result.get('success'):
                 if not silent:
-                    print(f"Error: 无法访问REMOTE_ROOT文件夹: {result.get('error', '未知错误')}")
+                    print(f"Error: 无法访问tmp文件夹: {result.get('error', '未知错误')}")
                 return False
             
             files = result.get('files', [])
@@ -2805,9 +2823,9 @@ fi
         timestamp = str(int(time.time()))
         random_hash = hashlib.md5(f"{timestamp}_{random.randint(1000, 9999)}".encode()).hexdigest()[:8]
         
-        # 生成指纹文件名（以.开头）
+        # 生成指纹文件名（以.开头，保存在tmp文件夹内）
         fingerprint_filename = f".gds_mount_fingerprint_{random_hash}"
-        fingerprint_path = f"{mount_point}/MyDrive/REMOTE_ROOT/{fingerprint_filename}"
+        fingerprint_path = f"{mount_point}/MyDrive/REMOTE_ROOT/tmp/{fingerprint_filename}"
         
         # 生成结果文件
         result_filename = f"remount_result_{timestamp}_{random_hash}.json"
@@ -2847,7 +2865,7 @@ fi
         current_mount = getattr(self, 'current_mount_point', None)
         current_fingerprint = None
         if current_mount:
-            current_fingerprint = f"{current_mount}/REMOTE_ROOT/.gds_mount_fingerprint_*"
+            current_fingerprint = f"{current_mount}/REMOTE_ROOT/tmp/.gds_mount_fingerprint_*"
         
         script = f'''# GDS 动态挂载脚本
 import os
@@ -2936,7 +2954,7 @@ except Exception as e:
     print(f"指纹文件创建失败: {{e}}")
 
 # 创建结果文件（包含文件夹ID）
-result_file = "{mount_point}/MyDrive/REMOTE_ROOT/tmp/remount_{timestamp}.json"
+result_file = "{result_path}"
 try:
     with open(result_file, 'w') as f:
         result_data = {{
@@ -3321,25 +3339,17 @@ except Exception as e:
             import json
             
             # 从result_path推断结果文件名
-            # result_path格式: /content/drive/MyDrive/REMOTE_ROOT/tmp/remount_result_{timestamp}_{hash}.json
-            # 但实际生成的文件名是: remount_{timestamp}.json
             import os
             result_filename = os.path.basename(result_path)
             
-            # 修正文件名：从remount_result_{timestamp}_{hash}.json转换为remount_{timestamp}.json
-            if "remount_result_" in result_filename:
-                # 提取timestamp部分
-                parts = result_filename.replace("remount_result_", "").replace(".json", "").split("_")
-                if len(parts) >= 2:
-                    timestamp = parts[0]
-                    result_filename = f"remount_{timestamp}.json"
-            
             # 等待结果文件出现（最多30秒）
             max_wait_time = 30
+            
             for i in range(max_wait_time):
                 try:
-                    # 使用GDS cat命令读取结果文件
-                    cat_result = self.cmd_cat(f"tmp/{result_filename}")
+                    # 使用GDS cat命令读取结果文件（使用绝对路径）
+                    cat_path = f"~/tmp/{result_filename}"
+                    cat_result = self.cmd_cat(cat_path)
                     
                     if cat_result.get("success"):
                         content = cat_result.get("output", "")
