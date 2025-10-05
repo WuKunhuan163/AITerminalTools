@@ -2201,9 +2201,9 @@ fi
             return 1
 
     def _show_background_log(self, bg_pid, command_identifier=None):
-        """显示background任务日志 - 使用统一接口"""
+        """显示background任务日志 - 直接读取.log文件"""
         try:
-            # 使用通用的文件读取接口
+            # 直接读取.log文件，包含所有输出信息
             result = self._read_background_file(bg_pid, 'log', command_identifier)
             
             if result.get("success", False):

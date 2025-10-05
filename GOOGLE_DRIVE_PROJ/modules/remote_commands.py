@@ -1871,7 +1871,10 @@ STDERR_FILE="{self.main_instance.REMOTE_ROOT}/tmp/{bg_pid}_stderr.tmp"
 LOG_FILE="{self.main_instance.REMOTE_ROOT}/tmp/{BG_LOG_FILE}"
 
 # 使用tee将输出同时写入临时文件和log文件
-bash -c {bg_original_cmd} 2>&1 | tee "$LOG_FILE" > "$STDOUT_FILE"
+# 使用heredoc避免复杂的引号转义问题
+bash << 'USER_COMMAND_EOF' 2>&1 | tee "$LOG_FILE" > "$STDOUT_FILE"
+{bg_original_cmd[1:-1] if bg_original_cmd.startswith('"') and bg_original_cmd.endswith('"') else bg_original_cmd}
+USER_COMMAND_EOF
 EXIT_CODE=${{PIPESTATUS[0]}}
 
 # 分离stdout和stderr（从log文件中提取）
@@ -1997,7 +2000,7 @@ result = {{
     "working_dir": os.getcwd(),
     "timestamp": datetime.now().isoformat(),
     "exit_code": 0,
-    "stdout": "Background task manager started for ID: {bg_pid}",
+    "stdout": "",
     "stderr": ""
 }}
 
