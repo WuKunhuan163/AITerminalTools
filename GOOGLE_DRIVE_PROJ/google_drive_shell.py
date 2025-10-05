@@ -771,7 +771,6 @@ class GoogleDriveShell:
         try:
             # 获取当前shell
             current_shell = self.get_current_shell()
-            print(f"DEBUG: current_shell={current_shell}")
             if not current_shell:
                 print(f"Error: 没有活跃的shell会话")
                 return 1
@@ -905,26 +904,13 @@ class GoogleDriveShell:
             cmd_parts.append(f"python3 {tmp_path}/status_helper_{bg_pid}.py {cmd_b64} {bg_pid} running {start_time} {tmp_path}/{status_file} $REAL_PID {result_file}")
             cmd_parts.append("")
             
-            # Part 7: Clean up and show message
+            # Part 7: Clean up
             cmd_parts.append("# Clean up helper script")
             cmd_parts.append(f"rm -f {tmp_path}/status_helper_{bg_pid}.py")
-            cmd_parts.append("")
-            cmd_parts.append("# Show success message")
-            cmd_parts.append(f"echo 'Background task started with ID: {bg_pid}'")
-            cmd_parts.append(f"echo 'Command: {shell_cmd}'")
-            cmd_parts.append("echo ''")
-            cmd_parts.append("echo 'Run the following commands to track the background task status:'")
-            cmd_parts.append(f"echo '  GDS --bg --status {bg_pid}    # Check task status'")
-            cmd_parts.append(f"echo '  GDS --bg --result {bg_pid}    # View task result'")
-            cmd_parts.append(f"echo '  GDS --bg --log {bg_pid}       # View task log'")
-            cmd_parts.append(f"echo '  GDS --bg --cleanup {bg_pid}   # Clean up task files'")
             
             bg_create_cmd = '\n'.join(cmd_parts)
             
-            # DEBUG: 显示生成的命令
-            print(f"DEBUG: Generated background command (first 500 chars):")
-            print(f"DEBUG: {bg_create_cmd[:500]}...")
-            print(f"DEBUG: Command length: {len(bg_create_cmd)} characters")
+            # 显示生成的命令
             
             # 设置后台模式标志
             current_shell_copy = current_shell.copy()
@@ -933,8 +919,7 @@ class GoogleDriveShell:
             current_shell_copy["_background_original_cmd"] = shell_cmd
             
             # 使用统一的命令执行接口
-            print(f"DEBUG: Executing background command...")
-            print(f"DEBUG: current_shell_copy with background flags: {current_shell_copy}")
+            # 执行背景命令
             result = self.remote_commands.execute_unified_command(
                 user_command=bg_create_cmd,
                 result_filename=None,
@@ -942,8 +927,7 @@ class GoogleDriveShell:
                 skip_quote_escaping=True
             )
             
-            # DEBUG: 显示执行结果
-            print(f"DEBUG: Background command execution result: {result}")
+            # 显示执行结果
             
             # 处理统一接口的结果
             if result.get("success", False):
@@ -956,6 +940,16 @@ class GoogleDriveShell:
                 if stderr:
                     import sys
                     print(stderr, file=sys.stderr)
+                
+                # 显示后台任务信息
+                print(f"Background task started with ID: {bg_pid}")
+                print(f"Command: {shell_cmd}")
+                print("")
+                print("Run the following commands to track the background task status:")
+                print(f"  GDS --bg --status {bg_pid}    # Check task status")
+                print(f"  GDS --bg --result {bg_pid}    # View task result")
+                print(f"  GDS --bg --log {bg_pid}       # View task log")
+                print(f"  GDS --bg --cleanup {bg_pid}   # Clean up task files")
                 
                 return 0
             else:
@@ -2778,11 +2772,7 @@ fi
             # 构建读取文件的命令
             read_cmd = f'cat "{file_path}"'
             
-            # DEBUG: 添加调试信息
-            print(f"DEBUG: _read_background_file - bg_pid={bg_pid}, file_type={file_type}")
-            print(f"DEBUG: target_file={target_file}")
-            print(f"DEBUG: file_path={file_path}")
-            print(f"DEBUG: read_cmd={read_cmd}")
+            # 读取背景文件
             
             # 使用统一的命令执行接口
             result = self.remote_commands.execute_unified_command(
@@ -2791,13 +2781,7 @@ fi
                 current_shell=current_shell
             )
             
-            # DEBUG: 显示执行结果
-            print(f"DEBUG: execute_unified_command result: {result}")
-            if result.get('data'):
-                data = result['data']
-                print(f"DEBUG: stdout length: {len(data.get('stdout', ''))}")
-                print(f"DEBUG: stderr: {data.get('stderr', '')}")
-                print(f"DEBUG: exit_code: {data.get('exit_code', 'N/A')}")
+            # 处理执行结果
             
             return result
             
@@ -2807,14 +2791,8 @@ fi
     def _show_background_result(self, bg_pid, command_identifier=None):
         """显示background任务的最终结果 - 使用统一接口"""
         try:
-            # DEBUG: 开始调试
-            print(f"DEBUG: _show_background_result called with bg_pid={bg_pid}")
-            
             # 使用通用的文件读取接口
             result = self._read_background_file(bg_pid, 'result', command_identifier)
-            
-            # DEBUG: 显示文件读取结果
-            print(f"DEBUG: _read_background_file returned: {result}")
             
             # 处理统一接口的结果
             if result.get("success", False):

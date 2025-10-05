@@ -1704,14 +1704,7 @@ fi
             import hashlib
             import json
             
-            # DEBUG: 超级大量debug print开始
-            print(f"DEBUG: _generate_unified_json_command called")
-            print(f"DEBUG: user_command type: {type(user_command)}")
-            print(f"DEBUG: user_command length: {len(user_command)}")
-            print(f"DEBUG: user_command (first 200 chars): {user_command[:200]}...")
-            print(f"DEBUG: skip_quote_escaping: {skip_quote_escaping}")
-            print(f"DEBUG: result_filename: {result_filename}")
-            print(f"DEBUG: current_shell: {current_shell}")
+            # 生成统一JSON命令
             import shlex
             from datetime import datetime
             
@@ -1764,7 +1757,7 @@ fi
             cmd_hash = hashlib.md5(user_command.encode()).hexdigest()[:8]
             
             # 根据是否为background模式生成不同的远程命令脚本
-            print(f"DEBUG: About to check is_background: {is_background}")
+            # 检查是否为背景任务
             if is_background:
                 # Background模式：生成后台任务脚本
                 import shlex
@@ -2052,11 +2045,7 @@ fi'''
                 print(f"Full script length: {len(remote_command)} characters")
                 raise Exception(f"Generated remote script has syntax errors: {error_msg}")
             
-            # DEBUG: 最终生成的remote_command
-            print(f"DEBUG: Final remote_command generated successfully")
-            print(f"DEBUG: Final remote_command length: {len(remote_command)}")
-            print(f"DEBUG: Final remote_command (first 500 chars): {remote_command[:500]}...")
-            print(f"DEBUG: Final result_filename: {result_filename}")
+            # 最终生成的remote_command
             
             return remote_command, result_filename
             
