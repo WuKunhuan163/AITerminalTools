@@ -1860,7 +1860,7 @@ EXIT_CODE=${{PIPESTATUS[0]}}
 # 分离stdout和stderr（从log文件中提取）
 # 由于使用了2>&1，所有输出都在stdout中，stderr为空
 cp "$STDOUT_FILE" "$STDOUT_FILE.bak"
-echo "" > "$STDERR_FILE"
+touch "$STDERR_FILE"
 
 # 生成后台任务的JSON结果文件
 python3 << 'PYTHON_EOF'
@@ -1881,14 +1881,14 @@ try:
     if os.path.exists(stdout_file):
         try:
             with open(stdout_file, "r", encoding="utf-8", errors="ignore") as f:
-                stdout_content = f.read()
+                stdout_content = f.read().rstrip('\n')
         except Exception:
             stdout_content = ""
     
     if os.path.exists(stderr_file):
         try:
             with open(stderr_file, "r", encoding="utf-8", errors="ignore") as f:
-                stderr_content = f.read()
+                stderr_content = f.read().rstrip('\n')
         except Exception:
             stderr_content = ""
     
