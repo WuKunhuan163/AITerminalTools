@@ -536,7 +536,7 @@ else:
                 print(f"后台模式检测：自动返回超时错误")
                 return {
                     "success": False,
-                    "error": f"Result file timeout after 60 seconds: {remote_file_path}",
+                    "error": f"Result file timeout: {remote_file_path}",
                     "timeout": True,
                     "background_mode": True
                 }
@@ -1771,28 +1771,20 @@ fi
                 # 使用字符串拼接而不是复杂的f-string来避免转义问题
                 escaped_bg_cmd = bg_original_cmd.replace('"', '\\"')
                 
+                # 获取当前挂载的特定指纹文件名
+                mount_hash = getattr(self.main_instance, 'MOUNT_HASH', None)
+                if mount_hash:
+                    fingerprint_file = f"{self.main_instance.REMOTE_ROOT}/tmp/.gds_mount_fingerprint_{mount_hash}"
+                else:
+                    # 回退到通配符模式
+                    fingerprint_file = f"{self.main_instance.REMOTE_ROOT}/tmp/.gds_mount_fingerprint_*"
+                
                 remote_command = f'''# Background任务启动脚本
-# 首先检查挂载是否成功
-python3 -c "
-import os
-import glob
-import sys
-try:
-    fingerprint_files = glob.glob(\"{self.main_instance.REMOTE_ROOT}/tmp/.gds_mount_fingerprint_*\")
-    if not fingerprint_files:
-        sys.exit(1)
-except Exception:
-    sys.exit(1)
-"
-if [ $? -ne 0 ]; then
-    clear
-    echo "当前session的GDS无法访问Google Drive文件结构。请使用GOOGLE_DRIVE --remount指令重新挂载，然后执行GDS的其他命令"
-else
-    # 确保工作目录存在并切换到正确的基础目录
-    mkdir -p "{remote_path}"
-    cd "{remote_path}" && {{
-        # 确保tmp目录存在
-        mkdir -p "{self.main_instance.REMOTE_ROOT}/tmp"
+# 确保工作目录存在并切换到正确的基础目录
+mkdir -p "{remote_path}"
+cd "{remote_path}" && {{
+    # 确保tmp目录存在
+    mkdir -p "{self.main_instance.REMOTE_ROOT}/tmp"
         
         # 创建状态文件，表示任务已开始
         cat > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_STATUS_FILE}" << STATUS_EOF
@@ -1810,7 +1802,7 @@ EXIT_CODE=$?
 
 # 生成后台任务的JSON结果文件
 python3 << 'PYTHON_EOF'
-            import json
+import json
 import os
 from datetime import datetime
 
@@ -1844,7 +1836,7 @@ SCRIPT_EOF
 
         # 给脚本执行权限并启动后台任务
         chmod +x "{self.main_instance.REMOTE_ROOT}/tmp/{BG_SCRIPT_FILE}"
-        nohup "{self.main_instance.REMOTE_ROOT}/tmp/{BG_SCRIPT_FILE}" > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_LOG_FILE}" 2>&1 &
+        nohup "{self.main_instance.REMOTE_ROOT}/tmp/{BG_SCRIPT_FILE}" < /dev/null > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_LOG_FILE}" 2>&1 &
         REAL_PID=$!
 
         # 更新状态文件包含真实PID
@@ -1852,16 +1844,25 @@ SCRIPT_EOF
 {{"pid": "{bg_pid}", "real_pid": $REAL_PID, "command": "{escaped_bg_cmd}", "status": "running", "start_time": "{start_time}", "result_file": "{BG_RESULT_FILE}"}}
 STATUS_RUNNING_EOF
 
-        echo "Background task started with ID: {bg_pid}"
-        echo "Result will be saved to: {self.main_instance.REMOTE_ROOT}/tmp/{BG_RESULT_FILE}"
-        echo "Use GDS --bg --status {bg_pid} to check status"
-        echo "Use GDS --bg --log {bg_pid} to view output"
-        echo "Use GDS --bg --result {bg_pid} to view final result"
+        # 验证background任务文件是否被正确创建
+        sleep 1  # 等待文件系统同步
+        if [ -f "{self.main_instance.REMOTE_ROOT}/tmp/{BG_STATUS_FILE}" ]; then
+            echo "Background task started with ID: {bg_pid}"
+            echo "Command: {escaped_bg_cmd}"
+            echo ""
+            echo "Run the following commands to track the background task status:"
+            echo "  GDS --bg --status {bg_pid}    # Check task status"
+            echo "  GDS --bg --result {bg_pid}    # View task result"
+            echo "  GDS --bg --log {bg_pid}       # View task log"
+            echo "  GDS --bg --cleanup {bg_pid}   # Clean up task files"
+        else
+            echo "Error: Background task creation failed - status file not found"
+            exit 1
+        fi
         
-        # 统一的执行完成提示
-        clear && echo "✅执行完成"
-    }}
-fi'''
+    # 统一的执行完成提示
+    clear && echo "✅执行完成"
+}}'''
             else:
                 # 普通模式：使用原有的统一JSON生成脚本
                 remote_command = f'''
@@ -1869,17 +1870,21 @@ fi'''
 # 首先检查挂载是否成功
 python3 -c "
 import os
-import glob
 import sys
 try:
-    fingerprint_files = glob.glob(\"{self.main_instance.REMOTE_ROOT}/tmp/.gds_mount_fingerprint_*\")
-    if not fingerprint_files:
+    mount_hash = '{getattr(self.main_instance, "MOUNT_HASH", "")}'
+    if mount_hash:
+        fingerprint_file = \\\"{self.main_instance.REMOTE_ROOT}/tmp/.gds_mount_fingerprint_\\\" + mount_hash
+        if os.path.exists(fingerprint_file):
+            sys.exit(0)
+        else:
+            sys.exit(1)
+    else:
         sys.exit(1)
 except Exception:
     sys.exit(1)
 "
 if [ $? -ne 0 ]; then
-    clear
     echo "当前session的GDS无法访问Google Drive文件结构。请使用GOOGLE_DRIVE --remount指令重新挂载，然后执行GDS的其他命令"
 else
     # 确保工作目录存在并切换到正确的基础目录
@@ -2555,9 +2560,9 @@ fi'''
                     actual_data = actual_result.get("data", {})
                     actual_stdout = actual_data.get("stdout", "").strip()
                     actual_stderr = actual_data.get("stderr", "").strip()
-                    if actual_stdout:
-                        print(actual_stdout)
                     
+                    # 不打印actual_stdout，因为用户的直接反馈已经包含了输出
+                    # 只在有stderr时打印stderr
                     if actual_stderr:
                         import sys
                         print(actual_stderr, file=sys.stderr)
