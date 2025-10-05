@@ -2249,10 +2249,7 @@ fi
             # 构建显示日志的远程命令
             log_cmd = f'''
 if [ -f "{tmp_path}/cmd_bg_{bg_pid}.log" ]; then
-    echo "--------- Start of Log ---------"
     cat "{tmp_path}/cmd_bg_{bg_pid}.log"
-    echo ""
-    echo "---------- End of Log ----------"
 else
     echo "Error: Log file for task {bg_pid} not found"
     exit 1
@@ -2276,10 +2273,10 @@ fi
                     import sys
                     print(stderr, file=sys.stderr)
                 
-                    return 0
-                else:
-                    error_msg = result.get("error", "Log view failed")
-                    print(f"Error: {error_msg}")
+                return 0
+            else:
+                error_msg = result.get("error", "Log view failed")
+                print(f"Error: {error_msg}")
                 return 1
                 
         except Exception as e:
