@@ -2055,26 +2055,27 @@ For more information, visit: https://github.com/your-repo/gds"""
     def _show_background_status(self, bg_pid, command_identifier=None):
         """显示background任务状态 - 使用统一接口"""
         try:
-            # 读取状态文件和日志大小 - 合并到一个远程命令中避免第二个窗口
-            from modules.constants import get_bg_status_file, get_bg_log_file
-            status_file = get_bg_status_file(bg_pid)
-            log_file = get_bg_log_file(bg_pid)
-            status_file_path = f"{self.REMOTE_ROOT}/tmp/{status_file}"
-            log_file_path = f"{self.REMOTE_ROOT}/tmp/{log_file}"
+            # 使用通用的文件读取接口读取状态
+            status_result = self._read_background_file(bg_pid, 'status', command_identifier)
             
-            # 构建合并的命令：读取status文件 + 获取日志大小
-            combined_cmd = f'cat "{status_file_path}" && echo "LOG_SIZE_SEPARATOR" && if [ -f "{log_file_path}" ]; then wc -c < "{log_file_path}"; else echo "0"; fi'
-            
-            current_shell = self.get_current_shell()
-            if not current_shell:
-                print("Error: No active shell session")
+            if not status_result.get("success", False):
+                error_msg = status_result.get("error", "Failed to read status file")
+                print(f"Error: Background task {bg_pid} not found")
                 return 1
-                
-            result = self.remote_commands.execute_unified_command(
-                user_command=combined_cmd,
-                result_filename=None,
-                current_shell=current_shell
-            )
+            
+            # 获取状态文件内容
+            status_data = status_result.get("data", {})
+            status_content = status_data.get("stdout", "").strip()
+            
+            # 同时获取日志大小
+            log_result = self._read_background_file(bg_pid, 'log', command_identifier)
+            log_size = 0
+            if log_result.get("success", False):
+                log_data = log_result.get("data", {})
+                log_content = log_data.get("stdout", "")
+                log_size = len(log_content.encode('utf-8'))
+            
+            result = {"success": True, "data": {"stdout": f"{status_content}\nLOG_SIZE_SEPARATOR\n{log_size}", "stderr": ""}}
             
             if not result.get("success", False):
                 error_msg = result.get("error", "Failed to read status file")
@@ -2114,21 +2115,13 @@ For more information, visit: https://github.com/your-repo/gds"""
                 end_time = status_data.get("end_time", "")
                 real_pid = status_data.get("real_pid", None)
                 
-                # 显示状态信息
-                if real_pid and status == "running":
-                    # 检查进程是否还在运行
-                    import subprocess
-                    try:
-                        subprocess.check_call(['ps', '-p', str(real_pid)], 
-                                            stdout=subprocess.DEVNULL, 
-                                            stderr=subprocess.DEVNULL)
-                        print(f"Status: running")
+                # 显示状态信息 - 直接信任远程状态文件
+                print(f"Status: {status}")
+                if real_pid:
+                    if status == "running":
                         print(f"PID: {real_pid}")
-                    except subprocess.CalledProcessError:
-                        print(f"Status: completed")
+                    else:
                         print(f"PID: {real_pid} (finished)")
-                else:
-                    print(f"Status: {status}")
                 
                 print(f"Command: {command}")
                 print(f"Start time: {start_time}")
@@ -2236,31 +2229,10 @@ fi
             return 1
 
     def _show_background_log(self, bg_pid, command_identifier=None):
-        """显示background任务日志"""
+        """显示background任务日志 - 使用统一接口"""
         try:
-            current_shell = self.get_current_shell()
-            if not current_shell:
-                print(f"Error: 没有活跃的shell会话")
-                return 1
-            
-            # 获取REMOTE_ROOT路径
-            tmp_path = f"{self.REMOTE_ROOT}/tmp"
-            
-            # 构建显示日志的远程命令
-            log_cmd = f'''
-if [ -f "{tmp_path}/cmd_bg_{bg_pid}.log" ]; then
-    cat "{tmp_path}/cmd_bg_{bg_pid}.log"
-else
-    echo "Error: Log file for task {bg_pid} not found"
-    exit 1
-fi
-'''
-            
-            # 使用统一的命令执行接口
-            result = self.remote_commands.execute_unified_command(
-                user_command=log_cmd,
-                current_shell=current_shell
-            )
+            # 使用通用的文件读取接口
+            result = self._read_background_file(bg_pid, 'log', command_identifier)
             
             if result.get("success", False):
                 data = result.get("data", {})
@@ -2269,14 +2241,20 @@ fi
                 
                 if stdout:
                     print(stdout)
-                if stderr:
+                elif stderr:
                     import sys
                     print(stderr, file=sys.stderr)
+                else:
+                    print(f"Log file for task {bg_pid} is empty or task hasn't started producing output yet.")
                 
                 return 0
             else:
                 error_msg = result.get("error", "Log view failed")
-                print(f"Error: {error_msg}")
+                if "does not exist" in error_msg.lower():
+                    print(f"Log file for task {bg_pid} not found. Task may not have started producing output yet.")
+                    print(f"Use 'GDS --bg --status {bg_pid}' to check if the task is running.")
+                else:
+                    print(f"Error: {error_msg}")
                 return 1
                 
         except Exception as e:
@@ -2762,25 +2740,21 @@ fi
             
             file_path = f"{tmp_path}/{target_file}"
             
-            current_shell = self.get_current_shell()
-            if not current_shell:
-                return {"success": False, "error": "没有活跃的shell会话"}
+            # 使用cmd_cat直接读取文件，避免弹窗
+            result = self.cmd_cat(file_path)
             
-            # 构建读取文件的命令
-            read_cmd = f'cat "{file_path}"'
-            
-            # 读取背景文件
-            
-            # 使用统一的命令执行接口
-            result = self.remote_commands.execute_unified_command(
-                user_command=read_cmd,
-                result_filename=None,
-                current_shell=current_shell
-            )
-            
-            # 处理执行结果
-            
-            return result
+            if result.get("success", False):
+                # 将cmd_cat的结果转换为统一格式
+                content = result.get("output", "")
+                return {
+                    "success": True,
+                    "data": {
+                        "stdout": content,
+                        "stderr": ""
+                    }
+                }
+            else:
+                return {"success": False, "error": result.get("error", "Failed to read file")}
             
         except Exception as e:
             return {"success": False, "error": str(e)}

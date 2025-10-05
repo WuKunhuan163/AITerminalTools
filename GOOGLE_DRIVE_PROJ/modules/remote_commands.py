@@ -1742,8 +1742,8 @@ fi
             # 生成结果文件名（如果未提供）
             if not result_filename:
                 if is_background:
-                    # Background模式使用常量定义的结果文件名格式
-                    result_filename = get_bg_result_file(bg_pid)
+                    # Background模式：主程序使用不同的文件名，避免与后台任务的result文件冲突
+                    result_filename = f"cmd_main_{bg_pid}.result.json"
                 else:
                     # 普通模式使用统一的结果文件名格式
                     timestamp = str(int(time.time()))
@@ -1848,9 +1848,19 @@ cat > "{self.main_instance.REMOTE_ROOT}/tmp/{BG_SCRIPT_FILE}" << 'SCRIPT_EOF'
 #!/bin/bash
 set -e
 
-# 执行用户命令
-bash -c {bg_original_cmd}
-EXIT_CODE=$?
+# 执行用户命令并捕获输出（同时写入log文件以便实时查看）
+STDOUT_FILE="{self.main_instance.REMOTE_ROOT}/tmp/{bg_pid}_stdout.tmp"
+STDERR_FILE="{self.main_instance.REMOTE_ROOT}/tmp/{bg_pid}_stderr.tmp"
+LOG_FILE="{self.main_instance.REMOTE_ROOT}/tmp/{BG_LOG_FILE}"
+
+# 使用tee将输出同时写入临时文件和log文件
+bash -c {bg_original_cmd} 2>&1 | tee "$LOG_FILE" > "$STDOUT_FILE"
+EXIT_CODE=${{PIPESTATUS[0]}}
+
+# 分离stdout和stderr（从log文件中提取）
+# 由于使用了2>&1，所有输出都在stdout中，stderr为空
+cp "$STDOUT_FILE" "$STDOUT_FILE.bak"
+echo "" > "$STDERR_FILE"
 
 # 生成后台任务的JSON结果文件
 python3 << 'PYTHON_EOF'
@@ -1861,12 +1871,33 @@ from datetime import datetime
 try:
     exit_code = int(os.environ.get('EXIT_CODE', '0'))
     
+    # 读取实际的命令输出
+    stdout_content = ""
+    stderr_content = ""
+    
+    stdout_file = "{self.main_instance.REMOTE_ROOT}/tmp/{bg_pid}_stdout.tmp"
+    stderr_file = "{self.main_instance.REMOTE_ROOT}/tmp/{bg_pid}_stderr.tmp"
+    
+    if os.path.exists(stdout_file):
+        try:
+            with open(stdout_file, "r", encoding="utf-8", errors="ignore") as f:
+                stdout_content = f.read()
+        except Exception:
+            stdout_content = ""
+    
+    if os.path.exists(stderr_file):
+        try:
+            with open(stderr_file, "r", encoding="utf-8", errors="ignore") as f:
+                stderr_content = f.read()
+        except Exception:
+            stderr_content = ""
+    
     result = {{
         "success": exit_code == 0,
         "data": {{
             "exit_code": exit_code,
-            "stdout": "Background task {bg_pid} completed",
-            "stderr": "",
+            "stdout": stdout_content,
+            "stderr": stderr_content,
             "working_dir": os.getcwd(),
             "timestamp": datetime.now().isoformat()
         }}
@@ -1874,6 +1905,12 @@ try:
     
     with open("{self.main_instance.REMOTE_ROOT}/tmp/{BG_RESULT_FILE}", "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2, ensure_ascii=False)
+    
+    # 清理临时文件
+    if os.path.exists(stdout_file):
+        os.remove(stdout_file)
+    if os.path.exists(stderr_file):
+        os.remove(stderr_file)
         
 except Exception as e:
     print(f"ERROR: Failed to generate JSON result: {{e}}", file=sys.stderr)
@@ -1951,7 +1988,7 @@ result = {{
     "working_dir": os.getcwd(),
     "timestamp": datetime.now().isoformat(),
     "exit_code": 0,
-    "stdout": "Background task manager started for ID: {bg_pid}\\nTask creation is proceeding in background...\\n✅执行完成",
+    "stdout": "Background task manager started for ID: {bg_pid}",
     "stderr": ""
 }}
 
