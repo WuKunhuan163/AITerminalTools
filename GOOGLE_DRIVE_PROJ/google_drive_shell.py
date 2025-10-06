@@ -1173,17 +1173,45 @@ For more information, visit: https://github.com/your-repo/gds"""
                     args = ['-c', python_code]
 
                 else:
-                    # 使用接口化的命令解析
-                    parse_result = self._parse_shell_command(shell_cmd_clean)
-                    if not parse_result["success"]:
-                        print(f"Error: {parse_result['error']}")
-                        return 1
-                    cmd = parse_result["cmd"]
-                    args = parse_result["args"]
+                    # 检查是否为简单命令，如果是则直接传递原始字符串避免引号丢失
+                    simple_commands = ['echo', 'printf', 'cat', 'ls', 'pwd', 'date', 'whoami']
+                    first_word = shell_cmd_clean.split()[0] if shell_cmd_clean.split() else ""
                     
-                    # 显示警告信息（如果有）
-                    if "warning" in parse_result:
-                        print(f"Warning: {parse_result['warning']}")
+                    if first_word in simple_commands and ('\"' in shell_cmd_clean or "'" in shell_cmd_clean):
+                        # 对于包含引号的简单命令，直接使用原始字符串
+                        # 直接调用 execute_unified_command 而不是 execute_generic_command
+                        current_shell = self.get_current_shell()
+                        result = self.remote_commands.execute_unified_command(
+                            user_command=shell_cmd_clean,
+                            current_shell=current_shell
+                        )
+                        if result.get("success", False):
+                            # 从正确的数据结构中获取stdout和stderr
+                            data = result.get("data", {})
+                            stdout = data.get("stdout", "").strip()
+                            stderr = data.get("stderr", "").strip()
+                            # 统一在命令处理结束后打印输出
+                            if stdout:
+                                print(stdout)
+                            if stderr:
+                                print(stderr, file=sys.stderr)
+                            return 0
+                        else:
+                            error_msg = result.get("error", f"Command '{shell_cmd_clean}' failed")
+                            print(error_msg)
+                            return 1
+                    else:
+                        # 使用接口化的命令解析
+                        parse_result = self._parse_shell_command(shell_cmd_clean)
+                        if not parse_result["success"]:
+                            print(f"Error: {parse_result['error']}")
+                            return 1
+                        cmd = parse_result["cmd"]
+                        args = parse_result["args"]
+                        
+                        # 显示警告信息（如果有）
+                        if "warning" in parse_result:
+                            print(f"Warning: {parse_result['warning']}")
             
             # 对所有命令应用通用引号和转义处理
             if args:
@@ -2347,13 +2375,15 @@ done
         import shlex
         
         try:
-            # 在shlex.split之前保护~路径，防止本地路径展开
-            protected_cmd = shell_cmd.replace('~/', '__TILDE_SLASH__').replace(' ~', ' __TILDE__')
+            # 在shlex.split之前保护~路径和转义引号，防止本地路径展开和引号丢失
+            protected_cmd = (shell_cmd.replace('~/', '__TILDE_SLASH__')
+                                     .replace(' ~', ' __TILDE__')
+                                     .replace('\\"', '__ESCAPED_QUOTE__'))
             
             cmd_parts = shlex.split(protected_cmd)
             
-            # 恢复~路径
-            cmd_parts = [part.replace('__TILDE_SLASH__', '~/').replace('__TILDE__', '~') for part in cmd_parts]
+            # 恢复~路径和转义引号
+            cmd_parts = [part.replace('__TILDE_SLASH__', '~/').replace('__TILDE__', '~').replace('__ESCAPED_QUOTE__', '\\"') for part in cmd_parts]
             
             if not cmd_parts:
                 return {

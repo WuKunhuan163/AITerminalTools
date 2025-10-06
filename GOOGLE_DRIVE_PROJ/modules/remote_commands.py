@@ -1731,6 +1731,7 @@ fi
                 bg_pid = ""
                 bg_original_cmd = ""
             
+            
             # 解析远端绝对路径
             if current_path == "~":
                 remote_path = self.main_instance.REMOTE_ROOT
@@ -2052,7 +2053,11 @@ else
         
         # 直接执行用户命令，捕获输出和错误
         set +e  # 允许命令失败
-        bash -c {shlex.quote(user_command)} > "$OUTPUT_FILE" 2> "$ERROR_FILE"
+        # 忽略SIGPIPE信号以避免broken pipe错误
+        trap '' PIPE
+        bash << 'USER_COMMAND_EOF' > "$OUTPUT_FILE" 2> "$ERROR_FILE"
+{user_command}
+USER_COMMAND_EOF
         EXIT_CODE=$?
         echo "$EXIT_CODE" > "$EXITCODE_FILE"
         set -e
@@ -2127,6 +2132,7 @@ if result_dir:
 
 with open(result_file, "w", encoding="utf-8") as f:
     json.dump(result, f, indent=2, ensure_ascii=False)
+
 
 JSON_SCRIPT_EOF
         
