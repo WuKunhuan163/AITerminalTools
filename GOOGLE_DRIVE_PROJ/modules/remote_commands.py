@@ -1456,7 +1456,7 @@ fi
             
             # 生成远端命令（包含语法检查）
             try:
-                remote_command_info = self._generate_command(cmd, cleaned_args, current_shell)
+                remote_command_info = self._generate_command_interface(cmd, cleaned_args, current_shell)
             except Exception as e:
                 if "语法错误" in str(e):
                     return {
@@ -1686,7 +1686,7 @@ fi
         except Exception as e:
             return False, f"Syntax check failed: {str(e)}"
 
-    def _generate_unified_json_command(self, user_command, result_filename=None, current_shell=None, skip_quote_escaping=False):
+    def _generate_command(self, user_command, result_filename=None, current_shell=None, skip_quote_escaping=False):
         """
         统一的JSON结果生成接口 - 为任何用户命令生成包含JSON结果的远程脚本
         
@@ -1703,6 +1703,8 @@ fi
             import time
             import hashlib
             import json
+            
+            # 挂载检查现在在_show_command_window中处理，这里不再需要
             
             # 生成统一JSON命令
             import shlex
@@ -2017,28 +2019,7 @@ MAIN_JSON_EOF'''
             else:
                 # 普通模式：使用原有的统一JSON生成脚本
                 remote_command = f'''
-# 统一JSON结果生成脚本
-# 首先检查挂载是否成功
-python3 -c "
-import os
-import sys
-try:
-    mount_hash = '{getattr(self.main_instance, "MOUNT_HASH", "")}'
-    if mount_hash:
-        fingerprint_file = \\\"{self.main_instance.REMOTE_ROOT}/tmp/.gds_mount_fingerprint_\\\" + mount_hash
-        if os.path.exists(fingerprint_file):
-            sys.exit(0)
-        else:
-            sys.exit(1)
-    else:
-        sys.exit(1)
-except Exception:
-    sys.exit(1)
-"
-if [ $? -ne 0 ]; then
-    clear && echo "当前session的GDS无法访问Google Drive文件结构。请使用GOOGLE_DRIVE --remount指令重新挂载，然后执行GDS的其他命令"
-else
-    # 确保工作目录存在并切换到正确的基础目录
+# 确保工作目录存在并切换到正确的基础目录
     mkdir -p "{remote_path}"
     cd "{remote_path}" && {{
         # 确保tmp目录存在
@@ -2138,8 +2119,7 @@ JSON_SCRIPT_EOF
         
         # 清理临时文件
         rm -f "$OUTPUT_FILE" "$ERROR_FILE" "$EXITCODE_FILE"
-    }}
-fi'''
+    }}'''
             
             
             # 检查生成的完整脚本语法（包括wrapper部分）
@@ -2160,7 +2140,7 @@ fi'''
         except Exception as e:
             raise Exception(f"Generate unified JSON command failed: {str(e)}")
 
-    def _generate_command(self, cmd, args, current_shell):
+    def _generate_command_interface(self, cmd, args, current_shell):
         """
         生成远端执行命令 - 现在使用统一的JSON生成接口
         
@@ -2218,7 +2198,7 @@ fi'''
                 user_command = cmd
             
             # 使用统一的JSON生成接口
-            return self._generate_unified_json_command(user_command, None, current_shell, False)
+            return self._generate_command(user_command, None, current_shell, False)
             
         except Exception as e:
             raise Exception(f"Generate remote command failed: {str(e)}")
@@ -2239,7 +2219,7 @@ fi'''
         try:
             # 使用统一的JSON生成接口（包含语法检查）
             try:
-                remote_command, actual_result_filename = self._generate_unified_json_command(
+                remote_command, actual_result_filename = self._generate_command(
                     user_command, result_filename, current_shell, skip_quote_escaping
                 )
             except Exception as e:
@@ -2419,8 +2399,8 @@ fi'''
             # 获取当前shell状态
             current_shell = self.main_instance.get_current_shell()
             
-            # 生成最终的远端命令（使用原有的_generate_command方法）
-            remote_command_info = self._generate_command(cmd, args, current_shell)
+            # 生成最终的远端命令（使用原有的_generate_command_interface方法）
+            remote_command_info = self._generate_command_interface(cmd, args, current_shell)
             final_remote_command, result_filename = remote_command_info
             
             # 显示命令窗口
@@ -2512,7 +2492,7 @@ fi'''
             # print(f"DEBUG: [{get_timestamp_func()}] [CAPTURE_EXIT] _execute_with_result_capture 结束 - window_id: {window_id}")
         # 注意：窗口槽位的释放由execute_generic_command的finally块统一处理
 
-    def _show_command_window(self, cmd, args, remote_command, result_filename=None, debug_info=None):
+    def show_command_window(self, cmd, args, remote_command, result_filename=None, debug_info=None):
         """
         显示远端命令的窗口（使用subprocess方法，完全抑制IMK信息）
         
@@ -2555,7 +2535,6 @@ fi'''
                 title=title,
                 command_text=remote_command
             )
-            
             # 转换结果格式以保持兼容性
             if result["action"] == "success":
                 return {
@@ -2951,12 +2930,40 @@ fi'''
         使用WindowManager显示命令窗口
         新架构：统一窗口管理，避免多线程竞态问题
         """
+        # 添加挂载检查到命令文本
+        mount_check_header = f'''# 首先检查挂载是否成功
+MOUNT_CHECK_FAILED=0
+python3 -c "
+import os
+import sys
+try:
+    mount_hash = '{getattr(self.main_instance, "MOUNT_HASH", "")}'
+    if mount_hash:
+        fingerprint_file = \\\"{self.main_instance.REMOTE_ROOT}/tmp/.gds_mount_fingerprint_\\\" + mount_hash
+        if os.path.exists(fingerprint_file):
+            sys.exit(0)
+        else:
+            sys.exit(1)
+    else:
+        sys.exit(1)
+except Exception:
+    sys.exit(1)
+"
+if [ $? -ne 0 ]; then
+    clear && echo "Error: 当前session的GDS无法访问Google Drive文件结构。请使用GOOGLE_DRIVE --remount指令重新挂载，然后执行GDS的其他命令"
+    MOUNT_CHECK_FAILED=1
+fi
+
+if [ $MOUNT_CHECK_FAILED -eq 0 ]; then
+'''
+        # 将挂载检查添加到命令文本前面，并在最后添加fi
+        enhanced_command_text = mount_check_header + command_text + "\nfi"
+        
         from .window_manager import get_window_manager
         
         # 获取窗口管理器并请求窗口
         window_manager = get_window_manager()
-        result = window_manager.request_window(title, command_text, timeout_seconds)
-        
+        result = window_manager.request_window(title, enhanced_command_text, timeout_seconds)
         return result
     
     def show_command_window_subprocess_legacy(self, title, command_text, timeout_seconds=3600):

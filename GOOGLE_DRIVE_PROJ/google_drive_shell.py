@@ -1329,7 +1329,7 @@ For more information, visit: https://github.com/your-repo/gds"""
                             return 1
                         
                         # 生成远程命令
-                        remote_command_info = self.remote_commands._generate_command("ls", cmd_args, current_shell)
+                        remote_command_info = self.remote_commands._generate_command_interface("ls", cmd_args, current_shell)
                         remote_command, result_filename = remote_command_info
                         
                         # 显示远程命令窗口
@@ -2195,7 +2195,7 @@ fi
 '''
             
             # 执行状态查询 - 使用与普通命令相同的_show_command_window方法
-            remote_command_info = self.remote_commands._generate_command("bash", ["-c", status_cmd], current_shell)
+            remote_command_info = self.remote_commands._generate_command_interface("bash", ["-c", status_cmd], current_shell)
             remote_command, result_filename = remote_command_info
             
             result = self.remote_commands._show_command_window("bash", ["-c", status_cmd], remote_command)
@@ -2300,7 +2300,7 @@ done
 '''
             
             # 执行等待
-            remote_command_info = self.remote_commands._generate_command("bash", ["-c", wait_cmd], current_shell)
+            remote_command_info = self.remote_commands._generate_command_interface("bash", ["-c", wait_cmd], current_shell)
             remote_command, result_filename = remote_command_info
             
             result = self.remote_commands.show_command_window_subprocess(
@@ -2625,7 +2625,7 @@ echo "Cleaned up $CLEANED completed background tasks"
 '''
             
             # 执行清理
-            remote_command_info = self.remote_commands._generate_command("bash", ["-c", cleanup_cmd], current_shell)
+            remote_command_info = self.remote_commands._generate_command_interface("bash", ["-c", cleanup_cmd], current_shell)
             remote_command, result_filename = remote_command_info
             
             result = self.remote_commands.show_command_window_subprocess(

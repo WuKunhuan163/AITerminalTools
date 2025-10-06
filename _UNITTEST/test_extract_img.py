@@ -116,7 +116,7 @@ class TestExtractImg(unittest.TestCase):
         if not self.test_academic_image.exists():
             self.skipTest(f"Test image {self.test_academic_image} not found")
         
-        # # Skip this test due to UNIMERNET performance issues in test environment
+        # Skip this test due to UNIMERNET performance issues in test environment
         # self.skipTest("UNIMERNET tests skipped due to performance issues - UNIMERNET is functional but slow")
         
         result = subprocess.run([
@@ -165,7 +165,7 @@ class TestExtractImg(unittest.TestCase):
         if not self.test_academic_image.exists():
             self.skipTest(f"Test image {self.test_academic_image} not found")
         
-        # # Skip this test due to UNIMERNET performance issues in test environment
+        # Skip this test due to UNIMERNET performance issues in test environment
         # self.skipTest("UNIMERNET tests skipped due to performance issues - UNIMERNET is functional but slow")
         
         result = subprocess.run([

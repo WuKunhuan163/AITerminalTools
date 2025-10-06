@@ -216,6 +216,8 @@
         "GDS grep \"error\" log.txt",
         "GDS --bg \"python train.py\"",
         "GDS --bg \"find . -name '*.py' | wc -l\"",
+        "GDS --bg \"python train_model.py --epochs 100\"",
+        "GDS --bg \"python process_data.py\"",
         "GDS --bg --status 1726234567_1234",
         "GDS --bg --log 1726234567_1234",
         "GDS --bg --result 1726234567_1234",
@@ -249,7 +251,7 @@
       "testable": true,
       "test_passed": true,
       "ai_usable": true,
-      "tool_use_scenario": "When user needs to access Google Drive, manage remote files through shell interface, upload/download files, execute remote Python code, manage Python packages with dependency analysis, manage Python versions (install/switch between different Python versions), create and manage virtual environments, perform code quality checks, edit files with advanced features, or set up Google Drive API integration",
+      "tool_use_scenario": "When user needs to access Google Drive, manage remote files through shell interface, upload/download files, execute remote Python code, run background tasks with status monitoring, manage Python packages with dependency analysis, manage Python versions (install/switch between different Python versions), create and manage virtual environments, perform code quality checks, edit files with advanced features, or set up Google Drive API integration",
       "gds_commands": {
         "navigation": [
           "pwd",
@@ -331,6 +333,10 @@
         "Path resolution supporting ~, .., relative and absolute paths",
         "Automatic download caching with cache management",
         "Remote Python code execution with full environment support",
+        "Background task execution with non-blocking operation",
+        "Real-time task status monitoring and log viewing",
+        "Background task result retrieval and management",
+        "Complex quote handling in background commands",
         "Python package management with pip integration",
         "Smart dependency tree analysis with PyPI API integration",
         "Python version management (pyenv-like) with remote compilation and installation",

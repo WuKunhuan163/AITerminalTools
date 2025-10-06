@@ -643,7 +643,7 @@ class FileCore:
                     # print(f"DEBUG: _resolve_file_path result: {file_result is not None}")
                     if file_result:
                         # 这是一个文件路径，返回单个文件信息
-                        # # print(f"DEBUG: Found as file, returning single file info")
+                        # print(f"DEBUG: Found as file, returning single file info")
                         # 内联_ls_single_file的逻辑
                         return {
                             "success": True,
@@ -654,7 +654,7 @@ class FileCore:
                             "mode": "single_file"
                         }
                     else:
-                        # # print(f"DEBUG: Neither directory nor file found for path '{path}'")
+                        # print(f"DEBUG: Neither directory nor file found for path '{path}'")
                         return {"success": False, "error": f"Path not found: {converted_path}"}
             
             if recursive:
@@ -1496,11 +1496,11 @@ class FileCore:
                 file_name = file.get('name', 'UNKNOWN')
                 # print(f"DEBUG: File {i+1}: '{file_name}' (type: {file.get('mimeType', 'UNKNOWN')})")
                 if file_name == filename:
-                    # # print(f"DEBUG: MATCH FOUND! File '{filename}' exists")
+                    # print(f"DEBUG: MATCH FOUND! File '{filename}' exists")
                     file['url'] = self._generate_web_url(file)
                     return file
             
-            # # print(f"DEBUG: File '{filename}' NOT FOUND in {len(files)} files")
+            # print(f"DEBUG: File '{filename}' NOT FOUND in {len(files)} files")
             return None
             
         except Exception as e:

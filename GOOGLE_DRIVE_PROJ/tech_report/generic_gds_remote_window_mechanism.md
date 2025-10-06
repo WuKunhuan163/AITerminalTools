@@ -22,7 +22,7 @@
 3. `GoogleDriveShell.execute_shell_command()`
 4. `RemoteCommands.execute_generic_command()`
 
-### 2. 命令生成阶段 (`_generate_command`)
+### 2. 命令生成阶段 (`_generate_command_interface`)
 
 **位置：** `modules/remote_commands.py:1272`
 
@@ -215,7 +215,7 @@ if result.get("success", False):
 
 ### RemoteCommands类主要方法
 - `execute_generic_command()`: 统一命令执行入口
-- `_generate_command()`: 生成远端命令
+- `_generate_command_interface()`: 生成远端命令
 - `_execute_with_result_capture()`: 执行并捕获结果
 - `_wait_and_read_result_file()`: 等待并读取结果文件
 - `show_command_window_subprocess()`: 显示命令窗口
