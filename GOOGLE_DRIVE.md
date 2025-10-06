@@ -4,7 +4,23 @@
 
 GOOGLE_DRIVE 是一个强大的 Google Drive 远程控制工具，支持通过命令行进行文件管理、上传下载、以及与 Google Colab 的集成。
 
-## 最新修复 (2024)
+## 最新修复 (2024-2025)
+
+### 引号处理和管道操作修复 ✨ (2025-10)
+- **引号处理完美支持**: 修复了转义引号丢失问题，`echo "Hello \"world\" test"` 现在正确输出 `Hello "world" test`
+- **复杂引号组合**: 支持单引号、双引号、转义引号的任意组合
+- **管道操作修复**: 解决了 `cat file | head -10` 的 broken pipe 错误
+- **后台任务引号**: 后台任务也完美支持复杂引号处理
+- **简单命令优化**: 对 echo、printf、cat 等命令进行了特殊优化
+
+### Background 任务系统重构 ✨ (2025-10)
+- **统一架构**: 重构了后台任务系统，使用统一的 result.json 文件
+- **实时状态**: `--status` 命令可以实时查看任务运行状态
+- **日志追踪**: `--log` 命令支持查看任务的实时输出
+- **结果获取**: `--result` 命令获取任务的完整执行结果
+- **无弹窗操作**: 所有后台管理命令都不会弹出窗口，直接在终端显示
+
+## 历史修复 (2024)
 
 ### Google Drive Desktop 自动启动
 - **问题修复**: Upload功能现在会自动启动Google Drive Desktop，无需用户手动选择
@@ -97,40 +113,30 @@ GOOGLE_DRIVE --checkout-remote-shell abc123
 GDS pwd  # 显示项目A的当前路径
 ```
 
-### 🚀 Background 执行功能 (新功能)
+### 🚀 Background 执行功能
 
-GDS 现在支持后台执行命令，让你可以同时运行多个任务而不被阻塞：
+GDS 支持后台执行命令，让你可以同时运行多个任务而不被阻塞：
 
-#### Background 选项
+#### Background 基本语法
 ```bash
-# 三种等效的后台执行方式
-GDS --background <command>    # 完整形式
-GDS --bg <command>           # 简写形式  
-GDS --async <command>        # 异步形式
+# 启动后台任务
+GDS --bg <command>           # 后台执行命令
 ```
 
 #### Background 管理命令
 ```bash
 # 启动后台任务
 GDS --bg "python train.py"
-GDS --background "find . -name '*.py' | wc -l"
+GDS --bg "find . -name '*.py' | wc -l"
 
 # 查看任务状态
-GDS --status                 # 查看所有后台任务
-GDS --status <task_id>       # 查看特定任务状态
+GDS --bg --status <task_id>       # 查看特定任务状态
 
 # 查看任务日志
-GDS --log <task_id>         # 查看任务输出日志
+GDS --bg --log <task_id>          # 查看任务输出日志
 
 # 查看任务结果
-GDS --result <task_id>      # 查看任务最终结果
-
-# 等待任务完成
-GDS --wait <task_id>        # 等待特定任务完成
-
-# 清理任务
-GDS --cleanup               # 清理所有已完成任务
-GDS --cleanup <task_id>     # 清理特定任务
+GDS --bg --result <task_id>       # 查看任务最终结果
 ```
 
 #### 使用示例
@@ -143,43 +149,32 @@ GDS --bg "python train_model.py --epochs 100"
 GDS --bg "python process_data.py"
 # 输出: Background task started with ID: 1726234580_5678
 
-# 查看所有任务状态
-GDS --status
+# 查看特定任务状态
+GDS --bg --status 1726234567_1234
 # 输出:
-# ========================
-# Task ID: 1726234567_1234
-# Command: python train_model.py --epochs 100
-# Status: running
-# PID: 12345
-# Start time: 2025-09-13T10:30:00Z
-# Log size: 2048 bytes
-# ========================
-# Task ID: 1726234580_5678
-# Command: python process_data.py
 # Status: completed
-# PID: 12350 (finished)
+# PID: 1726234567_1234 (finished)
+# Command: "python train_model.py --epochs 100"
+# Start time: 2025-10-06T10:57:45.849037
+# End time: 2025-10-06T02:58:44.159887
+# Log size: 40 bytes
 
 # 查看训练任务的实时日志
-GDS --log 1726234567_1234
+GDS --bg --log 1726234567_1234
 
 # 查看任务最终结果（包含完整输出）
-GDS --result 1726234567_1234
-
-# 等待训练完成
-GDS --wait 1726234567_1234
-
-# 清理已完成的任务
-GDS --cleanup
+GDS --bg --result 1726234567_1234
+# 输出: Training completed successfully with 95% accuracy
 ```
 
 #### Background 功能特点
-- **非阻塞执行**: 后台任务不会阻塞当前终端
-- **状态追踪**: 实时查看任务运行状态和PID
-- **日志管理**: 自动保存任务输出到日志文件
-- **结果保存**: 任务完成后保存完整的stdout和stderr输出
-- **多任务支持**: 同时运行多个后台任务
-- **智能清理**: 自动管理已完成任务的文件
-- **简洁输出**: 后台启动时只显示关键信息，不显示冗长的远程命令
+- **非阻塞执行**: 后台任务不会阻塞当前终端，立即返回任务ID
+- **状态追踪**: 使用 `--status` 查看任务运行状态和PID
+- **日志管理**: 使用 `--log` 查看任务的实时输出日志
+- **结果保存**: 使用 `--result` 查看任务完成后的完整输出
+- **多任务支持**: 同时运行多个独立的后台任务
+- **引号处理**: 完美支持复杂命令中的转义引号和特殊字符
+- **管道支持**: 支持管道操作，已修复 broken pipe 错误
 - **错误处理**: 完善的错误检测和报告机制
 
 ## 🤖 AI Agent 使用指南

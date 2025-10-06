@@ -215,14 +215,10 @@
         "GDS cat config.json",
         "GDS grep \"error\" log.txt",
         "GDS --bg \"python train.py\"",
-        "GDS --background \"find . -name '*.py'\"",
-        "GDS --async \"long_running_command\"",
-        "GDS --status",
-        "GDS --status 1726234567_1234",
-        "GDS --log 1726234567_1234",
-        "GDS --result 1726234567_1234",
-        "GDS --wait 1726234567_1234",
-        "GDS --cleanup",
+        "GDS --bg \"find . -name '*.py' | wc -l\"",
+        "GDS --bg --status 1726234567_1234",
+        "GDS --bg --log 1726234567_1234",
+        "GDS --bg --result 1726234567_1234",
         "GDS find . -name \"*.py\"",
         "GDS touch new_file.txt",
         "GDS mv old_name.txt new_name.txt",
@@ -288,14 +284,10 @@
           "python -c '<code>'"
         ],
         "background_execution": [
-          "--background <command>",
           "--bg <command>",
-          "--async <command>",
-          "--status [task_id]",
-          "--log <task_id>",
-          "--result <task_id>",
-          "--wait <task_id>",
-          "--cleanup [task_id]"
+          "--bg --status <task_id>",
+          "--bg --log <task_id>",
+          "--bg --result <task_id>"
         ],
         "package_management": [
           "pip install <package>",
