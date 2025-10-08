@@ -4,50 +4,6 @@
 
 GOOGLE_DRIVE 是一个强大的 Google Drive 远程控制工具，支持通过命令行进行文件管理、上传下载、以及与 Google Colab 的集成。
 
-## 最新修复 (2024-2025)
-
-### 引号处理和管道操作修复 ✨ (2025-10)
-- **引号处理完美支持**: 修复了转义引号丢失问题，`echo "Hello \"world\" test"` 现在正确输出 `Hello "world" test`
-- **复杂引号组合**: 支持单引号、双引号、转义引号的任意组合
-- **管道操作修复**: 解决了 `cat file | head -10` 的 broken pipe 错误
-- **后台任务引号**: 后台任务也完美支持复杂引号处理
-- **简单命令优化**: 对 echo、printf、cat 等命令进行了特殊优化
-
-### Background 任务系统重构 ✨ (2025-10)
-- **统一架构**: 重构了后台任务系统，使用统一的 result.json 文件
-- **实时状态**: `--status` 命令可以实时查看任务运行状态
-- **日志追踪**: `--log` 命令支持查看任务的实时输出
-- **结果获取**: `--result` 命令获取任务的完整执行结果
-- **无弹窗操作**: 所有后台管理命令都不会弹出窗口，直接在终端显示
-
-## 历史修复 (2024)
-
-### Google Drive Desktop 自动启动
-- **问题修复**: Upload功能现在会自动启动Google Drive Desktop，无需用户手动选择
-- **改进**: 简化了启动流程，提高用户体验
-- **状态检测**: 自动检测Google Drive Desktop运行状态
-
-### EDIT 功能用户友好界面重构 ✨
-- **简化语法**: 移除复杂的JSON格式，采用直观的命令行选项
-- **多行内容支持**: 原生支持 `\n` 换行符，轻松编辑多行内容
-- **直接内容模式**: `--content` 选项直接设置文件内容，无需复杂引号
-- **简单替换模式**: `--replace` 选项进行文本替换，支持多个替换
-- **行号编辑**: `--line` 和 `--insert` 选项按行号编辑
-- **预览模式**: `--preview` 选项查看修改结果而不保存
-- **备份功能**: `--backup` 选项创建修改前的备份文件
-- **转义字符支持**: 自动处理 `\n`, `\t`, `\r` 等转义字符
-
-### Upload 功能优化
-- **文件名保持**: 修复了上传时文件名被错误重命名的问题
-- **本地文件保护**: 改用 `cp` 替代 `mv`，保护本地文件不被意外删除
-- **--remove-local 选项**: 新增选项，成功上传后可选择性删除本地文件
-- **智能路径判断**: 通过文件扩展名自动区分文件和文件夹路径
-
-### Upload检测优化
-- **调试增强**: 当upload检测超时时，自动显示详细的错误诊断信息
-- **问题诊断**: 包括源文件检查、目标路径检查、权限检查等
-- **超时处理**: 改进了60秒超时机制的错误处理
-
 ## 🔧 GDS Shell 管理系统
 
 ### GDS vs GOOGLE_DRIVE --shell 的区别
@@ -245,7 +201,7 @@ GDS edit --backup production_config.py '[["old_setting", "new_setting"]]'
 ### 2. 文件操作
 - 📁 目录导航 (`pwd`, `ls`, `cd`, `mkdir`)
 - 🗑️ 文件删除 (`rm`, `rm -rf`)
-- 📤 文件上传 (`upload`) - **已优化检测机制**
+- 📤 文件上传 (`upload`)
 - 📥 文件下载 (`download`)
 - 🔄 文件移动 (`mv`)
 - ✏️ 文件编辑 (`edit`) - **支持多段同步替换**
@@ -414,73 +370,6 @@ GDS edit complex.py '[
 ]'
 ```
 
-### 输出格式
-
-#### 预览模式输出
-```
-📝 预览模式 - 文件: main.py
-原始行数: 10, 修改后行数: 8
-应用替换: 2 个
-
-🔄 修改摘要:
-  • Lines 1-2: replaced
-  • Text 'main()...' replaced
-
-📄 修改后内容预览:
-==================================================
-def greet():
-    print('Hello! ')
-greet()
-==================================================
-```
-
-#### 正常编辑输出
-```
-文件 main.py 编辑完成，应用了 2 个替换操作
-
-🔄 修改摘要:
-  • Lines 1-2: replaced
-  • Text 'main()...' replaced
-
-💾 备份文件已创建: main.py.backup.20250123_143022
-```
-
-### 错误处理
-
-常见错误和解决方案：
-
-1. **行号范围错误**
-   ```
-   行号范围错误: [1, 15]，文件共10行
-   ```
-   - 检查文件实际行数，调整行号范围
-
-2. **文本未找到**
-   ```
-   未找到要替换的文本: old_function...
-   ```
-   - 确认搜索文本在文件中存在，注意大小写和空格
-
-3. **JSON格式错误**
-   ```
-   替换规范JSON解析失败: Expecting ',' delimiter
-   ```
-   - 检查JSON格式，确保引号、括号匹配
-
-4. **编码问题**
-   ```
-   文件编码不支持，请确保文件为UTF-8或GBK编码
-   ```
-   - 转换文件编码为UTF-8或GBK
-
-### 最佳实践
-
-1. **使用预览模式**: 复杂修改前先使用 `--preview` 查看结果
-2. **创建备份**: 重要文件修改时使用 `--backup` 选项
-3. **分步编辑**: 复杂修改可分解为多个简单的编辑操作
-4. **验证结果**: 编辑后使用 `cat` 或 `read` 命令验证修改结果
-5. **JSON转义**: 替换内容包含特殊字符时注意JSON转义
-
 ## 🐍 虚拟环境管理功能
 
 ### 概述
@@ -585,119 +474,6 @@ GDS venv --delete myproject
 # 输出: Virtual environment 'myproject' deleted successfully
 ```
 
-#### 多项目管理示例
-```bash
-# 创建数据分析项目环境
-GDS venv --create dataanalysis
-GDS venv --activate dataanalysis
-GDS pip install numpy pandas scikit-learn jupyter
-
-# 创建Web开发项目环境
-GDS venv --create webapp
-GDS venv --activate webapp
-GDS pip install flask django requests
-
-# 在不同项目间切换
-GDS venv --activate dataanalysis  # 切换到数据分析环境
-GDS python analyze_data.py        # 运行数据分析脚本
-
-GDS venv --activate webapp        # 切换到Web开发环境
-GDS python run_server.py          # 运行Web服务器
-```
-
-#### 实际开发场景
-```bash
-# 场景：开发一个需要特定版本库的机器学习项目
-
-# 1. 创建项目专用环境
-GDS venv --create ml_project_v1
-GDS venv --activate ml_project_v1
-
-# 2. 安装项目依赖
-GDS pip install numpy==1.21.0 tensorflow==2.8.0 scikit-learn==1.0.2
-
-# 3. 创建并运行项目代码
-GDS echo 'import numpy as np
-import tensorflow as tf
-print(f"NumPy version: {np.__version__}")
-print(f"TensorFlow version: {tf.__version__}")
-print(f"ML environment is ready!")' > ml_setup_test.py
-
-GDS python ml_setup_test.py
-
-# 4. 项目完成后，可以保留环境或删除
-GDS venv --deactivate
-# GDS venv --delete ml_project_v1  # 可选：删除环境
-```
-
-### 高级功能
-
-#### Shell 会话隔离
-```bash
-# Shell A 中激活环境1
-GOOGLE_DRIVE --checkout-remote-shell shell_a
-GDS venv --activate project_a
-GDS pip install requests
-
-# Shell B 中激活环境2（在新终端中）
-GOOGLE_DRIVE --checkout-remote-shell shell_b
-GDS venv --activate project_b
-GDS pip install flask
-
-# 两个Shell可以同时使用不同的虚拟环境
-```
-
-#### 环境状态检查
-```bash
-# 检查当前激活的环境
-GDS venv --list
-# 输出中带 * 的是当前激活环境
-
-# 查看环境详细信息
-GDS cat ~/.env/myproject/env_info.txt
-# 显示环境创建时间、路径等信息
-```
-
-### 输出格式
-
-#### 创建环境
-```bash
-GDS venv --create testenv
-```
-```
-Virtual environment 'testenv' created successfully
-Environment path: /content/drive/MyDrive/REMOTE_ROOT/.env/testenv
-```
-
-#### 激活环境
-```bash
-GDS venv --activate testenv
-```
-```
-Virtual environment 'testenv' activated successfully
-PYTHONPATH has been set in the remote environment
-Environment path: /content/drive/MyDrive/REMOTE_ROOT/.env/testenv
-```
-
-#### 列出环境
-```bash
-GDS venv --list
-```
-```
-Virtual environments (2 total):
-* testenv
-  production
-```
-
-#### pip 安装
-```bash
-GDS pip install numpy
-```
-```
-pip install numpy executed successfully in environment 'testenv'
-Target path: /content/drive/MyDrive/REMOTE_ROOT/.env/testenv
-```
-
 #### 智能依赖树分析 ⭐ **新功能**
 ```bash
 GDS pip --show-deps tensorflow --depth=2
@@ -732,76 +508,6 @@ Level 2: pytest (1.4MB), wheel (0.1MB), grpcio-tools (5.6MB), h5py (4.7MB), ml-d
 - **层级汇总**: 按层级显示所有唯一依赖包，便于批量安装规划
 - **已安装标记**: 显示 `[√]` 标记已安装的包
 - **性能统计**: 显示API调用次数、分析包数和总时间
-
-**使用场景**:
-- 📦 **依赖规划**: 在安装前了解包的完整依赖树和存储需求
-- 🔍 **冲突分析**: 识别潜在的依赖冲突和版本要求
-- 📊 **容量估算**: 计算项目的总存储空间需求
-- 🚀 **批量安装**: 按层级顺序安装依赖，提高安装成功率
-
-### 错误处理
-
-#### 常见错误和解决方案
-
-1. **环境名称冲突**
-   ```
-   Virtual environment 'myproject' already exists
-   ```
-   - 使用不同的环境名称或先删除现有环境
-
-2. **环境不存在**
-   ```
-   Virtual environment 'nonexistent' does not exist
-   ```
-   - 使用 `GDS venv --list` 查看可用环境
-
-3. **非法环境名称**
-   ```
-   Environment name cannot start with '.'
-   ```
-   - 避免使用以点号开头的环境名称
-
-4. **激活失败**
-   ```
-   Failed to activate virtual environment: environment variables not set correctly
-   ```
-   - 检查远程环境连接状态，重试激活命令
-
-### 最佳实践
-
-1. **环境命名**: 使用描述性名称，如 `ml_project`、`web_api`、`data_analysis`
-2. **定期清理**: 删除不再使用的虚拟环境以节省空间
-3. **依赖管理**: 为每个项目创建独立环境，避免依赖冲突
-4. **状态检查**: 使用 `GDS venv --list` 确认当前激活的环境
-5. **Shell 隔离**: 利用多Shell功能为不同项目维护独立的开发环境
-
-### 与其他功能的集成
-
-#### 与文件操作的结合
-```bash
-# 在虚拟环境中开发
-GDS venv --activate myproject
-GDS echo 'import requests
-response = requests.get("https://api.github.com")
-print(response.status_code)' > api_test.py
-GDS python api_test.py
-```
-
-#### 与编辑功能的结合
-```bash
-# 激活环境后编辑代码
-GDS venv --activate dataproject
-GDS edit analysis.py '[["import pandas", "import pandas as pd\nimport numpy as np"]]'
-GDS python analysis.py
-```
-
-#### 与上传下载的结合
-```bash
-# 上传本地代码到激活的环境中
-GDS venv --activate myproject
-GDS upload ~/local_project/main.py
-GDS python main.py
-```
 
 ## Python版本管理详解 ⭐ **新功能**
 
@@ -877,86 +583,10 @@ GDS pyenv --local 3.11.7
 GDS pyenv --version
 ```
 
-### 高级功能
-
-#### Shell隔离
-不同的shell会话可以使用不同的Python版本：
-```bash
-# Shell A 使用 Python 3.10
-GOOGLE_DRIVE --checkout-remote-shell shell_a
-GDS pyenv --local 3.10.12
-GDS python --version  # Python 3.10.12
-
-# Shell B 使用 Python 3.11
-GOOGLE_DRIVE --checkout-remote-shell shell_b  
-GDS pyenv --local 3.11.7
-GDS python --version  # Python 3.11.7
-```
-
-#### 与虚拟环境结合
-```bash
-# 1. 切换到特定Python版本
-GDS pyenv --local 3.10.12
-
-# 2. 创建基于该版本的虚拟环境
-GDS venv --create myproject_py310
-
-# 3. 激活虚拟环境
-GDS venv --activate myproject_py310
-
-# 4. 在虚拟环境中安装包
-GDS pip install numpy tensorflow
-```
-
-### 实际使用场景
-
-#### 多版本兼容性测试
-```bash
-# 测试代码在不同Python版本下的兼容性
-GDS pyenv --local 3.8.10
-GDS python test_script.py  # 在Python 3.8下测试
-
-GDS pyenv --local 3.11.7  
-GDS python test_script.py  # 在Python 3.11下测试
-```
-
-#### 项目特定Python版本
-```bash
-# 为特定项目设置Python版本
-GDS cd /path/to/project
-GDS pyenv --local 3.9.18    # 该目录下使用Python 3.9.18
-GDS python manage.py runserver  # 使用指定版本运行项目
-```
-
-### 故障排除
-
-#### 安装失败
-如果Python版本安装失败，可能的原因：
-1. 网络连接问题
-2. 远端磁盘空间不足
-3. 编译依赖缺失
-
-#### 版本切换无效
-确保使用正确的命令：
-- `pyenv --global <version>` 设置全局版本
-- `pyenv --local <version>` 设置当前shell版本
-
-#### 清理无用版本
-```bash
-# 卸载不再需要的Python版本
-GDS pyenv --uninstall 3.8.10
-```
-
 ## UPLOAD 功能详解
 
 ### 概述
 UPLOAD 功能通过 Google Drive Desktop 实现文件上传，支持本地文件同步到远程 Google Drive。
-
-### 最新改进
-- **自动启动**: 自动检测并启动Google Drive Desktop，无需手动干预
-- **调试增强**: 检测失败时自动显示`GDS ls ~`输出，便于问题诊断
-- **超时优化**: 改进60秒超时机制，提供更详细的错误信息
-- **路径解析**: 支持基本路径解析功能
 
 ### 工作原理
 1. **环境检查**: 自动检测并启动Google Drive Desktop
@@ -1005,23 +635,6 @@ GOOGLE_DRIVE --upload file.txt /content/drive/MyDrive/Projects
 | `.` 或空 | 当前 Shell 位置（默认为 REMOTE_ROOT） |
 | `subfolder` | `REMOTE_ROOT/subfolder` |
 | `/absolute/path` | 绝对路径 |
-
-### 生成的远端命令示例
-
-#### 上传到 REMOTE_ROOT
-```bash
-mv "/content/drive/Othercomputers/我的 MacBook Air/Google Drive/file.txt" "/content/drive/MyDrive/REMOTE_ROOT/file.txt"
-```
-
-#### 上传到子目录
-```bash
-mv "/content/drive/Othercomputers/我的 MacBook Air/Google Drive/file.txt" "/content/drive/MyDrive/REMOTE_ROOT/documents/file.txt"
-```
-
-#### 多文件上传
-```bash
-mv "/content/drive/Othercomputers/我的 MacBook Air/Google Drive/file1.txt" "/content/drive/MyDrive/REMOTE_ROOT/file1.txt" && mv "/content/drive/Othercomputers/我的 MacBook Air/Google Drive/file2.txt" "/content/drive/MyDrive/REMOTE_ROOT/file2.txt"
-```
 
 ## Shell 命令参考
 
@@ -1075,11 +688,6 @@ echo -e 'import json\nprint(f"Hello Python")' > script.py
 echo -e 'Line 1\nLine 2 with "quotes"\nLine 3' > multiline.txt
 ```
 
-**重要提示**: 
-- 对于JSON内容，使用单引号包围整个字符串，避免转义问题
-- 使用 `-e` 参数处理换行符（\n）、制表符（\t）等转义字符
-- 复杂脚本建议使用多行echo -e语法
-
 **READ 命令详细语法**:
 ```bash
 # 基本用法
@@ -1120,13 +728,6 @@ edit --backup file.py -c "new content"                  # 创建备份后编辑
 
 # 组合使用
 edit file.py -r "TODO" "DONE" -l 1 "# Updated file" --backup
-
-# 注意事项
-# - 行号从0开始（0-based索引）
-# - [a, b] 替换第a行到第b行（包含第b行）
-# - [a, null] 在第a行后插入内容
-# - 支持 \n 换行符和 _4SP_ 等空格占位符
-# - --backup 创建 filename.backup.timestamp 备份文件
 ```
 
 ### 下载功能
@@ -1186,41 +787,6 @@ linter [--language LANG] <file>  # 多语言语法和代码风格检查
 - **代码风格**: 检查代码风格和最佳实践
 - **集成编辑**: 在edit命令中自动运行linter检查
 
-**使用示例**:
-```bash
-# 自动检测语言并检查
-GDS linter main.py
-
-# 指定语言检查
-GDS linter --language python script.py
-GDS linter --language javascript app.js
-GDS linter --language bash deploy.sh
-
-# 检查JSON配置文件
-GDS linter config.json
-
-# 检查多种文件类型
-GDS linter *.py          # 检查所有Python文件
-GDS linter src/          # 检查目录中的文件
-```
-
-**输出示例**:
-```
-🔍 Linter Results for main.py
-
-Language: python (detected from .py extension)
-🛠️  Linter: flake8
-
-🚫 Linter Errors:
-  Line 15: E302 expected 2 blank lines, found 1
-  Line 23: F401 'os' imported but unused
-
-Warning: Linter Warnings:
-  Line 8: W291 trailing whitespace
-
-📊 Summary: 2 errors, 1 warning, 0 info
-```
-
 ### 远程命令执行 ⭐ **新功能**
 ```bash
 GOOGLE_DRIVE --shell "command"  # 执行远程命令
@@ -1235,41 +801,11 @@ GOOGLE_DRIVE --shell "command"  # 执行远程命令
 - **超时处理**: 60秒等待超时后提供用户手动输入fallback机制
 - **长期运行支持**: 适用于http-server等需要持续运行的服务
 
-**使用示例**:
-```bash
-# 基本命令
-GOOGLE_DRIVE --shell "whoami"
-GOOGLE_DRIVE --shell "pwd && ls -la"
-
-# 执行Python脚本
-GOOGLE_DRIVE --shell "python3 my_script.py"
-
-# 复杂命令组合
-GOOGLE_DRIVE --shell "cd /path && python3 -c 'print(\"Hello World\")'"
-
-# 长期运行服务（会触发超时fallback）
-GOOGLE_DRIVE --shell "python3 -m http.server 8000"
-```
-
-**输出效果**:
-- 保留原始多行格式
-- 正确处理特殊字符（引号、反斜杠等）
-- 分别显示stdout和stderr内容
-- 完整的错误信息和调试支持
-
-**超时处理机制**:
-当命令执行超过60秒未生成结果文件时（如http-server等长期运行服务），系统会：
-1. 显示超时提示和可能的原因
-2. 提供用户手动输入选项
-3. 支持多行输入，按Ctrl+D结束
-4. 支持Ctrl+C中断和重新输入
-5. 可选择跳过输入（直接按Enter）
-
 ## 使用示例
 
-### Upload 文件上传 ⭐ **已优化**
+### Upload 文件上传
 
-**新语法** (2024年更新):
+**新语法**:
 ```bash
 # 上传单个文件到当前目录
 GDS upload file.txt
@@ -1293,12 +829,6 @@ GDS upload --target-dir projects/myproject file.txt
 - **智能验证**: 使用ls-based validation确保准确的成功计数
 - **清晰语法**: 所有参数都是文件，除非使用 `--target-dir`
 - **双阶段进度**: "⏳ Waiting for upload" → "⏳ Validating the result"
-
-**示例输出**:
-```bash
-$ GDS upload --target-dir backup file1.txt file2.txt
-Upload completed: 2/2 files
-```
 
 ### 基础操作
 ```bash
@@ -1412,7 +942,7 @@ GDS read document.txt 0 10
 
 # 读取多个不连续范围
 GDS read document.txt "[[0, 5], [10, 15]]"
-``````
+```
 
 ### 文件编辑
 ```bash
@@ -1525,4 +1055,4 @@ GOOGLE_DRIVE --upload docs/readme.md docs/
 
 ---
 
-**注意**: 使用本工具前请确保已正确配置 Google Drive API 和 Google Drive Desktop。 
+**注意**: 使用本工具前请确保已正确配置 Google Drive API 和 Google Drive Desktop。
