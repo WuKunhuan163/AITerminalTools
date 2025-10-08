@@ -1038,7 +1038,7 @@ def handle_multiple_commands(shell_cmd, command_identifier=None):
                     return 1
                 
                 # 使用远程命令模块直接执行
-                result = shell.execute_generic_command("bash", ["-c", compound_cmd])
+                result = shell.execute_command_interface("bash", ["-c", compound_cmd])
                 if isinstance(result, dict):
                     # 显示输出
                     if result.get("stdout"):

@@ -189,7 +189,7 @@ class ShellManagement:
                 command = " && ".join(commands) + ''
                 
                 # 执行远程命令来初始化环境
-                result = self.main_instance.execute_generic_command("bash", ["-c", command])
+                result = self.main_instance.execute_command_interface("bash", ["-c", command])
                 
                 return {
                     "success": True,
@@ -275,7 +275,7 @@ class ShellManagement:
                 command = " && ".join(commands) + ''
                 
                 # 执行远程命令来设置环境
-                result = self.main_instance.execute_generic_command("bash", ["-c", command])
+                result = self.main_instance.execute_command_interface("bash", ["-c", command])
                 
                 return {
                     "success": True,
@@ -314,7 +314,7 @@ class ShellManagement:
             command = " && ".join(commands) + ''
             
             # 执行远程命令来清理环境
-            result = self.main_instance.execute_generic_command("bash", ["-c", command])
+            result = self.main_instance.execute_command_interface("bash", ["-c", command])
             
             del shells_data["shells"][shell_id]
             

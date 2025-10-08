@@ -293,9 +293,35 @@ Shell commands: ls -la && echo "done"
         Returns:
             subprocess结果对象
         """
-        full_command = f"python3 {self.GOOGLE_DRIVE_PY} --shell {command}"
-        print(f"\n执行命令: {command}")
+        # 使用统一的命令转译接口
+        try:
+            # 创建GoogleDriveShell实例来使用转译接口
+            import sys
+            import os
+            sys.path.insert(0, os.path.join(self.BIN_DIR, 'GOOGLE_DRIVE_PROJ'))
+            from google_drive_shell import GoogleDriveShell
+            
+            # 创建临时实例用于命令转译
+            gds = GoogleDriveShell()
+            translation_result = gds.parse_and_translate_command(command)
+            
+            if not translation_result["success"]:
+                print(f"命令转译失败: {translation_result['error']}")
+                command_str = str(command)  # 回退到原始格式
+            else:
+                command_str = translation_result["translated_command"]
+                print(f"命令转译成功: {command} -> {command_str}")
+                
+        except Exception as e:
+            print(f"转译接口调用失败: {e}")
+            # 回退到原始处理逻辑
+            import shlex
+            if isinstance(command, list):
+                command_str = ' '.join(shlex.quote(str(arg)) for arg in command)
+            else:
+                command_str = command
         
+        full_command = f"python3 {self.GOOGLE_DRIVE_PY} --shell {command_str}"
         try:
             # 注意：远端窗口操作没有timeout限制，允许用户手动执行
             result = subprocess.run(

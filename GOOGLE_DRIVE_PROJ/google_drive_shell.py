@@ -306,11 +306,11 @@ class GoogleDriveShell:
         """委托到shell_management管理器"""
         return self.shell_management.create_shell(*args, **kwargs)
     
-    def execute_generic_command(self, *args, **kwargs):
+    def execute_command_interface(self, *args, **kwargs):
         """委托到remote_commands管理器"""
         # 检查是否已经在execute_shell_command的队列管理中
         kwargs['_skip_queue_management'] = kwargs.get('_skip_queue_management', False)
-        return self.remote_commands.execute_generic_command(*args, **kwargs)
+        return self.remote_commands.execute_command_interface(*args, **kwargs)
     
     def _verify_mkdir_with_ls(self, *args, **kwargs):
         """委托到verification管理器"""
@@ -424,7 +424,7 @@ class GoogleDriveShell:
                     return 1
         
         # 使用通用的远程命令执行机制
-        result = self.execute_generic_command('echo', args)
+        result = self.execute_command_interface('echo', args)
         
         if result.get("success", False):
             # 统一在命令处理结束后打印输出
@@ -775,22 +775,39 @@ class GoogleDriveShell:
                 print(f"Error: 没有活跃的shell会话")
                 return 1
             
-            # 简单的语法检查
+            # 改进的语法检查 - 正确处理复杂引号
             try:
                 import subprocess
                 import tempfile
+                import os
+                
+                # 准备要检查的命令内容
+                # 如果shell_cmd被引号包围，需要去除外层引号
+                cmd_to_check = shell_cmd.strip()
+                if ((cmd_to_check.startswith('"') and cmd_to_check.endswith('"')) or
+                    (cmd_to_check.startswith("'") and cmd_to_check.endswith("'"))):
+                    cmd_to_check = cmd_to_check[1:-1]
+                
+                # 创建临时脚本文件进行语法检查
                 with tempfile.NamedTemporaryFile(mode='w', suffix='.sh', delete=False) as temp_file:
-                    temp_file.write(f"#!/bin/bash\n{shell_cmd}")
+                    # 写入shebang
+                    temp_file.write("#!/bin/bash\n")
+                    
+                    # 写入去除外层引号的命令
+                    temp_file.write(cmd_to_check)
+                    temp_file.write("\n")  # 确保命令以换行结尾
+                    
                     temp_file_path = temp_file.name
                 
+                # 执行语法检查
                 result = subprocess.run(['bash', '-n', temp_file_path], capture_output=True, text=True, timeout=5)
-                import os
                 os.unlink(temp_file_path)
                 
                 if result.returncode != 0:
                     print(f"Error: Bash syntax error in command: {shell_cmd}")
                     print(f"Error: {result.stderr.strip()}")
                     return 1
+                    
             except Exception as e:
                 print(f"Warning: Could not check syntax: {e}")
             
@@ -920,7 +937,7 @@ class GoogleDriveShell:
             
             # 使用统一的命令执行接口
             # 执行背景命令
-            result = self.remote_commands.execute_unified_command(
+            result = self.remote_commands.execute_command(
                 user_command=bg_create_cmd,
                 result_filename=None,
                 current_shell=current_shell_copy,
@@ -1033,6 +1050,9 @@ class GoogleDriveShell:
     def execute_shell_command(self, shell_cmd, command_identifier=None):
         """执行shell命令 - 使用WindowManager的新架构入口点"""
         
+        # Debug print (disabled)
+        # print(f"DEBUG: execute_shell_command called with: '{shell_cmd}'")
+        
         # 保存原始用户命令，用于后续的文件验证分析
         self._original_user_command = shell_cmd.strip()
         try:
@@ -1094,6 +1114,34 @@ For more information, visit: https://github.com/your-repo/gds"""
                     print(help_text)
                     return 0
             
+            
+            # 首先检查独立的background管理命令
+            if shell_cmd_clean.startswith('--status'):
+                # GDS --status [task_id]
+                status_args = shell_cmd_clean[8:].strip()  # 移除--status
+                if status_args:
+                    return self._show_background_status(status_args, command_identifier)
+                else:
+                    return self._show_all_background_status(command_identifier)
+            elif shell_cmd_clean.startswith('--log '):
+                # GDS --log <task_id>
+                task_id = shell_cmd_clean[6:].strip()  # 移除--log 
+                return self._show_background_log(task_id, command_identifier)
+            elif shell_cmd_clean.startswith('--result '):
+                # GDS --result <task_id>
+                task_id = shell_cmd_clean[9:].strip()  # 移除--result 
+                return self._show_background_result(task_id, command_identifier)
+            elif shell_cmd_clean.startswith('--cleanup'):
+                # GDS --cleanup [task_id]
+                cleanup_args = shell_cmd_clean[9:].strip()  # 移除--cleanup
+                if cleanup_args:
+                    return self._cleanup_background_task(cleanup_args, command_identifier)
+                else:
+                    return self._cleanup_background_tasks(command_identifier)
+            elif shell_cmd_clean.startswith('--wait '):
+                # GDS --wait <task_id>
+                task_id = shell_cmd_clean[7:].strip()  # 移除--wait 
+                return self._wait_background_task(task_id, command_identifier)
 
             # 检查background选项
             background_mode = False
@@ -1173,15 +1221,121 @@ For more information, visit: https://github.com/your-repo/gds"""
                     args = ['-c', python_code]
 
                 else:
-                    # 检查是否为简单命令，如果是则直接传递原始字符串避免引号丢失
-                    simple_commands = ['echo', 'printf', 'cat', 'ls', 'pwd', 'date', 'whoami']
+                    # 首先检查是否为特殊命令（导航命令等），优先处理
                     first_word = shell_cmd_clean.split()[0] if shell_cmd_clean.split() else ""
+                    
+                    # Debug print (disabled)
+                    # print(f"DEBUG: first_word='{first_word}', checking special commands first")
+                    
+                    # 特殊命令处理 - 在简单命令检查之前
+                    if first_word in ['pwd', 'ls', 'cd']:
+                        # print(f"DEBUG: Processing special command '{first_word}' with local API")
+                        
+                        # 解析命令和参数
+                        import shlex
+                        try:
+                            cmd_parts = shlex.split(shell_cmd_clean)
+                            if cmd_parts:
+                                cmd = cmd_parts[0]
+                                args = cmd_parts[1:]
+                            else:
+                                print("Error: Empty command after parsing")
+                                return 1
+                        except Exception as e:
+                            print(f"Error: Command parsing failed: {e}")
+                            return 1
+                        
+                        # print(f"DEBUG: Parsed special cmd='{cmd}', args={args}")
+                        
+                        if cmd == 'pwd':
+                            # 导入shell_commands模块中的具体函数
+                            import os
+                            import sys
+                            current_dir = os.path.dirname(__file__)
+                            modules_dir = os.path.join(current_dir, 'modules')
+                            if modules_dir not in sys.path:
+                                sys.path.append(modules_dir)
+                            
+                            from shell_commands import shell_pwd
+                            return shell_pwd(command_identifier)
+                        elif cmd == 'ls':
+                            # 使用本地API调用cmd_ls，不调用远程命令
+                            recursive = False
+                            detailed = False
+                            paths = []
+                            
+                            for arg in args:
+                                if arg == '-R':
+                                    recursive = True
+                                elif arg == '--detailed':
+                                    detailed = True
+                                elif not arg.startswith('-'):
+                                    paths.append(arg)
+                            
+                            path = paths[0] if paths else None
+                            result = self.cmd_ls(path=path, detailed=detailed, recursive=recursive, show_hidden=False)
+                            
+                            if result.get("success"):
+                                files = result.get("files", [])
+                                folders = result.get("folders", [])
+                                all_items = folders + files
+                                
+                                if all_items:
+                                    # 按名称排序，文件夹优先
+                                    sorted_folders = sorted(folders, key=lambda x: x.get('name', '').lower())
+                                    sorted_files = sorted(files, key=lambda x: x.get('name', '').lower())
+                                    
+                                    # 合并列表，文件夹在前
+                                    all_sorted_items = sorted_folders + sorted_files
+                                    
+                                    if detailed:
+                                        # 详细模式显示更多信息
+                                        for item in all_sorted_items:
+                                            name = item.get('name', 'Unknown')
+                                            size = item.get('size', 'N/A')
+                                            modified = item.get('modifiedTime', 'Unknown')
+                                            if item.get('mimeType') == 'application/vnd.google-apps.folder':
+                                                print(f"d {name}/ - {modified}")
+                                            else:
+                                                print(f"f {name} ({size}) - {modified}")
+                                    else:
+                                        # 简单的列表格式，类似bash ls
+                                        for item in all_sorted_items:
+                                            name = item.get('name', 'Unknown')
+                                            if item.get('mimeType') == 'application/vnd.google-apps.folder':
+                                                print(f"{name}")
+                                            else:
+                                                print(name)
+                                
+                                return 0
+                            else:
+                                error_msg = result.get('error', 'Unknown error')
+                                print(f"Failed to list files: {error_msg}")
+                                return 1
+                        elif cmd == 'cd':
+                            if not args:
+                                print(f"Error: cd command needs a path")
+                                return 1
+                            # 使用file_operations中的cmd_cd方法
+                            path = args[0]
+                            result = self.cmd_cd(path)
+                            if result.get("success"):
+                                # cd命令成功时不显示输出（像bash一样）
+                                return 0
+                            else:
+                                print(result.get("error", "Error: cd command execution failed"))
+                                return 1
+                    
+                    # 检查是否为简单命令，如果是则直接传递原始字符串避免引号丢失
+                    simple_commands = ['echo', 'printf', 'cat', 'date', 'whoami']
+                    
+                    # print(f"DEBUG: first_word='{first_word}', in simple_commands={first_word in simple_commands}")
                     
                     if first_word in simple_commands and ('\"' in shell_cmd_clean or "'" in shell_cmd_clean):
                         # 对于包含引号的简单命令，直接使用原始字符串
-                        # 直接调用 execute_unified_command 而不是 execute_generic_command
+                        # 直接调用 execute_command 而不是 execute_command_interface
                         current_shell = self.get_current_shell()
-                        result = self.remote_commands.execute_unified_command(
+                        result = self.remote_commands.execute_command(
                             user_command=shell_cmd_clean,
                             current_shell=current_shell
                         )
@@ -1201,17 +1355,37 @@ For more information, visit: https://github.com/your-repo/gds"""
                             print(error_msg)
                             return 1
                     else:
-                        # 使用接口化的命令解析
-                        parse_result = self._parse_shell_command(shell_cmd_clean)
-                        if not parse_result["success"]:
-                            print(f"Error: {parse_result['error']}")
+                        # 使用统一的命令解析和转译接口
+                        translation_result = self.parse_and_translate_command(shell_cmd_clean)
+                        if not translation_result["success"]:
+                            print(f"Error: {translation_result['error']}")
                             return 1
-                        cmd = parse_result["cmd"]
-                        args = parse_result["args"]
                         
-                        # 显示警告信息（如果有）
-                        if "warning" in parse_result:
-                            print(f"Warning: {parse_result['warning']}")
+                        # 直接使用转译后的命令，不需要再次解析
+                        translated_cmd = translation_result["translated_command"]
+                        
+                        # 直接使用execute_command执行转译后的命令
+                        current_shell = self.get_current_shell()
+                        result = self.remote_commands.execute_command(
+                            user_command=translated_cmd,
+                            current_shell=current_shell
+                        )
+                        
+                        if result.get("success", False):
+                            # 显示输出
+                            data = result.get("data", {})
+                            stdout = data.get("stdout", "").strip()
+                            stderr = data.get("stderr", "").strip()
+                            if stdout:
+                                print(stdout)
+                            if stderr:
+                                import sys
+                                print(stderr, file=sys.stderr)
+                            return 0
+                        else:
+                            error_msg = result.get("error", f"Command '{translated_cmd}' failed")
+                            print(error_msg)
+                            return 1
             
             # 对所有命令应用通用引号和转义处理
             if args:
@@ -1253,6 +1427,23 @@ For more information, visit: https://github.com/your-repo/gds"""
             
             # 如果不是多命令，继续执行原来的单命令逻辑
             # 这里应该继续原来execute_shell_command的逻辑
+            
+            # 解析命令和参数
+            import shlex
+            try:
+                cmd_parts = shlex.split(shell_cmd_clean)
+                if cmd_parts:
+                    cmd = cmd_parts[0]
+                    args = cmd_parts[1:]
+                else:
+                    print("DEBUG: Empty command after parsing")
+                    return 1
+            except Exception as e:
+                print(f"DEBUG: Command parsing failed: {e}")
+                return 1
+            
+            print(f"DEBUG: Parsed cmd='{cmd}', args={args}")
+            
             if cmd == 'pwd':
                 # 导入shell_commands模块中的具体函数
                 import os
@@ -1264,156 +1455,60 @@ For more information, visit: https://github.com/your-repo/gds"""
                 from shell_commands import shell_pwd
                 return shell_pwd(command_identifier)
             elif cmd == 'ls':
-                
                 # 解析ls命令的参数
                 recursive = False
                 detailed = False
-                force_mode = False  # -f选项
-                directory_mode = False  # -d选项：显示目录本身而不是内容
-                paths = []  # 支持多个路径
+                paths = []
                 
                 for arg in args:
                     if arg == '-R':
                         recursive = True
                     elif arg == '--detailed':
                         detailed = True
-                    elif arg == '-f':
-                        force_mode = True
-                    elif arg == '-d':
-                        directory_mode = True
                     elif not arg.startswith('-'):
                         paths.append(arg)
                 
-                # 修复shell展开的家目录路径问题
-                import os
-                local_home = os.path.expanduser("~")
-                fixed_paths = []
-                for path in paths:
-                    if path and path.startswith('/Users/') and path.startswith(local_home):
-                        # 将本地家目录路径转换为远程路径格式
-                        relative_path = path[len(local_home):].lstrip('/')
-                        if relative_path:
-                            fixed_paths.append(f"~/{relative_path}")
-                        else:
-                            fixed_paths.append("~")
-                    else:
-                        fixed_paths.append(path)
-                paths = fixed_paths
+                # 使用本地API调用cmd_ls，不调用远程命令
+                path = paths[0] if paths else None
+                result = self.cmd_ls(path=path, detailed=detailed, recursive=recursive, show_hidden=False)
                 
-                # 检查是否有通配符模式
-                has_wildcards = any('*' in path or '?' in path or '[' in path or ']' in path for path in paths)
-                
-                # 如果有通配符，使用本地匹配而不是远程命令（避免后台模式问题）
-                if has_wildcards and len(paths) == 1 and not recursive and not force_mode and not directory_mode:
-                    # 处理单个通配符路径
-                    wildcard_path = paths[0]
-                    return self._handle_wildcard_ls(wildcard_path)
-                
-                # 如果有多个路径、使用了-R/-f/-d选项，使用远端命令执行
-                if len(paths) > 1 or recursive or force_mode or directory_mode:
-                    # 构建ls命令参数
-                    cmd_args = []
-                    if recursive:
-                        cmd_args.append("-R")
-                    if force_mode:
-                        cmd_args.append("-f")
-                    if directory_mode:
-                        cmd_args.append("-d")
-                    cmd_args.extend(paths)
+                if result.get("success"):
+                    files = result.get("files", [])
+                    folders = result.get("folders", [])
+                    all_items = folders + files
                     
-                    # 直接调用远程命令处理，绕过特殊命令检查
-                    try:
-                        current_shell = self.get_current_shell()
-                        if not current_shell:
-                            print(f"Error: 没有活跃的shell会话")
-                            return 1
+                    if all_items:
+                        # 按名称排序，文件夹优先
+                        sorted_folders = sorted(folders, key=lambda x: x.get('name', '').lower())
+                        sorted_files = sorted(files, key=lambda x: x.get('name', '').lower())
                         
-                        # 生成远程命令
-                        remote_command_info = self.remote_commands._generate_command_interface("ls", cmd_args, current_shell)
-                        remote_command, result_filename = remote_command_info
+                        # 合并列表，文件夹在前
+                        all_sorted_items = sorted_folders + sorted_files
                         
-                        # 显示远程命令窗口
-                        options_str = " ".join(opt for opt in ["-R" if recursive else "", "-f" if force_mode else "", "-d" if directory_mode else ""] if opt)
-                        paths_str = " ".join(paths) if paths else ""
-                        title = f"GDS Remote Command: ls {options_str} {paths_str}".strip()
-                        instruction = f"Command: ls {options_str} {paths_str}\n\nPlease execute the following command in your remote environment:"
-                        
-                        result = self.remote_commands.show_command_window_subprocess(  # WARNING: BYPASSING QUEUE SYSTEM
-                            title=title,
-                            command_text=remote_command,
-                            timeout_seconds=300
-                        )
-                        
-                        # 处理结果，模拟execute_generic_command的逻辑
-                        if result["action"] == "success":
-                            # 等待并读取结果文件
-                            result_data = self.remote_commands._wait_and_read_result_file(result_filename)
-                            if result_data.get("success"):
-                                # 显示stdout内容（ls -R的输出）
-                                stdout_content = result_data.get("data", {}).get("stdout", "")
-                                if stdout_content:
-                                    print(stdout_content)
-                                return 0
-                            else:
-                                print(result_data.get("error", "Error: 读取结果失败"))
-                                return 1
-                        elif result["action"] == "direct_feedback":
-                            # 处理直接反馈
-                            print()  # shift a newline since ctrl+D
-                            debug_info = {
-                                "cmd": "ls",
-                                "args": cmd_args,
-                                "result_filename": result_filename
-                            }
-                            try:
-                                feedback_result = self.remote_commands.direct_feedback(remote_command, debug_info)
-                                if feedback_result.get("success", False):
-                                    return 0
+                        if detailed:
+                            # 详细模式显示更多信息
+                            for item in all_sorted_items:
+                                name = item.get('name', 'Unknown')
+                                size = item.get('size', 'N/A')
+                                modified = item.get('modifiedTime', 'Unknown')
+                                if item.get('mimeType') == 'application/vnd.google-apps.folder':
+                                    print(f"d {name}/ - {modified}")
                                 else:
-                                    print(feedback_result.get("error", "Error: 处理直接反馈失败"))
-                                    return 1
-                            except Exception as e:
-                                print(f"Error: 处理直接反馈时出错: {e}")
-                                return 1
+                                    print(f"f {name} ({size}) - {modified}")
                         else:
-                            print(result.get("error", "Error: ls -R command execution failed"))
-                            return 1
-                    except Exception as e:
-                        print(f"Error: ls -R command execution failed: {e}")
-                        import traceback
-                        traceback.print_exc()
-                        return 1
-                else:
-                    # 单个路径或无路径的情况，直接使用cmd_ls
-                    path = paths[0] if paths else None
-                    result = self.cmd_ls(path=path, detailed=detailed, recursive=recursive, show_hidden=False)
-                    
-                    if result.get("success"):
-                        files = result.get("files", [])
-                        folders = result.get("folders", [])
-                        all_items = folders + files
-                        
-                        if all_items:
-                            # 按名称排序，文件夹优先
-                            sorted_folders = sorted(folders, key=lambda x: x.get('name', '').lower())
-                            sorted_files = sorted(files, key=lambda x: x.get('name', '').lower())
-                            
-                            # 合并列表，文件夹在前
-                            all_sorted_items = sorted_folders + sorted_files
-                            
                             # 简单的列表格式，类似bash ls
                             for item in all_sorted_items:
                                 name = item.get('name', 'Unknown')
                                 if item.get('mimeType') == 'application/vnd.google-apps.folder':
-                                    print(f"{name}/")
+                                    print(f"{name}")
                                 else:
                                     print(name)
-                        
-                        return 0
-                    else:
-                        error_msg = result.get('error', 'Unknown error')
-                        print(f"Failed to list files: {error_msg}")
-                        return 1
+                    
+                    return 0
+                else:
+                    error_msg = result.get('error', 'Unknown error')
+                    print(f"Failed to list files: {error_msg}")
+                    return 1
             elif cmd == 'cd':
                 if not args:
                     print(f"Error: cd command needs a path")
@@ -1473,7 +1568,7 @@ For more information, visit: https://github.com/your-repo/gds"""
                     combined_command = " && ".join([f'{mkdir_prefix} "{path}"' for path in absolute_paths])
                     
                     # 执行合并的命令
-                    result = self.execute_generic_command("bash", ["-c", combined_command])
+                    result = self.execute_command_interface("bash", ["-c", combined_command])
                     
                     if result.get("success"):
                         # 验证所有目录都被创建了
@@ -2054,7 +2149,7 @@ For more information, visit: https://github.com/your-repo/gds"""
                     return 1
             else:
                 # 尝试通过通用远程命令执行
-                result = self.execute_generic_command(cmd, args)
+                result = self.execute_command_interface(cmd, args)
                 if result.get("success", False):
                     stdout = result.get("stdout", "").strip()
                     stderr = result.get("stderr", "").strip()
@@ -2152,73 +2247,86 @@ For more information, visit: https://github.com/your-repo/gds"""
                 return 1
             
             # 构建查询所有状态的远程命令
-            status_cmd = '''
-if [ ! -d ~/tmp ]; then
+            status_cmd = f'''
+REMOTE_ROOT="{self.REMOTE_ROOT}"
+TMP_DIR="$REMOTE_ROOT/tmp"
+
+if [ ! -d "$TMP_DIR" ]; then
     echo "No background tasks found"
     exit 0
 fi
 
+# 创建临时文件存储任务信息
+TEMP_FILE="/tmp/gds_tasks_$$.txt"
+
 FOUND_TASKS=0
-for status_file in ~/tmp/cmd_bg_*.status; do
-    if [ -f "$status_file" ]; then
+for result_file in "$TMP_DIR"/cmd_bg_*.result.json; do
+    if [ -f "$result_file" ]; then
         FOUND_TASKS=1
-        BG_PID=$(basename "$status_file" .status | sed 's/cmd_bg_//')
-        STATUS_DATA=$(cat "$status_file")
-        REAL_PID=$(echo "$STATUS_DATA" | grep -o '"real_pid":[0-9]*' | cut -d':' -f2)
+        BG_PID=$(basename "$result_file" .result.json | sed 's/cmd_bg_//')
         
-        echo "========================"
-        echo "Task ID: $BG_PID"
-        echo "Command: $(echo "$STATUS_DATA" | grep -o '"command":"[^"]*' | cut -d':' -f2- | sed 's/^"//')"
+        # 读取result文件并解析状态信息
+        RESULT_DATA=$(cat "$result_file")
         
-        if [ -n "$REAL_PID" ] && ps -p $REAL_PID > /dev/null 2>&1; then
-            echo "Status: running"
-            echo "PID: $REAL_PID"
+        # 从result文件中提取命令和时间信息
+        COMMAND=$(echo "$RESULT_DATA" | python3 -c "import json,sys; data=json.load(sys.stdin); print(data.get('command', 'Unknown'))" 2>/dev/null || echo "Unknown")
+        END_TIME=$(echo "$RESULT_DATA" | python3 -c "import json,sys; data=json.load(sys.stdin); print(data.get('end_time', 'Unknown'))" 2>/dev/null || echo "Unknown")
+        
+        # 检查任务是否还在运行（通过检查end_time）
+        if [ "$END_TIME" = "Unknown" ] || [ "$END_TIME" = "null" ] || [ -z "$END_TIME" ]; then
+            STATUS="running"
         else
-            echo "Status: completed"
-            if [ -n "$REAL_PID" ]; then
-                echo "PID: $REAL_PID (finished)"
-            fi
+            STATUS="completed"
         fi
         
-        echo "Start time: $(echo "$STATUS_DATA" | grep -o '"start_time":"[^"]*' | cut -d':' -f2- | sed 's/^"//')"
-        
-        if [ -f ~/tmp/cmd_bg_${BG_PID}.log ]; then
-            LOG_SIZE=$(wc -c < ~/tmp/cmd_bg_${BG_PID}.log)
-            echo "Log size: $LOG_SIZE bytes"
+        # 截断命令到前20个字符
+        COMMAND_SHORT=$(echo "$COMMAND" | cut -c1-20)
+        if [ ${{#COMMAND}} -gt 20 ]; then
+            COMMAND_SHORT="$COMMAND_SHORT..."
         fi
+        
+        # 将任务信息写入临时文件，用于排序
+        echo "$BG_PID|$STATUS|$COMMAND_SHORT" >> "$TEMP_FILE"
     fi
 done
 
 if [ $FOUND_TASKS -eq 0 ]; then
     echo "No background tasks found"
+else
+    # 显示表格头部
+    echo "Background Tasks:"
+    printf "%-18s | %-9s | %s\\n" "Task ID" "Status" "Command (first 20 chars)"
+    printf "%-18s-+-%-9s-+-%s\\n" "------------------" "---------" "--------------------"
+    
+    # 按PID排序并显示
+    sort -t'|' -k1,1n "$TEMP_FILE" | while IFS='|' read -r pid status command; do
+        printf "%-18s | %-9s | %s\\n" "$pid" "$status" "$command"
+    done
+    
+    # 清理临时文件
+    rm -f "$TEMP_FILE"
 fi
 '''
             
-            # 执行状态查询 - 使用与普通命令相同的_show_command_window方法
-            remote_command_info = self.remote_commands._generate_command_interface("bash", ["-c", status_cmd], current_shell)
-            remote_command, result_filename = remote_command_info
+            # 执行状态查询 - 使用与单个任务状态查询相同的方法
+            result = self.execute_command_interface("bash", ["-c", status_cmd])
             
-            result = self.remote_commands._show_command_window("bash", ["-c", status_cmd], remote_command)
-            
-            # 处理结果 - 使用与普通命令相同的统一结果格式
+            # 处理结果 - 使用与单个任务状态查询相同的格式
             if result.get("success", False):
-                # 成功情况：显示结果数据
+                # 尝试从不同的数据结构中获取stdout和stderr
                 data = result.get("data", {})
-                stdout = data.get("stdout", "").strip()
-                stderr = data.get("stderr", "").strip()
+                stdout = result.get("stdout", "") or data.get("stdout", "")
+                stderr = result.get("stderr", "") or data.get("stderr", "")
+                stdout = stdout.strip()
+                stderr = stderr.strip()
                 
+                # 统一在命令处理结束后打印输出
                 if stdout:
                     print(stdout)
                 if stderr:
                     import sys
                     print(stderr, file=sys.stderr)
-                    return 0
-                else:
-                    # 失败情况：显示错误信息
-                    if result.get("action") == "direct_feedback_error":
-                        data = result.get("data", {})
-                        error_msg = data.get("error", "All background status check failed via direct feedback")
-                        print(f"Error: {error_msg}")
+                return 0
             else:
                 error_msg = result.get("error", "Failed to check status")
                 print(f"Error: {error_msg}")
@@ -2358,6 +2466,105 @@ done
         
         return False
 
+    def parse_and_translate_command(self, input_command):
+        """
+        统一的命令解析和转译接口
+        
+        Args:
+            input_command: 输入命令，可以是字符串或列表格式
+            
+        Returns:
+            dict: 转译结果
+                - success (bool): 是否转译成功
+                - translated_command (str): 转译后的命令字符串
+                - original_format (str): 原始格式类型 ("string" 或 "list")
+                - error (str): 错误信息（如果失败）
+        """
+        import shlex
+        
+        try:
+            original_format = "string" if isinstance(input_command, str) else "list"
+            
+            # 第一步：统一解析为cmd和args
+            if isinstance(input_command, list):
+                if not input_command:
+                    return {
+                        "success": False,
+                        "error": "Empty command list"
+                    }
+                cmd = input_command[0]
+                args = input_command[1:] if len(input_command) > 1 else []
+            else:
+                # 字符串格式，直接使用shlex解析
+                try:
+                    import shlex
+                    # 在shlex.split之前保护~路径和转义引号
+                    protected_cmd = (input_command.replace('~/', '__TILDE_SLASH__')
+                                                  .replace(' ~', ' __TILDE__')
+                                                  .replace('\\"', '__ESCAPED_QUOTE__'))
+                    
+                    cmd_parts = shlex.split(protected_cmd)
+                    
+                    # 恢复~路径和转义引号
+                    cmd_parts = [part.replace('__TILDE_SLASH__', '~/').replace('__TILDE__', '~').replace('__ESCAPED_QUOTE__', '\\"') for part in cmd_parts]
+                    
+                    if not cmd_parts:
+                        return {
+                            "success": False,
+                            "error": "Empty command"
+                        }
+                    
+                    cmd = cmd_parts[0]
+                    args = cmd_parts[1:] if len(cmd_parts) > 1 else []
+                    
+                except ValueError as e:
+                    # 如果shlex解析失败，尝试简单分割作为fallback
+                    try:
+                        cmd_parts = input_command.split()
+                        if not cmd_parts:
+                            return {
+                                "success": False,
+                                "error": f"Command parsing failed: {e}"
+                            }
+                        cmd = cmd_parts[0]
+                        args = cmd_parts[1:] if len(cmd_parts) > 1 else []
+                    except Exception as fallback_e:
+                        return {
+                            "success": False,
+                            "error": f"Command parsing failed: {e}, fallback also failed: {fallback_e}"
+                        }
+            
+            # 第二步：根据命令类型进行特殊转译
+            if cmd in ["python", "python3"]:
+                if len(args) == 1:
+                    # 格式：["python", "code"] -> "python -c 'code'"
+                    python_code = args[0]
+                    translated_command = f'{cmd} -c {shlex.quote(python_code)}'
+                elif len(args) >= 2 and args[0] == "-c":
+                    # 格式：["python", "-c", "code"] -> "python -c 'code'"
+                    python_code = args[1]
+                    translated_command = f'{cmd} -c {shlex.quote(python_code)}'
+                else:
+                    # 其他Python命令格式，正常处理
+                    quoted_args = [shlex.quote(str(arg)) for arg in args]
+                    translated_command = f'{cmd} {" ".join(quoted_args)}'
+            else:
+                # 普通命令，使用shlex.quote处理所有参数
+                quoted_args = [shlex.quote(str(arg)) for arg in args]
+                translated_command = f'{cmd} {" ".join(quoted_args)}' if args else cmd
+            
+            return {
+                "success": True,
+                "translated_command": translated_command,
+                "original_format": original_format
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Command translation failed: {str(e)}"
+            }
+
     def _parse_shell_command(self, shell_cmd):
         """
         接口化的shell命令解析方法
@@ -2411,12 +2618,12 @@ done
                     "success": True,
                     "cmd": cmd_parts[0],
                     "args": cmd_parts[1:] if len(cmd_parts) > 1 else [],
-                    "warning": f"Used simple parsing due to shlex error: {e}"
+                    "warning": f"Used fallback parsing due to: {e}"
                 }
-            except Exception as fallback_error:
+            except Exception as fallback_e:
                 return {
                     "success": False,
-                    "error": f"Command parsing failed: {e}. Fallback also failed: {fallback_error}"
+                    "error": f"Command parsing failed: {e}, fallback also failed: {fallback_e}"
                 }
 
     def _handle_edit_command(self, shell_cmd):
@@ -2429,7 +2636,7 @@ done
         
         try:
             # 使用统一的命令解析接口
-            parse_result = self._parse_shell_command(shell_cmd)
+            parse_result = self.parse_and_translate_command(shell_cmd)
             if not parse_result["success"]:
                 print(f"Error: {parse_result['error']}")
                 return 1
@@ -2597,26 +2804,31 @@ done
                 return 1
             
             # 构建清理命令
-            cleanup_cmd = '''
-if [ ! -d ~/tmp ]; then
+            cleanup_cmd = f'''
+REMOTE_ROOT="{self.REMOTE_ROOT}"
+TMP_DIR="$REMOTE_ROOT/tmp"
+
+if [ ! -d "$TMP_DIR" ]; then
     echo "No background tasks to clean up"
     exit 0
 fi
 
 CLEANED=0
-for status_file in ~/tmp/cmd_bg_*.status; do
-    if [ -f "$status_file" ]; then
-        BG_PID=$(basename "$status_file" .status | sed 's/cmd_bg_//')
-        STATUS_DATA=$(cat "$status_file")
-        REAL_PID=$(echo "$STATUS_DATA" | grep -o '"real_pid":[0-9]*' | cut -d':' -f2)
+for result_file in "$TMP_DIR"/cmd_bg_*.result.json; do
+    if [ -f "$result_file" ]; then
+        BG_PID=$(basename "$result_file" .result.json | sed 's/cmd_bg_//')
         
-        # 检查进程是否还在运行
-        if [ -n "$REAL_PID" ] && ps -p $REAL_PID > /dev/null 2>&1; then
-            echo "Skipping running task: $BG_PID (PID: $REAL_PID)"
-        else
+        # 读取result文件并检查任务状态
+        RESULT_DATA=$(cat "$result_file")
+        END_TIME=$(echo "$RESULT_DATA" | python3 -c "import json,sys; data=json.load(sys.stdin); print(data.get('end_time', 'Unknown'))" 2>/dev/null || echo "Unknown")
+        
+        # 如果任务已完成（有end_time），则清理
+        if [ "$END_TIME" != "Unknown" ] && [ "$END_TIME" != "null" ] && [ -n "$END_TIME" ]; then
             echo "Cleaning up completed task: $BG_PID"
-            rm -f ~/tmp/cmd_bg_${BG_PID}.*
+            rm -f "$TMP_DIR/cmd_bg_${{BG_PID}}".*
             CLEANED=$((CLEANED + 1))
+        else
+            echo "Skipping running task: $BG_PID"
         fi
     fi
 done
@@ -2624,28 +2836,27 @@ done
 echo "Cleaned up $CLEANED completed background tasks"
 '''
             
-            # 执行清理
-            remote_command_info = self.remote_commands._generate_command_interface("bash", ["-c", cleanup_cmd], current_shell)
-            remote_command, result_filename = remote_command_info
+            # 执行清理 - 使用与其他函数相同的方法
+            result = self.execute_command_interface("bash", ["-c", cleanup_cmd])
             
-            result = self.remote_commands.show_command_window_subprocess(
-                title="GDS Cleanup Background Tasks",
-                command_text=remote_command,
-                timeout_seconds=86400  # 24小时，实际上就是无timeout
-            )
-            
-            if result["action"] == "success":
-                result_data = self.remote_commands._wait_and_read_result_file(result_filename)
-                if result_data.get("success"):
-                    stdout_content = result_data.get("data", {}).get("stdout", "")
-                    if stdout_content:
-                        print(stdout_content)
-                    return 0
-                else:
-                    print(f"Error: {result_data.get('error', 'Cleanup failed')}")
-                    return 1
+            if result.get("success", False):
+                # 尝试从不同的数据结构中获取stdout和stderr
+                data = result.get("data", {})
+                stdout = result.get("stdout", "") or data.get("stdout", "")
+                stderr = result.get("stderr", "") or data.get("stderr", "")
+                stdout = stdout.strip()
+                stderr = stderr.strip()
+                
+                # 统一在命令处理结束后打印输出
+                if stdout:
+                    print(stdout)
+                if stderr:
+                    import sys
+                    print(stderr, file=sys.stderr)
+                return 0
             else:
-                print(f"Error: Failed to cleanup: {result.get('error', 'Unknown error')}")
+                error_msg = result.get("error", "Failed to cleanup")
+                print(f"Error: {error_msg}")
                 return 1
                 
         except Exception as e:
@@ -2665,28 +2876,29 @@ echo "Cleaned up $CLEANED completed background tasks"
             
             # 构建清理特定任务的命令
             cleanup_cmd = f'''
-if [ ! -f "{tmp_path}/cmd_bg_{bg_pid}.status" ]; then
+if [ ! -f "{tmp_path}/cmd_bg_{bg_pid}.result.json" ]; then
     echo "Error: Background task {bg_pid} not found"
     exit 1
 fi
 
-STATUS_DATA=$(cat "{tmp_path}/cmd_bg_{bg_pid}.status")
-REAL_PID=$(echo "$STATUS_DATA" | grep -o '"real_pid": *[0-9]*' | grep -o '[0-9]*')
+# 读取result文件并检查任务状态
+RESULT_DATA=$(cat "{tmp_path}/cmd_bg_{bg_pid}.result.json")
+END_TIME=$(echo "$RESULT_DATA" | python3 -c "import json,sys; data=json.load(sys.stdin); print(data.get('end_time', 'Unknown'))" 2>/dev/null || echo "Unknown")
 
-# 检查进程是否还在运行
-if [ -n "$REAL_PID" ] && ps -p $REAL_PID > /dev/null 2>&1; then
-    echo "Error: Cannot cleanup running task {bg_pid} (PID: $REAL_PID)"
-    echo "Use 'kill $REAL_PID' to stop it first, or wait for it to complete"
+# 检查任务是否还在运行
+if [ "$END_TIME" = "Unknown" ] || [ "$END_TIME" = "null" ] || [ -z "$END_TIME" ]; then
+    echo "Error: Cannot cleanup running task {bg_pid}"
+    echo "Wait for the task to complete first"
     exit 1
 else
     echo "Cleaning up task: {bg_pid}"
-    rm -f "{tmp_path}/cmd_bg_{bg_pid}.*"
+    rm -f "{tmp_path}/cmd_bg_{bg_pid}".*
     echo "Task {bg_pid} cleaned up successfully"
 fi
 '''
             
             # 使用统一的命令执行接口
-            result = self.remote_commands.execute_unified_command(
+            result = self.remote_commands.execute_command(
                 user_command=cleanup_cmd,
                 current_shell=current_shell
             )
@@ -2702,10 +2914,10 @@ fi
                     import sys
                     print(stderr, file=sys.stderr)
                 
-                    return 0
-                else:
-                    error_msg = result.get("error", "Cleanup failed")
-                    print(f"Error: {error_msg}")
+                return 0
+            else:
+                error_msg = result.get("error", "Cleanup failed")
+                print(f"Error: {error_msg}")
                 return 1
                 
         except Exception as e:

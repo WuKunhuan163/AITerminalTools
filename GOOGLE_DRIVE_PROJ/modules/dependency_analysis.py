@@ -260,7 +260,7 @@ class DependencyAnalysis:
             
             # 构建远程pip show命令
             pip_show_cmd = f"pip show {package_name}"
-            result = self.main_instance.execute_generic_command("bash", ["-c", pip_show_cmd])
+            result = self.main_instance.execute_command_interface("bash", ["-c", pip_show_cmd])
             
             if not result.get("success"):
                 # Remote pip show failed

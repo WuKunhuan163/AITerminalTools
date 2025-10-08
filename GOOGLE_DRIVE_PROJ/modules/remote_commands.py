@@ -1367,7 +1367,7 @@ fi
             cleaned_args.append(remove_emoji(arg))
         return cleaned_args
 
-    def execute_generic_command(self, cmd, args, _skip_queue_management=False, _original_user_command=None):
+    def execute_command_interface(self, cmd, args, _skip_queue_management=False, _original_user_command=None):
         """
         统一远端命令执行接口 - 处理除特殊命令外的所有命令
         
@@ -1379,6 +1379,13 @@ fi
         Returns:
             dict: 执行结果，包含stdout、stderr、path等字段
         """
+        # Debug print (disabled)
+        # print(f"DEBUG: execute_command_interface called with cmd='{cmd}', args={args}")
+        
+        # 检查是否为特殊命令，如果是则不应该到这里
+        if cmd in self.SPECIAL_COMMANDS:
+            print(f"DEBUG: WARNING - Special command '{cmd}' reached execute_command_interface!")
+            return {"success": False, "error": f"Special command '{cmd}' should not use remote execution"}
         # 移除emoji字符避免远程shell编码问题（暂时禁用，测试base64方案）
         # cleaned_args = self._remove_emoji_from_args(args)
         cleaned_args = args  # 使用原始args测试base64编码
@@ -1468,10 +1475,22 @@ fi
                 else:
                     raise e
             
-            # 正常执行流程：显示远端命令并通过tkinter获取用户执行结果
+            # 使用统一的命令执行接口替代过时的_execute_with_result_capture
             debug_log(f"🖥️ DEBUG: [{get_relative_timestamp()}] [EXEC] 开始执行远端命令 - window_id: {window_id}, cmd: {cmd}")
-            debug_log(f"🔧 DEBUG: [{get_relative_timestamp()}] [EXEC_CALL] 调用_execute_with_result_capture - window_id: {window_id}, remote_command_info: {len(remote_command_info) if isinstance(remote_command_info, (list, tuple)) else 'not_list'}")
-            result = self._execute_with_result_capture(remote_command_info, cmd, cleaned_args, window_id, get_relative_timestamp, debug_log)
+            debug_log(f"🔧 DEBUG: [{get_relative_timestamp()}] [EXEC_CALL] 调用execute_command - window_id: {window_id}")
+            
+            # 构建用户命令字符串
+            if cleaned_args:
+                import shlex
+                user_command = f"{cmd} {' '.join(shlex.quote(str(arg)) for arg in cleaned_args)}"
+            else:
+                user_command = cmd
+                
+            current_shell = self.main_instance.get_current_shell()
+            result = self.execute_command(
+                user_command=user_command,
+                current_shell=current_shell
+            )
             debug_log(f"📋 DEBUG: [{get_relative_timestamp()}] [RESULT] 远端命令执行完成 - window_id: {window_id}, success: {result.get('success', False)}")
             
             # WindowManager自动管理窗口生命周期，无需手动释放
@@ -2160,13 +2179,18 @@ JSON_SCRIPT_EOF
                     user_command = f'bash -c "{args[1]}"'
                 elif cmd == "sh" and len(args) >= 2 and args[0] == "-c":
                     user_command = f'sh -c "{args[1]}"'
-                elif cmd == "python" and len(args) >= 2 and args[0] == "-c":
-                    # 对于python -c命令，需要正确转义
+                elif cmd in ["python", "python3"] and len(args) >= 2 and args[0] == "-c":
+                    # 对于python -c命令，使用base64编码避免转义问题
+                    import base64
                     python_code = args[1]
-                    escaped_python_code = (python_code.replace('\\', '\\\\')
-                                                     .replace('"', '\\"')
-                                                     .replace('$', '\\$'))
-                    user_command = f'python -c "{escaped_python_code}"'
+                    python_code_b64 = base64.b64encode(python_code.encode('utf-8')).decode('ascii')
+                    user_command = f'{cmd} -c "import base64; exec(base64.b64decode(\'{python_code_b64}\').decode(\'utf-8\'))"'
+                elif cmd in ["python", "python3"] and len(args) == 1:
+                    # 对于直接的python代码执行（如测试中的格式），转换为python -c格式
+                    import base64
+                    python_code = args[0]
+                    python_code_b64 = base64.b64encode(python_code.encode('utf-8')).decode('ascii')
+                    user_command = f'{cmd} -c "import base64; exec(base64.b64decode(\'{python_code_b64}\').decode(\'utf-8\'))"'
                 else:
                     # 处理重定向和其他参数
                     import shlex
@@ -2203,7 +2227,7 @@ JSON_SCRIPT_EOF
         except Exception as e:
             raise Exception(f"Generate remote command failed: {str(e)}")
 
-    def execute_unified_command(self, user_command, result_filename=None, current_shell=None, skip_quote_escaping=False):
+    def execute_command(self, user_command, result_filename=None, current_shell=None, skip_quote_escaping=False):
         """
         统一的命令执行接口 - 支持任何用户命令，自动生成JSON结果
         
@@ -2255,9 +2279,15 @@ JSON_SCRIPT_EOF
             
             # 处理窗口结果
             if window_result["action"] == "success":
-                # 用户点击了执行完成，等待并读取结果
+                # 用户点击了执行完成，现在开始显示进度指示器，等待并读取结果
+                from .progress_manager import start_progress_buffering, stop_progress_buffering
+                start_progress_buffering("⏳ Waiting for result ...")
+                
                 result_file_path = f"{self.main_instance.REMOTE_ROOT}/tmp/{actual_result_filename}"
                 result = self._wait_and_read_result_file(actual_result_filename)
+                
+                # 停止进度指示器
+                stop_progress_buffering()
                 
                 if result.get("success", False):
                     data = result.get("data", {})
@@ -2330,9 +2360,8 @@ JSON_SCRIPT_EOF
         """
         debug_log_func(f"🎯 DEBUG: [{get_timestamp_func()}] [CAPTURE_START] _execute_with_result_capture 开始 - window_id: {window_id}, cmd: {cmd}")
         
-        # 开始进度缓冲
+        # 进度缓冲将在用户完成窗口操作后开始
         from .progress_manager import start_progress_buffering, stop_progress_buffering
-        start_progress_buffering()
         
         # WindowManager自动处理窗口生命周期
         debug_log_func(f"🏗️ DEBUG: [{get_timestamp_func()}] [WINDOW_MANAGER] WindowManager自动处理窗口 - window_id: {window_id}")
@@ -2404,37 +2433,38 @@ JSON_SCRIPT_EOF
             final_remote_command, result_filename = remote_command_info
             
             # 显示命令窗口
-            window_result = self._show_command_window(cmd, args, final_remote_command, result_filename)
-            debug_print(f"_show_command_window返回结果: {window_result}")
-            
-            # 检查用户窗口操作结果，并在适当时机释放槽位
-            user_completed_window = False
+            title = f"GDS Remote Command: {cmd}"
+            window_result = self.show_command_window_subprocess(
+                title=title,
+                command_text=final_remote_command
+            )
+            debug_print(f"show_command_window_subprocess返回结果: {window_result}")
             
             if window_result.get("action") == "direct_feedback":
                 # 用户选择直接反馈，使用direct_feedback_interface（照搬--bg指令的逻辑）
                 debug_print(f"_execute_with_result_capture: 检测到direct_feedback，使用direct_feedback_interface")
                 debug_print(f"window_result: {window_result}")
-                user_completed_window = True  # 用户完成了窗口操作
                 debug_log_func(f"👤 DEBUG: [{get_timestamp_func()}] [USER_COMPLETED] 设置user_completed_window=True (direct_feedback) - window_id: {window_id}")
                 debug_capture.stop_capture()  # 在返回前停止debug捕获
                 
                 # WindowManager自动处理窗口生命周期
                 debug_log_func(f"🏗️ DEBUG: [{get_timestamp_func()}] [USER_FEEDBACK] 用户完成直接反馈 - window_id: {window_id}")
                 
-                # 照搬execute_unified_command的逻辑：使用direct_feedback_interface
+                # 照搬execute_command的逻辑：使用direct_feedback_interface
                 print()  # 换行
                 feedback_result = self.direct_feedback_interface(remote_command, result_filename)
                 return feedback_result
             elif window_result.get("action") == "success":
-                # 用户确认执行完成
-                user_completed_window = True
+                # 用户确认执行完成，现在开始显示进度指示器
                 debug_log_func(f"👤 DEBUG: [{get_timestamp_func()}] [USER_COMPLETED] 设置user_completed_window=True (success) - window_id: {window_id}")
                 debug_print(f"_execute_with_result_capture: 用户确认执行完成")
+                
+                # 现在开始进度指示器，等待远程结果
+                start_progress_buffering("⏳ Waiting for result ...")
             elif window_result.get("action") != "success":
                 debug_print(f"_execute_with_result_capture: window_result.action != 'success'")
                 debug_print(f"实际的window_result.action: {window_result.get('action')}")
                 debug_print(f"完整window_result: {window_result}")
-                user_completed_window = True  # 用户取消或超时也算完成窗口操作
                 debug_log_func(f"👤 DEBUG: [{get_timestamp_func()}] [USER_COMPLETED] 设置user_completed_window=True (non-success: {window_result.get('action')}) - window_id: {window_id}")
                 debug_capture.stop_capture()  # 在返回前停止debug捕获
                 
@@ -2451,6 +2481,9 @@ JSON_SCRIPT_EOF
             
             # 等待远端文件出现
             result_data = self._wait_and_read_result_file(result_filename)
+            
+            # 停止进度指示器
+            stop_progress_buffering()
             
             if not result_data.get("success"):
                 return {
@@ -2928,6 +2961,21 @@ JSON_SCRIPT_EOF
     def show_command_window_subprocess(self, title, command_text, timeout_seconds=3600):
         """
         使用WindowManager显示命令窗口
+        
+        DEBUG: 这里是tkinter窗口弹出的地方！
+        """
+        # Debug print - 找到tkinter窗口弹出的地方 (disabled)
+        # print(f"DEBUG: *** TKINTER WINDOW POPUP *** show_command_window_subprocess called!")
+        # print(f"DEBUG: title='{title}'")
+        # print(f"DEBUG: command_text preview: '{command_text[:100]}...'")
+        
+        # 打印调用堆栈 (disabled)
+        # import traceback
+        # print("DEBUG: Call stack:")
+        # for line in traceback.format_stack()[-5:]:
+        #     print(f"DEBUG: {line.strip()}")
+        
+        """
         新架构：统一窗口管理，避免多线程竞态问题
         """
         # 添加挂载检查到命令文本

@@ -143,7 +143,7 @@ except:
             '''.strip()
             
             # 执行远程命令
-            result = self.main_instance.execute_generic_command("bash", ["-c", command])
+            result = self.main_instance.execute_command_interface("bash", ["-c", command])
             
             if result.get("success"):
                 return {
@@ -157,7 +157,7 @@ except:
             else:
                 return {
                     "success": False,
-                    "error": f"User direct feedback is as above. ",
+                    "error": f"User direct feedback is as above. If there is no feedback, it may indicate the operation is cancelled.",
                     "stdout": result.get("stdout", ""),
                     "stderr": result.get("stderr", "")
                 }
@@ -191,7 +191,7 @@ except:
             command = " && ".join(commands)
             
             # 执行远程命令
-            result = self.main_instance.execute_generic_command("bash", ["-c", command])
+            result = self.main_instance.execute_command_interface("bash", ["-c", command])
             
             if result.get("success"):
                 return {
@@ -234,7 +234,7 @@ except:
             command = " && ".join(commands)
             
             # 执行远程命令
-            result = self.main_instance.execute_generic_command("bash", ["-c", command])
+            result = self.main_instance.execute_command_interface("bash", ["-c", command])
             
             if result.get("success"):
                 return {

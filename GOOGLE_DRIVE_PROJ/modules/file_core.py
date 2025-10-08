@@ -452,7 +452,7 @@ class FileCore:
                     "file_moves": file_moves
                 }
             
-            execution_result = self.main_instance.execute_generic_command("bash", ["-c", remote_command])
+            execution_result = self.main_instance.execute_command_interface("bash", ["-c", remote_command])
             
             # 如果执行失败，直接返回错误
             if not execution_result["success"]:
@@ -998,7 +998,7 @@ class FileCore:
             }
             
             # 使用统一接口执行远端命令
-            execution_result = self.main_instance.execute_generic_command("bash", ["-c", remote_command])
+            execution_result = self.main_instance.execute_command_interface("bash", ["-c", remote_command])
             
             if execution_result["success"]:
                 # 执行成功后，进行验证以确保目录真正创建（最多60次重试）
@@ -1120,7 +1120,7 @@ class FileCore:
             }
             
             # 使用统一接口执行远端命令
-            execution_result = self.main_instance.execute_generic_command("bash", ["-c", remote_command])
+            execution_result = self.main_instance.execute_command_interface("bash", ["-c", remote_command])
             
             if execution_result["success"]:
                 # 简洁返回，像bash shell一样成功时不显示任何信息
@@ -1182,7 +1182,7 @@ class FileCore:
                     remote_command = f'rm "{absolute_path}"'
             
             # 执行远程命令
-            result = self.main_instance.execute_generic_command("bash", ["-c", remote_command])
+            result = self.main_instance.execute_command_interface("bash", ["-c", remote_command])
             
             if result["success"]:
                 # 简化验证逻辑：如果远程命令执行完成，就认为删除成功
@@ -1420,7 +1420,7 @@ class FileCore:
             remote_command = f"({base_command})"
             
             # 使用远端指令执行接口
-            result = self.main_instance.execute_generic_command("bash", ["-c", remote_command])
+            result = self.main_instance.execute_command_interface("bash", ["-c", remote_command])
             
             if result.get("success"):
                 # 验证文件是否真的被移动了

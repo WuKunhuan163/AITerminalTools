@@ -189,8 +189,8 @@
     },
     "GOOGLE_DRIVE": {
       "name": "GOOGLE_DRIVE",
-      "description": "Google Drive access tool with GDS (Google Drive Shell) for remote file management, Python package management, and Python version management",
-      "purpose": "Access Google Drive in browser and manage files remotely through an interactive shell interface (GDS). Supports file operations, remote Python execution, Python package management with dependency analysis, Python version management (pyenv-like), virtual environments, and comprehensive Google Drive API integration.",
+      "description": "Google Drive access tool with GDS (Google Drive Shell) for remote file management and background task execution",
+      "purpose": "Access Google Drive in browser and manage files remotely through an interactive shell interface (GDS). Supports file operations, remote Python execution, background task execution with status monitoring, Python package management with dependency analysis, Python version management (pyenv-like), virtual environments, and comprehensive Google Drive API integration.",
       "usage": "GOOGLE_DRIVE [url] [options] | GOOGLE_DRIVE --shell [command] | GDS [command]",
       "examples": [
         "GOOGLE_DRIVE",
@@ -251,7 +251,7 @@
       "testable": true,
       "test_passed": true,
       "ai_usable": true,
-      "tool_use_scenario": "When user needs to access Google Drive, manage remote files through shell interface, upload/download files, execute remote Python code, run background tasks with status monitoring, manage Python packages with dependency analysis, manage Python versions (install/switch between different Python versions), create and manage virtual environments, perform code quality checks, edit files with advanced features, or set up Google Drive API integration",
+      "tool_use_scenario": "When user needs to access Google Drive, manage remote files through shell interface, upload/download files, execute remote Python code, run background tasks with status monitoring (GDS --bg), manage Python packages with dependency analysis, manage Python versions (install/switch between different Python versions), create and manage virtual environments, perform code quality checks, edit files with advanced features, or set up Google Drive API integration",
       "gds_commands": {
         "navigation": [
           "pwd",
@@ -333,10 +333,10 @@
         "Path resolution supporting ~, .., relative and absolute paths",
         "Automatic download caching with cache management",
         "Remote Python code execution with full environment support",
-        "Background task execution with non-blocking operation",
-        "Real-time task status monitoring and log viewing",
-        "Background task result retrieval and management",
-        "Complex quote handling in background commands",
+        "Background task execution with non-blocking operation (GDS --bg)",
+        "Real-time task status monitoring and log viewing (--status, --log)",
+        "Background task result retrieval and management (--result)",
+        "Complex quote handling and pipe operations in background commands",
         "Python package management with pip integration",
         "Smart dependency tree analysis with PyPI API integration",
         "Python version management (pyenv-like) with remote compilation and installation",

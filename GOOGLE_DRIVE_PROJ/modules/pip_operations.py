@@ -230,7 +230,7 @@ find '{env_path}' -maxdepth 1 -name '*.egg-info' -type d 2>/dev/null | sed 's|.*
 """.strip()
             
             # 执行远程命令
-            result = self.main_instance.execute_generic_command("bash", ["-c", scan_command])
+            result = self.main_instance.execute_command_interface("bash", ["-c", scan_command])
             
             if result.get("success"):
                 output = result.get("stdout", "")
@@ -628,7 +628,7 @@ except Exception as e:
             full_command = " && ".join(commands)
             
             # 执行远程命令
-            result = self.main_instance.execute_generic_command("bash", ["-c", full_command])
+            result = self.main_instance.execute_command_interface("bash", ["-c", full_command])
             
             # Debug info removed - pip functionality working correctly
             

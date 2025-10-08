@@ -131,7 +131,7 @@ class VenvOperations:
             
             # 使用bash -c执行命令脚本
             command_script = " && ".join(commands)
-            result = self.main_instance.execute_generic_command("bash", ["-c", command_script])
+            result = self.main_instance.execute_command_interface("bash", ["-c", command_script])
             
             if result.get("success", False):
                 # 检查远程命令的实际执行结果
@@ -213,7 +213,7 @@ class VenvOperations:
             
             # 生成删除环境的远程命令，添加执行状态提示
             command = f"rm -rf {env_path}"
-            result = self.main_instance.execute_generic_command("bash", ["-c", command])
+            result = self.main_instance.execute_command_interface("bash", ["-c", command])
             
             if result.get("success", False):
                 print(f"Virtual environment '{env_name}' deleted successfully")
@@ -285,7 +285,7 @@ fi
         full_command = "; ".join(delete_script_parts)
         
         # 执行单个远程命令
-        result = self.main_instance.execute_generic_command("bash", ["-c", full_command])
+        result = self.main_instance.execute_command_interface("bash", ["-c", full_command])
         
         if result.get("success"):
             # 解析远程输出，统计删除结果
@@ -438,7 +438,7 @@ fi
 '''
             
             # 执行远程命令（这会显示远端窗口）
-            result = self.main_instance.execute_generic_command("bash", ["-c", remote_command])
+            result = self.main_instance.execute_command_interface("bash", ["-c", remote_command])
             
             if result.get("success"):
                 output = result.get("stdout", "").strip()
@@ -551,7 +551,7 @@ if [ "$VERIFICATION_RESULT" != "VERIFICATION_SUCCESS" ]; then
 fi
 '''
             
-            result = self.main_instance.execute_generic_command("bash", ["-c", remote_command])
+            result = self.main_instance.execute_command_interface("bash", ["-c", remote_command])
             
             if result.get("success", False):
                 # 添加额外的提示信息

@@ -636,7 +636,7 @@ def main():
         # 不在 RUN 环境中，直接输出到 stdout（保持原有行为）
         os.system("clear") if os.name == "posix" else os.system("cls")
         if not timeout:
-            user_input += f"\n{end_hint}"
+            user_input += end_hint
         print(user_input)
 
 if __name__ == "__main__":

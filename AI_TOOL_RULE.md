@@ -70,8 +70,8 @@ When working with the user, you have access to the following custom binary tools
   - `FILEDIALOG --multiple --types pdf`
 
 ### GOOGLE_DRIVE
-- **Purpose**: Access Google Drive in browser and manage files remotely through an interactive shell interface (GDS). Supports file operations, remote Python execution, Python package management with dependency analysis, and comprehensive Google Drive API integration.
-- **Description**: Google Drive access tool with GDS (Google Drive Shell) for remote file management and Python package management
+- **Purpose**: Access Google Drive in browser and manage files remotely through an interactive shell interface (GDS). Supports file operations, remote Python execution, background task execution with status monitoring, Python package management with dependency analysis, Python version management (pyenv-like), virtual environments, and comprehensive Google Drive API integration.
+- **Description**: Google Drive access tool with GDS (Google Drive Shell) for remote file management and background task execution
 - **Usage**: `GOOGLE_DRIVE [url] [options] | GOOGLE_DRIVE --shell [command] | GDS [command]`
 - **Examples**:
   - `GOOGLE_DRIVE`
@@ -85,7 +85,7 @@ When working with the user, you have access to the following custom binary tools
   - `GOOGLE_DRIVE --shell upload --target-dir docs file.txt`
   - `GOOGLE_DRIVE --shell rm -rf old_folder`
   - `GOOGLE_DRIVE --shell edit file.py '[["old_code", "new_code"]]'`
-  - `GOOGLE_DRIVE --shell python -c 'print(f"Hello World")'`
+  - `GOOGLE_DRIVE --shell python -c 'print("Hello World")'`
   - `GOOGLE_DRIVE --upload file.txt remote/path`
   - `GDS pwd`
   - `GDS ls --detailed`
@@ -95,6 +95,13 @@ When working with the user, you have access to the following custom binary tools
   - `GDS download report.pdf`
   - `GDS cat config.json`
   - `GDS grep "error" log.txt`
+  - `GDS --bg "python train.py"`
+  - `GDS --bg "find . -name '*.py' | wc -l"`
+  - `GDS --bg "python train_model.py --epochs 100"`
+  - `GDS --bg "python process_data.py"`
+  - `GDS --bg --status 1726234567_1234`
+  - `GDS --bg --log 1726234567_1234`
+  - `GDS --bg --result 1726234567_1234`
   - `GDS find . -name "*.py"`
   - `GDS touch new_file.txt`
   - `GDS mv old_name.txt new_name.txt`
@@ -106,6 +113,10 @@ When working with the user, you have access to the following custom binary tools
   - `GDS venv --create myenv`
   - `GDS venv --activate myenv`
   - `GDS venv --list`
+  - `GDS pyenv --list-available`
+  - `GDS pyenv --install 3.10.12`
+  - `GDS pyenv --global 3.10.12`
+  - `GDS pyenv --version`
   - `GDS linter script.py`
   - `GOOGLE_DRIVE --create-remote-shell`
   - `GOOGLE_DRIVE --list-remote-shell`
@@ -210,6 +221,7 @@ When working with the user, you have access to the following custom binary tools
   - `BACKGROUND_CMD --list`
   - `BACKGROUND_CMD --kill 12345`
   - `BACKGROUND_CMD --cleanup`
+  - `BACKGROUND_CMD --help`
 
 ## Other Tools:
 
@@ -242,7 +254,7 @@ When working with the user, you have access to the following custom binary tools
 - **EXTRACT_PDF**: When user needs to extract text from PDF files with different extraction engines
 - **EXTRACT_IMG**: When user needs intelligent image analysis with automatic content type detection
 - **FILEDIALOG**: When user needs to select specific file types through a GUI dialog
-- **GOOGLE_DRIVE**: When user needs to access Google Drive, manage remote files through shell interface, upload/download files, execute remote Python code, manage Python packages with dependency analysis, create and manage virtual environments, perform code quality checks, edit files with advanced features, or set up Google Drive API integration
+- **GOOGLE_DRIVE**: When user needs to access Google Drive, manage remote files through shell interface, upload/download files, execute remote Python code, run background tasks with status monitoring (GDS --bg), manage Python packages with dependency analysis, manage Python versions (install/switch between different Python versions), create and manage virtual environments, perform code quality checks, edit files with advanced features, or set up Google Drive API integration
 - **IMG2TEXT**: When user needs to convert images to text descriptions
 - **LEARN**: When user needs structured learning materials, paper analysis, context-aware tutorials, or LEARN command generation
 - **OPENROUTER**: When user needs to call OpenRouter API for AI responses with cost tracking

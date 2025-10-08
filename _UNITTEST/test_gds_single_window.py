@@ -195,7 +195,7 @@ class TestGDSSingleWindow(unittest.TestCase):
                 content = f.read()
             
             execute_shell_calls = content.count('execute_shell_command CALLED')
-            execute_generic_calls = content.count('execute_generic_command CALLED')
+            execute_generic_calls = content.count('execute_command_interface CALLED')
             queue_inits = content.count('queue_manager initialized')
             slot_acquired_direct = content.count('Slot acquired directly')
             slot_acquired_after_waiting = content.count('Slot acquired after waiting')

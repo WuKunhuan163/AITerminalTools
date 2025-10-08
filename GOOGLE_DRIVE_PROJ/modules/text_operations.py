@@ -58,7 +58,7 @@ class TextOperations:
             remote_command = f'echo "{content_base64}" | base64 -d > "{remote_absolute_path}"'
             
             # 使用远程命令执行接口
-            result = self.main_instance.execute_generic_command("bash", ["-c", remote_command])
+            result = self.main_instance.execute_command_interface("bash", ["-c", remote_command])
             
             if result.get("success"):
                 # 验证文件是否真的被创建了
@@ -430,7 +430,7 @@ class TextOperations:
             find_command = " ".join(find_cmd_parts)
             
             # 执行远程find命令
-            result = self.main_instance.execute_generic_command("bash", ["-c", find_command])
+            result = self.main_instance.execute_command_interface("bash", ["-c", find_command])
             
             if result.get("success"):
                 stdout = result.get("stdout", "").strip()

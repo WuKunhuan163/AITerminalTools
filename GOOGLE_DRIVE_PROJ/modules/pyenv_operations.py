@@ -179,7 +179,7 @@ fi
 '''
             
             # 执行远程安装命令
-            result = self.main_instance.execute_generic_command("bash", ["-c", install_command])
+            result = self.main_instance.execute_command_interface("bash", ["-c", install_command])
             
             if result.get("success") and result.get("exit_code") == 0:
                 # 更新状态文件
@@ -244,7 +244,7 @@ fi
 '''
             
             # 执行远程卸载命令
-            result = self.main_instance.execute_generic_command("bash", ["-c", uninstall_command])
+            result = self.main_instance.execute_command_interface("bash", ["-c", uninstall_command])
             
             if result.get("success") and result.get("exit_code") == 0:
                 # 更新状态文件
@@ -355,7 +355,7 @@ print(json.dumps(result))
 "
 '''
             
-            result = self.main_instance.execute_generic_command("bash", ["-c", unified_command])
+            result = self.main_instance.execute_command_interface("bash", ["-c", unified_command])
             
             if result.get("success") and result.get("stdout"):
                 try:
@@ -580,7 +580,7 @@ except:
             fi
             '''
             
-            result = self.main_instance.execute_generic_command("bash", ["-c", check_command])
+            result = self.main_instance.execute_command_interface("bash", ["-c", check_command])
             
             if result.get("success") and result.get("stdout"):
                 version_info = result["stdout"].strip()
@@ -705,7 +705,7 @@ except:
         try:
             # 通过远程命令列出python目录下的版本
             list_command = f'ls -1 "{self._get_python_base_path()}" 2>/dev/null | grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" || echo ""'
-            result = self.main_instance.execute_generic_command("bash", ["-c", list_command])
+            result = self.main_instance.execute_command_interface("bash", ["-c", list_command])
             
             if result.get("success") and result.get("stdout"):
                 versions = [v.strip() for v in result["stdout"].split('\n') if v.strip()]
@@ -747,7 +747,7 @@ except:
             # 通过远程命令读取状态文件
             state_file = self._get_python_state_file_path()
             read_command = f'cat "{state_file}" 2>/dev/null || echo "{{}}"'
-            result = self.main_instance.execute_generic_command("bash", ["-c", read_command])
+            result = self.main_instance.execute_command_interface("bash", ["-c", read_command])
             
             if result.get("success") and result.get("stdout"):
                 try:
@@ -794,7 +794,7 @@ print('State updated successfully')
 "
 '''
             
-            result = self.main_instance.execute_generic_command("bash", ["-c", update_command])
+            result = self.main_instance.execute_command_interface("bash", ["-c", update_command])
             
             if not (result.get("success") and result.get("exit_code") == 0):
                 raise Exception(f"Failed to update Python state: {result.get('error', 'Unknown error')}")
