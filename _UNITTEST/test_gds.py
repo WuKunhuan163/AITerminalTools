@@ -77,8 +77,19 @@ class GDSTest(unittest.TestCase):
         """设置远端测试目录"""
         print(f"远端测试目录: ~/tmp/{cls.test_folder}")
         
-        # 创建测试目录 (先切换到根目录确保正确的路径解析)
-        mkdir_command = f"python3 {cls.GOOGLE_DRIVE_PY} --shell 'cd ~ && mkdir -p ~/tmp/{cls.test_folder}'"
+        # 创建测试目录 (分步执行，避免复杂shell命令)
+        # 首先确保tmp目录存在
+        mkdir_tmp_command = f"python3 {cls.GOOGLE_DRIVE_PY} --shell 'mkdir -p ~/tmp'"
+        subprocess.run(
+            mkdir_tmp_command,
+            shell=True,
+            capture_output=True,
+            text=True,
+            cwd=cls.BIN_DIR
+        )
+        
+        # 然后创建测试目录
+        mkdir_command = f"python3 {cls.GOOGLE_DRIVE_PY} --shell 'mkdir -p ~/tmp/{cls.test_folder}'"
         result = subprocess.run(
             mkdir_command,
             shell=True,

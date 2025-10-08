@@ -259,7 +259,21 @@ class TestGDSSingleWindow(unittest.TestCase):
         finally:
             self.monitoring = False
             if hasattr(self, 'test_process') and self.test_process.poll() is None:
+                print(f"🔪 Kill测试进程 (PID: {self.test_process.pid})")
                 self.test_process.kill()
+            
+            # 等待一段时间让窗口进程自动关闭
+            print("⏳ 等待2秒让窗口进程自动关闭...")
+            time.sleep(2)
+            
+            # 检查是否还有窗口进程存在
+            remaining_windows = self.detect_gds_windows()
+            if remaining_windows:
+                print(f"Warning: 发现 {len(remaining_windows)} 个窗口进程未关闭")
+                for w in remaining_windows:
+                    print(f"  - PID={w['pid']}")
+            else:
+                print("✅ 所有窗口进程已自动关闭")
         
         print("\\n🛑 监控已停止")
         

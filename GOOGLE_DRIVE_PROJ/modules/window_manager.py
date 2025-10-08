@@ -421,6 +421,11 @@ try:
     # 解码base64命令
     command_text = base64.b64decode("COMMAND_B64_PLACEHOLDER").decode('utf-8')
     
+    # 获取父进程PID（由父进程传入）
+    parent_pid = PARENT_PID_PLACEHOLDER
+    
+    print(f"[DEBUG] 窗口进程启动: PID={os.getpid()}, 父进程PID={parent_pid}, 窗口ID=WINDOW_ID_PLACEHOLDER", file=sys.stderr)
+    
     root = tk.Tk()
     root.title("Google Drive Shell")
     root.geometry("500x60")
@@ -433,10 +438,37 @@ try:
         with open(debug_file, "a", encoding="utf-8") as f:
             import time
             timestamp = time.time() - 1757413752.714440  # 相对时间戳
-            f.write("🪟 DEBUG: [{:.3f}s] [TKINTER_WINDOW_CREATED] 窗口创建成功 - WINDOW_ID_PLACEHOLDER\\n".format(timestamp))
+            f.write("🪟 DEBUG: [{:.3f}s] [TKINTER_WINDOW_CREATED] 窗口创建成功 - WINDOW_ID_PLACEHOLDER (PID={}, 父进程PID={})\\n".format(timestamp, os.getpid(), parent_pid))
             f.flush()
     except:
         pass
+    
+    # 父进程监控函数
+    def check_parent_alive():
+        try:
+            import psutil
+            # 检查父进程是否还存活
+            if not psutil.pid_exists(parent_pid):
+                print(f"[DEBUG] 父进程{parent_pid}已退出，关闭窗口", file=sys.stderr)
+                try:
+                    with open(debug_file, "a", encoding="utf-8") as f:
+                        timestamp = time.time() - 1757413752.714440
+                        f.write("🪟 DEBUG: [{:.3f}s] [TKINTER_WINDOW_DESTROYED] 窗口销毁 - 父进程被kill - WINDOW_ID_PLACEHOLDER\\n".format(timestamp))
+                        f.flush()
+                except:
+                    pass
+                result.update({"action": "parent_killed"})
+                root.destroy()
+                return
+            # 每1秒检查一次
+            root.after(1000, check_parent_alive)
+        except Exception as e:
+            print(f"[DEBUG] 父进程监控错误: {e}", file=sys.stderr)
+            # 出错时继续监控
+            root.after(1000, check_parent_alive)
+    
+    # 启动父进程监控
+    root.after(1000, check_parent_alive)
     
     # 居中窗口
     root.eval('tk::PlaceWindow . center')
@@ -700,6 +732,7 @@ except Exception as e:
         subprocess_script = subprocess_script.replace("WINDOW_ID_PLACEHOLDER", window_id)
         subprocess_script = subprocess_script.replace("TIMEOUT_MS_PLACEHOLDER", str(timeout_ms))
         subprocess_script = subprocess_script.replace("AUDIO_FILE_PATH_PLACEHOLDER", audio_file_path)
+        subprocess_script = subprocess_script.replace("PARENT_PID_PLACEHOLDER", str(os.getpid()))
         
         # 使用Popen来获得更好的进程控制
         try:
@@ -716,6 +749,11 @@ except Exception as e:
             
             # 将进程添加到活跃进程列表
             self.active_processes[window_id] = process
+            
+            # 统计当前tkinter窗口数量
+            time.sleep(0.5)  # 等待窗口进程启动
+            window_count = self._count_tkinter_windows()
+            self._debug_log(f"📊 DEBUG: [WINDOW_COUNT_AFTER_CREATE] 窗口创建后，当前远端指令tkinter窗口总数: {window_count}")
             
             try:
                 # 等待进程完成，带超时
@@ -772,6 +810,27 @@ except Exception as e:
                 f.flush()
         except Exception:
             pass  # 忽略日志错误
+    
+    def _count_tkinter_windows(self):
+        """统计当前GDS tkinter窗口数量"""
+        count = 0
+        try:
+            for proc in psutil.process_iter(['pid', 'cmdline']):
+                try:
+                    cmdline = proc.info['cmdline']
+                    if not cmdline:
+                        continue
+                    cmdline_str = ' '.join(cmdline)
+                    # 检测GDS相关的tkinter窗口进程
+                    if ('python' in cmdline_str.lower() and 
+                        ('-c' in cmdline_str or 'tkinter' in cmdline_str.lower()) and
+                        ('Google Drive Shell' in cmdline_str or 'root.title' in cmdline_str)):
+                        count += 1
+                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                    continue
+        except Exception:
+            pass
+        return count
     
     def cleanup_windows(self, force=False):
         """

@@ -98,6 +98,22 @@ class CoreUtils:
                 return shell.list_shells()
             elif args[0] == '--create-remote-shell':
                 return shell.create_shell()
+            elif args[0].startswith('--'):
+                # 处理未知的--参数，提供错误信息
+                print(f"Error: Unknown option '{args[0]}'")
+                print("Available options:")
+                print("  --shell <command>        Execute shell command")
+                print("  --list-remote-shell      List remote shells")
+                print("  --create-remote-shell    Create remote shell")
+                print("  --help                   Show help")
+                print("")
+                print("For background tasks, use:")
+                print("  --shell \"--bg <command>\"  Run command in background")
+                print("")
+                print("Examples:")
+                print("  GOOGLE_DRIVE --shell \"echo hello\"")
+                print("  GOOGLE_DRIVE --shell \"--bg echo hello\"")
+                return 1
             else:
                 command = ' '.join(args)
                 return shell.execute_shell_command(command)

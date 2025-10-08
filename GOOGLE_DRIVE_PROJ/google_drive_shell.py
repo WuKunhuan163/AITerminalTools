@@ -2907,12 +2907,17 @@ fi
                 data = result.get("data", {})
                 stdout = data.get("stdout", "").strip()
                 stderr = data.get("stderr", "").strip()
+                exit_code = data.get("exit_code", 0)
                 
                 if stdout:
                     print(stdout)
                 if stderr:
                     import sys
                     print(stderr, file=sys.stderr)
+                
+                # 检查shell脚本的退出码
+                if exit_code != 0:
+                    return 1
                 
                 return 0
             else:

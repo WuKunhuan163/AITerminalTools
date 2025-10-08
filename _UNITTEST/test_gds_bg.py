@@ -33,13 +33,13 @@ class GDSBackgroundTest(unittest.TestCase):
         
         # 设置路径
         cls.BIN_DIR = Path(__file__).parent.parent
-        cls.GDS_CMD = ["python3", str(cls.BIN_DIR / "GOOGLE_DRIVE.py"), "--shell"]
+        cls.GDS_CMD = ["python3", str(cls.BIN_DIR / "GOOGLE_DRIVE.py")]
         cls.TEST_DATA_DIR = Path(__file__).parent / "_DATA"
         
         # 确保GDS可用
         try:
             result = subprocess.run(
-                cls.GDS_CMD + ["pwd"], 
+                cls.GDS_CMD + ["--shell", "pwd"], 
                 capture_output=True, 
                 text=True
             )
@@ -50,25 +50,25 @@ class GDSBackgroundTest(unittest.TestCase):
     
     def run_gds_bg_command(self, command):
         """运行GDS --bg命令并返回结果 - 无timeout限制，允许用户手动操作"""
-        cmd = self.GDS_CMD + ["--bg", command]
+        cmd = self.GDS_CMD + ["--shell", f"--bg {command}"]
         result = subprocess.run(cmd, capture_output=True, text=True)
         return result
     
     def run_gds_bg_status(self, task_id):
         """查询GDS --bg任务状态 - 无timeout限制，允许用户手动操作"""
-        cmd = self.GDS_CMD + ["--bg", "--status", task_id]
+        cmd = self.GDS_CMD + ["--shell", f"--bg --status {task_id}"]
         result = subprocess.run(cmd, capture_output=True, text=True)
         return result
     
     def run_gds_bg_result(self, task_id):
         """获取GDS --bg任务结果 - 无timeout限制，允许用户手动操作"""
-        cmd = self.GDS_CMD + ["--bg", "--result", task_id]
+        cmd = self.GDS_CMD + ["--shell", f"--bg --result {task_id}"]
         result = subprocess.run(cmd, capture_output=True, text=True)
         return result
     
     def run_gds_bg_cleanup(self, task_id):
         """清理GDS --bg任务 - 无timeout限制，允许用户手动操作"""
-        cmd = self.GDS_CMD + ["--bg", "--cleanup", task_id]
+        cmd = self.GDS_CMD + ["--shell", f"--bg --cleanup {task_id}"]
         result = subprocess.run(cmd, capture_output=True, text=True)
         return result
     
