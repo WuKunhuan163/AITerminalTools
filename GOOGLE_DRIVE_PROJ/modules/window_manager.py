@@ -686,18 +686,19 @@ try:
     )
     copy_btn.pack(side=tk.LEFT, padx=(0, 5), fill=tk.X, expand=True)
     
-    # 直接反馈按钮（第二个位置）
+    # 直接反馈按钮（第二个位置）- 默认禁用，需要粘贴键激活
     feedback_btn = tk.Button(
         button_frame, 
-        text="💬直接反馈", 
+        text="⏳等待粘贴", 
         command=direct_feedback,
         font=("Arial", 9),
-        bg="#FF9800",
-        fg="white",
+        bg="#CCCCCC",  # 灰色表示禁用
+        fg="#666666",
         padx=10,
         pady=5,
         relief=tk.RAISED,
-        bd=2
+        bd=2,
+        state=tk.DISABLED  # 默认禁用
     )
     feedback_btn.pack(side=tk.LEFT, padx=(0, 5), fill=tk.X, expand=True)
     
@@ -744,6 +745,13 @@ try:
                     fg="white",
                     state=tk.NORMAL
                 )
+                # 启用直接反馈按钮
+                feedback_btn.config(
+                    text="💬直接反馈",
+                    bg="#FF9800",
+                    fg="white",
+                    state=tk.NORMAL
+                )
                 # 播放提示音
                 try:
                     import threading
@@ -752,8 +760,60 @@ try:
                     pass
             return "break"  # 阻止默认行为
     
-    # 绑定键盘事件到窗口（仅保留复制功能）
+    # 专门的粘贴事件处理函数
+    def handle_paste_shortcut(event=None):
+        global paste_detected
+        if not paste_detected:
+            paste_detected = True
+            # 启用执行完成按钮
+            complete_btn.config(
+                text="✅执行完成",
+                bg="#4CAF50",
+                fg="white",
+                state=tk.NORMAL
+            )
+            # 启用直接反馈按钮
+            feedback_btn.config(
+                text="💬直接反馈",
+                bg="#FF9800",
+                fg="white",
+                state=tk.NORMAL
+            )
+            # 播放提示音
+            try:
+                import threading
+                threading.Thread(target=play_bell_in_subprocess, daemon=True).start()
+            except Exception:
+                pass
+        return "break"
+    
+    # 绑定键盘事件到窗口
     root.bind('<Key>', on_key_press)
+    
+    # 尝试多种方式绑定Command+V (macOS)
+    try:
+        # 方法1: 使用Command修饰符
+        root.bind('<Command-v>', handle_paste_shortcut)
+        root.bind('<Command-KeyPress-v>', handle_paste_shortcut)
+        
+        # 方法2: 使用Cmd修饰符
+        root.bind('<Cmd-v>', handle_paste_shortcut)
+        root.bind('<Cmd-KeyPress-v>', handle_paste_shortcut)
+        
+        # 方法3: 使用Meta修饰符（在macOS上通常对应Command键）
+        root.bind('<Meta-v>', handle_paste_shortcut)
+        root.bind('<Meta-KeyPress-v>', handle_paste_shortcut)
+        
+        # 方法4: 使用Control修饰符（Windows/Linux）
+        root.bind('<Control-v>', handle_paste_shortcut)
+        root.bind('<Control-KeyPress-v>', handle_paste_shortcut)
+        
+        import sys
+        print("DEBUG: All paste key bindings set up", file=sys.stderr)
+    except Exception as e:
+        import sys
+        print(f"DEBUG: Error setting up key bindings: {e}", file=sys.stderr)
+    
     root.focus_set()  # 确保窗口能接收键盘事件
     
     # 设置超时定时器
