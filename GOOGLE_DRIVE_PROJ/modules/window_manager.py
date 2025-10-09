@@ -536,26 +536,36 @@ try:
                                      capture_output=True, timeout=2)
                     except:
                         pass
-        except Exception:
-            pass  # 如果播放失败，忽略错误
+            else:
+                print(f"DEBUG: Audio file not found: {audio_path}", file=sys.stderr)
+        except Exception as e:
+            print(f"DEBUG: Audio playback failed: {e}", file=sys.stderr)
     
     # 带focus计数的聚焦函数
-    def force_focus_with_count():
+    def force_focus_with_count(play_sound=True):
         global focus_count, button_clicked
         
         focus_count += 1
         force_focus()
         
-        try:
-            import threading
-            threading.Thread(target=play_bell_in_subprocess, daemon=True).start()
-            root.after(100, lambda: trigger_copy_button())
-        except Exception:
-            pass
+        # 只有在需要时才播放音效
+        if play_sound:
+            try:
+                import threading
+                threading.Thread(target=play_bell_in_subprocess, daemon=True).start()
+                root.after(100, lambda: trigger_copy_button())
+            except Exception:
+                pass
+        else:
+            # 不播放音效时，仍然触发复制按钮
+            try:
+                root.after(100, lambda: trigger_copy_button())
+            except Exception:
+                pass
     
-    # 设置窗口置顶并初始聚焦（第1次，会播放音效）
+    # 设置窗口置顶并初始聚焦（第1次，播放音效）
     root.attributes('-topmost', True)
-    force_focus_with_count()
+    force_focus_with_count(play_sound=True)
     
     # 自动复制命令到剪切板
     root.clipboard_clear()
@@ -689,10 +699,20 @@ try:
     # 设置焦点到完成按钮
     complete_btn.focus_set()
     
-    # 10秒自动激活功能
-    def auto_activate_buttons():
-        """10秒后自动激活按钮（静默激活，无音效）"""
-        print("DEBUG: Auto-activating buttons after 10 seconds (silent mode)", file=sys.stderr)
+    # 按钮激活状态标志
+    buttons_activated = False
+    
+    # 统一的按钮激活函数
+    def activate_buttons(activation_source, play_sound=True):
+        """激活按钮的统一函数"""
+        global buttons_activated
+        
+        if buttons_activated:
+            return  # 已经激活过了
+            
+        buttons_activated = True
+        
+        print(f"DEBUG: Activating buttons - source: {activation_source}, sound: {play_sound}", file=sys.stderr)
         
         # 启用直接反馈按钮
         feedback_btn.config(
@@ -710,25 +730,221 @@ try:
             state=tk.NORMAL
         )
         
-        print("DEBUG: Buttons auto-activated successfully (no sound)", file=sys.stderr)
+        # 播放音效（如果需要）
+        if play_sound:
+            try:
+                import threading
+                threading.Thread(target=play_bell_in_subprocess, daemon=True).start()
+            except Exception:
+                pass
+        
+        print(f"DEBUG: Buttons activated successfully - source: {activation_source}", file=sys.stderr)
+        
+        # 记录到debug文件
+        try:
+            with open(debug_file, "a", encoding="utf-8") as f:
+                import time
+                timestamp = time.time() - 1757413752.714440
+                f.write("🎯 DEBUG: [{:.3f}s] [BUTTON_ACTIVATION] 按钮激活 - 来源: {} - WINDOW_ID_PLACEHOLDER\\n".format(timestamp, activation_source))
+                f.flush()
+        except:
+            pass
+    
+    # 全局按键监听器
+    global_listener = None
+    
+    # 启动pynput全局监听器
+    def start_global_listener():
+        """启动pynput全局按键监听器"""
+        global global_listener, buttons_activated
+        
+        try:
+            from pynput import keyboard
+            
+            def on_press(key):
+                """全局按键按下回调"""
+                try:
+                    if buttons_activated:
+                        return  # 已经激活了，不需要继续监听
+                    
+                    # 检查是否是Command键
+                    key_name = getattr(key, 'name', str(key))
+                    
+                    print(f"DEBUG: Global key detected: {key_name}", file=sys.stderr)
+                    
+                    # macOS Command键检测
+                    if key_name in ['cmd', 'cmd_l', 'cmd_r'] or (hasattr(key, 'vk') and key.vk in [55, 54]):
+                        print("DEBUG: Global Command key detected", file=sys.stderr)
+                        activate_buttons("全局Command键", play_sound=False)  # 不播放音效
+                        
+                    # Windows/Linux Control键检测
+                    elif key_name in ['ctrl', 'ctrl_l', 'ctrl_r']:
+                        print("DEBUG: Global Control key detected", file=sys.stderr)
+                        activate_buttons("全局Control键", play_sound=False)  # 不播放音效
+                        
+                except Exception as e:
+                    print(f"DEBUG: Global listener error: {e}", file=sys.stderr)
+            
+            # 创建监听器
+            global_listener = keyboard.Listener(on_press=on_press)
+            global_listener.start()
+            
+            print("DEBUG: Global keyboard listener started", file=sys.stderr)
+            
+        except Exception as e:
+            print(f"DEBUG: Failed to start global listener: {e}", file=sys.stderr)
+    
+    # 启动全局监听器
+    start_global_listener()
+    
+    # Command键检测功能（窗口焦点方案）
+    def on_key_press(event):
+        """处理按键按下事件"""
+        global buttons_activated
+        
+        if buttons_activated:
+            return  # 已经激活了
+        
+        # 记录按键事件到debug
+        key_info = f"keysym='{event.keysym}', keycode={event.keycode}, state={event.state}"
+        print(f"DEBUG: Key press detected: {key_info}", file=sys.stderr)
+        
+        try:
+            with open(debug_file, "a", encoding="utf-8") as f:
+                import time
+                timestamp = time.time() - 1757413752.714440
+                f.write("⌨️ DEBUG: [{:.3f}s] [KEY_PRESS] 按键检测: {} - WINDOW_ID_PLACEHOLDER\\n".format(timestamp, key_info))
+                f.flush()
+        except:
+            pass
+        
+        # 检查是否是Command键（Meta键）- macOS
+        if event.keysym in ['Meta_L', 'Meta_R', 'Cmd_L', 'Cmd_R']:
+            print("DEBUG: Command key detected via keysym", file=sys.stderr)
+            activate_buttons("Command键按下", play_sound=False)  # 不播放音效
+            return
+            
+        # 检查是否是Control键 - Windows/Linux备用
+        if event.keysym in ['Control_L', 'Control_R']:
+            print("DEBUG: Control key detected via keysym", file=sys.stderr)
+            activate_buttons("Control键按下", play_sound=False)  # 不播放音效
+            return
+            
+        # 检查修饰键状态位
+        if event.state & 0x8:  # Command/Meta键状态位 (macOS)
+            print("DEBUG: Command key detected via state bit", file=sys.stderr)
+            activate_buttons("Command键状态位", play_sound=False)  # 不播放音效
+            return
+            
+        if event.state & 0x4:  # Control键状态位 (Windows/Linux)
+            print("DEBUG: Control key detected via state bit", file=sys.stderr)
+            activate_buttons("Control键状态位", play_sound=False)  # 不播放音效
+            return
+        
+        # 手动激活快捷键：空格键或Enter键
+        if event.keysym in ['space', 'Return']:
+            print(f"DEBUG: Manual activation key detected: {event.keysym}", file=sys.stderr)
+            activate_buttons(f"手动激活({event.keysym})", play_sound=True)
+            return
+    
+    # 组合键检测功能
+    def on_combination_key(event):
+        """处理组合键事件"""
+        global buttons_activated
+        
+        if buttons_activated:
+            return  # 已经激活了
+        
+        print(f"DEBUG: Combination key detected: {event}", file=sys.stderr)
+        
+        # 检查是否是Command+任意键或Ctrl+任意键
+        if hasattr(event, 'state'):
+            if event.state & 0x8:  # Command/Meta键
+                print("DEBUG: Command combination key detected", file=sys.stderr)
+                activate_buttons("Command组合键", play_sound=False)  # 不播放音效
+                return
+            elif event.state & 0x4:  # Control键
+                print("DEBUG: Control combination key detected", file=sys.stderr)
+                activate_buttons("Control组合键", play_sound=False)  # 不播放音效
+                return
+    
+    def on_key_release(event):
+        """处理按键释放事件"""
+        # 记录按键释放事件
+        key_info = f"keysym='{event.keysym}', keycode={event.keycode}"
+        print(f"DEBUG: Key release detected: {key_info}", file=sys.stderr)
+    
+    # 10秒自动激活功能（保底方案）
+    def auto_activate_buttons():
+        """10秒后自动激活按钮（静默激活，无音效）"""
+        global buttons_activated
+        
+        if buttons_activated:
+            return  # 已经激活过了
+            
+        print("DEBUG: Auto-activating buttons after 10 seconds (silent mode)", file=sys.stderr)
+        activate_buttons("10秒自动激活", play_sound=False)
     
     # 设置10秒定时器
     print("DEBUG: Setting 10-second auto-activation timer", file=sys.stderr)
     root.after(10000, auto_activate_buttons)
     
-    # 添加键盘快捷键
-    def on_key_press(event):
-        global button_clicked
-        
-        # Command+C (Mac) 或 Ctrl+C (Windows/Linux) -复制指令
-        if ((event.state & 0x8) and event.keysym == 'c') or ((event.state & 0x4) and event.keysym == 'c'):
-            button_clicked = True
-            copy_command()
-            return "break"  # 阻止默认行为
+    # 绑定键盘事件（窗口焦点方案）
+    print("DEBUG: Binding keyboard events for Command key detection (focus required)", file=sys.stderr)
     
-    # 绑定键盘事件到窗口（仅保留复制功能）
-    root.bind('<Key>', on_key_press)
-    root.focus_set()  # 确保窗口能接收键盘事件
+    # 绑定窗口按键事件（需要焦点）
+    root.bind('<KeyPress>', on_key_press)
+    root.bind('<KeyRelease>', on_key_release)
+    
+    # 绑定Command键的各种可能事件（macOS）
+    root.bind('<Meta_L>', lambda e: on_key_press(e))
+    root.bind('<Meta_R>', lambda e: on_key_press(e))
+    root.bind('<KeyPress-Meta_L>', lambda e: on_key_press(e))
+    root.bind('<KeyPress-Meta_R>', lambda e: on_key_press(e))
+    
+    # 绑定Control键（Windows/Linux备用）
+    root.bind('<Control_L>', lambda e: on_key_press(e))
+    root.bind('<Control_R>', lambda e: on_key_press(e))
+    root.bind('<KeyPress-Control_L>', lambda e: on_key_press(e))
+    root.bind('<KeyPress-Control_R>', lambda e: on_key_press(e))
+    
+    # 绑定组合键（Command+任意键，Ctrl+任意键）
+    combination_keys = [
+        '<Command-v>', '<Command-V>', '<Command-c>', '<Command-C>',  # Command组合键
+        '<Control-v>', '<Control-V>', '<Control-c>', '<Control-C>',  # Ctrl组合键
+        '<Meta-v>', '<Meta-V>', '<Meta-c>', '<Meta-C>',              # Meta组合键
+        '<Command-Key>', '<Control-Key>', '<Meta-Key>'               # 通用组合键
+    ]
+    
+    for combo in combination_keys:
+        try:
+            root.bind(combo, on_combination_key)
+            print(f"DEBUG: Bound combination key: {combo}", file=sys.stderr)
+        except Exception as e:
+            print(f"DEBUG: Failed to bind combination key {combo}: {e}", file=sys.stderr)
+    
+    # 定期强制获取焦点（每5秒一次）
+    def periodic_focus():
+        """定期强制获取焦点"""
+        global buttons_activated
+        if not buttons_activated:  # 只有在按钮未激活时才尝试获取焦点
+            try:
+                root.focus_force()
+                root.lift()
+                print("DEBUG: Periodic focus force executed", file=sys.stderr)
+            except Exception as e:
+                print(f"DEBUG: Periodic focus force failed: {e}", file=sys.stderr)
+        
+        # 5秒后再次执行
+        root.after(5000, periodic_focus)
+    
+    # 启动定期焦点获取
+    root.after(2000, periodic_focus)  # 2秒后开始
+    
+    # 确保窗口能接收键盘事件
+    root.focus_set()
+    
+    print("DEBUG: Global keyboard event bindings completed", file=sys.stderr)
     
     # 设置超时定时器
     def timeout_destroy():
@@ -745,8 +961,29 @@ try:
     
     root.after(TIMEOUT_MS_PLACEHOLDER, timeout_destroy)
     
+    # 清理函数
+    def cleanup_resources():
+        """清理资源"""
+        global global_listener
+        try:
+            if global_listener:
+                global_listener.stop()
+                print("DEBUG: Global listener stopped", file=sys.stderr)
+        except Exception as e:
+            print(f"DEBUG: Error stopping global listener: {e}", file=sys.stderr)
+    
+    # 绑定窗口关闭事件
+    def on_window_closing():
+        cleanup_resources()
+        root.destroy()
+    
+    root.protocol("WM_DELETE_WINDOW", on_window_closing)
+    
     # 运行窗口
-    root.mainloop()
+    try:
+        root.mainloop()
+    finally:
+        cleanup_resources()
     
     # 输出结果
     print(json.dumps(result))
