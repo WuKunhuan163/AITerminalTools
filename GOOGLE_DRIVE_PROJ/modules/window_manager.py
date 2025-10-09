@@ -654,38 +654,67 @@ try:
     )
     copy_btn.pack(side=tk.LEFT, padx=(0, 5), fill=tk.X, expand=True)
     
-    # 直接反馈按钮（第二个位置）
+    # 直接反馈按钮（第二个位置）- 初始禁用状态
     feedback_btn = tk.Button(
         button_frame, 
-        text="💬 直接反馈", 
+        text="⏳等待激活", 
         command=direct_feedback,
         font=("Arial", 9),
-        bg="#FF9800",
-        fg="white",
+        bg="#CCCCCC",  # 灰色表示禁用
+        fg="#666666",
         padx=10,
         pady=5,
         relief=tk.RAISED,
-        bd=2
+        bd=2,
+        state=tk.DISABLED  # 初始禁用
     )
     feedback_btn.pack(side=tk.LEFT, padx=(0, 5), fill=tk.X, expand=True)
     
-    # 执行完成按钮（最右边）
+    # 执行完成按钮（最右边）- 初始禁用状态
     complete_btn = tk.Button(
         button_frame, 
-        text="✅执行完成", 
+        text="⏳等待激活", 
         command=execution_completed,
         font=("Arial", 9, "bold"),
-        bg="#4CAF50",
-        fg="white",
+        bg="#CCCCCC",  # 灰色表示禁用
+        fg="#666666",
         padx=10,
         pady=5,
         relief=tk.RAISED,
-        bd=2
+        bd=2,
+        state=tk.DISABLED  # 初始禁用
     )
     complete_btn.pack(side=tk.LEFT, fill=tk.X, expand=True)
     
     # 设置焦点到完成按钮
     complete_btn.focus_set()
+    
+    # 10秒自动激活功能
+    def auto_activate_buttons():
+        """10秒后自动激活按钮（静默激活，无音效）"""
+        print("DEBUG: Auto-activating buttons after 10 seconds (silent mode)", file=sys.stderr)
+        
+        # 启用直接反馈按钮
+        feedback_btn.config(
+            text="💬直接反馈",
+            bg="#FF9800",
+            fg="white",
+            state=tk.NORMAL
+        )
+        
+        # 启用执行完成按钮
+        complete_btn.config(
+            text="✅执行完成",
+            bg="#4CAF50",
+            fg="white",
+            state=tk.NORMAL
+        )
+        
+        print("DEBUG: Buttons auto-activated successfully (no sound)", file=sys.stderr)
+    
+    # 设置10秒定时器
+    print("DEBUG: Setting 10-second auto-activation timer", file=sys.stderr)
+    root.after(10000, auto_activate_buttons)
     
     # 添加键盘快捷键
     def on_key_press(event):
