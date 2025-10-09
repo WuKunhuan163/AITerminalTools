@@ -608,9 +608,11 @@ try:
     
     def execution_completed():
         global button_clicked
+        print("DEBUG: execution_completed function called!", file=sys.stderr)
         button_clicked = True
         result_queue.put({"action": "success", "message": "用户确认执行完成"})
         result["action"] = "success"
+        print("DEBUG: execution_completed about to destroy window", file=sys.stderr)
         
         # 保存剪切板内容，防止窗口关闭时丢失
         try:
@@ -702,7 +704,7 @@ try:
     )
     feedback_btn.pack(side=tk.LEFT, padx=(0, 5), fill=tk.X, expand=True)
     
-    # 执行完成按钮（最右边）- 临时启用以便测试
+    # 执行完成按钮（最右边）- 默认禁用，需要粘贴键激活
     complete_btn = tk.Button(
         button_frame, 
         text="✅执行完成", 
@@ -714,12 +716,14 @@ try:
         pady=5,
         relief=tk.RAISED,
         bd=2,
-        state=tk.NORMAL  # 临时启用
+        state=tk.NORMAL  # 启用以便测试
     )
     complete_btn.pack(side=tk.LEFT, fill=tk.X, expand=True)
+    print("DEBUG: Complete button created and packed", file=sys.stderr)
     
     # 设置焦点到完成按钮
     complete_btn.focus_set()
+    print("DEBUG: Focus set to complete button", file=sys.stderr)
     
     # 粘贴检测标志
     paste_detected = False
@@ -728,23 +732,16 @@ try:
     def on_key_press(event):
         global button_clicked, paste_detected
         
-        # 详细的debug输出
-        import sys
-        print(f"DEBUG: KeyPress event - keysym: {event.keysym}, state: {event.state}, keycode: {event.keycode}, char: {repr(event.char)}", file=sys.stderr)
-        
         # Command+C (Mac) 或 Ctrl+C (Windows/Linux) -复制指令
         if ((event.state & 0x8) and event.keysym == 'c') or ((event.state & 0x4) and event.keysym == 'c'):
-            print(f"DEBUG: Copy shortcut detected!", file=sys.stderr)
             button_clicked = True
             copy_command()
             return "break"  # 阻止默认行为
             
         # Command+V (Mac) 或 Ctrl+V (Windows/Linux) - 检测粘贴操作
         if ((event.state & 0x8) and event.keysym == 'v') or ((event.state & 0x4) and event.keysym == 'v'):
-            print(f"DEBUG: Paste shortcut detected in on_key_press!", file=sys.stderr)
             if not paste_detected:
                 paste_detected = True
-                print(f"DEBUG: Activating buttons from on_key_press!", file=sys.stderr)
                 # 启用执行完成按钮
                 complete_btn.config(
                     text="✅执行完成",
@@ -769,10 +766,8 @@ try:
             
         # Enter键 - 也可以激活按钮（用于测试）
         if event.keysym == 'Return':
-            print(f"DEBUG: Return key detected!", file=sys.stderr)
             if not paste_detected:
                 paste_detected = True
-                print(f"DEBUG: Activating buttons from Return key!", file=sys.stderr)
                 # 启用执行完成按钮
                 complete_btn.config(
                     text="✅执行完成",
@@ -800,6 +795,7 @@ try:
         global paste_detected
         import sys
         print(f"DEBUG: handle_paste_shortcut called! event: {event}", file=sys.stderr)
+        print(f"DEBUG: Current paste_detected state: {paste_detected}", file=sys.stderr)
         if not paste_detected:
             paste_detected = True
             print(f"DEBUG: Activating buttons from handle_paste_shortcut!", file=sys.stderr)
@@ -825,16 +821,76 @@ try:
                 pass
         else:
             print(f"DEBUG: Paste already detected, ignoring", file=sys.stderr)
+        print(f"DEBUG: handle_paste_shortcut completed", file=sys.stderr)
         return "break"
     
-    # 绑定键盘事件到窗口
-    root.bind('<Key>', on_key_press)
+    # 只使用特定的粘贴绑定，不使用通用键盘绑定
+    print("DEBUG: About to set up paste bindings", file=sys.stderr)
     
-    # 添加特定的快捷键绑定（基于测试脚本的成功经验）
-    root.bind('<Control-v>', lambda e: handle_paste_shortcut())
-    root.bind('<Command-v>', lambda e: handle_paste_shortcut())
-    root.bind('<Meta-v>', lambda e: handle_paste_shortcut())
-    root.bind('<Return>', lambda e: handle_paste_shortcut())
+    def debug_paste_ctrl(e):
+        print("DEBUG: Control-v binding triggered!", file=sys.stderr)
+        return handle_paste_shortcut()
+    
+    def debug_paste_cmd(e):
+        print("DEBUG: Command-v binding triggered!", file=sys.stderr)
+        return handle_paste_shortcut()
+    
+    def debug_paste_meta(e):
+        print("DEBUG: Meta-v binding triggered!", file=sys.stderr)
+        return handle_paste_shortcut()
+    
+    def debug_return(e):
+        print("DEBUG: Return binding triggered!", file=sys.stderr)
+        print("DEBUG: Calling execution_completed directly from Return key", file=sys.stderr)
+        execution_completed()
+        return "break"
+    
+    # 测试单一按键绑定
+    def debug_single_key(key_name):
+        def handler(e):
+            print(f"DEBUG: Single key '{key_name}' pressed!", file=sys.stderr)
+            print(f"DEBUG: Event details - keysym: {e.keysym}, state: {e.state}, char: {repr(e.char)}", file=sys.stderr)
+            return "break"
+        return handler
+    
+    root.bind('<Control-v>', debug_paste_ctrl)
+    root.bind('<Command-v>', debug_paste_cmd)
+    root.bind('<Meta-v>', debug_paste_meta)
+    root.bind('<Return>', debug_return)
+    
+    # 添加单一按键绑定测试
+    root.bind('<v>', debug_single_key('v'))
+    root.bind('<c>', debug_single_key('c'))
+    root.bind('<space>', debug_single_key('space'))
+    root.bind('<BackSpace>', debug_single_key('backspace'))
+    
+    # 测试Command键的单独检测
+    def debug_command_key(e):
+        print(f"DEBUG: Command key event! keysym: {e.keysym}, state: {e.state}, type: {e.type}", file=sys.stderr)
+        return "break"
+    
+    def debug_meta_key(e):
+        print(f"DEBUG: Meta key event! keysym: {e.keysym}, state: {e.state}, type: {e.type}", file=sys.stderr)
+        return "break"
+    
+    # 绑定Command键的各种可能名称（使用正确的tkinter键名）
+    try:
+        root.bind('<Meta_L>', debug_meta_key)
+        root.bind('<Meta_R>', debug_meta_key)
+        print("DEBUG: Meta key bindings set up successfully", file=sys.stderr)
+    except Exception as e:
+        print(f"DEBUG: Failed to bind Meta keys: {e}", file=sys.stderr)
+    
+    # 添加通用键盘事件监听来捕获所有事件
+    def debug_all_keys(e):
+        if e.keysym in ['Meta_L', 'Meta_R', 'Command_L', 'Command_R', 'v', 'c']:
+            print(f"DEBUG: All-key handler - keysym: {e.keysym}, state: {e.state}, type: {e.type}, char: {repr(e.char)}", file=sys.stderr)
+        return None  # 不阻止其他处理器
+    
+    root.bind('<KeyPress>', debug_all_keys)
+    root.bind('<KeyRelease>', debug_all_keys)
+    
+    print("DEBUG: All key bindings set up completed (including Command key detection)", file=sys.stderr)
     
     # 确保窗口获得焦点（使用测试脚本中成功的方法）
     root.focus_force()
@@ -843,7 +899,7 @@ try:
     root.focus_set()
     
     import sys
-    print("DEBUG: Enhanced keyboard event binding set up with specific shortcuts", file=sys.stderr)
+    print("DEBUG: Using specific paste bindings only (no general key binding)", file=sys.stderr)
     
     # 设置超时定时器
     def timeout_destroy():
@@ -876,12 +932,16 @@ try:
     root.after(TIMEOUT_MS_PLACEHOLDER, timeout_destroy)
     
     # 运行窗口
+    print("DEBUG: Starting tkinter mainloop", file=sys.stderr)
     root.mainloop()
+    print("DEBUG: Tkinter mainloop ended", file=sys.stderr)
     
     # 输出结果
+    print(f"DEBUG: Final result: {result}", file=sys.stderr)
     print(json.dumps(result))
 
 except Exception as e:
+    print(f"DEBUG: Exception occurred: {e}", file=sys.stderr)
     print(json.dumps({"action": "error", "message": str(e)}))
 '''
         
@@ -926,13 +986,21 @@ except Exception as e:
                     import sys
                     print(f"SUBPROCESS STDERR:\n{stderr}", file=sys.stderr)
                 
-                if process.returncode == 0 and stdout.strip():
-                    try:
-                        window_result = json.loads(stdout.strip())
-                        self._debug_log(f"🪟 DEBUG: [TKINTER_WINDOW_RESULT] 窗口结果: {window_id}, action: {window_result.get('action')}")
-                        return window_result
-                    except json.JSONDecodeError as e:
-                        return {"action": "error", "message": f"窗口结果解析失败: {e}"}
+                # 添加更多debug信息
+                self._debug_log(f"🪟 DEBUG: [SUBPROCESS_RESULT] Process completed: returncode={process.returncode}, stdout_length={len(stdout)}, stderr_length={len(stderr)}")
+                
+                if process.returncode == 0:
+                    if stdout.strip():
+                        try:
+                            window_result = json.loads(stdout.strip())
+                            self._debug_log(f"🪟 DEBUG: [TKINTER_WINDOW_RESULT] 窗口结果: {window_id}, action: {window_result.get('action')}")
+                            return window_result
+                        except json.JSONDecodeError as e:
+                            self._debug_log(f"🪟 DEBUG: [JSON_DECODE_ERROR] Failed to parse stdout: {stdout[:200]}")
+                            return {"action": "error", "message": f"窗口结果解析失败: {e}"}
+                    else:
+                        self._debug_log(f"🪟 DEBUG: [EMPTY_STDOUT] Process succeeded but stdout is empty")
+                        return {"action": "error", "message": "窗口进程成功但没有输出结果"}
                 else:
                     return {"action": "error", "message": f"窗口进程失败: returncode={process.returncode}, stderr={stderr}"}
                     
