@@ -938,8 +938,8 @@ try:
         # 5秒后再次执行
         root.after(5000, periodic_focus)
     
-    # 启动定期焦点获取
-    root.after(2000, periodic_focus)  # 2秒后开始
+    # 启动定期焦点获取（已禁用，避免意外获取焦点）
+    # root.after(2000, periodic_focus)  # 2秒后开始
     
     # 确保窗口能接收键盘事件
     root.focus_set()
