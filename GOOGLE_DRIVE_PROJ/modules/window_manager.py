@@ -611,6 +611,13 @@ try:
         button_clicked = True
         result_queue.put({"action": "success", "message": "用户确认执行完成"})
         result["action"] = "success"
+        
+        # 保存剪切板内容，防止窗口关闭时丢失
+        try:
+            saved_clipboard = root.clipboard_get()
+        except:
+            saved_clipboard = command_text  # 如果获取失败，使用原始命令
+        
         # 记录窗口销毁
         try:
             with open(debug_file, "a", encoding="utf-8") as f:
@@ -620,6 +627,15 @@ try:
                 f.flush()
         except:
             pass
+            
+        # 销毁窗口前重新设置剪切板
+        try:
+            root.clipboard_clear()
+            root.clipboard_append(saved_clipboard)
+            root.update()  # 确保剪切板更新生效
+        except:
+            pass
+            
         root.destroy()
     
     def direct_feedback():
@@ -628,6 +644,13 @@ try:
         button_clicked = True
         result_queue.put({"action": "direct_feedback", "message": "启动直接反馈模式"})
         result["action"] = "direct_feedback"
+        
+        # 保存剪切板内容，防止窗口关闭时丢失
+        try:
+            saved_clipboard = root.clipboard_get()
+        except:
+            saved_clipboard = command_text  # 如果获取失败，使用原始命令
+        
         # 记录窗口销毁
         try:
             with open(debug_file, "a", encoding="utf-8") as f:
@@ -637,6 +660,15 @@ try:
                 f.flush()
         except:
             pass
+            
+        # 销毁窗口前重新设置剪切板
+        try:
+            root.clipboard_clear()
+            root.clipboard_append(saved_clipboard)
+            root.update()  # 确保剪切板更新生效
+        except:
+            pass
+            
         root.destroy()
     
     #复制指令按钮
@@ -657,7 +689,7 @@ try:
     # 直接反馈按钮（第二个位置）
     feedback_btn = tk.Button(
         button_frame, 
-        text="💬 直接反馈", 
+        text="💬直接反馈", 
         command=direct_feedback,
         font=("Arial", 9),
         bg="#FF9800",
@@ -669,32 +701,55 @@ try:
     )
     feedback_btn.pack(side=tk.LEFT, padx=(0, 5), fill=tk.X, expand=True)
     
-    # 执行完成按钮（最右边）
+    # 执行完成按钮（最右边）- 默认禁用，需要粘贴键激活
     complete_btn = tk.Button(
         button_frame, 
-        text="✅执行完成", 
+        text="⏳等待粘贴", 
         command=execution_completed,
         font=("Arial", 9, "bold"),
-        bg="#4CAF50",
-        fg="white",
+        bg="#CCCCCC",  # 灰色表示禁用
+        fg="#666666",
         padx=10,
         pady=5,
         relief=tk.RAISED,
-        bd=2
+        bd=2,
+        state=tk.DISABLED  # 默认禁用
     )
     complete_btn.pack(side=tk.LEFT, fill=tk.X, expand=True)
     
     # 设置焦点到完成按钮
     complete_btn.focus_set()
     
+    # 粘贴检测标志
+    paste_detected = False
+    
     # 添加键盘快捷键
     def on_key_press(event):
-        global button_clicked
+        global button_clicked, paste_detected
         
         # Command+C (Mac) 或 Ctrl+C (Windows/Linux) -复制指令
         if ((event.state & 0x8) and event.keysym == 'c') or ((event.state & 0x4) and event.keysym == 'c'):
             button_clicked = True
             copy_command()
+            return "break"  # 阻止默认行为
+            
+        # Command+V (Mac) 或 Ctrl+V (Windows/Linux) - 检测粘贴操作
+        if ((event.state & 0x8) and event.keysym == 'v') or ((event.state & 0x4) and event.keysym == 'v'):
+            if not paste_detected:
+                paste_detected = True
+                # 启用执行完成按钮
+                complete_btn.config(
+                    text="✅执行完成",
+                    bg="#4CAF50",
+                    fg="white",
+                    state=tk.NORMAL
+                )
+                # 播放提示音
+                try:
+                    import threading
+                    threading.Thread(target=play_bell_in_subprocess, daemon=True).start()
+                except Exception:
+                    pass
             return "break"  # 阻止默认行为
     
     # 绑定键盘事件到窗口（仅保留复制功能）
@@ -703,6 +758,12 @@ try:
     
     # 设置超时定时器
     def timeout_destroy():
+        # 保存剪切板内容，防止窗口关闭时丢失
+        try:
+            saved_clipboard = root.clipboard_get()
+        except:
+            saved_clipboard = command_text  # 如果获取失败，使用原始命令
+            
         try:
             with open(debug_file, "a", encoding="utf-8") as f:
                 import time
@@ -711,6 +772,15 @@ try:
                 f.flush()
         except:
             pass
+            
+        # 销毁窗口前重新设置剪切板
+        try:
+            root.clipboard_clear()
+            root.clipboard_append(saved_clipboard)
+            root.update()  # 确保剪切板更新生效
+        except:
+            pass
+            
         result.update({"action": "timeout"})
         root.destroy()
     
