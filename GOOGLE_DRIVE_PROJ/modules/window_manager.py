@@ -702,19 +702,19 @@ try:
     )
     feedback_btn.pack(side=tk.LEFT, padx=(0, 5), fill=tk.X, expand=True)
     
-    # 执行完成按钮（最右边）- 默认禁用，需要粘贴键激活
+    # 执行完成按钮（最右边）- 临时启用以便测试
     complete_btn = tk.Button(
         button_frame, 
-        text="⏳等待粘贴", 
+        text="✅执行完成", 
         command=execution_completed,
         font=("Arial", 9, "bold"),
-        bg="#CCCCCC",  # 灰色表示禁用
-        fg="#666666",
+        bg="#4CAF50",  # 绿色表示启用
+        fg="white",
         padx=10,
         pady=5,
         relief=tk.RAISED,
         bd=2,
-        state=tk.DISABLED  # 默认禁用
+        state=tk.NORMAL  # 临时启用
     )
     complete_btn.pack(side=tk.LEFT, fill=tk.X, expand=True)
     
@@ -728,16 +728,51 @@ try:
     def on_key_press(event):
         global button_clicked, paste_detected
         
+        # 详细的debug输出
+        import sys
+        print(f"DEBUG: KeyPress event - keysym: {event.keysym}, state: {event.state}, keycode: {event.keycode}, char: {repr(event.char)}", file=sys.stderr)
+        
         # Command+C (Mac) 或 Ctrl+C (Windows/Linux) -复制指令
         if ((event.state & 0x8) and event.keysym == 'c') or ((event.state & 0x4) and event.keysym == 'c'):
+            print(f"DEBUG: Copy shortcut detected!", file=sys.stderr)
             button_clicked = True
             copy_command()
             return "break"  # 阻止默认行为
             
         # Command+V (Mac) 或 Ctrl+V (Windows/Linux) - 检测粘贴操作
         if ((event.state & 0x8) and event.keysym == 'v') or ((event.state & 0x4) and event.keysym == 'v'):
+            print(f"DEBUG: Paste shortcut detected in on_key_press!", file=sys.stderr)
             if not paste_detected:
                 paste_detected = True
+                print(f"DEBUG: Activating buttons from on_key_press!", file=sys.stderr)
+                # 启用执行完成按钮
+                complete_btn.config(
+                    text="✅执行完成",
+                    bg="#4CAF50",
+                    fg="white",
+                    state=tk.NORMAL
+                )
+                # 启用直接反馈按钮
+                feedback_btn.config(
+                    text="💬直接反馈",
+                    bg="#FF9800",
+                    fg="white",
+                    state=tk.NORMAL
+                )
+                # 播放提示音
+                try:
+                    import threading
+                    threading.Thread(target=play_bell_in_subprocess, daemon=True).start()
+                except Exception:
+                    pass
+            return "break"  # 阻止默认行为
+            
+        # Enter键 - 也可以激活按钮（用于测试）
+        if event.keysym == 'Return':
+            print(f"DEBUG: Return key detected!", file=sys.stderr)
+            if not paste_detected:
+                paste_detected = True
+                print(f"DEBUG: Activating buttons from Return key!", file=sys.stderr)
                 # 启用执行完成按钮
                 complete_btn.config(
                     text="✅执行完成",
@@ -763,8 +798,11 @@ try:
     # 专门的粘贴事件处理函数
     def handle_paste_shortcut(event=None):
         global paste_detected
+        import sys
+        print(f"DEBUG: handle_paste_shortcut called! event: {event}", file=sys.stderr)
         if not paste_detected:
             paste_detected = True
+            print(f"DEBUG: Activating buttons from handle_paste_shortcut!", file=sys.stderr)
             # 启用执行完成按钮
             complete_btn.config(
                 text="✅执行完成",
@@ -785,36 +823,27 @@ try:
                 threading.Thread(target=play_bell_in_subprocess, daemon=True).start()
             except Exception:
                 pass
+        else:
+            print(f"DEBUG: Paste already detected, ignoring", file=sys.stderr)
         return "break"
     
     # 绑定键盘事件到窗口
     root.bind('<Key>', on_key_press)
     
-    # 尝试多种方式绑定Command+V (macOS)
-    try:
-        # 方法1: 使用Command修饰符
-        root.bind('<Command-v>', handle_paste_shortcut)
-        root.bind('<Command-KeyPress-v>', handle_paste_shortcut)
-        
-        # 方法2: 使用Cmd修饰符
-        root.bind('<Cmd-v>', handle_paste_shortcut)
-        root.bind('<Cmd-KeyPress-v>', handle_paste_shortcut)
-        
-        # 方法3: 使用Meta修饰符（在macOS上通常对应Command键）
-        root.bind('<Meta-v>', handle_paste_shortcut)
-        root.bind('<Meta-KeyPress-v>', handle_paste_shortcut)
-        
-        # 方法4: 使用Control修饰符（Windows/Linux）
-        root.bind('<Control-v>', handle_paste_shortcut)
-        root.bind('<Control-KeyPress-v>', handle_paste_shortcut)
-        
-        import sys
-        print("DEBUG: All paste key bindings set up", file=sys.stderr)
-    except Exception as e:
-        import sys
-        print(f"DEBUG: Error setting up key bindings: {e}", file=sys.stderr)
+    # 添加特定的快捷键绑定（基于测试脚本的成功经验）
+    root.bind('<Control-v>', lambda e: handle_paste_shortcut())
+    root.bind('<Command-v>', lambda e: handle_paste_shortcut())
+    root.bind('<Meta-v>', lambda e: handle_paste_shortcut())
+    root.bind('<Return>', lambda e: handle_paste_shortcut())
     
-    root.focus_set()  # 确保窗口能接收键盘事件
+    # 确保窗口获得焦点（使用测试脚本中成功的方法）
+    root.focus_force()
+    root.lift()
+    root.attributes('-topmost', True)
+    root.focus_set()
+    
+    import sys
+    print("DEBUG: Enhanced keyboard event binding set up with specific shortcuts", file=sys.stderr)
     
     # 设置超时定时器
     def timeout_destroy():
@@ -891,6 +920,11 @@ except Exception as e:
                 
                 # 进程正常完成，从活跃列表中移除
                 self.active_processes.pop(window_id, None)
+                
+                # 总是输出stderr以便看到debug信息
+                if stderr.strip():
+                    import sys
+                    print(f"SUBPROCESS STDERR:\n{stderr}", file=sys.stderr)
                 
                 if process.returncode == 0 and stdout.strip():
                     try:
