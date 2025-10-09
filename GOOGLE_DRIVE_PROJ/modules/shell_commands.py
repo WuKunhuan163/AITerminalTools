@@ -714,14 +714,12 @@ def _split_pipe_command_with_quotes(shell_cmd):
             in_double_quote = not in_double_quote
             current_part += char
         elif char == '|' and not in_single_quote and not in_double_quote:
-            # 检查是否是管道符号（前后可能有空格）
+            # 这是一个管道符号（不管前后是否有空格）
+            parts.append(current_part.strip())
+            current_part = ""
+            # 跳过管道符号后的空格（如果有的话）
             if i + 1 < len(shell_cmd) and shell_cmd[i + 1] == ' ':
-                # 这是一个管道符号
-                parts.append(current_part.strip())
-                current_part = ""
-                i += 1  # 跳过管道符号后的空格
-            else:
-                current_part += char
+                i += 1
         else:
             current_part += char
         
@@ -733,7 +731,7 @@ def _split_pipe_command_with_quotes(shell_cmd):
     return parts
 
 def handle_pipe_commands(shell_cmd, command_identifier=None):
-    """处理用|连接的pipe命令"""
+    """处理用|连接的pipe命令 - 修复版本：直接在远程执行整个pipe命令"""
     try:
         # 解析pipe命令：支持 | 操作符，但要正确处理引号
         pipe_parts = _split_pipe_command_with_quotes(shell_cmd)
@@ -757,54 +755,80 @@ def handle_pipe_commands(shell_cmd, command_identifier=None):
                 print(error_msg)
             return 1
         
-        # 执行pipe命令链
-        if not is_run_environment(command_identifier):
-            pass
-            # print(f"Executing pipe command chain: {shell_cmd}")
+        # 添加调试日志（已禁用）
+        # if not is_run_environment(command_identifier):
+        #     print(f"DEBUG: Executing pipe command as remote command: {shell_cmd}")
+        #     print(f"DEBUG: Pipe parts detected: {pipe_parts}")
+        #     print(f"DEBUG: Number of pipe parts: {len(pipe_parts)}")
         
-        previous_output = ""
-        final_result = 0
-        
-        for i, cmd_part in enumerate(pipe_parts):
-            cmd_part = cmd_part.strip()
-            
-            if not is_run_environment(command_identifier):
-                pass
-                # print(f"- Executing command {i+1}/{len(pipe_parts)}: {cmd_part}")
-            
-            # 如果不是第一个命令，将上一个命令的输出作为输入
-            if i > 0:
-                # 对于pipe命令，我们需要特殊处理
-                # 这里简化实现：将前一个命令的输出作为当前命令的输入参数
-                if cmd_part.startswith('grep ') or cmd_part.startswith('head ') or cmd_part.startswith('tail ') or cmd_part.startswith('sort') or cmd_part.startswith('uniq'):
-                    # 对于这些常见的pipe命令，我们模拟其行为
-                    final_result = _execute_pipe_command(cmd_part, previous_output, shell, command_identifier)
-                    if final_result != 0:
-                        break
+        # 修复：直接将整个pipe命令作为远程命令执行，而不是本地模拟
+        # 这样可以确保pipe操作在远程shell中正确执行
+        try:
+            # 获取当前shell信息
+            current_shell = shell.get_current_shell()
+            if not current_shell:
+                error_msg = "No active shell found for pipe command execution"
+                if is_run_environment(command_identifier):
+                    write_to_json_output({"success": False, "error": error_msg}, command_identifier)
                 else:
-                    # 对于其他命令，直接执行
-                    final_result = shell.execute_shell_command(cmd_part, command_identifier)
-                    if final_result != 0:
-                        break
-            else:
-                # 第一个命令，正常执行并捕获输出
-                import io
-                import contextlib
-                from contextlib import redirect_stdout
+                    print(error_msg)
+                return 1
+            
+            # 使用远程命令执行接口直接执行整个pipe命令
+            result = shell.execute_command_interface("bash", ["-c", shell_cmd])
+            
+            if isinstance(result, dict):
+                # 显示输出 - 处理嵌套的数据结构
+                if result.get("success") and "data" in result:
+                    # 新的嵌套结构
+                    data = result["data"]
+                    stdout = data.get("stdout", "")
+                    stderr = data.get("stderr", "")
+                    exit_code = data.get("exit_code", 0)
+                else:
+                    # 旧的平坦结构
+                    stdout = result.get("stdout", "")
+                    stderr = result.get("stderr", "")
+                    exit_code = result.get("exit_code", 0)
                 
-                # 捕获第一个命令的输出
-                output_buffer = io.StringIO()
-                try:
-                    with redirect_stdout(output_buffer):
-                        final_result = shell.execute_shell_command(cmd_part, command_identifier)
-                    previous_output = output_buffer.getvalue()
-                except Exception as e:
+                # 调试输出（已禁用）
+                # if not is_run_environment(command_identifier):
+                #     print(f"DEBUG: stdout length: {len(stdout)}, stderr length: {len(stderr)}, exit_code: {exit_code}")
+                #     if stdout:
+                #         print(f"DEBUG: stdout content: {repr(stdout[:200])}")
+                
+                if stdout:
                     if not is_run_environment(command_identifier):
-                        print(f"Error capturing output from command '{cmd_part}': {e}")
-                    final_result = 1
-                    break
-        
-        return final_result
+                        print(stdout, end="")
+                    elif is_run_environment(command_identifier):
+                        # 在RUN环境下，将输出写入JSON
+                        write_to_json_output({
+                            "success": True,
+                            "stdout": stdout,
+                            "stderr": stderr,
+                            "exit_code": exit_code
+                        }, command_identifier)
+                        return exit_code
+                        
+                if stderr:
+                    if not is_run_environment(command_identifier):
+                        import sys
+                        print(stderr, end="", file=sys.stderr)
+                        
+                return exit_code
+            else:
+                # 非字典结果（已禁用调试）
+                # if not is_run_environment(command_identifier):
+                #     print(f"DEBUG: Non-dict result: {result}")
+                return result if isinstance(result, int) else 0
+                
+        except Exception as e:
+            error_msg = f"Error executing pipe command remotely: {e}"
+            if is_run_environment(command_identifier):
+                write_to_json_output({"success": False, "error": error_msg}, command_identifier)
+            else:
+                print(error_msg)
+            return 1
         
     except Exception as e:
         error_msg = f"Error executing pipe commands: {e}"
@@ -948,8 +972,8 @@ def handle_single_command(shell_cmd, command_identifier=None):
 def handle_multiple_commands(shell_cmd, command_identifier=None):
     """处理多个用&&、||或|连接的shell命令"""
     try:
-        # 首先检查是否包含pipe操作符
-        if ' | ' in shell_cmd:
+        # 首先检查是否包含pipe操作符（带空格或不带空格）
+        if ' | ' in shell_cmd or '|' in shell_cmd:
             pipe_result = handle_pipe_commands(shell_cmd, command_identifier)
             if pipe_result is not None:
                 return pipe_result

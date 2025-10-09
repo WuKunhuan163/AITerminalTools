@@ -1,0 +1,5 @@
+[K⏳ Waiting for result ......[K[KLine 1: Hello world
+Line 2: This is a test
+Line 3: Hello again
+Line 4: Multiple Hello Hello Hello
+Line 5: No match here

@@ -447,15 +447,41 @@ class GoogleDriveShell:
             import re
             
             # 使用正则表达式提取内容和文件名
-            # 匹配格式：echo "content" > filename 或 echo 'content' > filename
-            match = re.match(r'^echo\s+(["\'])(.*?)\1\s*>\s*(.+)$', shell_cmd_clean.strip(), re.DOTALL)
+            # 匹配格式：echo "content" > filename 或 echo 'content' > filename 或 echo -n "content" > filename
+            # 也处理被错误解析的格式：echo -n content" with "spaces > filename
+            patterns = [
+                r'^echo\s+(?:-n\s+)?(["\'])(.*?)\1\s*>\s*(.+)$',  # 正常格式
+                r'^echo\s+(?:-n\s+)?(.*?)\s*>\s*(.+)$'  # 无引号或被错误解析的格式
+            ]
+            
+            match = None
+            for pattern in patterns:
+                match = re.match(pattern, shell_cmd_clean.strip(), re.DOTALL)
+                if match:
+                    break
             
             if not match:
                 print(f"Error: Unable to parse echo redirect command format")
                 return 1
             
-            content = match.group(2)
-            target_file = match.group(3).strip()
+            # 根据匹配的模式提取内容和文件名
+            if len(match.groups()) == 3:
+                # 正常格式：echo "content" > filename
+                content = match.group(2)
+                target_file = match.group(3).strip()
+            else:
+                # 无引号格式：echo content > filename
+                content = match.group(1)
+                target_file = match.group(2).strip()
+                # 清理可能的引号残留
+                content = content.replace('"', '').replace("'", '')
+            
+            # 检查是否使用了-n选项（不添加换行符）
+            no_newline = '-n' in shell_cmd_clean.split()[1:3]  # 检查前几个参数中是否有-n
+            
+            # 如果不是-n选项，添加换行符（模拟正常echo行为）
+            if not no_newline:
+                content += '\n'
         
             # 使用base64编码的文件创建方法
             result = self.file_operations._create_text_file(target_file, content)
@@ -1062,6 +1088,7 @@ class GoogleDriveShell:
             
             # 首先检测引号包围的完整命令（在命令解析之前）
             shell_cmd_clean = shell_cmd.strip()
+            
             if ((shell_cmd_clean.startswith("'") and shell_cmd_clean.endswith("'")) or 
                 (shell_cmd_clean.startswith('"') and shell_cmd_clean.endswith('"'))):
                 # 去除外层引号，这是一个完整的远程命令
@@ -1221,14 +1248,36 @@ For more information, visit: https://github.com/your-repo/gds"""
                     args = ['-c', python_code]
 
                 else:
-                    # 首先检查是否为特殊命令（导航命令等），优先处理
+                    # 首先检查是否包含多命令组合（&&、||或|），在特殊命令检查之前
+                    has_multiple_ops = False
+                    # 检查带空格和不带空格的操作符，使用清理后的命令
+                    for op in [' && ', ' || ', ' | ', '&&', '||', '|']:
+                        if op in shell_cmd_clean:
+                            # 检查操作符是否在引号外
+                            if self._is_operator_outside_quotes(shell_cmd_clean, op):
+                                has_multiple_ops = True
+                                break
+                    
+                    if has_multiple_ops:
+                        # 导入shell_commands模块中的具体函数
+                        import os
+                        import sys
+                        current_dir = os.path.dirname(__file__)
+                        modules_dir = os.path.join(current_dir, 'modules')
+                        if modules_dir not in sys.path:
+                            sys.path.append(modules_dir)
+                        
+                        from shell_commands import handle_multiple_commands
+                        return handle_multiple_commands(shell_cmd_clean, command_identifier)
+                    
+                    # 然后检查是否为特殊命令（导航命令等）
                     first_word = shell_cmd_clean.split()[0] if shell_cmd_clean.split() else ""
                     
                     # Debug print (disabled)
                     # print(f"DEBUG: first_word='{first_word}', checking special commands first")
                     
-                    # 特殊命令处理 - 在简单命令检查之前
-                    if first_word in ['pwd', 'ls', 'cd']:
+                    # 特殊命令处理 - 在pipe检查之后
+                    if first_word in ['pwd', 'ls', 'cd', 'cat']:
                         # print(f"DEBUG: Processing special command '{first_word}' with local API")
                         
                         # 解析命令和参数
@@ -1325,67 +1374,51 @@ For more information, visit: https://github.com/your-repo/gds"""
                             else:
                                 print(result.get("error", "Error: cd command execution failed"))
                                 return 1
+                        elif cmd == 'cat':
+                            # 使用本地Google Drive API处理cat命令
+                            if not args:
+                                print(f"Error: cat command needs a file name")
+                                return 1
+                            result = self.cmd_cat(args[0])
+                            if result.get("success", False):
+                                # 使用end=''避免添加额外的换行符
+                                print(result.get("output", ""), end='')
+                                return 0
+                            else:
+                                print(result.get("error", "Failed to read file"))
+                                return 1
                     
-                    # 检查是否为简单命令，如果是则直接传递原始字符串避免引号丢失
-                    simple_commands = ['echo', 'printf', 'cat', 'date', 'whoami']
+                    # 使用统一的命令解析和转译接口
+                    translation_result = self.parse_and_translate_command(shell_cmd_clean)
+                    if not translation_result["success"]:
+                        print(f"Error: {translation_result['error']}")
+                        return 1
                     
-                    # print(f"DEBUG: first_word='{first_word}', in simple_commands={first_word in simple_commands}")
+                    # 直接使用转译后的命令，不需要再次解析
+                    translated_cmd = translation_result["translated_command"]
                     
-                    if first_word in simple_commands and ('\"' in shell_cmd_clean or "'" in shell_cmd_clean):
-                        # 对于包含引号的简单命令，直接使用原始字符串
-                        # 直接调用 execute_command 而不是 execute_command_interface
-                        current_shell = self.get_current_shell()
-                        result = self.remote_commands.execute_command(
-                            user_command=shell_cmd_clean,
-                            current_shell=current_shell
-                        )
-                        if result.get("success", False):
-                            # 从正确的数据结构中获取stdout和stderr
-                            data = result.get("data", {})
-                            stdout = data.get("stdout", "").strip()
-                            stderr = data.get("stderr", "").strip()
-                            # 统一在命令处理结束后打印输出
-                            if stdout:
-                                print(stdout)
-                            if stderr:
-                                print(stderr, file=sys.stderr)
-                            return 0
-                        else:
-                            error_msg = result.get("error", f"Command '{shell_cmd_clean}' failed")
-                            print(error_msg)
-                            return 1
+                    # 直接使用execute_command执行转译后的命令
+                    current_shell = self.get_current_shell()
+                    result = self.remote_commands.execute_command(
+                        user_command=translated_cmd,
+                        current_shell=current_shell
+                    )
+                    
+                    if result.get("success", False):
+                        # 显示输出
+                        data = result.get("data", {})
+                        stdout = data.get("stdout", "").strip()
+                        stderr = data.get("stderr", "").strip()
+                        if stdout:
+                            print(stdout)
+                        if stderr:
+                            import sys
+                            print(stderr, file=sys.stderr)
+                        return 0
                     else:
-                        # 使用统一的命令解析和转译接口
-                        translation_result = self.parse_and_translate_command(shell_cmd_clean)
-                        if not translation_result["success"]:
-                            print(f"Error: {translation_result['error']}")
-                            return 1
-                        
-                        # 直接使用转译后的命令，不需要再次解析
-                        translated_cmd = translation_result["translated_command"]
-                        
-                        # 直接使用execute_command执行转译后的命令
-                        current_shell = self.get_current_shell()
-                        result = self.remote_commands.execute_command(
-                            user_command=translated_cmd,
-                            current_shell=current_shell
-                        )
-                        
-                        if result.get("success", False):
-                            # 显示输出
-                            data = result.get("data", {})
-                            stdout = data.get("stdout", "").strip()
-                            stderr = data.get("stderr", "").strip()
-                            if stdout:
-                                print(stdout)
-                            if stderr:
-                                import sys
-                                print(stderr, file=sys.stderr)
-                            return 0
-                        else:
-                            error_msg = result.get("error", f"Command '{translated_cmd}' failed")
-                            print(error_msg)
-                            return 1
+                        error_msg = result.get("error", f"Command '{translated_cmd}' failed")
+                        print(error_msg)
+                        return 1
             
             # 对所有命令应用通用引号和转义处理
             if args:
@@ -1405,56 +1438,6 @@ For more information, visit: https://github.com/your-repo/gds"""
                     print("Note: No need to add quotes around the command")
                     return 1
             
-            # 检查是否包含多命令组合（&&、||或|），但要避免引号内的操作符
-            has_multiple_ops = False
-            for op in [' && ', ' || ', ' | ']:
-                if op in shell_cmd:
-                    # 检查操作符是否在引号外
-                    if self._is_operator_outside_quotes(shell_cmd, op):
-                        has_multiple_ops = True
-                        break
-            
-            if has_multiple_ops:
-                # 导入shell_commands模块中的具体函数
-                import os
-                current_dir = os.path.dirname(__file__)
-                modules_dir = os.path.join(current_dir, 'modules')
-                if modules_dir not in sys.path:
-                    sys.path.append(modules_dir)
-                
-                from shell_commands import handle_multiple_commands
-                return handle_multiple_commands(shell_cmd, command_identifier)
-            
-            # 如果不是多命令，继续执行原来的单命令逻辑
-            # 这里应该继续原来execute_shell_command的逻辑
-            
-            # 解析命令和参数
-            import shlex
-            try:
-                cmd_parts = shlex.split(shell_cmd_clean)
-                if cmd_parts:
-                    cmd = cmd_parts[0]
-                    args = cmd_parts[1:]
-                else:
-                    print("DEBUG: Empty command after parsing")
-                    return 1
-            except Exception as e:
-                print(f"DEBUG: Command parsing failed: {e}")
-                return 1
-            
-            print(f"DEBUG: Parsed cmd='{cmd}', args={args}")
-            
-            if cmd == 'pwd':
-                # 导入shell_commands模块中的具体函数
-                import os
-                current_dir = os.path.dirname(__file__)
-                modules_dir = os.path.join(current_dir, 'modules')
-                if modules_dir not in sys.path:
-                    sys.path.append(modules_dir)
-                
-                from shell_commands import shell_pwd
-                return shell_pwd(command_identifier)
-            elif cmd == 'ls':
                 # 解析ls命令的参数
                 recursive = False
                 detailed = False
@@ -2466,6 +2449,32 @@ done
         
         return False
 
+    def _smart_quote(self, text):
+        """
+        智能引用函数，根据内容选择最合适的引号类型
+        优先使用双引号以避免与外层单引号冲突
+        """
+        import shlex
+        
+        text_str = str(text)
+        
+        # 如果不包含空格和特殊字符，不需要引号
+        if not any(c in text_str for c in [' ', '\t', '\n', '"', "'", '\\', '&', '|', ';', '(', ')', '<', '>', '$', '`', '*', '?', '[', ']', '{', '}', '~']):
+            return text_str
+            
+        # 优先使用双引号（避免与外层单引号冲突）
+        if '"' not in text_str:
+            # 需要转义反斜杠、美元符号和反引号
+            escaped = text_str.replace('\\', '\\\\').replace('$', '\\$').replace('`', '\\`')
+            return f'"{escaped}"'
+            
+        # 如果包含双引号但不包含单引号，使用单引号
+        if "'" not in text_str:
+            return f"'{text_str}'"
+            
+        # 如果两种引号都包含，使用shlex.quote的默认行为
+        return shlex.quote(text_str)
+
     def parse_and_translate_command(self, input_command):
         """
         统一的命令解析和转译接口
@@ -2480,6 +2489,76 @@ done
                 - original_format (str): 原始格式类型 ("string" 或 "list")
                 - error (str): 错误信息（如果失败）
         """
+        
+        # EXPERIMENTAL: 简单实现 - 不解析，直接返回原始命令
+        # 这样可以避免shlex.split破坏嵌套引号的问题
+        if True:  # 临时启用experimental分支
+            try:
+                if isinstance(input_command, list):
+                    # 列表格式：直接用shlex.quote处理每个参数
+                    import shlex
+                    if not input_command:
+                        return {
+                            "success": False,
+                            "error": "Empty command list"
+                        }
+                    
+                    # 智能引号处理：只对需要引号的参数添加引号
+                    quoted_parts = []
+                    for i, part in enumerate(input_command):
+                        part_str = str(part)
+                        # 重定向操作符不添加引号
+                        if part_str in ['>', '>>', '<', '|', '&', '&&', '||', ';']:
+                            quoted_parts.append(part_str)
+                        else:
+                            # 检查是否需要引号（包含空格或特殊字符）
+                            needs_quotes = any(char in part_str for char in [' ', '\t', '\n', '"', "'", '\\', '&', '|', ';', 
+                                                                           '(', ')', '<', '>', '$', '`', '*', '?', '[', ']', 
+                                                                           '{', '}', '~', '#'])
+                            
+                            if not needs_quotes:
+                                # 不需要引号，直接使用
+                                quoted_parts.append(part_str)
+                            else:
+                                # 需要引号：智能引号处理，优先使用双引号避免与外层单引号冲突
+                                if '"' not in part_str:
+                                    quoted_parts.append(f'"{part_str}"')
+                                elif "'" not in part_str:
+                                    quoted_parts.append(f"'{part_str}'")
+                                else:
+                                    # 如果同时包含单引号和双引号，使用shlex.quote
+                                    quoted_parts.append(shlex.quote(part_str))
+                    translated_command = ' '.join(quoted_parts)
+                    
+                    return {
+                        "success": True,
+                        "translated_command": translated_command,
+                        "original_format": "list"
+                    }
+                else:
+                    # 字符串格式：直接返回，但进行基本安全处理
+                    if not input_command.strip():
+                        return {
+                            "success": False,
+                            "error": "Empty command"
+                        }
+                    
+                    # 基本安全处理：转义反引号防止命令注入
+                    safe_command = input_command.strip().replace('`', '\\`')
+                    
+                    return {
+                        "success": True,
+                        "translated_command": safe_command,
+                        "original_format": "string"
+                    }
+                    
+            except Exception as e:
+                return {
+                    "success": False,
+                    "error": f"Experimental translation failed: {e}"
+                }
+        
+        # 原始复杂实现（暂时禁用）
         import shlex
         
         try:
@@ -2498,15 +2577,61 @@ done
                 # 字符串格式，直接使用shlex解析
                 try:
                     import shlex
-                    # 在shlex.split之前保护~路径和转义引号
-                    protected_cmd = (input_command.replace('~/', '__TILDE_SLASH__')
-                                                  .replace(' ~', ' __TILDE__')
-                                                  .replace('\\"', '__ESCAPED_QUOTE__'))
                     
-                    cmd_parts = shlex.split(protected_cmd)
+                    # 预先检查引号匹配
+                    def check_quote_balance(cmd_str):
+                        """检查引号是否匹配"""
+                        single_quotes = 0
+                        double_quotes = 0
+                        escaped = False
+                        
+                        for char in cmd_str:
+                            if escaped:
+                                escaped = False
+                                continue
+                            if char == '\\':
+                                escaped = True
+                                continue
+                            elif char == '"' and single_quotes % 2 == 0:
+                                double_quotes += 1
+                            elif char == "'" and double_quotes % 2 == 0:
+                                single_quotes += 1
+                        
+                        return single_quotes % 2 == 0 and double_quotes % 2 == 0
                     
-                    # 恢复~路径和转义引号
-                    cmd_parts = [part.replace('__TILDE_SLASH__', '~/').replace('__TILDE__', '~').replace('__ESCAPED_QUOTE__', '\\"') for part in cmd_parts]
+                    if not check_quote_balance(input_command):
+                        return {
+                            "success": False,
+                            "error": "Unmatched quotes in command"
+                        }
+                    
+                    # 检查是否包含嵌套引号，如果是则使用简单解析
+                    if '\\"' in input_command or "\\'" in input_command:
+                        # 对于包含嵌套引号的命令，使用简单的空格分割
+                        # 这样可以保持引号结构
+                        cmd_parts = input_command.split()
+                        if not cmd_parts:
+                            return {
+                                "success": False,
+                                "error": "Empty command"
+                            }
+                    else:
+                        # 在shlex.split之前保护~路径和转义引号
+                        # 使用更唯一的占位符避免与用户输入冲突
+                        import uuid
+                        unique_id = str(uuid.uuid4()).replace('-', '')[:16]
+                        tilde_slash_placeholder = f'__GDS_TILDE_SLASH_{unique_id}__'
+                        tilde_placeholder = f'__GDS_TILDE_{unique_id}__'
+                        escaped_quote_placeholder = f'__GDS_ESCAPED_QUOTE_{unique_id}__'
+                        
+                        protected_cmd = (input_command.replace('~/', tilde_slash_placeholder)
+                                                      .replace(' ~', f' {tilde_placeholder}')
+                                                      .replace('\\"', escaped_quote_placeholder))
+                        
+                        cmd_parts = shlex.split(protected_cmd)
+                        
+                        # 恢复~路径和转义引号
+                        cmd_parts = [part.replace(tilde_slash_placeholder, '~/').replace(tilde_placeholder, '~').replace(escaped_quote_placeholder, '\\"') for part in cmd_parts]
                     
                     if not cmd_parts:
                         return {
@@ -2549,8 +2674,18 @@ done
                     quoted_args = [shlex.quote(str(arg)) for arg in args]
                     translated_command = f'{cmd} {" ".join(quoted_args)}'
             else:
-                # 普通命令，使用shlex.quote处理所有参数
-                quoted_args = [shlex.quote(str(arg)) for arg in args]
+                # 普通命令，智能处理参数引用
+                quoted_args = []
+                for arg in args:
+                    arg_str = str(arg)
+                    # 重定向操作符不添加引号
+                    if arg_str in ['>', '>>', '<', '|', '&', '&&', '||', ';']:
+                        quoted_args.append(arg_str)
+                    # 如果参数包含~且不包含空格或特殊字符，不添加引号
+                    elif '~' in arg_str and ' ' not in arg_str and not any(c in arg_str for c in ['&', '|', ';', '(', ')', '<', '>', '$', '`', '"', "'"]):
+                        quoted_args.append(arg_str)
+                    else:
+                        quoted_args.append(self._smart_quote(arg_str))
                 translated_command = f'{cmd} {" ".join(quoted_args)}' if args else cmd
             
             return {

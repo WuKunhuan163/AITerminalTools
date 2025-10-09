@@ -85,12 +85,37 @@ class ProcessManager:
     
     def _resolve_shell_aliases(self, command: str, shell: str) -> str:
         """解析shell别名"""
+        # 获取命令的第一部分
+        try:
+            cmd_parts = shlex.split(command)
+            if not cmd_parts:
+                return command
+            
+            first_cmd = cmd_parts[0]
+            
+            # 跳过shell内置命令，这些命令不需要别名解析
+            shell_builtins = {
+                'cd', 'pwd', 'echo', 'printf', 'test', '[', 'exit', 'return',
+                'source', '.', 'exec', 'eval', 'set', 'unset', 'export',
+                'alias', 'unalias', 'history', 'jobs', 'bg', 'fg', 'kill',
+                'wait', 'read', 'shift', 'getopts', 'break', 'continue',
+                'if', 'then', 'else', 'elif', 'fi', 'case', 'esac',
+                'for', 'while', 'until', 'do', 'done', 'function'
+            }
+            
+            if first_cmd in shell_builtins:
+                return command
+            
+        except ValueError:
+            # 如果shlex.split失败，直接返回原命令
+            return command
+        
         if shell == 'zsh':
             # 使用交互式zsh来解析别名
-            resolve_cmd = f'zsh -i -c "which {shlex.split(command)[0]} 2>/dev/null || echo {shlex.split(command)[0]}"'
+            resolve_cmd = f'zsh -i -c "which {shlex.quote(first_cmd)} 2>/dev/null || echo {shlex.quote(first_cmd)}"'
         elif shell == 'bash':
             # 使用交互式bash来解析别名
-            resolve_cmd = f'bash -i -c "which {shlex.split(command)[0]} 2>/dev/null || echo {shlex.split(command)[0]}"'
+            resolve_cmd = f'bash -i -c "which {shlex.quote(first_cmd)} 2>/dev/null || echo {shlex.quote(first_cmd)}"'
         else:
             return command
         
@@ -98,10 +123,16 @@ class ProcessManager:
             result = subprocess.run(resolve_cmd, shell=True, capture_output=True, text=True, timeout=5)
             if result.returncode == 0 and result.stdout.strip():
                 resolved_cmd = result.stdout.strip()
-                # 替换命令的第一部分
-                cmd_parts = shlex.split(command)
-                cmd_parts[0] = resolved_cmd
-                return ' '.join(shlex.quote(part) for part in cmd_parts)
+                
+                # 检查resolved_cmd是否包含"built-in"等字样，如果是则跳过替换
+                if 'built-in' in resolved_cmd.lower() or 'shell function' in resolved_cmd.lower():
+                    return command
+                
+                # 只有当resolved_cmd是有效路径或命令时才替换
+                if resolved_cmd != first_cmd and (resolved_cmd.startswith('/') or resolved_cmd.startswith('./')):
+                    cmd_parts[0] = resolved_cmd
+                    return ' '.join(shlex.quote(part) for part in cmd_parts)
+                    
         except (subprocess.TimeoutExpired, subprocess.SubprocessError):
             pass
         
@@ -460,8 +491,8 @@ def main():
     # 操作参数
     parser.add_argument('--list', action='store_true',
                        help='列出所有活跃的后台进程')
-    parser.add_argument('--status', type=int, metavar='PID',
-                       help='查询指定PID进程的状态')
+    parser.add_argument('--status', nargs='?', const='all', metavar='PID',
+                       help='查询指定PID进程的状态，无参数时列出所有进程（等同于--list）')
     parser.add_argument('--result', type=int, metavar='PID',
                        help='获取指定PID进程的执行结果')
     parser.add_argument('--log', type=int, metavar='PID',
@@ -521,29 +552,63 @@ def main():
                 print(json.dumps({'success': success, 'action': 'force_kill', 'pid': args.force_kill}))
         
         elif args.status is not None:
-            status = manager.get_process_status(args.status)
-            if status:
+            if args.status == 'all':
+                # --status 无参数时，等同于 --list
+                processes = manager.list_processes()
                 if args.json:
-                    print(json.dumps({'success': True, 'action': 'status', 'status': status}))
+                    print(json.dumps({
+                        'success': True,
+                        'action': 'status_all',
+                        'processes': processes,
+                        'total_count': len(processes)
+                    }, indent=2))
                 else:
-                    print(f"Process {args.status} Status:")
-                    print(f"  Command: {status['command']}")
-                    print(f"  Status: {status['status']}")
-                    if status['is_running']:
-                        print(f"  CPU: {status['cpu_percent']:.1f}%")
-                        print(f"  Memory: {status['memory_mb']:.1f}MB")
-                        print(f"  Runtime: {status['runtime']}")
+                    if processes:
+                        print(f"\nActive processes ({len(processes)}):")
+                        print(f"-" * 80)
+                        for proc in processes:
+                            # 截断命令显示，只显示前20个字符
+                            cmd_display = proc['command'][:20] + "..." if len(proc['command']) > 20 else proc['command']
+                            print(f"PID: {proc['pid']:<8} | "
+                                  f"Status: {proc['status']:<10} | "
+                                  f"Runtime: {proc['runtime']:<10} | "
+                                  f"Command: {cmd_display}")
+                        print(f"-" * 80)
                     else:
-                        print(f"  Total runtime: {status['runtime']}")
-                        if status.get('end_time'):
-                            print(f"  Completed at: {status['end_time']}")
-                    print(f"  Log file: {status['log_file']}")
+                        print("No active background processes")
             else:
-                if args.json:
-                    print(json.dumps({'success': False, 'action': 'status', 'error': f'Process {args.status} not found'}))
-                else:
-                    print(f"Error: Process {args.status} not found or has terminated")
-                sys.exit(1)
+                # --status PID 查询指定进程状态
+                try:
+                    pid = int(args.status)
+                    status = manager.get_process_status(pid)
+                    if status:
+                        if args.json:
+                            print(json.dumps({'success': True, 'action': 'status', 'status': status}))
+                        else:
+                            print(f"Process {pid} Status:")
+                            print(f"  Command: {status['command']}")
+                            print(f"  Status: {status['status']}")
+                            if status['is_running']:
+                                print(f"  CPU: {status['cpu_percent']:.1f}%")
+                                print(f"  Memory: {status['memory_mb']:.1f}MB")
+                                print(f"  Runtime: {status['runtime']}")
+                            else:
+                                print(f"  Total runtime: {status['runtime']}")
+                                if status.get('end_time'):
+                                    print(f"  Completed at: {status['end_time']}")
+                            print(f"  Log file: {status['log_file']}")
+                    else:
+                        if args.json:
+                            print(json.dumps({'success': False, 'action': 'status', 'error': f'Process {pid} not found'}))
+                        else:
+                            print(f"Error: Process {pid} not found or has terminated")
+                        sys.exit(1)
+                except ValueError:
+                    if args.json:
+                        print(json.dumps({'success': False, 'action': 'status', 'error': f'Invalid PID: {args.status}'}))
+                    else:
+                        print(f"Error: Invalid PID: {args.status}")
+                    sys.exit(1)
         
         elif args.result is not None:
             result = manager.get_process_result(args.result)

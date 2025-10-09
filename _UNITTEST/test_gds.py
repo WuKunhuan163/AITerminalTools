@@ -332,7 +332,7 @@ Shell commands: ls -la && echo "done"
             else:
                 command_str = command
         
-        full_command = f"python3 {self.GOOGLE_DRIVE_PY} --shell {command_str}"
+        full_command = f"python3 {self.GOOGLE_DRIVE_PY} --shell '{command_str}'"
         try:
             # 注意：远端窗口操作没有timeout限制，允许用户手动执行
             result = subprocess.run(
@@ -3093,6 +3093,210 @@ print("=== Verification completed ===")
         self.assertEqual(result.returncode, 0, "清理测试文件应该成功")
         
         print(f"pyenv功能性验证完成")
+
+    def test_39_redirection_commands_reinforcement(self):
+        """强化补丁：测试printf和echo -n重定向功能"""
+        print(f"测试printf和echo -n重定向功能（强化补丁）")
+        
+        # 创建测试目录（使用相对路径）
+        result = self._run_gds_command(["mkdir", "-p", "redirection_test"])
+        self.assertEqual(result.returncode, 0, "创建测试目录应该成功")
+        
+        # 测试1: printf重定向（不带换行符）
+        print("测试场景1: printf重定向")
+        result = self._run_gds_command(['printf', 'Hello World without newline', '>', 'redirection_test/printf_test.txt'])
+        self.assertEqual(result.returncode, 0, "printf重定向应该成功")
+        
+        # 验证文件内容
+        result = self._run_gds_command(["cat", "redirection_test/printf_test.txt"])
+        self.assertEqual(result.returncode, 0, "读取printf文件应该成功")
+        self.assertEqual(result.stdout, "Hello World without newline", "printf内容应该正确且无换行符")
+        
+        # 测试2: echo -n重定向（不带换行符）
+        print("测试场景2: echo -n重定向")
+        result = self._run_gds_command(['echo', '-n', 'Echo without newline', '>', 'redirection_test/echo_test.txt'])
+        self.assertEqual(result.returncode, 0, "echo -n重定向应该成功")
+        
+        # 验证文件内容
+        result = self._run_gds_command(["cat", "redirection_test/echo_test.txt"])
+        self.assertEqual(result.returncode, 0, "读取echo文件应该成功")
+        self.assertEqual(result.stdout, "Echo without newline", "echo -n内容应该正确且无换行符")
+        
+        # 测试3: 普通echo重定向（带换行符）
+        print("测试场景3: 普通echo重定向")
+        result = self._run_gds_command(['echo', 'Echo with newline', '>', 'redirection_test/echo_normal.txt'])
+        self.assertEqual(result.returncode, 0, "echo重定向应该成功")
+        
+        # 验证文件内容
+        result = self._run_gds_command(["cat", "redirection_test/echo_normal.txt"])
+        self.assertEqual(result.returncode, 0, "读取echo文件应该成功")
+        self.assertEqual(result.stdout, "Echo with newline\n", "echo内容应该正确且带换行符")
+        
+        # 测试4: 追加重定向 >>
+        print("测试场景4: 追加重定向")
+        result = self._run_gds_command(['printf', 'Appended text', '>>', 'redirection_test/printf_test.txt'])
+        self.assertEqual(result.returncode, 0, "printf追加重定向应该成功")
+        
+        # 验证追加后的内容
+        result = self._run_gds_command(["cat", "redirection_test/printf_test.txt"])
+        self.assertEqual(result.returncode, 0, "读取追加文件应该成功")
+        self.assertEqual(result.stdout, "Hello World without newlineAppended text", "追加内容应该正确")
+        
+        # 测试5: 复杂重定向（带特殊字符）
+        print("测试场景5: 复杂重定向")
+        result = self._run_gds_command(['echo', 'Special chars: @#$%^&*()', '>', 'redirection_test/special.txt'])
+        self.assertEqual(result.returncode, 0, "特殊字符重定向应该成功")
+        
+        # 验证特殊字符内容
+        result = self._run_gds_command(["cat", "redirection_test/special.txt"])
+        self.assertEqual(result.returncode, 0, "读取特殊字符文件应该成功")
+        self.assertEqual(result.stdout, "Special chars: @#$%^&*()\n", "特殊字符内容应该正确")
+        
+        # 测试6: 多级目录重定向
+        print("测试场景6: 多级目录重定向")
+        result = self._run_gds_command(["mkdir", "-p", "redirection_test/subdir/deep"])
+        self.assertEqual(result.returncode, 0, "创建多级目录应该成功")
+        
+        result = self._run_gds_command(['echo', '-n', 'Deep directory test', '>', 'redirection_test/subdir/deep/test.txt'])
+        self.assertEqual(result.returncode, 0, "多级目录重定向应该成功")
+        
+        # 验证多级目录文件
+        result = self._run_gds_command(["cat", "redirection_test/subdir/deep/test.txt"])
+        self.assertEqual(result.returncode, 0, "读取多级目录文件应该成功")
+        self.assertEqual(result.stdout, "Deep directory test", "多级目录文件内容应该正确")
+        
+        # 测试7: 验证重定向符号不被错误引用
+        print("测试场景7: 重定向符号处理验证")
+        # 这个测试确保重定向符号 > 不会被当作普通字符串处理
+        result = self._run_gds_command(['echo', 'test', '>', 'redirection_test/redirect_symbol_test.txt'])
+        self.assertEqual(result.returncode, 0, "重定向符号处理应该成功")
+        
+        # 如果重定向符号被错误引用，这个文件不会被创建
+        result = self._run_gds_command(["ls", "redirection_test/redirect_symbol_test.txt"])
+        self.assertEqual(result.returncode, 0, "重定向创建的文件应该存在")
+        
+        # 清理测试文件
+        result = self._run_gds_command(["rm", "-rf", "redirection_test"])
+        self.assertEqual(result.returncode, 0, "清理测试目录应该成功")
+        
+        print(f"printf和echo -n重定向功能测试完成（强化补丁）")
+    
+    def test_40_regex_validation(self):
+        """测试正则表达式验证功能"""
+        print(f"测试正则表达式验证功能")
+        
+        # 测试echo重定向的正则匹配
+        shell_cmd_clean = "echo -n 'Echo without newline' > redirection_test/echo_test.txt"
+        pattern = r'^echo\s+(?:-n\s+)?(["\'])(.*?)\1\s*>\s*(.+)$'
+        
+        print(f"测试命令: {shell_cmd_clean}")
+        print(f"正则模式: {pattern}")
+        
+        import re
+        match = re.match(pattern, shell_cmd_clean.strip(), re.DOTALL)
+        self.assertIsNotNone(match, "echo重定向正则应该匹配")
+        
+        if match:
+            groups = match.groups()
+            print(f"匹配组: {groups}")
+            self.assertEqual(len(groups), 3, "应该有3个匹配组")
+            self.assertEqual(groups[0], "'", "第一组应该是引号类型")
+            self.assertEqual(groups[1], "Echo without newline", "第二组应该是内容")
+            self.assertEqual(groups[2], "redirection_test/echo_test.txt", "第三组应该是文件路径")
+        
+        print(f"正则表达式验证测试完成")
+    
+    def test_41_edge_cases_comprehensive(self):
+        """综合边缘情况测试"""
+        print(f"综合边缘情况测试")
+        
+        # 子测试1: 反引号注入防护
+        print("子测试1: 反引号注入防护")
+        result = self._run_gds_command('echo "Command: `whoami`" > test_backtick.txt')
+        self.assertEqual(result.returncode, 0, "反引号命令应该成功")
+        
+        result = self._run_gds_command('cat test_backtick.txt')
+        self.assertEqual(result.returncode, 0, "读取反引号文件应该成功")
+        # 反引号被正确转义，检查转义后的形式或原始形式
+        self.assertTrue("`whoami`" in result.stdout or "\\`whoami\\`" in result.stdout, "应该包含反引号（原始或转义形式）")
+        self.assertNotIn("root", result.stdout, "不应该执行whoami命令")
+        
+        # 子测试2: 占位符冲突防护
+        print("子测试2: 占位符冲突防护")
+        result = self._run_gds_command('echo "Text with __TILDE_SLASH__ marker" > test_placeholder.txt')
+        self.assertEqual(result.returncode, 0, "占位符命令应该成功")
+        
+        result = self._run_gds_command('cat test_placeholder.txt')
+        self.assertEqual(result.returncode, 0, "读取占位符文件应该成功")
+        self.assertIn("__TILDE_SLASH__", result.stdout, "应该保留原始占位符")
+        self.assertNotIn("/content/drive", result.stdout, "不应该被替换为路径")
+        
+        # 子测试3: 复杂引号嵌套
+        print("子测试3: 复杂引号嵌套")
+        result = self._run_gds_command('echo "Outer \\"nested\\" quotes" > test_nested.txt')
+        self.assertEqual(result.returncode, 0, "嵌套引号命令应该成功")
+        
+        result = self._run_gds_command('cat test_nested.txt')
+        self.assertEqual(result.returncode, 0, "读取嵌套引号文件应该成功")
+        self.assertIn('Outer "nested" quotes', result.stdout, "应该正确处理嵌套引号")
+        
+        # 子测试4: printf格式注入防护
+        print("子测试4: printf格式注入防护")
+        dangerous_formats = ["%s%s%s%s", "%x%x%x%x", "%^&*()%"]
+        
+        for i, fmt in enumerate(dangerous_formats):
+            result = self._run_gds_command(f'printf "Format: {fmt}" > test_printf_fmt_{i}.txt')
+            self.assertEqual(result.returncode, 0, f"printf格式{fmt}应该成功")
+            
+            result = self._run_gds_command(f'cat test_printf_fmt_{i}.txt')
+            self.assertEqual(result.returncode, 0, f"读取printf格式文件{i}应该成功")
+            self.assertIn(f"Format: {fmt}", result.stdout, f"应该包含格式字符串{fmt}")
+        
+        # 子测试5: 特殊字符处理
+        print("子测试5: 特殊字符处理")
+        special_chars = [
+            ("ampersand", "Text with & character"),
+            ("pipe", "Text with | character"),
+            ("semicolon", "Text with ; character"),
+            ("parentheses", "Text with () characters"),
+        ]
+        
+        for name, text in special_chars:
+            result = self._run_gds_command(f'echo "{text}" > test_{name}.txt')
+            self.assertEqual(result.returncode, 0, f"特殊字符{name}命令应该成功")
+            
+            result = self._run_gds_command(f'cat test_{name}.txt')
+            self.assertEqual(result.returncode, 0, f"读取特殊字符文件{name}应该成功")
+            self.assertIn(text, result.stdout, f"应该包含特殊字符文本{name}")
+        
+        # 子测试6: Unicode编码处理
+        print("子测试6: Unicode编码处理")
+        unicode_texts = [
+            ("chinese", "中文测试"),
+            ("emoji", "测试🚀💻"),
+            ("symbols", "©®™€"),
+        ]
+        
+        for name, text in unicode_texts:
+            result = self._run_gds_command(f'echo "{text}" > test_unicode_{name}.txt')
+            self.assertEqual(result.returncode, 0, f"Unicode{name}命令应该成功")
+            
+            result = self._run_gds_command(f'cat test_unicode_{name}.txt')
+            self.assertEqual(result.returncode, 0, f"读取Unicode文件{name}应该成功")
+            self.assertIn(text, result.stdout, f"应该包含Unicode文本{name}")
+        
+        # 清理测试文件
+        cleanup_files = [
+            "test_backtick.txt", "test_placeholder.txt", "test_nested.txt",
+            "test_printf_fmt_0.txt", "test_printf_fmt_1.txt", "test_printf_fmt_2.txt",
+            "test_ampersand.txt", "test_pipe.txt", "test_semicolon.txt", "test_parentheses.txt",
+            "test_unicode_chinese.txt", "test_unicode_emoji.txt", "test_unicode_symbols.txt"
+        ]
+        
+        for filename in cleanup_files:
+            self._run_gds_command(f'rm -f {filename}')
+        
+        print(f"综合边缘情况测试完成")
 
 class ParallelTestRunner:
     """并行测试运行器"""

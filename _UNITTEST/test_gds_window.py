@@ -25,7 +25,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import tempfile
 import shutil
 
-class TestWindowRobustness(unittest.TestCase):
+class TestGDSWindow(unittest.TestCase):
     """GDS窗口管理器鲁棒性测试"""
     
     @classmethod

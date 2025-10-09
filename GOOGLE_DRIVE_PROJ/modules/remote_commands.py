@@ -1729,6 +1729,9 @@ fi
             import shlex
             from datetime import datetime
             
+            # DEBUG: 打印用户命令 (已禁用)
+            # print(f"DEBUG: Original user_command: {repr(user_command)}")
+            
             # 检测和处理感叹号问题（只对简单用户命令进行检测）
             # 如果用户命令很短且包含感叹号，可能是shell历史扩展问题
             if '!' in user_command and len(user_command) < 200 and not user_command.strip().startswith('#'):
@@ -1739,6 +1742,77 @@ fi
                 print(f"Cleaned command: {cleaned_command}")
                 print(f"Suggestion: Avoid using '!' in commands to prevent shell history expansion errors.")
                 user_command = cleaned_command
+            
+            # 检测和处理printf格式字符问题
+            # 如果命令以printf开头且包含%字符，需要特殊处理避免格式指令错误
+            if user_command.strip().startswith('printf '):
+                import re
+                # 匹配printf命令的模式: printf "content" 或 printf 'content'
+                printf_pattern = r'^printf\s+(["\'])(.*?)\1(.*)$'
+                match = re.match(printf_pattern, user_command.strip())
+                if match:
+                    quote_char = match.group(1)
+                    content = match.group(2)
+                    rest_args = match.group(3).strip()  # 可能包含重定向等
+                    
+                    # 检查内容是否包含%字符（可能导致格式指令问题）
+                    if '%' in content:
+                        # print(f"Debug: Detected printf with % characters, converting to safe format")
+                        # print(f"  Original: {user_command}")
+                        # 转换为安全的printf "%s" "content"格式
+                        safe_command = f'printf "%s" {quote_char}{content}{quote_char}'
+                        if rest_args:
+                            safe_command += f' {rest_args}'
+                        # print(f"  Converted: {safe_command}")
+                        user_command = safe_command
+            
+            # 检测和处理echo命令中的转义序列问题
+            # 确保echo命令能正确处理\n和\t等转义序列
+            if user_command.strip().startswith('echo '):
+                import re
+                # 匹配echo命令的模式: echo "content" 或 echo 'content'
+                echo_pattern = r'^echo\s+(["\'])(.*?)\1(.*)$'
+                match = re.match(echo_pattern, user_command.strip())
+                if match:
+                    quote_char = match.group(1)
+                    content = match.group(2)
+                    rest_args = match.group(3).strip()  # 可能包含重定向等
+                    
+                    # 检查内容是否包含转义序列
+                    if '\\n' in content or '\\t' in content:
+                        # print(f"Debug: Detected echo with escape sequences, adding -e flag")
+                        # print(f"  Original: {user_command}")
+                        # 添加-e标志以启用转义序列解释
+                        safe_command = f'echo -e {quote_char}{content}{quote_char}'
+                        if rest_args:
+                            safe_command += f' {rest_args}'
+                        # print(f"  Converted: {safe_command}")
+                        user_command = safe_command
+            
+            
+            # 路径替换：将用户命令中的~替换为REMOTE_ROOT
+            if '~' in user_command:
+                # 替换~为实际的REMOTE_ROOT路径
+                original_command = user_command
+                user_command = user_command.replace('~', self.main_instance.REMOTE_ROOT)
+                
+                # 路径替换后，移除不必要的引号
+                # 如果替换后的路径被引号包围且不包含空格，则移除引号
+                import re
+                # 匹配被引号包围的REMOTE_ROOT路径
+                pattern = f"'({re.escape(self.main_instance.REMOTE_ROOT)}[^']*?)'"
+                def remove_quotes_if_safe(match):
+                    path = match.group(1)
+                    # 如果路径不包含空格或特殊字符，移除引号
+                    if ' ' not in path and not any(c in path for c in ['&', '|', ';', '(', ')', '<', '>', '$', '`']):
+                        return path
+                    return match.group(0)  # 保持原样
+                
+                user_command = re.sub(pattern, remove_quotes_if_safe, user_command)
+                
+                # print(f"DEBUG: Path replacement applied")
+                # print(f"  Original: {original_command}")
+                # print(f"  Replaced: {user_command}")
             
             # 获取当前路径
             if current_shell:
@@ -2202,13 +2276,24 @@ JSON_SCRIPT_EOF
                         
                         if target_file:
                             if cmd_args:
-                                user_command = f"{cmd} {' '.join(cmd_args)} > {target_file}"
+                                # 对命令参数进行适当的引号处理，避免引号冲突
+                                quoted_args = []
+                                for arg in cmd_args:
+                                    # 智能引号处理：优先使用双引号，避免与外层单引号冲突
+                                    if '"' not in arg:
+                                        quoted_args.append(f'"{arg}"')
+                                    elif "'" not in arg:
+                                        quoted_args.append(f"'{arg}'")
+                                    else:
+                                        # 如果同时包含单引号和双引号，使用shlex.quote
+                                        quoted_args.append(shlex.quote(arg))
+                                user_command = f"{cmd} {' '.join(quoted_args)} > {target_file}"
                             else:
                                 user_command = f"{cmd} > {target_file}"
                         else:
                             user_command = f"{cmd} {' '.join(args)}"
                     else:
-                        # 处理~路径展开
+                        # 处理~路径展开和智能引号处理
                         processed_args = []
                         for arg in args:
                             if arg == "~":
@@ -2216,7 +2301,14 @@ JSON_SCRIPT_EOF
                             elif arg.startswith("~/"):
                                 processed_args.append(f'"{self.main_instance.REMOTE_ROOT}/{arg[2:]}"')
                             else:
-                                processed_args.append(arg)
+                                # 智能引号处理：优先使用双引号，避免与外层单引号冲突
+                                if '"' not in arg:
+                                    processed_args.append(f'"{arg}"')
+                                elif "'" not in arg:
+                                    processed_args.append(f"'{arg}'")
+                                else:
+                                    # 如果同时包含单引号和双引号，使用shlex.quote
+                                    processed_args.append(shlex.quote(arg))
                         user_command = f"{cmd} {' '.join(processed_args)}"
             else:
                 user_command = cmd
