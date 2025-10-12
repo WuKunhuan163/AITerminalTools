@@ -1216,17 +1216,16 @@ For more information, visit: https://github.com/your-repo/gds"""
                     # 然后检查是否为特殊命令（导航命令等）
                     first_word = shell_cmd_clean.split()[0] if shell_cmd_clean.split() else ""
                     
-                    # Debug print (enabled for upload debugging)
-                    print(f"DEBUG: first_word='{first_word}', checking special commands first")
-                    print(f"DEBUG: shell_cmd_clean='{shell_cmd_clean}'")
-                    print(f"DEBUG: is_quoted_command={is_quoted_command}")
+                    # Debug print (disabled)
+                    # print(f"DEBUG: first_word='{first_word}', checking special commands first")
+                    # print(f"DEBUG: shell_cmd_clean='{shell_cmd_clean}'")
+                    # print(f"DEBUG: is_quoted_command={is_quoted_command}")
                     
                     # 特殊命令处理 - 在pipe检查之后
                     special_commands = ['pwd', 'ls', 'cd', 'cat', 'mkdir', 'touch', 'echo', 'help', 'venv', 'pyenv', 
                                       'cleanup-windows', 'linter', 'pip', 'deps', 'edit', 'read', 'python', 
                                       'upload', 'upload-folder', 'download', 'mv', 'find', 'rm', 'grep']
                     if first_word in special_commands:
-                        print(f"DEBUG: Processing special command '{first_word}' with local API")
                         # print(f"DEBUG: Processing special command '{first_word}' with local API")
                         
                         # 解析命令和参数
@@ -1243,16 +1242,16 @@ For more information, visit: https://github.com/your-repo/gds"""
                             print(f"Error: Command parsing failed: {e}")
                             return 1
                         
-                        print(f"DEBUG: Parsed special cmd='{cmd}', args={args}")
-                        print(f"DEBUG: About to check cmd conditions...")
+                        # print(f"DEBUG: Parsed special cmd='{cmd}', args={args}")
+                        # print(f"DEBUG: About to check cmd conditions...")
                         
-                        print(f"DEBUG: Checking cmd conditions, cmd='{cmd}'")
-                        print(f"DEBUG: About to enter if-elif chain...")
-                        print(f"DEBUG: Testing pwd condition: cmd == 'pwd' -> {cmd == 'pwd'}")
+                        # print(f"DEBUG: Checking cmd conditions, cmd='{cmd}'")
+                        # print(f"DEBUG: About to enter if-elif chain...")
+                        # print(f"DEBUG: Testing pwd condition: cmd == 'pwd' -> {cmd == 'pwd'}")
                         if cmd == 'pwd':
-                            print(f"DEBUG: Inside pwd condition")
-                            print(f"DEBUG: Matched pwd condition")
-                            print(f"DEBUG: Found pwd condition")
+                            # print(f"DEBUG: Inside pwd condition")
+                            # print(f"DEBUG: Matched pwd condition")
+                            # print(f"DEBUG: Found pwd condition")
                             # 导入shell_commands模块中的具体函数
                             import os
                             import sys
@@ -1344,7 +1343,7 @@ For more information, visit: https://github.com/your-repo/gds"""
                                 print(result.get("error", "Failed to read file"))
                                 return 1
                         elif cmd == 'upload':
-                            print(f"DEBUG: ✅ FOUND UPLOAD IN CORRECT ELIF CHAIN! args={args}")
+                            # print(f"DEBUG: ✅ FOUND UPLOAD IN CORRECT ELIF CHAIN! args={args}")
                             # 使用委托方法处理upload命令
                             if not args:
                                 print(f"Error: upload command needs a file name")
@@ -1943,8 +1942,8 @@ For more information, visit: https://github.com/your-repo/gds"""
                         print(stderr, end="", file=sys.stderr)
                     return 1
             else:
-                print(f"DEBUG: ❌ NO CONDITION MATCHED! cmd='{cmd}' not found in handlers")
-                print(f"DEBUG: This should not happen for upload command")
+                # print(f"DEBUG: ❌ NO CONDITION MATCHED! cmd='{cmd}' not found in handlers")
+                # print(f"DEBUG: This should not happen for upload command")
                 # 继续到远程执行
                 pass
             

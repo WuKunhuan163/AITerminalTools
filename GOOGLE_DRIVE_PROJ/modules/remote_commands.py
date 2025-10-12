@@ -856,10 +856,6 @@ else:
                     dest_path = "unknown_dest"
                 
                 retry_cmd = f'''
-echo "DEBUG: Checking source file: {source_path}"
-ls -la "{source_path}" 2>/dev/null || echo "DEBUG: Source file not found!"
-echo "DEBUG: Target directory: $(dirname "{dest_path}")"
-ls -la "$(dirname "{dest_path}")" 2>/dev/null || echo "DEBUG: Target directory not found!"
 for attempt in $(seq 1 30); do
     if {cmd} 2>/dev/null; then
         break
@@ -1499,15 +1495,15 @@ fi
                 if cmd.startswith("__QUOTED_COMMAND__"):
                     # 对于已经转译的引号命令，直接拼接参数，不使用shlex.quote
                     user_command = f"{cmd} {' '.join(str(arg) for arg in cleaned_args)}"
-                    print(f"DEBUG: execute_command_interface - QUOTED_COMMAND detected, cmd: {repr(cmd)}, cleaned_args: {repr(cleaned_args)}")
+                    # print(f"DEBUG: execute_command_interface - QUOTED_COMMAND detected, cmd: {repr(cmd)}, cleaned_args: {repr(cleaned_args)}")
                 else:
                     # 对于普通命令，使用shlex.quote处理参数
                     user_command = f"{cmd} {' '.join(shlex.quote(str(arg)) for arg in cleaned_args)}"
-                    print(f"DEBUG: execute_command_interface - normal command, cmd: {repr(cmd)}, cleaned_args: {repr(cleaned_args)}")
-                print(f"DEBUG: execute_command_interface - constructed user_command: {repr(user_command)}")
+                    # print(f"DEBUG: execute_command_interface - normal command, cmd: {repr(cmd)}, cleaned_args: {repr(cleaned_args)}")
+                # print(f"DEBUG: execute_command_interface - constructed user_command: {repr(user_command)}")
             else:
                 user_command = cmd
-                print(f"DEBUG: execute_command_interface - no args, user_command: {repr(user_command)}")
+                # print(f"DEBUG: execute_command_interface - no args, user_command: {repr(user_command)}")
                 
             current_shell = self.main_instance.get_current_shell()
             result = self.execute_command(

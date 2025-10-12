@@ -204,7 +204,7 @@ class FileCore:
                     try:
                         if Path(zip_path).exists():
                             Path(zip_path).unlink()
-                            print(f"Cleaned up local temporary file: {zip_filename}")
+                            # print(f"Cleaned up local temporary file: {zip_filename}")
                     except Exception as e:
                         print(f"Warning: Failed to clean up temporary file: {e}")
                 else:
@@ -215,7 +215,7 @@ class FileCore:
             try:
                 if 'zip_path' in locals() and Path(zip_path).exists():
                     Path(zip_path).unlink()
-                    print(f"Cleaned up local temporary file: {zip_path}")
+                    # print(f"Cleaned up local temporary file: {zip_path}")
             except:
                 pass
             return {"success": False, "error": f"Folder upload process failed: {e}"}
@@ -376,15 +376,6 @@ class FileCore:
                     "error": "All file moves failed",
                     "failed_moves": failed_moves
                 }
-            
-            # 5. 检测网络连接
-            network_result = self.main_instance.file_operations.check_network_connection()
-            if not network_result:
-                print(f"Network connection detection failed")
-                print(f"Will continue to execute, but please ensure network connection is normal")
-            else:
-                # 静默处理网络检查
-                pass
             
             # 6. 等待文件同步到 DRIVE_EQUIVALENT
             # 对于同步检测，使用重命名后的文件名（在DRIVE_EQUIVALENT中的实际文件名）
