@@ -1135,7 +1135,7 @@ print(f"Current files: {len(os.listdir())}")'''
         # 多文件上传（使用--force确保可重复性）
         valid_script = self.TEST_DATA_DIR / "valid_script.py"
         special_file = self.TEST_DATA_DIR / "special_chars.txt"
-        success, result = self._run_gds_command_with_retry(
+        success, result = self._run_upload_command_with_retry(
             f'upload --force {valid_script} {special_file}',
             ['ls valid_script.py', 'ls special_chars.txt'],
             max_retries=3
@@ -1144,7 +1144,7 @@ print(f"Current files: {len(os.listdir())}")'''
         
         # 文件夹上传（修复：--force参数应该在路径之前）
         project_dir = self.TEST_DATA_DIR / "test_project"
-        success, result = self._run_gds_command_with_retry(
+        success, result = self._run_upload_command_with_retry(
             f'upload-folder --force {project_dir}',
             ['ls test_project'],
             max_retries=3
@@ -1157,7 +1157,7 @@ print(f"Current files: {len(os.listdir())}")'''
         shutil.copy2(original_file, conflict_test_file)
         
         # 先确保文件存在
-        success, result = self._run_gds_command_with_retry(
+        success, result = self._run_upload_command_with_retry(
             f'upload --force {conflict_test_file}',
             ['ls test_upload_conflict_file.py'],
             max_retries=3
@@ -1175,7 +1175,7 @@ print(f"Current files: {len(os.listdir())}")'''
             f.write('print(f"ORIGINAL VERSION - Test upload")')
         
         # 先上传原始版本
-        success, result = self._run_gds_command_with_retry(
+        success, result = self._run_upload_command_with_retry(
             f'upload --force {overwrite_test_file}',
             ['ls test_upload_overwrite_file.py'],
             max_retries=3
@@ -1192,7 +1192,7 @@ print(f"Current files: {len(os.listdir())}")'''
             f.write('print(f"MODIFIED VERSION - Test upload overwrite!")')
         
         # 使用--force上传修改后的文件
-        success, result = self._run_gds_command_with_retry(
+        success, result = self._run_upload_command_with_retry(
             f'upload --force {overwrite_test_file}',
             ['grep "MODIFIED VERSION" test_upload_overwrite_file.py'],
             max_retries=3
@@ -1220,7 +1220,7 @@ print(f"Current files: {len(os.listdir())}")'''
                 import shutil
                 shutil.rmtree(item)
         
-        success, result = self._run_gds_command_with_retry(
+        success, result = self._run_upload_command_with_retry(
             f'upload-folder --force {empty_dir}',
             ['ls empty_test_dir'],
             max_retries=3
@@ -1293,7 +1293,7 @@ Line 5: No match here'''
         import shutil
         shutil.copy2(original_file, test_edit_file)
         
-        success, result = self._run_gds_command_with_retry(
+        success, result = self._run_upload_command_with_retry(
             f'upload --force {test_edit_file}',
             ['ls test_edit_simple_hello.py'],
             max_retries=3
@@ -1302,7 +1302,7 @@ Line 5: No match here'''
         
         # 测试upload --force的覆盖功能
         # 再次上传同一个文件，应该覆盖成功
-        success, result = self._run_gds_command_with_retry(
+        success, result = self._run_upload_command_with_retry(
             f'upload --force {test_edit_file}',
             ['ls test_edit_simple_hello.py'],
             max_retries=3
@@ -1347,7 +1347,7 @@ Line 5: No match here'''
         # 复制文件并上传
         import shutil
         shutil.copy2(original_file, test_read_file)
-        success, result = self._run_gds_command_with_retry(
+        success, result = self._run_upload_command_with_retry(
             f'upload --force {test_read_file}',
             ['ls test_read_simple_hello.py'],
             max_retries=3
@@ -1591,7 +1591,7 @@ if __name__ == "__main__":
         
         # 1. 上传项目文件夹（修复：--force参数应该在路径之前）
         project_dir = self.TEST_DATA_DIR / "test_project"
-        success, result = self._run_gds_command_with_retry(
+        success, result = self._run_upload_command_with_retry(
             f'upload-folder --force {project_dir}',
             ['ls test_project'],
             max_retries=3
@@ -1672,7 +1672,7 @@ if __name__ == "__main__":
         # 复制文件并上传
         import shutil
         shutil.copy2(original_file, test07_file)
-        success, result = self._run_gds_command_with_retry(
+        success, result = self._run_upload_command_with_retry(
             f'upload --force {test07_file}',
             ['ls test07_simple_hello.py'],
             max_retries=3
@@ -1875,7 +1875,7 @@ if __name__ == "__main__":
         # 强制上传测试文件（确保文件存在）
         print(f"上传测试文件...")
         valid_script = self.TEST_DATA_DIR / "valid_script.py"
-        success, result = self._run_gds_command_with_retry(
+        success, result = self._run_upload_command_with_retry(
             f'upload --force {valid_script}',
             ['ls valid_script.py'],
             max_retries=3
@@ -1883,7 +1883,7 @@ if __name__ == "__main__":
         self.assertTrue(success, f"valid_script.py上传失败: {result.stderr if result else 'Unknown error'}")
         
         invalid_script = self.TEST_DATA_DIR / "invalid_script.py"
-        success, result = self._run_gds_command_with_retry(
+        success, result = self._run_upload_command_with_retry(
             f'upload --force {invalid_script}',
             ['ls invalid_script.py'],
             max_retries=3
@@ -1891,7 +1891,7 @@ if __name__ == "__main__":
         self.assertTrue(success, f"invalid_script.py上传失败: {result.stderr if result else 'Unknown error'}")
         
         json_file = self.TEST_DATA_DIR / "valid_config.json"
-        success, result = self._run_gds_command_with_retry(
+        success, result = self._run_upload_command_with_retry(
             f'upload --force {json_file}',
             ['ls valid_config.json'],
             max_retries=3
