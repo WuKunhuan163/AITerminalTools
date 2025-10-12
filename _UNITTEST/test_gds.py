@@ -1125,9 +1125,11 @@ print(f"Current files: {len(os.listdir())}")'''
         shutil.copy2(original_file, unique_file)
         
         # 使用重试机制上传文件（upload是GDS命令，不是shell命令）
+        # 注意：验证文件名应该是上传文件的basename
+        expected_filename = unique_file.name  # 获取文件名而不是完整路径
         success, result = self._run_upload_command_with_retry(
             f'upload --force {unique_file}',
-            ['ls test_upload_simple_hello.py'],
+            [f'ls {expected_filename}'],
             max_retries=3
         )
         self.assertTrue(success, f"文件上传失败: {result.stderr if result else 'Unknown error'}")
