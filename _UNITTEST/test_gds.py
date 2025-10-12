@@ -485,6 +485,70 @@ Shell commands: ls -la && echo "done"
                     self.stderr = str(e)
             return MockResult()
     
+    def _run_upload_command_with_retry(self, command, verification_commands, max_retries=3):
+        """
+        运行GDS upload命令并进行重试验证的辅助方法
+        upload是GDS的直接命令，不是shell命令
+        """
+        print(f"\n执行带重试的upload命令: {command}")
+        print(f"验证命令: {verification_commands}")
+        print(f"最大重试次数: {max_retries}")
+        
+        for attempt in range(max_retries):
+            print(f"\n尝试 {attempt + 1}/{max_retries}")
+            
+            # 执行upload命令（直接使用GOOGLE_DRIVE命令）
+            full_command = f"python3 {self.GOOGLE_DRIVE_PY} {command}"
+            result = subprocess.run(
+                full_command,
+                shell=True,
+                capture_output=True,
+                text=True,
+                cwd=self.BIN_DIR
+            )
+            
+            print(f"返回码: {result.returncode}")
+            if result.stdout:
+                print(f"输出: {result.stdout}")
+            if result.stderr:
+                print(f"错误: {result.stderr}")
+            
+            if result.returncode != 0:
+                print(f"Error: Upload command failed, return code: {result.returncode}")
+                if attempt < max_retries - 1:
+                    print(f"Waiting 1 second before retrying...")
+                    import time
+                    time.sleep(1)
+                    continue
+                else:
+                    return False, result
+            
+            # 执行验证命令
+            all_verifications_passed = True
+            for i, verify_cmd in enumerate(verification_commands):
+                print(f"验证命令 {i+1}: {verify_cmd}")
+                verify_result = self._run_gds_command(verify_cmd, expect_success=False, check_function_result=False)
+                
+                if verify_result.returncode != 0:
+                    print(f"验证失败: {verify_cmd} (返回码: {verify_result.returncode})")
+                    all_verifications_passed = False
+                    break
+                else:
+                    print(f"验证成功: {verify_cmd}")
+            
+            if all_verifications_passed:
+                print("所有验证通过!")
+                return True, result
+            else:
+                if attempt < max_retries - 1:
+                    print(f"验证失败，等待1秒后重试...")
+                    import time
+                    time.sleep(1)
+                    continue
+        
+        print("所有重试都失败了")
+        return False, result
+
     # ==================== 基础功能测试 ====================
     
     def test_01_echo_basic(self):
@@ -1060,8 +1124,8 @@ print(f"Current files: {len(os.listdir())}")'''
         import shutil
         shutil.copy2(original_file, unique_file)
         
-        # 使用重试机制上传文件
-        success, result = self._run_gds_command_with_retry(
+        # 使用重试机制上传文件（upload是GDS命令，不是shell命令）
+        success, result = self._run_upload_command_with_retry(
             f'upload --force {unique_file}',
             ['ls test_upload_simple_hello.py'],
             max_retries=3
