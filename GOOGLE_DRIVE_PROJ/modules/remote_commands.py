@@ -846,12 +846,25 @@ else:
                 except:
                     filename = 'file'
                 
+                # 提取源文件和目标文件路径用于debug
+                try:
+                    cmd_parts = cmd.split('"')
+                    source_path = cmd_parts[1] if len(cmd_parts) > 1 else "unknown_source"
+                    dest_path = cmd_parts[3] if len(cmd_parts) > 3 else "unknown_dest"
+                except:
+                    source_path = "unknown_source"
+                    dest_path = "unknown_dest"
+                
                 retry_cmd = f'''
+echo "DEBUG: Checking source file: {source_path}"
+ls -la "{source_path}" 2>/dev/null || echo "DEBUG: Source file not found!"
+echo "DEBUG: Target directory: $(dirname "{dest_path}")"
+ls -la "$(dirname "{dest_path}")" 2>/dev/null || echo "DEBUG: Target directory not found!"
 for attempt in $(seq 1 30); do
     if {cmd} 2>/dev/null; then
         break
     elif [ "$attempt" -eq 30 ]; then
-        echo "Error: Error: {filename} move failed, still failed after 60 retries" >&2
+        echo "Error: Error: {filename} move failed, still failed after 30 retries" >&2
         exit 1
     else
         sleep 1
@@ -976,8 +989,8 @@ total_files={len(file_info_list)}
             completed[{file_info['index']}]=1
             break
         else
-            if [ "$attempt" -eq 60 ]; then
-                echo "Error: (已重试60次失败)"
+            if [ "$attempt" -eq 30 ]; then
+                echo "Error: (已重试30次失败)"
                 completed[{file_info['index']}]=0
             else
                 echo -n "."

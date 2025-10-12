@@ -6,19 +6,19 @@ FAIL
 FAIL: test_09_edit (test_gds.GDSTest)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 1227, in test_09_edit
-    self.assertTrue(success, f"test04文件上传失败: {result.stderr if result else 'Unknown error'}")
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 1237, in test_09_edit
+    echo_cmd = f'echo "{test_content}" > grep_test.txt'
 AssertionError: False is not true : test04文件上传失败: bash: line 1: upload: command not found
 
 
 ----------------------------------------------------------------------
-Ran 1 test in 132.537s
+Ran 1 test in 147.744s
 
 FAILED (failures=1)
 设置GDS全面测试环境...
-远端测试目录: ~/tmp/gds_test_20251010_035925_458568_32d5a3b8
-已切换到远端测试目录: ~/tmp/gds_test_20251010_035925_458568_32d5a3b8
-本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_opp2d7xt
+远端测试目录: ~/tmp/gds_test_20251013_005155_435934_9f4323a8
+已切换到远端测试目录: ~/tmp/gds_test_20251013_005155_435934_9f4323a8
+本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_lgbefcck
 测试环境设置完成
 
 执行带重试的命令: upload --force /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP/test_edit_simple_hello.py
@@ -29,7 +29,7 @@ FAILED (failures=1)
 命令转译成功: upload --force /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP/test_edit_simple_hello.py -> upload --force /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP/test_edit_simple_hello.py
 返回码: 0
 输出: 
-[K⏳ Waiting for result .....
+[K⏳ Waiting for result ....
 [K
 [K...
 Warning: 错误: bash: line 1: upload: command not found
@@ -46,7 +46,7 @@ Verify failed, waiting 2 seconds before retrying...
 命令转译成功: upload --force /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP/test_edit_simple_hello.py -> upload --force /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP/test_edit_simple_hello.py
 返回码: 0
 输出: 
-[K⏳ Waiting for result ......
+[K⏳ Waiting for result .....
 [K
 [K...
 Warning: 错误: bash: line 1: upload: command not found
@@ -63,7 +63,7 @@ Verify failed, waiting 2 seconds before retrying...
 命令转译成功: upload --force /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP/test_edit_simple_hello.py -> upload --force /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP/test_edit_simple_hello.py
 返回码: 0
 输出: 
-[K⏳ Waiting for result ........
+[K⏳ Waiting for result ...
 [K
 [K...
 Warning: 错误: bash: line 1: upload: command not found

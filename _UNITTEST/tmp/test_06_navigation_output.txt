@@ -6,33 +6,22 @@ FAIL
 FAIL: test_06_navigation (test_gds.GDSTest)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 355, in _run_gds_command
-    self.assertEqual(result.returncode, 0, f"命令执行失败: {command}")
-  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/case.py", line 831, in assertEqual
-    assertion_func(first, second, msg=msg)
-AssertionError: 1 != 0 : 命令执行失败: cd path_test
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 990, in test_06_navigation
-    result = self._run_gds_command('cd path_test')
-  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 361, in _run_gds_command
-    self.fail(f"命令执行异常: {command} - {e}")
-AssertionError: 命令执行异常: cd path_test - 1 != 0 : 命令执行失败: cd path_test
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 1045, in test_06_navigation
+    self.assertNotEqual(result.returncode, 0)
+AssertionError: 0 == 0
 
 ----------------------------------------------------------------------
-Ran 1 test in 125.159s
+Ran 1 test in 321.386s
 
 FAILED (failures=1)
 设置GDS全面测试环境...
-远端测试目录: ~/tmp/gds_test_20251010_035808_666277_42652c44
-已切换到远端测试目录: ~/tmp/gds_test_20251010_035808_666277_42652c44
-本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_ijs6t27j
+远端测试目录: ~/tmp/gds_test_20251013_004044_338370_295b1af1
+已切换到远端测试目录: ~/tmp/gds_test_20251013_004044_338370_295b1af1
+本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_vbh0nbpa
 测试环境设置完成
 命令转译成功: pwd -> pwd
 返回码: 0
-输出: ~/tmp/gds_test_20251010_035808_666277_42652c44
+输出: ~/tmp/gds_test_20251013_004044_338370_295b1af1
 ...
 命令转译成功: ls -> ls
 返回码: 0
@@ -48,7 +37,7 @@ FAILED (failures=1)
 命令转译成功: mkdir -p multi_test/dir1 multi_test/dir2 multi_test/dir3 -> mkdir -p multi_test/dir1 multi_test/dir2 multi_test/dir3
 返回码: 0
 输出: 
-[K⏳ Waiting for result .....
+[K⏳ Waiting for result ...
 [K
 [K...
 命令转译成功: ls multi_test/dir1 -> ls multi_test/dir1
@@ -65,11 +54,39 @@ FAILED (failures=1)
 命令转译成功: mkdir -p path_test/level1/level2 -> mkdir -p path_test/level1/level2
 返回码: 0
 输出: 
-[K⏳ Waiting for result .....
+[K⏳ Waiting for result ......
 [K
 [K...
 命令转译成功: cd path_test -> cd path_test
+返回码: 0
+命令转译成功: cd level1 -> cd level1
+返回码: 0
+命令转译成功: cd level2 -> cd level2
+返回码: 0
+命令转译成功: cd ../.. -> cd ../..
+返回码: 0
+命令转译成功: cd ~ -> cd ~
+返回码: 0
+命令转译成功: cd ~/tmp/gds_test_20251013_004044_338370_295b1af1 -> cd ~/tmp/gds_test_20251013_004044_338370_295b1af1
+返回码: 0
+命令转译成功: cd path_test/level1/level2 -> cd path_test/level1/level2
+返回码: 0
+命令转译成功: cd ../../.. -> cd ../../..
+返回码: 0
+Error:  错误路径类型测试
+命令转译成功: cd nonexistent_directory -> cd nonexistent_directory
 返回码: 1
-输出: Directory does not exist: path_test
+输出: Directory does not exist: nonexistent_directory
 ...
-命令执行异常: 1 != 0 : 命令执行失败: cd path_test
+命令转译成功: 'echo "test content" > test_file.txt' -> __QUOTED_COMMAND__echo 'test content' > test_file.txt
+返回码: 0
+输出: 
+[K⏳ Waiting for result ......
+[K
+[K...
+命令转译成功: cd test_file.txt -> cd test_file.txt
+返回码: 1
+输出: Directory does not exist: test_file.txt
+...
+命令转译成功: cd "" -> cd ""
+返回码: 0

@@ -1394,6 +1394,51 @@ For more information, visit: https://github.com/your-repo/gds"""
                                 error_msg = result.get("error", "Upload failed")
                                 print(error_msg)
                                 return 1
+                        elif cmd == 'upload-folder':
+                            # 使用委托方法处理upload-folder命令
+                            if not args:
+                                print(f"Error: upload-folder command needs a folder path")
+                                return 1
+                            
+                            # 解析参数: upload-folder [--keep-zip] [--force] <folder> [target]
+                            # 或者: upload-folder <folder> [target] [--keep-zip] [--force]
+                            folder_path = None
+                            target_path = "."
+                            keep_zip = False
+                            force = False
+                            
+                            i = 0
+                            while i < len(args):
+                                if args[i] == '--keep-zip':
+                                    keep_zip = True
+                                    i += 1
+                                elif args[i] == '--force':
+                                    force = True
+                                    i += 1
+                                elif not folder_path:
+                                    folder_path = args[i]
+                                    i += 1
+                                elif not target_path or target_path == ".":
+                                    target_path = args[i]
+                                    i += 1
+                                else:
+                                    print(f"Error: Too many arguments for upload-folder command")
+                                    return 1
+                            
+                            if not folder_path:
+                                print(f"Error: upload-folder command needs a folder path")
+                                return 1
+                            
+                            result = self.cmd_upload_folder(folder_path, target_path=target_path, keep_zip=keep_zip, force=force)
+                            if result.get("success"):
+                                stdout = result.get("stdout", "")
+                                if stdout:
+                                    print(stdout)
+                                return 0
+                            else:
+                                error_msg = result.get("error", "Upload folder failed")
+                                print(error_msg)
+                                return 1
                     
                     # 使用统一的命令解析和转译接口
                     translation_result = self.parse_and_translate_command(shell_cmd_clean)
@@ -1903,47 +1948,8 @@ For more information, visit: https://github.com/your-repo/gds"""
                 # 继续到远程执行
                 pass
             
-            # upload条件已移动到正确的elif链中
-            if cmd == 'upload-folder':
-                # 使用委托方法处理upload-folder命令
-                if not args:
-                    print(f"Error: upload-folder command needs a folder path")
-                    return 1
-                
-                # 解析参数: upload-folder [--keep-zip] [--force] <folder> [target]
-                # 或者: upload-folder <folder> [target] [--keep-zip] [--force]
-                folder_path = None
-                target_path = "."
-                keep_zip = False
-                force = False
-                
-                i = 0
-                while i < len(args):
-                    if args[i] == '--keep-zip':
-                        keep_zip = True
-                        i += 1
-                    elif args[i] == '--force':
-                        force = True
-                        i += 1
-                    elif folder_path is None:
-                        folder_path = args[i]
-                        i += 1
-                    else:
-                        target_path = args[i]
-                        i += 1
-                
-                if folder_path is None:
-                    print(f"Error: upload-folder command needs a folder path")
-                    return 1
-                
-                result = self.cmd_upload_folder(folder_path, target_path, keep_zip, force)
-                if result.get("success", False):
-                    print(result.get("message", "Folder upload completed"))
-                    return 0
-                else:
-                    print(result.get("error", "Folder upload failed"))
-                    return 1
-            elif cmd == 'download':
+            # upload-folder条件已移动到正确的elif链中
+            if cmd == 'download':
                 # 使用委托方法处理download命令
                 if not args:
                     print(f"Error: download command needs a file name")

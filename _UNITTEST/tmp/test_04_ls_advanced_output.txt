@@ -6,184 +6,35 @@ FAIL
 FAIL: test_04_ls_advanced (test_gds.GDSTest)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 355, in _run_gds_command
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 357, in _run_gds_command
     self.assertEqual(result.returncode, 0, f"命令执行失败: {command}")
   File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/case.py", line 831, in assertEqual
     assertion_func(first, second, msg=msg)
-AssertionError: 1 != 0 : 命令执行失败: cd level1/../level1/level2
+AssertionError: 1 != 0 : 命令执行失败: "mkdir -p ls_test_subdir && cd ls_test_subdir"
 
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 849, in test_04_ls_advanced
-    result = self._run_gds_command('cd level1/../level1/level2')
-  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 361, in _run_gds_command
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 711, in test_04_ls_advanced
+    result = self._run_gds_command('"mkdir -p ls_test_subdir && cd ls_test_subdir"')
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 363, in _run_gds_command
     self.fail(f"命令执行异常: {command} - {e}")
-AssertionError: 命令执行异常: cd level1/../level1/level2 - 1 != 0 : 命令执行失败: cd level1/../level1/level2
+AssertionError: 命令执行异常: "mkdir -p ls_test_subdir && cd ls_test_subdir" - 1 != 0 : 命令执行失败: "mkdir -p ls_test_subdir && cd ls_test_subdir"
 
 ----------------------------------------------------------------------
-Ran 1 test in 370.426s
+Ran 1 test in 211.729s
 
 FAILED (failures=1)
 设置GDS全面测试环境...
-远端测试目录: ~/tmp/gds_test_20251012_112159_681453_9372994c
-已切换到远端测试目录: ~/tmp/gds_test_20251012_112159_681453_9372994c
-本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_bkf2fz66
+远端测试目录: ~/tmp/gds_test_20251013_000151_272284_88627c86
+已切换到远端测试目录: ~/tmp/gds_test_20251013_000151_272284_88627c86
+本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_vmvbur_k
 测试环境设置完成
 切换到测试子目录
 命令转译成功: "mkdir -p ls_test_subdir && cd ls_test_subdir" -> "mkdir -p ls_test_subdir && cd ls_test_subdir"
-返回码: 0
-输出: 
-[K⏳ Waiting for result ......
-[K
-[K...
-测试基本ls命令
-命令转译成功: ls -> ls
-返回码: 0
-测试ls .（当前目录）
-命令转译成功: ls . -> ls .
-返回码: 0
-验证ls和ls .输出一致性
-命令转译成功: ls -> ls
-返回码: 0
-测试ls ~（根目录）
-命令转译成功: ls ~ -> ls ~
-返回码: 0
-输出: +%s)
-computer_vision
-simple_test_dir
-tmp
-~
-...
-创建测试目录结构
-命令转译成功: mkdir -p ls_test_dir/subdir -> mkdir -p ls_test_dir/subdir
-返回码: 0
-输出: 
-[K⏳ Waiting for result .......
-[K
-[K...
-命令转译成功: 'echo "root file" > ls_test_root.txt' -> __QUOTED_COMMAND__echo 'root file' > ls_test_root.txt
-返回码: 0
-输出: 
-[K⏳ Waiting for result ......
-[K
-[K...
-Warning: 错误: bash: line 1: __QUOTED_COMMAND__echo: command not found
-...
-命令转译成功: 'echo "subdir file" > ls_test_dir/ls_test_sub.txt' -> __QUOTED_COMMAND__echo 'subdir file' > ls_test_dir/ls_test_sub.txt
-返回码: 0
-输出: 
-[K⏳ Waiting for result .......
-[K
-[K...
-Warning: 错误: bash: line 1: __QUOTED_COMMAND__echo: command not found
-...
-测试不同路径的ls命令
-命令转译成功: ls ls_test_dir -> ls ls_test_dir
-返回码: 0
-输出: subdir
-ls_test_sub.txt
-...
-测试ls -R（递归）
-命令转译成功: ls -R ls_test_dir -> ls -R ls_test_dir
-返回码: 0
-输出: subdir
-ls_test_sub.txt
-...
-测试文件路径的ls
-命令转译成功: ls ls_test_root.txt -> ls ls_test_root.txt
-返回码: 0
-输出: ls_test_root.txt
-...
-命令转译成功: ls ls_test_dir/ls_test_sub.txt -> ls ls_test_dir/ls_test_sub.txt
-返回码: 0
-输出: ls_test_sub.txt
-...
-Error:  测试不存在路径的错误处理
-命令转译成功: ls nonexistent_file.txt -> ls nonexistent_file.txt
 返回码: 1
-输出: Failed to list files: Path not found: nonexistent_file.txt
+输出: Command 'mkdir -p ls_test_subdir' failed
+
+- Skipped command 2/2 (previous command failed): cd ls_test_subdir
 ...
-命令转译成功: ls nonexistent_dir/ -> ls nonexistent_dir/
-返回码: 1
-输出: Failed to list files: Path not found: nonexistent_dir/
-...
-测试特殊字符路径
-命令转译成功: mkdir -p "test dir with spaces" -> mkdir -p "test dir with spaces"
-返回码: 0
-输出: 
-[K⏳ Waiting for result ......
-[K
-[K...
-命令转译成功: ls "test dir with spaces" -> ls "test dir with spaces"
-返回码: 0
-清理测试文件
-命令转译成功: rm -rf ls_test_dir -> rm -rf ls_test_dir
-返回码: 0
-输出: 
-[K⏳ Waiting for result .......
-[K
-[K...
-命令转译成功: rm -rf ls_test_root.txt -> rm -rf ls_test_root.txt
-返回码: 0
-输出: 
-[K⏳ Waiting for result ......
-[K
-[K...
-命令转译成功: rm -rf "test dir with spaces" -> rm -rf "test dir with spaces"
-返回码: 0
-输出: 
-[K⏳ Waiting for result .....
-[K
-[K...
-测试绝对路径ls ~
-命令转译成功: ls ~ -> ls ~
-返回码: 0
-输出: +%s)
-computer_vision
-simple_test_dir
-tmp
-~
-...
-创建多级测试目录结构
-命令转译成功: mkdir -p path_test/level1/level2 -> mkdir -p path_test/level1/level2
-返回码: 0
-输出: 
-[K⏳ Waiting for result .....
-[K
-[K...
-测试相对路径cd
-命令转译成功: cd path_test -> cd path_test
-返回码: 0
-测试当前目录ls
-命令转译成功: ls . -> ls .
-返回码: 0
-输出: level1
-...
-测试子目录ls
-命令转译成功: ls level1 -> ls level1
-返回码: 0
-输出: level2
-...
-测试多级cd
-命令转译成功: cd level1/level2 -> cd level1/level2
-返回码: 0
-测试父目录cd ..
-命令转译成功: cd .. -> cd ..
-返回码: 0
-测试多级父目录cd ../..
-命令转译成功: cd ../.. -> cd ../..
-返回码: 0
-测试相对路径ls
-命令转译成功: ls path_test/level1 -> ls path_test/level1
-返回码: 0
-输出: level2
-...
-测试复杂相对路径cd
-命令转译成功: cd path_test -> cd path_test
-返回码: 0
-命令转译成功: cd level1/../level1/level2 -> cd level1/../level1/level2
-返回码: 1
-输出: Directory does not exist: level1/../level1/level2
-...
-命令执行异常: 1 != 0 : 命令执行失败: cd level1/../level1/level2
+命令执行异常: 1 != 0 : 命令执行失败: "mkdir -p ls_test_subdir && cd ls_test_subdir"

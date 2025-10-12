@@ -497,15 +497,8 @@ Shell commands: ls -la && echo "done"
         for attempt in range(max_retries):
             print(f"\n尝试 {attempt + 1}/{max_retries}")
             
-            # 执行upload命令（直接使用GOOGLE_DRIVE命令）
-            full_command = f"python3 {self.GOOGLE_DRIVE_PY} {command}"
-            result = subprocess.run(
-                full_command,
-                shell=True,
-                capture_output=True,
-                text=True,
-                cwd=self.BIN_DIR
-            )
+            # 执行upload命令（使用_run_gds_command方法）
+            result = self._run_gds_command(command, expect_success=False, check_function_result=False)
             
             print(f"返回码: {result.returncode}")
             if result.stdout:
@@ -1127,12 +1120,12 @@ print(f"Current files: {len(os.listdir())}")'''
         # 使用重试机制上传文件（upload是GDS命令，不是shell命令）
         # 注意：验证文件名应该是上传文件的basename
         expected_filename = unique_file.name  # 获取文件名而不是完整路径
-        success, result = self._run_upload_command_with_retry(
-            f'upload --force {unique_file}',
-            [f'ls {expected_filename}'],
-            max_retries=3
-        )
-        self.assertTrue(success, f"文件上传失败: {result.stderr if result else 'Unknown error'}")
+        # 使用普通的GDS命令方式运行upload
+        result = self._run_gds_command(f'upload --force {unique_file}')
+        self.assertEqual(result.returncode, 0)
+        
+        # 验证文件上传成功
+        self.assertTrue(self._verify_file_exists(expected_filename))
         
         # 多文件上传（使用--force确保可重复性）
         valid_script = self.TEST_DATA_DIR / "valid_script.py"

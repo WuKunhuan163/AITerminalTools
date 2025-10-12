@@ -6,34 +6,40 @@ FAIL
 FAIL: test_08_grep (test_gds.GDSTest)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 1168, in test_08_grep
-    self.assertTrue(self._verify_file_exists("grep_test.txt"))
-AssertionError: False is not true
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 1186, in test_08_grep
+    self.assertIn("1: Line 1: Hello world", output)
+AssertionError: '1: Line 1: Hello world' not found in '\n\x1b[K⏳ Waiting for result ....\n\x1b[K\n\x1b[K'
 
 ----------------------------------------------------------------------
-Ran 1 test in 77.159s
+Ran 1 test in 104.769s
 
 FAILED (failures=1)
 设置GDS全面测试环境...
-远端测试目录: ~/tmp/gds_test_20251010_035924_837138_5c75401c
-已切换到远端测试目录: ~/tmp/gds_test_20251010_035924_837138_5c75401c
-本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_u738ykn5
+远端测试目录: ~/tmp/gds_test_20251013_005010_234179_fc95daeb
+已切换到远端测试目录: ~/tmp/gds_test_20251013_005010_234179_fc95daeb
+本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_dxnemjqf
 测试环境设置完成
 命令转译成功: 'echo "Line 1: Hello world
 Line 2: This is a test
 Line 3: Hello again
 Line 4: Multiple Hello Hello Hello
-Line 5: No match here" > grep_test.txt' -> __QUOTED_COMMAND__echo "Line 1: Hello world
+Line 5: No match here" > grep_test.txt' -> __QUOTED_COMMAND__echo 'Line 1: Hello world
 Line 2: This is a test
 Line 3: Hello again
 Line 4: Multiple Hello Hello Hello
-Line 5: No match here" > grep_test.txt
+Line 5: No match here' > grep_test.txt
 返回码: 0
 输出: 
-[K⏳ Waiting for result ........
+[K⏳ Waiting for result ......
 [K
 [K...
 命令转译成功: ls grep_test.txt -> ls grep_test.txt
-返回码: 1
-输出: Failed to list files: Path not found: grep_test.txt
+返回码: 0
+输出: grep_test.txt
 ...
+命令转译成功: grep grep_test.txt -> grep grep_test.txt
+返回码: 0
+输出: 
+[K⏳ Waiting for result ....
+[K
+[K...
