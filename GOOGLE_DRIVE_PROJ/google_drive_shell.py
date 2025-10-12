@@ -1216,11 +1216,17 @@ For more information, visit: https://github.com/your-repo/gds"""
                     # 然后检查是否为特殊命令（导航命令等）
                     first_word = shell_cmd_clean.split()[0] if shell_cmd_clean.split() else ""
                     
-                    # Debug print (disabled)
-                    # print(f"DEBUG: first_word='{first_word}', checking special commands first")
+                    # Debug print (enabled for upload debugging)
+                    print(f"DEBUG: first_word='{first_word}', checking special commands first")
+                    print(f"DEBUG: shell_cmd_clean='{shell_cmd_clean}'")
+                    print(f"DEBUG: is_quoted_command={is_quoted_command}")
                     
                     # 特殊命令处理 - 在pipe检查之后
-                    if first_word in ['pwd', 'ls', 'cd', 'cat']:
+                    special_commands = ['pwd', 'ls', 'cd', 'cat', 'mkdir', 'touch', 'echo', 'help', 'venv', 'pyenv', 
+                                      'cleanup-windows', 'linter', 'pip', 'deps', 'edit', 'read', 'python', 
+                                      'upload', 'upload-folder', 'download', 'mv', 'find', 'rm', 'grep']
+                    if first_word in special_commands:
+                        print(f"DEBUG: Processing special command '{first_word}' with local API")
                         # print(f"DEBUG: Processing special command '{first_word}' with local API")
                         
                         # 解析命令和参数
@@ -1237,9 +1243,16 @@ For more information, visit: https://github.com/your-repo/gds"""
                             print(f"Error: Command parsing failed: {e}")
                             return 1
                         
-                        # print(f"DEBUG: Parsed special cmd='{cmd}', args={args}")
+                        print(f"DEBUG: Parsed special cmd='{cmd}', args={args}")
+                        print(f"DEBUG: About to check cmd conditions...")
                         
+                        print(f"DEBUG: Checking cmd conditions, cmd='{cmd}'")
+                        print(f"DEBUG: About to enter if-elif chain...")
+                        print(f"DEBUG: Testing pwd condition: cmd == 'pwd' -> {cmd == 'pwd'}")
                         if cmd == 'pwd':
+                            print(f"DEBUG: Inside pwd condition")
+                            print(f"DEBUG: Matched pwd condition")
+                            print(f"DEBUG: Found pwd condition")
                             # 导入shell_commands模块中的具体函数
                             import os
                             import sys
@@ -1329,6 +1342,57 @@ For more information, visit: https://github.com/your-repo/gds"""
                                 return 0
                             else:
                                 print(result.get("error", "Failed to read file"))
+                                return 1
+                        elif cmd == 'upload':
+                            print(f"DEBUG: ✅ FOUND UPLOAD IN CORRECT ELIF CHAIN! args={args}")
+                            # 使用委托方法处理upload命令
+                            if not args:
+                                print(f"Error: upload command needs a file name")
+                                return 1
+                            
+                            # 参数解析规则：
+                            # 格式: upload [--target-dir TARGET] [--force] [--remove-local] file1 file2 file3 ...
+                            # 或者: upload file1 file2 file3 ... [--force] [--remove-local]
+                            
+                            target_path = "."  # 默认上传到当前目录
+                            source_files = []
+                            force = False
+                            remove_local = False
+                            
+                            i = 0
+                            while i < len(args):
+                                if args[i] == '--target-dir':
+                                    if i + 1 < len(args):
+                                        target_path = args[i + 1]
+                                        i += 2  # 跳过--target-dir和其值
+                                    else:
+                                        print(f"Error: --target-dir option requires a directory path")
+                                        return 1
+                                elif args[i] == '--force':
+                                    force = True
+                                    i += 1
+                                elif args[i] == '--remove-local':
+                                    remove_local = True
+                                    i += 1
+                                else:
+                                    source_files.append(args[i])
+                                    i += 1
+                            
+                            if not source_files:
+                                print(f"Error: No source files specified for upload")
+                                return 1
+                            
+                            # 调用upload命令
+                            result = self.cmd_upload(source_files, target_path=target_path, force=force, remove_local=remove_local)
+                            if result.get("success"):
+                                # 统一在命令处理结束后打印输出
+                                stdout = result.get("stdout", "")
+                                if stdout:
+                                    print(stdout)
+                                return 0
+                            else:
+                                error_msg = result.get("error", "Upload failed")
+                                print(error_msg)
                                 return 1
                     
                     # 使用统一的命令解析和转译接口
@@ -1833,55 +1897,14 @@ For more information, visit: https://github.com/your-repo/gds"""
                     if stderr:
                         print(stderr, end="", file=sys.stderr)
                     return 1
-            elif cmd == 'upload':
-                # 使用委托方法处理upload命令
-                if not args:
-                    print(f"Error: upload command needs a file name")
-                    return 1
-                
-                # 参数解析规则：
-                # 格式: upload [--target-dir TARGET] [--force] [--remove-local] file1 file2 file3 ...
-                # 或者: upload file1 file2 file3 ... [--force] [--remove-local]
-                
-                target_path = "."  # 默认上传到当前目录
-                source_files = []
-                force = False
-                remove_local = False
-                
-                i = 0
-                while i < len(args):
-                    if args[i] == '--target-dir':
-                        if i + 1 < len(args):
-                            target_path = args[i + 1]
-                            i += 2  # 跳过--target-dir和其值
-                        else:
-                            print(f"Error: --target-dir option requires a directory path")
-                            return 1
-                    elif args[i] == '--force':
-                        force = True
-                        i += 1
-                    elif args[i] == '--remove-local':
-                        remove_local = True
-                        i += 1
-                    else:
-                        source_files.append(args[i])
-                        i += 1
-                
-                if not source_files:
-                    print(f"Error: No source files specified for upload")
-                    return 1
-                
-                    from GOOGLE_DRIVE_PROJ.modules.progress_manager import result_print
-                if result.get("cancelled"):
-                    result_print(result.get("error", "Upload cancelled by user"), success=False)
-                    return 130  # 标准的Ctrl+C退出码
-                elif result.get("success", False):
-                    result_print(result.get("message", "Upload completed"), success=True)
-                    return 0
-                else:
-                    result_print(result.get("error", "Upload failed"), success=False)
-                    return 1
-            elif cmd == 'upload-folder':
+            else:
+                print(f"DEBUG: ❌ NO CONDITION MATCHED! cmd='{cmd}' not found in handlers")
+                print(f"DEBUG: This should not happen for upload command")
+                # 继续到远程执行
+                pass
+            
+            # upload条件已移动到正确的elif链中
+            if cmd == 'upload-folder':
                 # 使用委托方法处理upload-folder命令
                 if not args:
                     print(f"Error: upload-folder command needs a folder path")
@@ -2072,6 +2095,8 @@ For more information, visit: https://github.com/your-repo/gds"""
                     print(result.get("error", "Error: Grep命令执行失败"))
                     return 1
             else:
+                print(f"DEBUG: ❌ REACHED REMOTE EXECUTION FALLBACK! cmd='{cmd}' not handled locally")
+                print(f"DEBUG: This means upload condition was not matched in the if-elif chain")
                 # 尝试通过通用远程命令执行
                 result = self.execute_command_interface(cmd, args)
                 if result.get("success", False):

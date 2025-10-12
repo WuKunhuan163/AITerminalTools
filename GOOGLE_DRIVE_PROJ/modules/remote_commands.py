@@ -847,10 +847,10 @@ else:
                     filename = 'file'
                 
                 retry_cmd = f'''
-for attempt in $(seq 1 60); do
+for attempt in $(seq 1 30); do
     if {cmd} 2>/dev/null; then
         break
-    elif [ "$attempt" -eq 60 ]; then
+    elif [ "$attempt" -eq 30 ]; then
         echo "Error: Error: {filename} move failed, still failed after 60 retries" >&2
         exit 1
     else
@@ -970,7 +970,7 @@ total_files={len(file_info_list)}
                 full_command += f'''
 (
     echo -n "⏳ Moving {file_info['source_name']} -> {file_info['dest_name']}: "
-    for attempt in $(seq 1 60); do
+    for attempt in $(seq 1 30); do
         if mv {file_info['source_path']} {file_info['dest_path']} 2>/dev/null; then
             echo "✅"
             completed[{file_info['index']}]=1
