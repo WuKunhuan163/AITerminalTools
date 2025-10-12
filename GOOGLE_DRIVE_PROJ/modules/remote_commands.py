@@ -1482,9 +1482,19 @@ fi
             # 构建用户命令字符串
             if cleaned_args:
                 import shlex
-                user_command = f"{cmd} {' '.join(shlex.quote(str(arg)) for arg in cleaned_args)}"
+                # 检查是否是__QUOTED_COMMAND__标记的命令，如果是则不使用shlex.quote
+                if cmd.startswith("__QUOTED_COMMAND__"):
+                    # 对于已经转译的引号命令，直接拼接参数，不使用shlex.quote
+                    user_command = f"{cmd} {' '.join(str(arg) for arg in cleaned_args)}"
+                    print(f"DEBUG: execute_command_interface - QUOTED_COMMAND detected, cmd: {repr(cmd)}, cleaned_args: {repr(cleaned_args)}")
+                else:
+                    # 对于普通命令，使用shlex.quote处理参数
+                    user_command = f"{cmd} {' '.join(shlex.quote(str(arg)) for arg in cleaned_args)}"
+                    print(f"DEBUG: execute_command_interface - normal command, cmd: {repr(cmd)}, cleaned_args: {repr(cleaned_args)}")
+                print(f"DEBUG: execute_command_interface - constructed user_command: {repr(user_command)}")
             else:
                 user_command = cmd
+                print(f"DEBUG: execute_command_interface - no args, user_command: {repr(user_command)}")
                 
             current_shell = self.main_instance.get_current_shell()
             result = self.execute_command(
@@ -2333,6 +2343,10 @@ JSON_SCRIPT_EOF
             dict: 执行结果
         """
         try:
+            # 处理__QUOTED_COMMAND__标记
+            if user_command.startswith("__QUOTED_COMMAND__"):
+                user_command = user_command[len("__QUOTED_COMMAND__"):]
+            
             # 使用统一的JSON生成接口（包含语法检查）
             try:
                 remote_command, actual_result_filename = self._generate_command(
@@ -3635,8 +3649,9 @@ def main():
                 # 这是一个引号包围的完整命令，直接使用
                 shell_cmd = shell_cmd_parts[0]
                 quoted_parts = shell_cmd_parts  # 为调试信息设置
-                # 添加标记，表示这是引号包围的命令
-                shell_cmd = f"__QUOTED_COMMAND__{shell_cmd}"
+                # 只有在没有标记的情况下才添加标记，避免重复添加
+                if not shell_cmd.startswith("__QUOTED_COMMAND__"):
+                    shell_cmd = f"__QUOTED_COMMAND__{shell_cmd}"
 
             else:
                 # 正常的多参数命令，需要正确处理带空格的参数

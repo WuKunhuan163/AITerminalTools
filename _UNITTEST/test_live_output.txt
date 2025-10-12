@@ -1,0 +1,33 @@
+test_02_echo_advanced (test_gds.GDSTest.test_02_echo_advanced)
+测试echo的正确JSON语法（修复后的功能） ... FAIL
+
+======================================================================
+FAIL: test_02_echo_advanced (test_gds.GDSTest.test_02_echo_advanced)
+测试echo的正确JSON语法（修复后的功能）
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 566, in test_02_echo_advanced
+    self.assertTrue(self._verify_file_content_contains("correct_json.txt", '{"name": "test"'))
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 92.458s
+
+FAILED (failures=1)
+设置GDS全面测试环境...
+远端测试目录: ~/tmp/gds_test_20251012_114215_327976_d9baebda
+已切换到远端测试目录: ~/tmp/gds_test_20251012_114215_327976_d9baebda
+本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_d5ihq348
+测试环境设置完成
+命令转译成功: 'echo "{\"name\": \"test\", \"value\": 123}" > correct_json.txt' -> __QUOTED_COMMAND__echo '{"name": "test", "value": 123}' > correct_json.txt
+返回码: 0
+输出: DEBUG: execute_command received user_command: '__QUOTED_COMMAND__echo {name:" test, value: "123} > correct_json.txt'
+DEBUG: After removing __QUOTED_COMMAND__ marker: 'echo {name:" test, value: "123} >...
+命令转译成功: ls correct_json.txt -> ls correct_json.txt
+返回码: 0
+输出: correct_json.txt
+...
+命令转译成功: cat correct_json.txt -> cat correct_json.txt
+返回码: 0
+输出: {name: test, value: 123}
+...

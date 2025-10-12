@@ -315,7 +315,6 @@ Shell commands: ls -la && echo "done"
             # 创建临时实例用于命令转译
             gds = GoogleDriveShell()
             translation_result = gds.parse_and_translate_command(command)
-            
             if not translation_result["success"]:
                 print(f"命令转译失败: {translation_result['error']}")
                 command_str = str(command)  # 回退到原始格式
@@ -332,7 +331,10 @@ Shell commands: ls -la && echo "done"
             else:
                 command_str = command
         
-        full_command = f"python3 {self.GOOGLE_DRIVE_PY} --shell '{command_str}'"
+        # 正确转义command_str以避免shell的二次解释
+        import shlex
+        escaped_command_str = shlex.quote(command_str)
+        full_command = f"python3 {self.GOOGLE_DRIVE_PY} --shell {escaped_command_str}"
         try:
             # 注意：远端窗口操作没有timeout限制，允许用户手动执行
             result = subprocess.run(
@@ -586,8 +588,16 @@ Shell commands: ls -la && echo "done"
         self.assertTrue(self._verify_file_content_contains("multiline.txt", "Line2"))
         self.assertTrue(self._verify_file_content_contains("multiline.txt", "Line3"))
         
-        # 使用错误语法（会导致本地重定向）
-        result = self._run_gds_command('echo \'{"name": "test", "value": 123}\' > local_redirect.txt')
+        # 使用本地重定向语法（GDS输出被本地重定向）
+        # 直接运行GDS命令，让shell处理重定向
+        full_command = f"python3 {self.GOOGLE_DRIVE_PY} --shell \"echo '{{\\\"name\\\": \\\"test\\\", \\\"value\\\": 123}}'\" > local_redirect.txt"
+        result = subprocess.run(
+            full_command,
+            shell=True,
+            capture_output=True,
+            text=True,
+            cwd=self.BIN_DIR
+        )
         self.assertEqual(result.returncode, 0)
 
         # 文件应该被创建在TEST_TEMP_DIR中（本地临时目录）
@@ -599,15 +609,15 @@ Shell commands: ls -la && echo "done"
         
         self.assertTrue(actual_file.exists(), f"文件应该在{self.TEST_TEMP_DIR}或{self.BIN_DIR}被创建")
         
-        # 检查本地文件内容（应该包含处理后的JSON内容）
+        # 检查本地文件内容（应该包含GDS返回的JSON内容）
         with open(actual_file, 'r') as f:
             content = f.read().strip()
         
-        # 验证文件包含正确的JSON内容（GDS应该处理并创建文件）
-        print(f"文件内容: {content}")
-        self.assertTrue(len(content) > 0, "文件不应该为空")
+        # 验证文件包含正确的JSON内容
+        print(f"本地重定向文件内容: {content}")
+        self.assertIn('{"name": "test", "value": 123}', content)
         
-        # 验证远端没有这个文件（应该返回False）
+        # 验证远端没有这个文件（因为是本地重定向）
         self.assertFalse(self._verify_file_exists("local_redirect.txt"))
         
         # 清理：删除本地创建的文件

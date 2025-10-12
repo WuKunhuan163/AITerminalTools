@@ -440,134 +440,74 @@ class GoogleDriveShell:
             print(error_msg)
             return 1
     
-    def _handle_quoted_echo_redirect(self, shell_cmd_clean):
-        """处理引号包围的echo重定向命令，使用base64编码"""
-        try:
-            # 解析echo命令：echo "content" > filename
-            import re
-            
-            # 使用正则表达式提取内容和文件名
-            # 匹配格式：echo "content" > filename 或 echo 'content' > filename 或 echo -n "content" > filename
-            # 也处理被错误解析的格式：echo -n content" with "spaces > filename
-            patterns = [
-                r'^echo\s+(?:-n\s+)?(["\'])(.*?)\1\s*>\s*(.+)$',  # 正常格式
-                r'^echo\s+(?:-n\s+)?(.*?)\s*>\s*(.+)$'  # 无引号或被错误解析的格式
-            ]
-            
-            match = None
-            for pattern in patterns:
-                match = re.match(pattern, shell_cmd_clean.strip(), re.DOTALL)
-                if match:
-                    break
-            
-            if not match:
-                print(f"Error: Unable to parse echo redirect command format")
-                return 1
-            
-            # 根据匹配的模式提取内容和文件名
-            if len(match.groups()) == 3:
-                # 正常格式：echo "content" > filename
-                content = match.group(2)
-                target_file = match.group(3).strip()
-            else:
-                # 无引号格式：echo content > filename
-                content = match.group(1)
-                target_file = match.group(2).strip()
-                # 清理可能的引号残留
-                content = content.replace('"', '').replace("'", '')
-            
-            # 检查是否使用了-n选项（不添加换行符）
-            no_newline = '-n' in shell_cmd_clean.split()[1:3]  # 检查前几个参数中是否有-n
-            
-            # 如果不是-n选项，添加换行符（模拟正常echo行为）
-            if not no_newline:
-                content += '\n'
-        
-            # 使用base64编码的文件创建方法
-            result = self.file_operations._create_text_file(target_file, content)
-            if result.get("success", False):
-                return 0
-            else:
-                error_msg = result.get("error", "File creation failed")
-                print(error_msg)
-                return 1
-                
-        except Exception as e:
-            print(f"Error: Error processing quoted echo command: {e}")
-            return 1
     
-    def _normalize_quotes_and_escapes(self, args):
-        """通用引号和转义处理：重组被分割的参数并统一处理转义字符"""
-        if not args:
-            return args
+    def _process_echo_escapes(self, echo_command):
+        """处理echo命令中的转义字符"""
+        import re
         
-        # 重组参数：将被shell分割的引号包围的字符串重新组合
-        reconstructed = []
-        temp_parts = []
-        in_quoted_string = False
-        quote_char = None
+        # 解析echo命令：echo "content" > filename
+        patterns = [
+            r'^echo\s+(?:-[ne]+\s+)?(["\'])(.*?)\1\s*>\s*(.+)$',  # 带引号格式
+            r'^echo\s+(?:-[ne]+\s+)?(.*?)\s*>\s*(.+)$'  # 无引号格式
+        ]
         
-        for arg in args:
-            # 检查是否开始一个引号包围的字符串
-            if not in_quoted_string and (arg.startswith('"') or arg.startswith("'")):
-                quote_char = arg[0]
-                in_quoted_string = True
-                temp_parts = [arg]
+        for pattern in patterns:
+            match = re.match(pattern, echo_command.strip(), re.DOTALL)
+            if match:
+                if len(match.groups()) == 3:
+                    # 带引号格式
+                    content = match.group(2)
+                    target_file = match.group(3).strip()
+                else:
+                    # 无引号格式
+                    content = match.group(1)
+                    target_file = match.group(2).strip()
                 
-                # 检查是否在同一个参数中结束
-                if len(arg) > 1 and arg.endswith(quote_char):
-                    # 单个参数完成
-                    reconstructed.append(self._process_quoted_string(arg))
-                    in_quoted_string = False
-                    temp_parts = []
-                    quote_char = None
-            elif in_quoted_string and arg.endswith(quote_char):
-                # 结束引号包围的字符串
-                temp_parts.append(arg)
-                # 重组完整的字符串
-                full_string = ' '.join(temp_parts)
-                reconstructed.append(self._process_quoted_string(full_string))
+                # 处理转义字符（保持JSON格式的完整性）
+                # 先处理双反斜杠，避免影响其他转义
+                content = content.replace('\\\\', '\x00DOUBLE_BACKSLASH\x00')
                 
-                temp_parts = []
-                in_quoted_string = False
-                quote_char = None
-            elif in_quoted_string:
-                # 引号字符串中间部分
-                temp_parts.append(arg)
-            else:
-                # 普通参数
-                reconstructed.append(arg)
+                # 检测JSON内容：如果内容包含JSON结构，需要特殊处理引号
+                is_json_like = ('{' in content and '}' in content and '\\"' in content)
+                
+                if is_json_like:
+                    # 对于JSON内容，保持转义引号不变，稍后在重构命令时处理
+                    # 不在这里转换 \"，避免双重转义
+                    pass
+                else:
+                    # 处理转义的引号（非JSON内容）
+                    content = content.replace('\\"', '"')
+                    content = content.replace("\\'", "'")
+                
+                # 处理其他转义字符
+                content = content.replace('\\n', '\n')
+                content = content.replace('\\t', '\t')
+                content = content.replace('\\r', '\r')
+                # 恢复双反斜杠
+                content = content.replace('\x00DOUBLE_BACKSLASH\x00', '\\')
+                
+                # 检查是否有-n选项
+                has_n_option = '-n' in echo_command.split()[:3]
+                
+                # 重构命令时需要正确处理引号
+                if is_json_like:
+                    # 对于JSON内容，先将 \" 转换为实际引号，然后用单引号包围整个内容
+                    # 这样可以避免bash解释内部的引号
+                    json_content = content.replace('\\"', '"')
+                    if has_n_option:
+                        return f"echo -n '{json_content}' > {target_file}"
+                    else:
+                        return f"echo '{json_content}' > {target_file}"
+                else:
+                    # 使用单引号包围内容，避免bash进一步解释引号
+                    if has_n_option:
+                        return f"echo -n '{content}' > {target_file}"
+                    else:
+                        return f"echo '{content}' > {target_file}"
         
-        # 如果还有未完成的引号字符串（异常情况）
-        if temp_parts:
-            reconstructed.extend(temp_parts)
-        
-        return reconstructed
+        # 如果解析失败，返回原命令
+        return echo_command
     
-    def _process_quoted_string(self, quoted_string):
-        """处理引号包围的字符串：保留外层引号，统一处理转义字符"""
-        if not quoted_string:
-            return quoted_string
-        
-        # 保留原始的外层引号（不额外嵌套）
-        if ((quoted_string.startswith('"') and quoted_string.endswith('"')) or 
-            (quoted_string.startswith("'") and quoted_string.endswith("'"))):
-            
-            quote_char = quoted_string[0]
-            content = quoted_string[1:-1]  # 提取内容
-            
-            # 统一处理转义字符：将 \\ 变成 \
-            # 注意：对于echo命令，我们需要保留\n、\t等转义序列，不要在这里处理它们
-            content = content.replace('\\\\', '\\')
-            content = content.replace('\\"', '"')
-            content = content.replace("\\'", "'")
-            
-            result = f"{quote_char}{content}{quote_char}"
-            return result
-        
-        return quoted_string
-    
-
 
     def exit_shell(self, *args, **kwargs):
         """委托到shell_management管理器"""
@@ -1083,8 +1023,12 @@ class GoogleDriveShell:
         self._original_user_command = shell_cmd.strip()
         try:
             is_quoted_command = shell_cmd.startswith("__QUOTED_COMMAND__")
+            # DEBUG: Temporarily disabled
+            # print(f"DEBUG: [EXECUTE_SHELL_COMMAND] Original shell_cmd: '{shell_cmd}'")
+            # print(f"DEBUG: [EXECUTE_SHELL_COMMAND] is_quoted_command: {is_quoted_command}")
             if is_quoted_command:
                 shell_cmd = shell_cmd[len("__QUOTED_COMMAND__"):]
+                # print(f"DEBUG: [EXECUTE_SHELL_COMMAND] After removing marker: '{shell_cmd}'")
             
             # 首先检测引号包围的完整命令（在命令解析之前）
             shell_cmd_clean = shell_cmd.strip()
@@ -1096,9 +1040,8 @@ class GoogleDriveShell:
                 shell_cmd = shell_cmd_clean  # 更新shell_cmd以便后续使用
                 is_quoted_command = True  # 设置引号命令标记
                 
-                # 特殊处理：引号包围的echo重定向命令
-                if shell_cmd_clean.strip().startswith('echo ') and '>' in shell_cmd_clean:
-                    return self._handle_quoted_echo_redirect(shell_cmd_clean)
+                # 引号包围的命令直接使用远程执行
+                # 不需要特殊处理，让通用的远程命令执行机制处理
 
             # 首先检查特殊命令（不需要远程执行）
             if shell_cmd_clean in ['--help', '-h', 'help']:
@@ -1420,9 +1363,7 @@ For more information, visit: https://github.com/your-repo/gds"""
                         print(error_msg)
                         return 1
             
-            # 对所有命令应用通用引号和转义处理
-            if args:
-                args = self._normalize_quotes_and_escapes(args)
+            # 引号和转义处理现在统一由parse_and_translate_command处理
             
             # 特殊处理BACKGROUND_CMD命令
             if cmd == "BACKGROUND_CMD":
@@ -2536,15 +2477,43 @@ done
                         "original_format": "list"
                     }
                 else:
-                    # 字符串格式：直接返回，但进行基本安全处理
+                    # 字符串格式：检查是否是引号包围的重定向命令
                     if not input_command.strip():
                         return {
                             "success": False,
                             "error": "Empty command"
                         }
                     
+                    command_str = input_command.strip()
+                    
+                    # 检查是否是引号包围的重定向命令（如 'echo "content" > file.txt'）
+                    if ((command_str.startswith("'") and command_str.endswith("'")) or 
+                        (command_str.startswith('"') and command_str.endswith('"'))):
+                        
+                        # 去掉外层引号
+                        inner_command = command_str[1:-1]
+                        
+                        # 检查是否包含重定向操作符
+                        if any(op in inner_command for op in [' > ', ' >> ', ' < ', ' | ']):
+                            # 这是一个引号包围的重定向命令，需要特殊处理
+                            # 处理转义字符（特别是echo命令中的转义）
+                            processed_command = inner_command
+                            if processed_command.strip().startswith('echo '):
+                                # 对echo命令进行转义字符处理
+                                processed_command = self._process_echo_escapes(processed_command)
+                            
+                            # 添加特殊标记，让后续处理知道这是远程重定向
+                            marked_command = f"__QUOTED_COMMAND__{processed_command}"
+                            
+                            return {
+                                "success": True,
+                                "translated_command": marked_command,
+                                "original_format": "string",
+                                "is_quoted_redirect": True
+                            }
+                    
                     # 基本安全处理：转义反引号防止命令注入
-                    safe_command = input_command.strip().replace('`', '\\`')
+                    safe_command = command_str.replace('`', '\\`')
                     
                     return {
                         "success": True,

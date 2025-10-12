@@ -1,0 +1,75 @@
+test_06_navigation (test_gds.GDSTest) ... /Users/wukunhuan/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+FAIL
+
+======================================================================
+FAIL: test_06_navigation (test_gds.GDSTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 355, in _run_gds_command
+    self.assertEqual(result.returncode, 0, f"命令执行失败: {command}")
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/case.py", line 831, in assertEqual
+    assertion_func(first, second, msg=msg)
+AssertionError: 1 != 0 : 命令执行失败: cd path_test
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 990, in test_06_navigation
+    result = self._run_gds_command('cd path_test')
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 361, in _run_gds_command
+    self.fail(f"命令执行异常: {command} - {e}")
+AssertionError: 命令执行异常: cd path_test - 1 != 0 : 命令执行失败: cd path_test
+
+----------------------------------------------------------------------
+Ran 1 test in 125.159s
+
+FAILED (failures=1)
+设置GDS全面测试环境...
+远端测试目录: ~/tmp/gds_test_20251010_035808_666277_42652c44
+已切换到远端测试目录: ~/tmp/gds_test_20251010_035808_666277_42652c44
+本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_ijs6t27j
+测试环境设置完成
+命令转译成功: pwd -> pwd
+返回码: 0
+输出: ~/tmp/gds_test_20251010_035808_666277_42652c44
+...
+命令转译成功: ls -> ls
+返回码: 0
+命令转译成功: mkdir test_dir -> mkdir test_dir
+返回码: 0
+输出: 
+[K⏳ Waiting for result .....
+[K
+[K...
+命令转译成功: ls test_dir -> ls test_dir
+返回码: 0
+测试多目录创建
+命令转译成功: mkdir -p multi_test/dir1 multi_test/dir2 multi_test/dir3 -> mkdir -p multi_test/dir1 multi_test/dir2 multi_test/dir3
+返回码: 0
+输出: 
+[K⏳ Waiting for result .....
+[K
+[K...
+命令转译成功: ls multi_test/dir1 -> ls multi_test/dir1
+返回码: 0
+命令转译成功: ls multi_test/dir2 -> ls multi_test/dir2
+返回码: 0
+命令转译成功: ls multi_test/dir3 -> ls multi_test/dir3
+返回码: 0
+命令转译成功: cd test_dir -> cd test_dir
+返回码: 0
+命令转译成功: cd .. -> cd ..
+返回码: 0
+🛤️ 不同远端路径类型测试
+命令转译成功: mkdir -p path_test/level1/level2 -> mkdir -p path_test/level1/level2
+返回码: 0
+输出: 
+[K⏳ Waiting for result .....
+[K
+[K...
+命令转译成功: cd path_test -> cd path_test
+返回码: 1
+输出: Directory does not exist: path_test
+...
+命令执行异常: 1 != 0 : 命令执行失败: cd path_test

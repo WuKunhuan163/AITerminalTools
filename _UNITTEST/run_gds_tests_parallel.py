@@ -77,7 +77,16 @@ def get_running_background_processes():
 
 def start_test(test_name):
     """启动一个测试"""
-    cmd = f'cd {Path(__file__).parent} && /usr/bin/python3 -m unittest {test_name} -v'
+    # 创建输出文件名
+    test_short_name = test_name.split('.')[-1]
+    output_file = f"tmp/{test_short_name}_output.txt"
+    
+    # 确保tmp目录存在
+    tmp_dir = Path(__file__).parent / "tmp"
+    tmp_dir.mkdir(exist_ok=True)
+    
+    # 修改命令以重定向输出到文件
+    cmd = f'cd {Path(__file__).parent} && /usr/bin/python3 -m unittest {test_name} -v > {output_file} 2>&1'
     
     try:
         result = subprocess.run(
@@ -91,13 +100,13 @@ def start_test(test_name):
             output = result.stdout.strip()
             if "Process started: PID" in output:
                 pid = output.split("PID ")[1].split(",")[0]
-                print(f"✅ Started {test_name} (PID: {pid})")
-                return int(pid)
+                print(f"▶️ Started {test_short_name} (PID: {pid}) -> {output_file}")
+                return int(pid), output_file
         print(f"❌ Failed to start {test_name}: {result.stderr}")
-        return None
+        return None, None
     except Exception as e:
         print(f"❌ Error starting {test_name}: {e}")
-        return None
+        return None, None
 
 def list_tests():
     """列出所有测试及其ID"""
@@ -122,7 +131,8 @@ def run_tests_range(start_id, end_id, max_concurrent=3):
     
     completed_tests = []
     failed_tests = []
-    running_pids = {}
+    running_pids = {}  # {pid: (test_name, output_file)}
+    test_results = {}  # {test_name: {"status": "pass/fail", "output_file": "path", "content": "..."}}
     
     while test_queue or running_pids:
         # 启动新测试（如果有空闲槽位）
@@ -130,16 +140,16 @@ def run_tests_range(start_id, end_id, max_concurrent=3):
         
         while len(running_pids) < max_concurrent and test_queue and current_running < max_concurrent:
             test_name = test_queue.pop(0)
-            pid = start_test(test_name)
+            pid, output_file = start_test(test_name)
             if pid:
-                running_pids[pid] = test_name
+                running_pids[pid] = (test_name, output_file)
                 current_running += 1
             else:
                 failed_tests.append(test_name)
         
         # 检查已完成的测试
         completed_pids = []
-        for pid, test_name in running_pids.items():
+        for pid, (test_name, output_file) in running_pids.items():
             try:
                 result = subprocess.run(
                     ["../BACKGROUND_CMD", "--status", str(pid), "--json"],
@@ -152,7 +162,38 @@ def run_tests_range(start_id, end_id, max_concurrent=3):
                     if data.get('success') and data.get('status', {}).get('status') == 'completed':
                         completed_pids.append(pid)
                         completed_tests.append(test_name)
-                        print(f"✅ Completed {test_name.split('.')[-1]} (PID: {pid})")
+                        
+                        # 读取测试结果
+                        test_short_name = test_name.split('.')[-1]
+                        output_path = Path(__file__).parent / output_file
+                        test_content = ""
+                        test_status = "unknown"
+                        
+                        try:
+                            if output_path.exists():
+                                test_content = output_path.read_text(encoding='utf-8')
+                                # 简单判断测试是否通过
+                                if "OK" in test_content and "FAILED" not in test_content:
+                                    test_status = "pass"
+                                elif "FAILED" in test_content or "ERROR" in test_content:
+                                    test_status = "fail"
+                                else:
+                                    test_status = "unknown"
+                            else:
+                                test_content = "Output file not found"
+                                test_status = "fail"
+                        except Exception as e:
+                            test_content = f"Error reading output: {e}"
+                            test_status = "fail"
+                        
+                        test_results[test_name] = {
+                            "status": test_status,
+                            "output_file": output_file,
+                            "content": test_content
+                        }
+                        
+                        status_icon = "✅" if test_status == "pass" else "❌" if test_status == "fail" else "❓"
+                        print(f"{status_icon} Completed {test_short_name} (PID: {pid}) - {test_status.upper()}")
             except Exception:
                 pass
         
@@ -174,15 +215,37 @@ def run_tests_range(start_id, end_id, max_concurrent=3):
     # 最终报告
     print(f"\n{'='*60}")
     print(f"🏁 Test execution completed!")
-    print(f"✅ Completed: {len(completed_tests)}")
-    print(f"❌ Failed: {len(failed_tests)}")
     
-    if failed_tests:
+    # 统计结果
+    passed_tests = [name for name, result in test_results.items() if result["status"] == "pass"]
+    failed_test_results = [name for name, result in test_results.items() if result["status"] == "fail"]
+    unknown_tests = [name for name, result in test_results.items() if result["status"] == "unknown"]
+    
+    print(f"✅ Passed: {len(passed_tests)}")
+    print(f"❌ Failed: {len(failed_test_results) + len(failed_tests)}")
+    print(f"❓ Unknown: {len(unknown_tests)}")
+    
+    # 显示失败的测试详情
+    all_failed = failed_tests + failed_test_results
+    if all_failed:
         print(f"\n❌ Failed tests:")
-        for test in failed_tests:
-            print(f"  - {test.split('.')[-1]}")
+        for test in all_failed:
+            test_short = test.split('.')[-1]
+            print(f"  - {test_short}")
+            if test in test_results:
+                output_file = test_results[test]["output_file"]
+                print(f"    📄 Output: {output_file}")
     
-    print(f"\n📊 Use '../BACKGROUND_CMD --status' to see detailed results")
+    # 显示通过的测试
+    if passed_tests:
+        print(f"\n✅ Passed tests:")
+        for test in passed_tests:
+            test_short = test.split('.')[-1]
+            output_file = test_results[test]["output_file"]
+            print(f"  - {test_short} (📄 {output_file})")
+    
+    print(f"\n📊 All test outputs saved in tmp/ folder")
+    print(f"📊 Use '../BACKGROUND_CMD --status' to see process details")
 
 def main():
     """主函数"""

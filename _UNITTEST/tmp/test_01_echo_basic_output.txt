@@ -1,0 +1,101 @@
+test_01_echo_basic (test_gds.GDSTest)
+测试基础echo命令 ... /Users/wukunhuan/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 261.177s
+
+OK
+设置GDS全面测试环境...
+远端测试目录: ~/tmp/gds_test_20251010_035154_645452_8a3cf2e3
+已切换到远端测试目录: ~/tmp/gds_test_20251010_035154_645452_8a3cf2e3
+本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_rj85hw5y
+测试环境设置完成
+命令转译成功: echo "Hello World" -> echo "Hello World"
+返回码: 0
+输出: 
+[K⏳ Waiting for result .......
+[K
+[KHello World
+...
+命令转译成功: echo "Complex: @#$%^&*() \"quotes\" 中文字符" -> echo "Complex: @#$%^&*() \"quotes\" 中文字符"
+返回码: 0
+输出: 
+[K⏳ Waiting for result ........
+[K
+[KComplex: @#$%^&*() "quotes" 中文字符
+...
+命令转译成功: 'echo "Test content" > test_echo.txt' -> __QUOTED_COMMAND__echo "Test content" > test_echo.txt
+返回码: 0
+输出: 
+[K⏳ Waiting for result .......
+[K
+[K...
+命令转译成功: ls test_echo.txt -> ls test_echo.txt
+返回码: 0
+输出: test_echo.txt
+...
+命令转译成功: cat test_echo.txt -> cat test_echo.txt
+返回码: 0
+输出: Test content
+...
+命令转译成功: 'echo "Line 1\nLine 2\tTabbed\\Backslash" > complex_echo.txt' -> __QUOTED_COMMAND__echo "Line 1\nLine 2\tTabbed\\Backslash" > complex_echo.txt
+返回码: 0
+输出: 
+[K⏳ Waiting for result ........
+[K
+[K...
+命令转译成功: ls complex_echo.txt -> ls complex_echo.txt
+返回码: 0
+输出: complex_echo.txt
+...
+命令转译成功: cat complex_echo.txt -> cat complex_echo.txt
+返回码: 0
+输出: Line 1
+Line 2	Tabbed\Backslash
+...
+命令转译成功: 'echo "{\"name\": \"test\", \"value\": 123}" > json_echo.txt' -> __QUOTED_COMMAND__echo "{\"name\": \"test\", \"value\": 123}" > json_echo.txt
+返回码: 0
+输出: 
+[K⏳ Waiting for result ........
+[K
+[K...
+命令转译成功: ls json_echo.txt -> ls json_echo.txt
+返回码: 0
+输出: json_echo.txt
+...
+命令转译成功: cat json_echo.txt -> cat json_echo.txt
+返回码: 0
+输出: {"name": "test", "value": 123}
+...
+命令转译成功: 'echo "测试中文：你好世界 Special chars: @#$%^&*()_+-=[]{}|;:,.<>?" > chinese_echo.txt' -> __QUOTED_COMMAND__echo "测试中文：你好世界 Special chars: @#$%^&*()_+-=[]{}|;:,.<>?" > chinese_echo.txt
+返回码: 0
+输出: 
+[K⏳ Waiting for result ........
+[K
+[K...
+命令转译成功: ls chinese_echo.txt -> ls chinese_echo.txt
+返回码: 0
+输出: chinese_echo.txt
+...
+命令转译成功: cat chinese_echo.txt -> cat chinese_echo.txt
+返回码: 0
+输出: 测试中文：你好世界 Special chars: @#$%^&*()_+-=[]{}|;:,.<>?
+...
+命令转译成功: 'echo -e "line1\nline2\nline3" > echo_multiline.txt' -> __QUOTED_COMMAND__echo -e "line1\nline2\nline3" > echo_multiline.txt
+返回码: 0
+输出: 
+[K⏳ Waiting for result ......
+[K
+[K...
+命令转译成功: ls echo_multiline.txt -> ls echo_multiline.txt
+返回码: 0
+输出: echo_multiline.txt
+...
+命令转译成功: cat echo_multiline.txt -> cat echo_multiline.txt
+返回码: 0
+输出: line1
+line2
+line3
+...

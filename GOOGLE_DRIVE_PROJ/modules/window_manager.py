@@ -424,6 +424,7 @@ try:
     # 获取父进程PID（由父进程传入）
     parent_pid = PARENT_PID_PLACEHOLDER
     
+    print(f"[DEBUG] 窗口进程启动: PID={os.getpid()}, 父进程PID={parent_pid}, 窗口ID=WINDOW_ID_PLACEHOLDER", file=sys.stderr)
     
     root = tk.Tk()
     root.title("Google Drive Shell")
@@ -448,6 +449,7 @@ try:
             import psutil
             # 检查父进程是否还存活
             if not psutil.pid_exists(parent_pid):
+                print(f"[DEBUG] 父进程{parent_pid}已退出，关闭窗口", file=sys.stderr)
                 try:
                     with open(debug_file, "a", encoding="utf-8") as f:
                         timestamp = time.time() - 1757413752.714440
@@ -461,6 +463,7 @@ try:
             # 每1秒检查一次
             root.after(1000, check_parent_alive)
         except Exception as e:
+            print(f"[DEBUG] 父进程监控错误: {e}", file=sys.stderr)
             # 出错时继续监控
             root.after(1000, check_parent_alive)
     
@@ -534,7 +537,9 @@ try:
                     except:
                         pass
             else:
+                pass
         except Exception as e:
+            pass
     
     # 带focus计数的聚焦函数
     def force_focus_with_count(play_sound=True):
@@ -662,7 +667,7 @@ try:
     # 直接反馈按钮（第二个位置）- 初始禁用状态
     feedback_btn = tk.Button(
         button_frame, 
-        text="⏳等待激活", 
+        text="⏳按Cmd激活", 
         command=direct_feedback,
         font=("Arial", 9),
         bg="#CCCCCC",  # 灰色表示禁用
@@ -678,7 +683,7 @@ try:
     # 执行完成按钮（最右边）- 初始禁用状态
     complete_btn = tk.Button(
         button_frame, 
-        text="⏳等待激活", 
+        text="⏳按Cmd激活", 
         command=execution_completed,
         font=("Arial", 9, "bold"),
         bg="#CCCCCC",  # 灰色表示禁用
@@ -701,13 +706,10 @@ try:
     def activate_buttons(activation_source, play_sound=True):
         """激活按钮的统一函数"""
         global buttons_activated
-        
         if buttons_activated:
             return  # 已经激活过了
-            
         buttons_activated = True
-        
-        
+
         # 启用直接反馈按钮
         feedback_btn.config(
             text="💬直接反馈",
@@ -731,7 +733,6 @@ try:
                 threading.Thread(target=play_bell_in_subprocess, daemon=True).start()
             except Exception:
                 pass
-        
         
         # 记录到debug文件
         try:
@@ -765,20 +766,23 @@ try:
                     
                     # macOS Command键检测
                     if key_name in ['cmd', 'cmd_l', 'cmd_r'] or (hasattr(key, 'vk') and key.vk in [55, 54]):
+                        pass
                         activate_buttons("全局Command键", play_sound=False)  # 不播放音效
                         
                     # Windows/Linux Control键检测
                     elif key_name in ['ctrl', 'ctrl_l', 'ctrl_r']:
+                        pass
                         activate_buttons("全局Control键", play_sound=False)  # 不播放音效
                         
                 except Exception as e:
+                    pass
             
             # 创建监听器
             global_listener = keyboard.Listener(on_press=on_press)
             global_listener.start()
             
-            
         except Exception as e:
+            pass
     
     # 启动全局监听器
     start_global_listener()
@@ -793,7 +797,6 @@ try:
         
         # 记录按键事件到debug
         key_info = f"keysym='{event.keysym}', keycode={event.keycode}, state={event.state}"
-        
         try:
             with open(debug_file, "a", encoding="utf-8") as f:
                 import time
@@ -863,8 +866,6 @@ try:
     # 设置10秒定时器
     root.after(10000, auto_activate_buttons)
     
-    # 绑定键盘事件（窗口焦点方案）
-    
     # 绑定窗口按键事件（需要焦点）
     root.bind('<KeyPress>', on_key_press)
     root.bind('<KeyRelease>', on_key_release)
@@ -893,6 +894,7 @@ try:
         try:
             root.bind(combo, on_combination_key)
         except Exception as e:
+            pass
     
     # 定期强制获取焦点（每5秒一次）
     def periodic_focus():
@@ -908,8 +910,12 @@ try:
         # 5秒后再次执行
         root.after(5000, periodic_focus)
     
+    # 启动定期焦点获取（已禁用，避免意外获取焦点）
+    # root.after(2000, periodic_focus)  # 2秒后开始
+    
     # 确保窗口能接收键盘事件
     root.focus_set()
+    
     
     # 设置超时定时器
     def timeout_destroy():
@@ -934,6 +940,7 @@ try:
             if global_listener:
                 global_listener.stop()
         except Exception as e:
+            pass
     
     # 绑定窗口关闭事件
     def on_window_closing():

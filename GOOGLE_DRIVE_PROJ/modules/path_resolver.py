@@ -447,8 +447,16 @@ class PathResolver:
                 return self.compute_absolute_path(parent_path, remaining_path)
             
             # 普通相对路径，需要处理路径中的 .. 和 .
-            normalized_path = self._normalize_path_components(current_shell_path, input_path)
-            return normalized_path
+            # 特别处理包含 ../ 的复杂路径（如 level1/../level1/level2）
+            if '../' in input_path:
+                # 使用路径规范化处理复杂的相对路径
+                normalized_path = self._normalize_path_components(current_shell_path, input_path)
+# Debug log removed
+                return normalized_path
+            else:
+                # 简单相对路径
+                normalized_path = self._normalize_path_components(current_shell_path, input_path)
+                return normalized_path
             
         except Exception as e:
             # 如果计算失败，返回输入路径
@@ -515,9 +523,12 @@ class PathResolver:
             
             # 重建路径
             if not normalized_components:
-                return "~"
+                result = "~"
             else:
-                return "~/" + "/".join(normalized_components)
+                result = "~/" + "/".join(normalized_components)
+            
+            
+            return result
                 
         except Exception as e:
             # 如果规范化失败，返回原始连接的路径
