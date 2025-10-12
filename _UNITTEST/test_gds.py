@@ -1161,7 +1161,7 @@ print(f"Current files: {len(os.listdir())}")'''
         # 先确保文件存在
         success, result = self._run_upload_command_with_retry(
             f'upload --force {conflict_test_file}',
-            ['ls test_upload_conflict_file.py'],
+            [f'ls {conflict_test_file.name}'],
             max_retries=3
         )
         self.assertTrue(success, f"冲突测试文件上传失败: {result.stderr if result else 'Unknown error'}")
@@ -1179,7 +1179,7 @@ print(f"Current files: {len(os.listdir())}")'''
         # 先上传原始版本
         success, result = self._run_upload_command_with_retry(
             f'upload --force {overwrite_test_file}',
-            ['ls test_upload_overwrite_file.py'],
+            [f'ls {overwrite_test_file.name}'],
             max_retries=3
         )
         self.assertTrue(success, f"原始版本上传失败: {result.stderr if result else 'Unknown error'}")
