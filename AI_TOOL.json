@@ -733,8 +733,8 @@
     },
     "BACKGROUND_CMD": {
       "name": "BACKGROUND_CMD",
-      "description": "Safe background process management tool",
-      "purpose": "Create, monitor, and manage background processes safely, preventing system resource exhaustion",
+      "description": "Safe background process management tool - MUST RUN IN FOREGROUND ONLY",
+      "purpose": "Create, monitor, and manage background processes safely, preventing system resource exhaustion. WARNING: This tool must be executed in foreground mode (is_background=false) to avoid terminal conflicts.",
       "usage": "BACKGROUND_CMD <command> [options]",
       "examples": [
         "BACKGROUND_CMD \"sleep 60\"",
@@ -753,10 +753,11 @@
       "testable": true,
       "test_passed": true,
       "ai_usable": true,
+      "ai_usage_notes": "CRITICAL: Always set is_background=false when calling this tool. Running BACKGROUND_CMD in background mode causes terminal conflicts and test failures.",
       "test_command": [
         "_UNITTEST/test_background_cmd.py"
       ],
-      "tool_use_scenario": "When user needs to run background processes safely, manage process resources, or resolve posix_spawnp failed errors",
+      "tool_use_scenario": "When user needs to run background processes safely, manage process resources, or resolve posix_spawnp failed errors. MUST be executed in foreground mode only.",
       "file_hashes": {
         "binary": "7ce4207c4fa79988bae1674460b63b5f6767d998b7085b1f4fd0aa7631dbe247",
         "python": "b495cbc4b0c7d4c0cec8664863f080369b8a41816a725ef5cf6d422233c6c608",
