@@ -111,11 +111,11 @@ class ProcessManager:
             return command
         
         if shell == 'zsh':
-            # 使用交互式zsh来解析别名
-            resolve_cmd = f'zsh -i -c "which {shlex.quote(first_cmd)} 2>/dev/null || echo {shlex.quote(first_cmd)}"'
+            # 使用交互式zsh来解析别名，先尝试alias命令，再尝试which
+            resolve_cmd = f'zsh -i -c "alias {shlex.quote(first_cmd)} 2>/dev/null | cut -d= -f2- | tr -d \"\\047\" || which {shlex.quote(first_cmd)} 2>/dev/null || echo {shlex.quote(first_cmd)}"'
         elif shell == 'bash':
-            # 使用交互式bash来解析别名
-            resolve_cmd = f'bash -i -c "which {shlex.quote(first_cmd)} 2>/dev/null || echo {shlex.quote(first_cmd)}"'
+            # 使用交互式bash来解析别名，先尝试alias命令，再尝试which
+            resolve_cmd = f'bash -i -c "alias {shlex.quote(first_cmd)} 2>/dev/null | cut -d= -f2- | tr -d \"\\047\" || which {shlex.quote(first_cmd)} 2>/dev/null || echo {shlex.quote(first_cmd)}"'
         else:
             return command
         
@@ -128,10 +128,24 @@ class ProcessManager:
                 if 'built-in' in resolved_cmd.lower() or 'shell function' in resolved_cmd.lower():
                     return command
                 
-                # 只有当resolved_cmd是有效路径或命令时才替换
-                if resolved_cmd != first_cmd and (resolved_cmd.startswith('/') or resolved_cmd.startswith('./')):
-                    cmd_parts[0] = resolved_cmd
-                    return ' '.join(shlex.quote(part) for part in cmd_parts)
+                # 处理别名替换
+                if resolved_cmd != first_cmd:
+                    # 如果是路径形式的命令，直接替换第一个参数
+                    if resolved_cmd.startswith('/') or resolved_cmd.startswith('./'):
+                        cmd_parts[0] = resolved_cmd
+                        return ' '.join(shlex.quote(part) for part in cmd_parts)
+                    # 如果是别名（包含空格），替换整个命令的第一部分
+                    elif ' ' in resolved_cmd:
+                        # 解析别名命令
+                        try:
+                            alias_parts = shlex.split(resolved_cmd)
+                            # 用别名替换原命令的第一部分，保留原命令的其他参数
+                            new_cmd_parts = alias_parts + cmd_parts[1:]
+                            # 不要对整个命令进行quote，而是直接拼接
+                            return ' '.join(new_cmd_parts)
+                        except ValueError:
+                            # 如果别名解析失败，回退到原命令
+                            return command
                     
         except (subprocess.TimeoutExpired, subprocess.SubprocessError):
             pass
