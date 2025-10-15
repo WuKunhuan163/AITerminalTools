@@ -91,29 +91,38 @@ class TextOperations:
     def cmd_cat(self, filename):
         """cat命令 - 显示文件内容"""
         try:
+            # print(f"🔍 DEBUG: cmd_cat called for filename: {filename}")
             if not self.drive_service:
+                # print(f"🔍 DEBUG: Drive service not initialized")
                 return {"success": False, "error": "Google Drive API service not initialized"}
                 
             current_shell = self.main_instance.get_current_shell()
             if not current_shell:
+                # print(f"🔍 DEBUG: No active shell")
                 return {"success": False, "error": "No active remote shell, please create or switch to a shell"}
             
             if not filename:
+                # print(f"🔍 DEBUG: No filename provided")
                 return {"success": False, "error": "Please specify the file to view"}
             
             # 查找文件
+            # print(f"🔍 DEBUG: Looking for file: {filename}")
             file_info = self._find_file(filename, current_shell)
+            # print(f"🔍 DEBUG: File info: {file_info}")
             if not file_info:
                 # 将本地路径转换为远程路径格式以便在错误消息中正确显示
                 converted_filename = self.main_instance.path_resolver._convert_local_path_to_remote(filename)
+                # print(f"🔍 DEBUG: File not found, converted path: {converted_filename}")
                 return {"success": False, "error": f"File or directory does not exist: {converted_filename}"}
             
             # 检查是否为文件
             if file_info['mimeType'] == 'application/vnd.google-apps.folder':
+                # print(f"🔍 DEBUG: Target is a directory")
                 return {"success": False, "error": f"cat: {filename}: Is a directory"}
             
             # 下载并读取文件内容
             try:
+                # print(f"🔍 DEBUG: Downloading file content...")
                 import io
                 from googleapiclient.http import MediaIoBaseDownload
                 
@@ -126,12 +135,15 @@ class TextOperations:
                     status, done = downloader.next_chunk()
                 
                 content = fh.getvalue().decode('utf-8', errors='replace')
+                # print(f"🔍 DEBUG: File content downloaded, length: {len(content)} chars")
                 return {"success": True, "output": content, "filename": filename}
                 
             except Exception as e:
+                # print(f"🔍 DEBUG: Error downloading file: {e}")
                 return {"success": False, "error": f"无法读取文件内容: {e}"}
                 
         except Exception as e:
+            # print(f"🔍 DEBUG: Exception in cmd_cat: {e}")
             return {"success": False, "error": f"执行cat命令时出错: {e}"}
 
     def cmd_grep(self, pattern, *filenames):
@@ -1179,4 +1191,25 @@ class TextOperations:
             raise
         except Exception as e:
             return {"success": False, "error": f"Backup creation failed: {str(e)}"}
+
+    def _run_linter_on_content(self, content, filename):
+        """运行linter检查内容"""
+        try:
+            # Import and use the LINTER tool
+            import sys
+            import os
+            sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+            from LINTER import MultiLanguageLinter
+            linter = MultiLanguageLinter()
+            
+            # Run linter on content
+            result = linter.lint_content(content, filename)
+            return result
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "has_issues": False,
+                "error": f"Linter execution failed: {str(e)}"
+            }
 

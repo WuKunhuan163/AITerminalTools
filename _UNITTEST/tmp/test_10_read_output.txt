@@ -6,22 +6,32 @@ FAIL
 FAIL: test_10_read (test_gds.GDSTest)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 1355, in test_10_read
-    self.assertTrue(success, f"test05文件上传失败: {result.stderr if result else 'Unknown error'}")
-AssertionError: False is not true : test05文件上传失败: bash: line 1: upload: command not found
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 357, in _run_gds_command
+    self.assertEqual(result.returncode, 0, f"命令执行失败: {command}")
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/case.py", line 831, in assertEqual
+    assertion_func(first, second, msg=msg)
+AssertionError: 1 != 0 : 命令执行失败: find . -name "*.py"
 
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 1368, in test_10_read
+    result = self._run_gds_command('find . -name "*.py"')
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 363, in _run_gds_command
+    self.fail(f"命令执行异常: {command} - {e}")
+AssertionError: 命令执行异常: find . -name "*.py" - 1 != 0 : 命令执行失败: find . -name "*.py"
 
 ----------------------------------------------------------------------
-Ran 1 test in 181.618s
+Ran 1 test in 258.486s
 
 FAILED (failures=1)
 设置GDS全面测试环境...
-远端测试目录: ~/tmp/gds_test_20251013_005428_293059_39943e3b
-已切换到远端测试目录: ~/tmp/gds_test_20251013_005428_293059_39943e3b
-本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_q50myplw
+远端测试目录: ~/tmp/gds_test_20251016_004207_922447_ce23dc2c
+已切换到远端测试目录: ~/tmp/gds_test_20251016_004207_922447_ce23dc2c
+本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_3r7djmzo
 测试环境设置完成
 
-执行带重试的命令: upload --force /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP/test_read_simple_hello.py
+执行带重试的upload命令: upload --force /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP/test_read_simple_hello.py
 验证命令: ['ls test_read_simple_hello.py']
 最大重试次数: 3
 
@@ -29,49 +39,69 @@ FAILED (failures=1)
 命令转译成功: upload --force /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP/test_read_simple_hello.py -> upload --force /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP/test_read_simple_hello.py
 返回码: 0
 输出: 
-[K⏳ Waiting for result ......
+[K⏳ Waiting for upload ...
 [K
+[K⏳ Waiting for file sync ...........
+[K
+[K⏳ Waiting for result ...
+[K
+[K
+[K⏳ Validating test_read_simple_hello.py ...
 [K...
-Warning: 错误: bash: line 1: upload: command not found
-...
-Verify 1/1: ls test_read_simple_hello.py
-命令转译成功: ls test_read_simple_hello.py -> ls test_read_simple_hello.py
-返回码: 1
-输出: Failed to list files: Path not found: test_read_simple_hello.py
-...
-Error: Verify failed, return code: 1
-Verify failed, waiting 2 seconds before retrying...
-
-尝试 2/3
-命令转译成功: upload --force /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP/test_read_simple_hello.py -> upload --force /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP/test_read_simple_hello.py
 返回码: 0
 输出: 
-[K⏳ Waiting for result ......
+[K⏳ Waiting for upload ...
 [K
-[K...
-Warning: 错误: bash: line 1: upload: command not found
-...
-Verify 1/1: ls test_read_simple_hello.py
+[K⏳ Waiting for file sync ...........
+[K
+[K⏳ Waiting for result ...
+[K
+[K
+[K⏳ Validating test_read_simple_hello.py ...
+[K
+验证命令 1: ls test_read_simple_hello.py
 命令转译成功: ls test_read_simple_hello.py -> ls test_read_simple_hello.py
-返回码: 1
-输出: Failed to list files: Path not found: test_read_simple_hello.py
-...
-Error: Verify failed, return code: 1
-Verify failed, waiting 2 seconds before retrying...
-
-尝试 3/3
-命令转译成功: upload --force /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP/test_read_simple_hello.py -> upload --force /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP/test_read_simple_hello.py
 返回码: 0
-输出: 
-[K⏳ Waiting for result .....
-[K
-[K...
-Warning: 错误: bash: line 1: upload: command not found
+输出: test_read_simple_hello.py
 ...
-Verify 1/1: ls test_read_simple_hello.py
-命令转译成功: ls test_read_simple_hello.py -> ls test_read_simple_hello.py
+验证成功: ls test_read_simple_hello.py
+所有验证通过!
+命令转译成功: cat test_read_simple_hello.py -> cat test_read_simple_hello.py
+返回码: 0
+输出: """
+Simple Hello Script
+"""
+print(f"Hello from remote project!")
+print(f"Current working directory:", __import__("os").getcwd())
+import sys
+print(f"Python version:", sys.version)
+...
+命令转译成功: read test_read_simple_hello.py -> read test_read_simple_hello.py
+返回码: 0
+输出:   1: """
+  2: Simple Hello Script
+  3: """
+  4: print(f"Hello from remote project!")
+  5: print(f"Current working directory:", __import__("os").getcwd())
+  6: import sys
+  7: print(f"Python version:",...
+命令转译成功: read test_read_simple_hello.py 1 3 -> read test_read_simple_hello.py 1 3
+返回码: 0
+输出:   1: """
+  2: Simple Hello Script
+  3: """
+  4: print(f"Hello from remote project!")
+  5: print(f"Current working directory:", __import__("os").getcwd())
+  6: import sys
+  7: print(f"Python version:",...
+命令转译成功: grep "print" test_read_simple_hello.py -> grep "print" test_read_simple_hello.py
+返回码: 0
+输出:   4: print(f"Hello from remote project!")
+  5: print(f"Current working directory:", __import__("os").getcwd())
+  7: print(f"Python version:", sys.version)
+...
+命令转译成功: find . -name "*.py" -> find . -name "*.py"
 返回码: 1
-输出: Failed to list files: Path not found: test_read_simple_hello.py
+输出: Command 'find . -name "*.py"' failed
 ...
-Error: Verify failed, return code: 1
-All retries failed
+命令执行异常: 1 != 0 : 命令执行失败: find . -name "*.py"

@@ -68,11 +68,17 @@ def get_running_background_processes():
         )
         if result.returncode == 0:
             data = json.loads(result.stdout)
-            running_count = sum(1 for proc in data.get('processes', []) 
-                              if proc.get('status') == 'running')
+            running_processes = [proc for proc in data.get('processes', []) 
+                               if proc.get('status') == 'running']
+            running_count = len(running_processes)
+            # Debug: 显示正在运行的进程详情（静默模式，避免过多输出）
+            # if running_processes:
+            #     running_pids = [proc.get('pid') for proc in running_processes]
+            #     print(f"🔍 Debug: BACKGROUND_CMD running processes: {running_pids}")
             return running_count
         return 0
-    except Exception:
+    except Exception as e:
+        print(f"❌ Debug: Error getting background processes: {e}")
         return 0
 
 def start_test(test_name):
@@ -89,12 +95,17 @@ def start_test(test_name):
     cmd = f'cd {Path(__file__).parent} && /usr/bin/python3 -m unittest {test_name} -v > {output_file} 2>&1'
     
     try:
+        print(f"🔍 Debug: About to run BACKGROUND_CMD with cmd: {cmd}")
         result = subprocess.run(
             ["../BACKGROUND_CMD", cmd],
             capture_output=True,
             text=True,
             cwd=Path(__file__).parent
         )
+        print(f"🔍 Debug: BACKGROUND_CMD returned code {result.returncode}")
+        print(f"🔍 Debug: stdout: {result.stdout}")
+        print(f"🔍 Debug: stderr: {result.stderr}")
+        
         if result.returncode == 0:
             # 从输出中提取PID
             output = result.stdout.strip()
@@ -102,10 +113,15 @@ def start_test(test_name):
                 pid = output.split("PID ")[1].split(",")[0]
                 print(f"▶️ Started {test_short_name} (PID: {pid}) -> {output_file}")
                 return int(pid), output_file
+            else:
+                print(f"❌ Debug: Unexpected output from BACKGROUND_CMD: {output}")
+                return None, None
         print(f"❌ Failed to start {test_name}: {result.stderr}")
         return None, None
     except Exception as e:
         print(f"❌ Error starting {test_name}: {e}")
+        import traceback
+        traceback.print_exc()
         return None, None
 
 def list_tests():
@@ -133,19 +149,24 @@ def run_tests_range(start_id, end_id, max_concurrent=3):
     failed_tests = []
     running_pids = {}  # {pid: (test_name, output_file)}
     test_results = {}  # {test_name: {"status": "pass/fail", "output_file": "path", "content": "..."}}
+    last_progress_msg = ""  # 跟踪上次的进度消息，避免重复打印
     
     while test_queue or running_pids:
         # 启动新测试（如果有空闲槽位）
-        current_running = get_running_background_processes()
-        
-        while len(running_pids) < max_concurrent and test_queue and current_running < max_concurrent:
+        while len(running_pids) < max_concurrent and test_queue:
             test_name = test_queue.pop(0)
+            print(f"🚀 Debug: Attempting to start {test_name.split('.')[-1]}")
+            print(f"🔍 Debug: Before start_test - len(running_pids)={len(running_pids)}, max_concurrent={max_concurrent}")
             pid, output_file = start_test(test_name)
+            print(f"🔍 Debug: start_test returned pid={pid}, output_file={output_file}")
             if pid:
                 running_pids[pid] = (test_name, output_file)
-                current_running += 1
+                print(f"✅ Debug: Successfully started {test_name.split('.')[-1]} with PID {pid}")
+                print(f"🔍 Debug: running_pids now: {list(running_pids.keys())}")
             else:
                 failed_tests.append(test_name)
+                print(f"❌ Debug: Failed to start {test_name.split('.')[-1]}")
+                print(f"🔍 Debug: Added to failed_tests: {failed_tests}")
         
         # 检查已完成的测试
         completed_pids = []
@@ -201,13 +222,21 @@ def run_tests_range(start_id, end_id, max_concurrent=3):
         for pid in completed_pids:
             del running_pids[pid]
         
-        # 显示进度
+        # 显示进度（只在变化时打印，避免重复）
         total = len(ALL_GDS_TESTS[start_id:end_id+1])
         done = len(completed_tests) + len(failed_tests)
-        running = len(running_pids)
+        running = len(running_pids)  # 使用测试套件跟踪的进程数量
         remaining = len(test_queue)
         
-        print(f"📈 Progress: {done}/{total} done, {running} running, {remaining} queued")
+        # 添加debug信息
+        progress_msg = f"📈 Progress: {done}/{total} done, {running} running, {remaining} queued"
+        debug_msg = f"🔍 Debug: running_pids={list(running_pids.keys())}"
+        
+        # 只在进度消息发生变化时打印
+        if progress_msg != last_progress_msg:
+            print(progress_msg)
+            print(debug_msg)  # 添加debug信息
+            last_progress_msg = progress_msg
         
         if running_pids or test_queue:
             time.sleep(5)  # 等待5秒再检查

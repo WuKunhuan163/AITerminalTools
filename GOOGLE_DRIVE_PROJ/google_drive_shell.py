@@ -951,6 +951,7 @@ class GoogleDriveShell:
         
         cmd = args[0]
         cmd_args = args[1:]
+        print(f"🔍 DEBUG: execute_shell_command_with_args - cmd='{cmd}', cmd_args={cmd_args}")
         
         # 直接处理命令，跳过字符串解析
         if cmd == 'ls':
@@ -1170,11 +1171,12 @@ For more information, visit: https://github.com/your-repo/gds"""
                         return self._execute_background_command(remaining_cmd, command_identifier)
                     break
             
-            # 解析命令 - 对edit命令特殊处理
-            if shell_cmd_clean.strip().startswith('edit '):
-                # 使用新的用户友好的edit命令解析器
-                return self._handle_edit_command(shell_cmd_clean.strip())
-            else:
+            # 解析命令
+            # 注释掉edit命令的特殊处理，让它通过正常的特殊命令路由
+            # if shell_cmd_clean.strip().startswith('edit '):
+            #     # 使用新的用户友好的edit命令解析器
+            #     return self._handle_edit_command(shell_cmd_clean.strip())
+            # else:
                 # 特殊处理python -c命令，避免shlex破坏Python代码中的引号
                 if shell_cmd_clean.strip().startswith('python -c '):
                     # 对于python -c命令，手动分割以保护Python代码中的引号
@@ -1225,6 +1227,7 @@ For more information, visit: https://github.com/your-repo/gds"""
                     special_commands = ['pwd', 'ls', 'cd', 'cat', 'mkdir', 'touch', 'echo', 'help', 'venv', 'pyenv', 
                                       'cleanup-windows', 'linter', 'pip', 'deps', 'edit', 'read', 'python', 
                                       'upload', 'upload-folder', 'download', 'mv', 'find', 'rm', 'grep']
+                    # print(f"🔍 DEBUG: Checking special commands - first_word='{first_word}', in_special={first_word in special_commands}")
                     if first_word in special_commands:
                         # print(f"DEBUG: Processing special command '{first_word}' with local API")
                         
@@ -1242,12 +1245,9 @@ For more information, visit: https://github.com/your-repo/gds"""
                             print(f"Error: Command parsing failed: {e}")
                             return 1
                         
-                        # print(f"DEBUG: Parsed special cmd='{cmd}', args={args}")
-                        # print(f"DEBUG: About to check cmd conditions...")
+                        # print(f"🔍 DEBUG: Parsed special cmd='{cmd}', args={args}")
+                        # print(f"🔍 DEBUG: About to enter if-elif chain...")
                         
-                        # print(f"DEBUG: Checking cmd conditions, cmd='{cmd}'")
-                        # print(f"DEBUG: About to enter if-elif chain...")
-                        # print(f"DEBUG: Testing pwd condition: cmd == 'pwd' -> {cmd == 'pwd'}")
                         if cmd == 'pwd':
                             # print(f"DEBUG: Inside pwd condition")
                             # print(f"DEBUG: Matched pwd condition")
@@ -1437,6 +1437,239 @@ For more information, visit: https://github.com/your-repo/gds"""
                             else:
                                 error_msg = result.get("error", "Upload folder failed")
                                 print(error_msg)
+                                return 1
+                        elif cmd == 'grep':
+                            # 使用委托方法处理grep命令
+                            # print(f"🔍 DEBUG: ✅ ENTERED GREP ELIF BLOCK IN SPECIAL COMMANDS! args={args}")
+                            if len(args) < 1:
+                                print(f"Error: grep command needs at least a file name")
+                                return 1
+                            
+                            # 处理参数解析
+                            if len(args) == 1:
+                                # 只有一个参数，视为文件名，模式为空（等效于read）
+                                pattern = ""
+                                filenames = args
+                                # print(f"🔍 DEBUG: Single arg detected - pattern='{pattern}', filenames={filenames}")
+                            elif '.' in args[-1] and not args[-1].startswith('.'):
+                                # 最后一个参数很可能是文件名，前面的是模式
+                                filenames = [args[-1]]
+                                pattern_parts = args[:-1]
+                                pattern = ' '.join(pattern_parts)
+                                # print(f"🔍 DEBUG: File extension detected - pattern='{pattern}', filenames={filenames}")
+                            else:
+                                # 传统处理：第一个参数是模式，其余是文件名
+                                pattern = args[0]
+                                filenames = args[1:]
+                                # print(f"🔍 DEBUG: Traditional parsing - pattern='{pattern}', filenames={filenames}")
+                            
+                            # 移除pattern的外层引号（如果存在）
+                            original_pattern = pattern
+                            if pattern.startswith('"') and pattern.endswith('"'):
+                                pattern = pattern[1:-1]
+                            elif pattern.startswith("'") and pattern.endswith("'"):
+                                pattern = pattern[1:-1]
+                            if original_pattern != pattern:
+                                # print(f"🔍 DEBUG: Pattern quotes removed - '{original_pattern}' -> '{pattern}'")
+                                pass
+                                
+                            # 检查是否为无模式的grep（等效于read）
+                            if not pattern or pattern.strip() == "":
+                                # print(f"🔍 DEBUG: No pattern detected, using read mode for files: {filenames}")
+                                # 无模式grep，等效于read命令
+                                for filename in filenames:
+                                    # print(f"🔍 DEBUG: Processing file: {filename}")
+                                    cat_result = self.cmd_cat(filename)
+                                    # print(f"🔍 DEBUG: cat_result success={cat_result.get('success')}")
+                                    if cat_result.get("success"):
+                                        content = cat_result["output"]
+                                        # print(f"🔍 DEBUG: File content length: {len(content)} chars")
+                                        # 修复换行显示问题，并添加行号
+                                        lines = content.split('\n')
+                                        # print(f"🔍 DEBUG: Split into {len(lines)} lines")
+                                        for i, line in enumerate(lines, 1):
+                                            print(f"{i:3}: {line}")
+                                    else:
+                                        print(f"Error: 无法读取文件: {filename}")
+                                # print(f"🔍 DEBUG: No pattern grep completed, returning 0")
+                                return 0
+                            
+                            # print(f"🔍 DEBUG: Pattern grep mode - pattern='{pattern}', filenames={filenames}")
+                            # 有模式的grep，只显示匹配行
+                            result = self.cmd_grep(pattern, *filenames)
+                            if result.get("success", False):
+                                result_data = result.get("result", {})
+                                has_matches = False
+                                
+                                has_file_errors = False
+                                for filename, file_result in result_data.items():
+                                    if "error" in file_result:
+                                        print(f"Error: {filename}: {file_result['error']}")
+                                        has_file_errors = True
+                                    else:
+                                        occurrences = file_result.get("occurrences", {})
+                                        if occurrences:
+                                            has_matches = True
+                                            # 获取文件内容用于显示匹配行
+                                            cat_result = self.cmd_cat(filename)
+                                            if cat_result.get("success"):
+                                                lines = cat_result["output"].split('\n')
+                                                # 按行号排序显示匹配行
+                                                sorted_line_nums = sorted([int(line_num) for line_num in occurrences.keys()])
+                                                for line_num in sorted_line_nums:
+                                                    line_index = line_num - 1
+                                                    if 0 <= line_index < len(lines):
+                                                        line_content = lines[line_index]
+                                                        print(f"{line_num:3}: {line_content}")
+                                            else:
+                                                print(f"Error: 无法读取文件内容: {filename}")
+                                
+                                # 按照bash grep的标准行为返回退出码
+                                if has_file_errors:
+                                    return 2  # 文件错误（如文件不存在）
+                                elif not has_matches:
+                                    return 1  # 没有匹配项
+                                else:
+                                    return 0  # 有匹配项
+                            else:
+                                print(result.get("error", "Error: Grep命令执行失败"))
+                                return 1
+                        elif cmd == 'read':
+                            # 使用委托方法处理read命令
+                            if not args:
+                                print(f"Error: read command needs a file name")
+                                return 1
+                            
+                            # 解析--force标志
+                            force = False
+                            remaining_args = []
+                            
+                            for arg in args:
+                                if arg == '--force':
+                                    force = True
+                                else:
+                                    remaining_args.append(arg)
+                            
+                            if not remaining_args:
+                                print(f"Error: read command needs a file name")
+                                return 1
+                            
+                            filename = remaining_args[0]
+                            
+                            # read命令等效于cat命令，显示带行号的文件内容
+                            cat_result = self.cmd_cat(filename)
+                            if cat_result.get("success"):
+                                content = cat_result["output"]
+                                # 修复换行显示问题，并添加行号
+                                lines = content.split('\n')
+                                for i, line in enumerate(lines, 1):
+                                    print(f"{i:3}: {line}")
+                                return 0
+                            else:
+                                print(f"Error: 无法读取文件: {filename}")
+                                return 1
+                        elif cmd == 'edit':
+                            # 使用委托方法处理edit命令
+                            if len(args) < 2:
+                                print(f"Error: edit command needs a file name and edit specification")
+                                return 1
+                            
+                            # 解析选项参数
+                            preview = False
+                            backup = False
+                            remaining_args = []
+                            
+                            for arg in args:
+                                if arg == '--preview':
+                                    preview = True
+                                elif arg == '--backup':
+                                    backup = True
+                                else:
+                                    remaining_args.append(arg)
+                            
+                            if len(remaining_args) < 2:
+                                print(f"Error: edit command needs a file name and edit specification")
+                                return 1
+                                
+                            filename = remaining_args[0]
+                            # 对于edit命令，JSON参数不能用空格连接，需要从原始命令中提取
+                            # 使用正则表达式从原始shell_cmd中提取JSON部分
+                            import re
+                            # 构建选项字符串用于匹配
+                            options_pattern = ""
+                            if preview:
+                                options_pattern += r"(?:--preview\s+)?"
+                            if backup:
+                                options_pattern += r"(?:--backup\s+)?"
+                            
+                            # 匹配命令：edit [options] filename JSON_spec
+                            pattern = rf'^edit\s+{options_pattern}(\S+)\s+(.+)$'
+                            match = re.search(pattern, shell_cmd_clean)
+                            if match:
+                                edit_spec = match.group(2)  # 直接提取JSON部分，不做空格连接
+                            else:
+                                # 回退方案：如果只有一个JSON参数，直接使用
+                                if len(remaining_args) == 2:
+                                    edit_spec = remaining_args[1]
+                                else:
+                                    # 多个参数时，可能是引号被分割了，尝试重新组合
+                                    edit_spec = ' '.join(remaining_args[1:])
+                            
+                            try:
+                                result = self.cmd_edit(filename, edit_spec, preview=preview, backup=backup)
+                            except KeyboardInterrupt:
+                                result = {"success": False, "error": "Operation interrupted by user"}
+                            
+                            if result.get("success", False):
+                                # 显示diff比较（预览模式和正常模式都显示）
+                                diff_output = result.get("diff_output", "")
+                                
+                                if diff_output and diff_output != "No changes detected":
+                                    print(f"\nEdit comparison: {filename}")
+                                    print(f"=" * 50)
+                                    
+                                    # 过滤diff输出，移除文件头和行号信息
+                                    diff_lines = diff_output.splitlines()
+                                    filtered_lines = []
+                                    for line in diff_lines:
+                                        # 跳过文件头行（--- 和 +++）
+                                        if line.startswith('---') or line.startswith('+++'):
+                                            continue
+                                        # 跳过行号信息行（@@）
+                                        if line.startswith('@@'):
+                                            continue
+                                        filtered_lines.append(line)
+                                    
+                                    # 显示过滤后的diff内容
+                                    if filtered_lines:
+                                        print('\n'.join(filtered_lines))
+                                    print(f"=" * 50)
+                                elif diff_output == "No changes detected":
+                                    print(f"No changes detected")
+                                
+                                # 对于正常模式，显示成功信息
+                                if result.get("mode") != "preview":
+                                    print(result.get("message", "\nFile edited successfully"))
+                                
+                                # 显示linter结果（如果有）
+                                if result.get("has_linter_issues"):
+                                    print(f"=" * 50)
+                                    linter_output = result.get("linter_output", "")
+                                    total_issues = linter_output.count("ERROR:") + linter_output.count("WARNING:")
+                                    print(f"{total_issues} linter warnings or errors found:")
+                                    print(linter_output)
+                                    print(f"=" * 50)
+                                elif result.get("linter_error"):
+                                    print(f"=" * 50)
+                                    print(f"Linter check failed: {result.get('linter_error')}")
+                                    print(f"=" * 50)
+                                elif result.get("has_linter_issues") == False:
+                                    # Only show "no issues" message if linter actually ran
+                                    pass  # No need to show anything for clean files
+                                
+                                return 0
+                            else:
+                                print(result.get("error", "Failed to edit file"))
                                 return 1
                     
                     # 使用统一的命令解析和转译接口
@@ -2020,6 +2253,8 @@ For more information, visit: https://github.com/your-repo/gds"""
                 return 0 if success_count == len(paths) else 1
             elif cmd == 'grep':
                 # 使用委托方法处理grep命令
+                # print(f"🔍 DEBUG: ✅ ENTERED GREP ELIF BLOCK! args={args}")
+                # print(f"🔍 DEBUG: This should be the correct grep processing path")
                 if len(args) < 1:
                     print(f"Error: grep command needs at least a file name")
                     return 1
@@ -2029,37 +2264,50 @@ For more information, visit: https://github.com/your-repo/gds"""
                     # 只有一个参数，视为文件名，模式为空（等效于read）
                     pattern = ""
                     filenames = args
+                    print(f"🔍 DEBUG: Single arg detected - pattern='{pattern}', filenames={filenames}")
                 elif '.' in args[-1] and not args[-1].startswith('.'):
                     # 最后一个参数很可能是文件名，前面的是模式
                     filenames = [args[-1]]
                     pattern_parts = args[:-1]
                     pattern = ' '.join(pattern_parts)
+                    print(f"🔍 DEBUG: File extension detected - pattern='{pattern}', filenames={filenames}")
                 else:
                     # 传统处理：第一个参数是模式，其余是文件名
                     pattern = args[0]
                     filenames = args[1:]
+                    print(f"🔍 DEBUG: Traditional parsing - pattern='{pattern}', filenames={filenames}")
                 
                 # 移除pattern的外层引号（如果存在）
+                original_pattern = pattern
                 if pattern.startswith('"') and pattern.endswith('"'):
                     pattern = pattern[1:-1]
                 elif pattern.startswith("'") and pattern.endswith("'"):
                     pattern = pattern[1:-1]
+                if original_pattern != pattern:
+                    print(f"🔍 DEBUG: Pattern quotes removed - '{original_pattern}' -> '{pattern}'")
                     
                 # 检查是否为无模式的grep（等效于read）
                 if not pattern or pattern.strip() == "":
+                    print(f"🔍 DEBUG: No pattern detected, using read mode for files: {filenames}")
                     # 无模式grep，等效于read命令
                     for filename in filenames:
+                        print(f"🔍 DEBUG: Processing file: {filename}")
                         cat_result = self.cmd_cat(filename)
+                        print(f"🔍 DEBUG: cat_result success={cat_result.get('success')}")
                         if cat_result.get("success"):
                             content = cat_result["output"]
+                            print(f"🔍 DEBUG: File content length: {len(content)} chars")
                             # 修复换行显示问题，并添加行号
                             lines = content.split('\n')
+                            print(f"🔍 DEBUG: Split into {len(lines)} lines")
                             for i, line in enumerate(lines, 1):
                                 print(f"{i:3}: {line}")
                         else:
                             print(f"Error: 无法读取文件: {filename}")
+                    print(f"🔍 DEBUG: No pattern grep completed, returning 0")
                     return 0
                 
+                print(f"🔍 DEBUG: Pattern grep mode - pattern='{pattern}', filenames={filenames}")
                 # 有模式的grep，只显示匹配行
                 result = self.cmd_grep(pattern, *filenames)
                 if result.get("success", False):
@@ -2100,8 +2348,9 @@ For more information, visit: https://github.com/your-repo/gds"""
                     print(result.get("error", "Error: Grep命令执行失败"))
                     return 1
             else:
-                print(f"DEBUG: ❌ REACHED REMOTE EXECUTION FALLBACK! cmd='{cmd}' not handled locally")
-                print(f"DEBUG: This means upload condition was not matched in the if-elif chain")
+                # print(f"🔍 DEBUG: ❌ REACHED REMOTE EXECUTION FALLBACK! cmd='{cmd}' not handled locally")
+                # print(f"🔍 DEBUG: This means '{cmd}' was not matched in the if-elif chain")
+                # print(f"🔍 DEBUG: Available conditions in chain should include grep")
                 # 尝试通过通用远程命令执行
                 result = self.execute_command_interface(cmd, args)
                 if result.get("success", False):
@@ -2769,18 +3018,28 @@ done
         import json
         
         try:
+            # print(f"🔍 DEBUG: _handle_edit_command called with: '{shell_cmd}'")
             # 使用统一的命令解析接口
             parse_result = self.parse_and_translate_command(shell_cmd)
+            # print(f"🔍 DEBUG: parse_result = {parse_result}")
             if not parse_result["success"]:
                 print(f"Error: {parse_result['error']}")
                 return 1
             
-            parts = [parse_result["cmd"]] + parse_result["args"]
+            # 从parse_result中提取命令和参数
+            if "cmd" in parse_result and "args" in parse_result:
+                parts = [parse_result["cmd"]] + parse_result["args"]
+            else:
+                # 如果parse_result没有cmd和args，从translated_command中解析
+                import shlex
+                parts = shlex.split(parse_result["translated_command"])
+            # print(f"🔍 DEBUG: parts = {parts}")
             if len(parts) < 2:
                 print("Error: edit command requires a filename")
                 return 1
                 
             cmd = parts[0]  # 'edit'
+            # print(f"🔍 DEBUG: cmd = '{cmd}'")
             filename = None
             preview = False
             backup = False

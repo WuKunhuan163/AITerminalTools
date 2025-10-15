@@ -438,8 +438,8 @@ else:
             from .progress_manager import start_progress_buffering
             start_progress_buffering("⏳ Waiting for result ...")
             
-            # 等待文件出现，最多30秒，支持Ctrl+C中断
-            max_wait_time = 30
+            # 等待文件出现，最多120秒，支持Ctrl+C中断
+            max_wait_time = 120
             import signal
             import sys
             
@@ -2911,8 +2911,8 @@ JSON_SCRIPT_EOF
             from .progress_manager import start_progress_buffering
             start_progress_buffering("⏳ Waiting for background task result ...")
             
-            # 等待文件出现，最多60秒，支持Ctrl+C中断
-            max_wait_time = 60  # 后台任务可能需要更长时间
+            # 等待文件出现，最多180秒，支持Ctrl+C中断
+            max_wait_time = 180  # 后台任务可能需要更长时间
             import signal
             import sys
             

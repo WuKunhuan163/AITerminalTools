@@ -158,15 +158,19 @@ class FileCore:
         """
         try:
             folder_name = Path(folder_path).name
-            print(f"Packing {folder_name} ...", end="", flush=True)
+            
+            # 使用统一的进度显示系统
+            from .progress_manager import start_progress_buffering, add_success_mark, clear_progress
+            start_progress_buffering(f"Packing {folder_name} ...")
             
             # 步骤1: 打包文件夹
             zip_result = self.main_instance.file_utils._zip_folder(folder_path)
             if not zip_result["success"]:
-                print(f" ✗")
+                clear_progress()
                 return {"success": False, "error": f"打包失败: {zip_result['error']}"}
             else: 
-                print(f" √")
+                add_success_mark()
+                clear_progress()
             
             zip_path = zip_result["zip_path"]
             zip_filename = Path(zip_path).name
@@ -181,11 +185,9 @@ class FileCore:
                                                   "keep_zip": keep_zip
                                               })
                 if not upload_result["success"]:
-                    print(f" ✗")
                     return {"success": False, "error": f"上传失败: {upload_result['error']}"}
                 
-                # 成功完成
-                print(f" √")
+                # 成功完成 - 不需要额外的输出，cmd_upload已经处理了进度显示
                 return {
                     "success": True,
                     "message": f"Uploaded folder: {folder_name}",

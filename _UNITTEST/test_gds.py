@@ -762,7 +762,6 @@ print(f"Current files: {len(os.listdir())}")'''
         
         # 测试ls不存在的文件
         result = self._run_gds_command('ls testdir/nonexistent.txt', expect_success=False)
-        # 修复后：GDS的ls命令对不存在文件应该返回非零退出码
         self.assertNotEqual(result.returncode, 0)  # 应该失败
         self.assertIn("Path not found", result.stdout)
         
@@ -1268,9 +1267,9 @@ Line 5: No match here'''
         self.assertNotIn("1: Line 1: Hello world", output)
         self.assertNotIn("3: Line 3: Hello again", output)
         
-        # 测试4: 测试不存在模式的grep（应该没有输出）
+        # 测试4: 测试不存在模式的grep（应该返回1，没有匹配项）
         result = self._run_gds_command('grep "NotFound" grep_test.txt')
-        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.returncode, 1)  # grep没有匹配项时返回1
         output = result.stdout
         self.assertNotIn("1:", output)
         self.assertNotIn("2:", output)
@@ -1306,7 +1305,7 @@ Line 5: No match here'''
         
         # 基础文本替换编辑
         success, result = self._run_gds_command_with_retry(
-            'edit test_edit_simple_hello.py \'[["Hello from remote project!", "Hello from MODIFIED remote project!"]]\'',
+            'edit test_edit_simple_hello.py [["Hello from remote project!", "Hello from MODIFIED remote project!"]]',
             ['grep "MODIFIED" test_edit_simple_hello.py'],
             max_retries=3
         )
@@ -1314,7 +1313,7 @@ Line 5: No match here'''
         
         # 行号替换编辑（使用0-based索引）
         success, result = self._run_gds_command_with_retry(
-            'edit test_edit_simple_hello.py \'[[[1, 2], "# Modified first line"]]\'',
+            'edit test_edit_simple_hello.py [[[1, 2], "# Modified first line"]]',
             ['grep "# Modified first line" test_edit_simple_hello.py'],
             max_retries=3
         )
@@ -1322,12 +1321,12 @@ Line 5: No match here'''
         
         # 预览模式编辑（不实际修改文件）
         # 预览模式不修改文件，所以不需要验证文件内容变化
-        result = self._run_gds_command('edit --preview test_edit_simple_hello.py \'[["print", "# print"]]\'')
+        result = self._run_gds_command('edit --preview test_edit_simple_hello.py [["print", "# print"]]')
         self.assertEqual(result.returncode, 0)
         
         # 备份模式编辑
         success, result = self._run_gds_command_with_retry(
-            'edit --backup test_edit_simple_hello.py \'[["MODIFIED", "Updated"]]\'',
+            'edit --backup test_edit_simple_hello.py [["MODIFIED", "Updated"]]',
             ['grep "Updated" test_edit_simple_hello.py'],
             max_retries=3
         )
