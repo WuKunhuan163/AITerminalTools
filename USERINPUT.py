@@ -113,7 +113,7 @@ def show_project_info(current_dir, project_dir):
         if output_file:
             print(f"Output file: {output_file}")
 
-def show_prompt_header(project_name):
+def show_prompt_header(project_name, hint_text=None):
     """显示提示头部信息"""
     # 移除主进程中的音效播放逻辑，只在Tkinter subprocess中播放音效
     # 这样可以避免双重音效播放和按钮点击时的音效问题
@@ -131,6 +131,10 @@ def show_prompt_header(project_name):
     print(f"{separator}")
     print(f"{title}")
     print(f"{separator}")
+    
+    if hint_text:
+        print(f"\nHint provided: {hint_text}")
+    
     print(f"\nEnter your next prompt. Press Ctrl+D (EOF) when done.")
 
 def show_tkinter_window_in_subprocess(project_name, timeout_seconds):
@@ -569,6 +573,7 @@ def main():
     
     # 解析命令行参数
     timeout_override = None
+    hint_text = None
     remaining_args = []
     
     i = 0
@@ -587,6 +592,13 @@ def main():
                     return
             else:
                 print(f"Error: --timeout requires a value")
+                return
+        elif args[i] == '--hint':
+            if i + 1 < len(args):
+                hint_text = args[i + 1]
+                i += 2  # Skip both --hint and its value
+            else:
+                print(f"Error: --hint requires a value")
                 return
         else:
             remaining_args.append(args[i])
@@ -623,7 +635,7 @@ def main():
             user_input = f"输入超时 ({final_timeout}秒)。{timeout_hint}"
         else:
             show_project_info(current_dir, project_dir)
-            show_prompt_header(project_name)
+            show_prompt_header(project_name, hint_text)
             user_input = get_user_input_via_terminal(project_name, timeout_hint)
     else:
         user_input = get_user_input_via_terminal(project_name, timeout_hint)

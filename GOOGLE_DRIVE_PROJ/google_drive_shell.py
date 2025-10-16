@@ -1227,9 +1227,9 @@ For more information, visit: https://github.com/your-repo/gds"""
                     special_commands = ['pwd', 'ls', 'cd', 'cat', 'mkdir', 'touch', 'echo', 'help', 'venv', 'pyenv', 
                                       'cleanup-windows', 'linter', 'pip', 'deps', 'edit', 'read', 'python', 
                                       'upload', 'upload-folder', 'download', 'mv', 'find', 'rm', 'grep']
-                    # print(f"🔍 DEBUG: Checking special commands - first_word='{first_word}', in_special={first_word in special_commands}")
+                    print(f"🔍 DEBUG: Checking special commands - first_word='{first_word}', in_special={first_word in special_commands}")
                     if first_word in special_commands:
-                        # print(f"DEBUG: Processing special command '{first_word}' with local API")
+                        print(f"DEBUG: Processing special command '{first_word}' with local API")
                         
                         # 解析命令和参数
                         import shlex
@@ -1245,10 +1245,11 @@ For more information, visit: https://github.com/your-repo/gds"""
                             print(f"Error: Command parsing failed: {e}")
                             return 1
                         
-                        # print(f"🔍 DEBUG: Parsed special cmd='{cmd}', args={args}")
-                        # print(f"🔍 DEBUG: About to enter if-elif chain...")
+                        print(f"🔍 DEBUG: Parsed special cmd='{cmd}', args={args}")
+                        print(f"🔍 DEBUG: About to enter if-elif chain...")
                         
                         if cmd == 'pwd':
+                            print(f"🔍 DEBUG: Matched pwd branch")
                             # print(f"DEBUG: Inside pwd condition")
                             # print(f"DEBUG: Matched pwd condition")
                             # print(f"DEBUG: Found pwd condition")
@@ -1880,8 +1881,10 @@ For more information, visit: https://github.com/your-repo/gds"""
                 from modules.shell_commands import shell_help
                 return shell_help(command_identifier)
             elif cmd == 'venv':
+                print(f"🔍 DEBUG: Inside venv elif branch, calling cmd_venv with args: {args}")
                 # 使用委托方法处理venv命令
                 result = self.cmd_venv(*args)
+                print(f"🔍 DEBUG: cmd_venv returned: {result}")
                 if result.get("success", False):
                     # venv命令成功后，同步更新本地shell状态
                     self._sync_venv_state_to_local_shell(args)
@@ -1889,6 +1892,7 @@ For more information, visit: https://github.com/your-repo/gds"""
                 else:
                     error_message = result.get("error", "Virtual environment operation failed")
                     print(error_message)
+                    return 1
             elif cmd == 'pyenv':
                 # 使用委托方法处理pyenv命令
                 result = self.cmd_pyenv(*args)
@@ -1897,6 +1901,7 @@ For more information, visit: https://github.com/your-repo/gds"""
                 else:
                     error_message = result.get("error", "Python version management operation failed")
                     print(error_message)
+                    return 1
             elif cmd == 'cleanup-windows':
                 # 手动清理窗口命令
                 force = '--force' in args

@@ -1,2 +1,190 @@
 test_09_edit (test_gds.GDSTest) ... /Users/wukunhuan/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
   warnings.warn(
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 416.577s
+
+OK
+设置GDS全面测试环境...
+远端测试目录: ~/tmp/gds_test_20251016_185749_023784_a770caa4
+已切换到远端测试目录: ~/tmp/gds_test_20251016_185749_023784_a770caa4
+本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_2np05ibs
+测试环境设置完成
+
+执行带重试的upload命令: upload --force /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP/test_edit_simple_hello.py
+验证命令: ['ls test_edit_simple_hello.py']
+最大重试次数: 3
+
+尝试 1/3
+命令转译成功: upload --force /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP/test_edit_simple_hello.py -> upload --force /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP/test_edit_simple_hello.py
+返回码: 0
+输出: 
+[K⏳ Waiting for upload ...
+[K
+[K⏳ Waiting for file sync ...........
+[K
+[K⏳ Waiting for result .......
+[K
+[K
+[K⏳ Validating test_edit_simple_hello.py ...
+[K...
+返回码: 0
+输出: 
+[K⏳ Waiting for upload ...
+[K
+[K⏳ Waiting for file sync ...........
+[K
+[K⏳ Waiting for result .......
+[K
+[K
+[K⏳ Validating test_edit_simple_hello.py ...
+[K
+验证命令 1: ls test_edit_simple_hello.py
+命令转译成功: ls test_edit_simple_hello.py -> ls test_edit_simple_hello.py
+返回码: 0
+输出: test_edit_simple_hello.py
+...
+验证成功: ls test_edit_simple_hello.py
+所有验证通过!
+
+执行带重试的upload命令: upload --force /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP/test_edit_simple_hello.py
+验证命令: ['ls test_edit_simple_hello.py']
+最大重试次数: 3
+
+尝试 1/3
+命令转译成功: upload --force /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP/test_edit_simple_hello.py -> upload --force /Users/wukunhuan/.local/bin/_UNITTEST/_TEMP/test_edit_simple_hello.py
+返回码: 0
+输出: 
+[K⏳ Waiting for upload ...
+[K
+[K⏳ Waiting for file sync ........
+[K
+[K⏳ Waiting for result ......
+[K
+[K
+[K⏳ Validating test_edit_simple_hello.py ...
+[K...
+返回码: 0
+输出: 
+[K⏳ Waiting for upload ...
+[K
+[K⏳ Waiting for file sync ........
+[K
+[K⏳ Waiting for result ......
+[K
+[K
+[K⏳ Validating test_edit_simple_hello.py ...
+[K
+验证命令 1: ls test_edit_simple_hello.py
+命令转译成功: ls test_edit_simple_hello.py -> ls test_edit_simple_hello.py
+返回码: 0
+输出: test_edit_simple_hello.py
+...
+验证成功: ls test_edit_simple_hello.py
+所有验证通过!
+
+执行带重试的命令: edit test_edit_simple_hello.py [["Hello from remote project", "Hello from MODIFIED remote project"]]
+验证命令: ['grep "MODIFIED" test_edit_simple_hello.py']
+最大重试次数: 3
+
+尝试 1/3
+命令转译成功: edit test_edit_simple_hello.py [["Hello from remote project", "Hello from MODIFIED remote project"]] -> edit test_edit_simple_hello.py [["Hello from remote project", "Hello from MODIFIED remote project"]]
+返回码: 0
+输出: 
+[K⏳ Waiting for upload ...
+[K
+[K⏳ Waiting for file sync ...........
+[K
+[K⏳ Waiting for result ...
+[K
+[K
+[K⏳ Validating test_edit_simple_hello.py ...
+[K
+Edit comparison: test_edit_simple_hell...
+Verify 1/1: grep "MODIFIED" test_edit_simple_hello.py
+命令转译成功: grep "MODIFIED" test_edit_simple_hello.py -> grep "MODIFIED" test_edit_simple_hello.py
+返回码: 1
+Error: Verify failed, return code: 1
+Verify failed, waiting 2 seconds before retrying...
+
+尝试 2/3
+命令转译成功: edit test_edit_simple_hello.py [["Hello from remote project", "Hello from MODIFIED remote project"]] -> edit test_edit_simple_hello.py [["Hello from remote project", "Hello from MODIFIED remote project"]]
+返回码: 0
+输出: 
+[K⏳ Waiting for upload ...
+[K
+[K⏳ Waiting for file sync ............
+[K
+[K⏳ Waiting for result ......
+[K
+[K
+[K⏳ Validating test_edit_simple_hello.py ...
+[K
+Edit comparison: test_edit_simple_...
+Verify 1/1: grep "MODIFIED" test_edit_simple_hello.py
+命令转译成功: grep "MODIFIED" test_edit_simple_hello.py -> grep "MODIFIED" test_edit_simple_hello.py
+返回码: 0
+输出:   4: print(f"Hello from MODIFIED remote project")
+...
+Verify successful
+All verifications passed, command executed successfully
+
+执行带重试的命令: edit test_edit_simple_hello.py [[[1, 2], "# Modified first line"]]
+验证命令: ['grep "# Modified first line" test_edit_simple_hello.py']
+最大重试次数: 3
+
+尝试 1/3
+命令转译成功: edit test_edit_simple_hello.py [[[1, 2], "# Modified first line"]] -> edit test_edit_simple_hello.py [[[1, 2], "# Modified first line"]]
+返回码: 0
+输出: 
+[K⏳ Waiting for upload ...
+[K
+[K⏳ Waiting for file sync ............
+[K
+[K⏳ Waiting for result ...
+[K
+[K
+[K⏳ Validating test_edit_simple_hello.py ...
+[K
+Edit comparison: test_edit_simple_hel...
+Verify 1/1: grep "# Modified first line" test_edit_simple_hello.py
+命令转译成功: grep "# Modified first line" test_edit_simple_hello.py -> grep "# Modified first line" test_edit_simple_hello.py
+返回码: 0
+输出:   2: # Modified first line
+...
+Verify successful
+All verifications passed, command executed successfully
+命令转译成功: edit --preview test_edit_simple_hello.py [["print", "# print"]] -> edit --preview test_edit_simple_hello.py [["print", "# print"]]
+返回码: 0
+输出: 
+Edit comparison: test_edit_simple_hello.py
+==================================================
+ """
+ # Modified first line
+-print(f"Hello from MODIFIED remote project")
+-print(f"Current working direct...
+
+执行带重试的命令: edit --backup test_edit_simple_hello.py [["MODIFIED", "Updated"]]
+验证命令: ['grep "Updated" test_edit_simple_hello.py']
+最大重试次数: 3
+
+尝试 1/3
+命令转译成功: edit --backup test_edit_simple_hello.py [["MODIFIED", "Updated"]] -> edit --backup test_edit_simple_hello.py [["MODIFIED", "Updated"]]
+返回码: 0
+输出: 
+[K⏳ Waiting for upload ...
+[K
+[K⏳ Waiting for file sync ..............
+[K
+[K⏳ Waiting for result .....
+[K
+[K
+[K⏳ Validating test_edit_simple_hello.py.backup.20251016_190357_7448, test_edit_si...
+Verify 1/1: grep "Updated" test_edit_simple_hello.py
+命令转译成功: grep "Updated" test_edit_simple_hello.py -> grep "Updated" test_edit_simple_hello.py
+返回码: 0
+输出:   3: print(f"Hello from Updated remote project")
+...
+Verify successful
+All verifications passed, command executed successfully

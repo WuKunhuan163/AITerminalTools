@@ -146,7 +146,7 @@ class GDSTest(unittest.TestCase):
         simple_script.write_text('''"""
 Simple Hello Script
 """
-print(f"Hello from remote project!")
+print(f"Hello from remote project")
 print(f"Current working directory:", __import__("os").getcwd())
 import sys
 print(f"Python version:", sys.version)
@@ -1305,7 +1305,7 @@ Line 5: No match here'''
         
         # 基础文本替换编辑
         success, result = self._run_gds_command_with_retry(
-            'edit test_edit_simple_hello.py [["Hello from remote project!", "Hello from MODIFIED remote project!"]]',
+            'edit test_edit_simple_hello.py [["Hello from remote project", "Hello from MODIFIED remote project"]]',
             ['grep "MODIFIED" test_edit_simple_hello.py'],
             max_retries=3
         )
