@@ -32,6 +32,10 @@ try:
         Validation,
         Verification,
     )
+    # 导入命令系统
+    from .modules.commands import CommandRegistry
+    from .modules.commands.venv_command import VenvCommand
+    from .modules.commands.grep_command import GrepCommand
 except ImportError:
     # 当作为独立模块导入时使用绝对导入
     from GOOGLE_DRIVE_PROJ.google_drive_api import GoogleDriveService
@@ -46,6 +50,10 @@ except ImportError:
         Validation,
         Verification,
     )
+    # 导入命令系统
+    from GOOGLE_DRIVE_PROJ.modules.commands import CommandRegistry
+    from GOOGLE_DRIVE_PROJ.modules.commands.venv_command import VenvCommand
+    from GOOGLE_DRIVE_PROJ.modules.commands.grep_command import GrepCommand
 
 class GoogleDriveShell:
     """Google Drive Shell管理类 (重构版本)"""
@@ -187,6 +195,13 @@ class GoogleDriveShell:
         self.file_utils = FileUtils(self.drive_service, self)
         self.validation = Validation(self.drive_service, self)
         self.verification = Verification(self.drive_service, self)
+        
+        # 初始化命令注册系统
+        self.command_registry = CommandRegistry()
+        
+        # 注册命令处理器
+        self.command_registry.register(VenvCommand(self))
+        self.command_registry.register(GrepCommand(self))
     
     def calculate_timeout_from_file_sizes(self, *args, **kwargs):
         """委托到sync_manager管理器"""
@@ -1224,10 +1239,35 @@ For more information, visit: https://github.com/your-repo/gds"""
                     # print(f"DEBUG: is_quoted_command={is_quoted_command}")
                     
                     # 特殊命令处理 - 在pipe检查之后
-                    special_commands = ['pwd', 'ls', 'cd', 'cat', 'mkdir', 'touch', 'echo', 'help', 'venv', 'pyenv', 
+                    # 使用新的命令注册系统
+                    print(f"🔍 DEBUG: Checking special commands - first_word='{first_word}', is_special={self.command_registry.is_special_command(first_word)}")
+                    
+                    # 首先检查新的命令注册系统
+                    if self.command_registry.is_special_command(first_word):
+                        print(f"DEBUG: Processing special command '{first_word}' with new command system")
+                        
+                        # 解析命令和参数
+                        import shlex
+                        try:
+                            cmd_parts = shlex.split(shell_cmd_clean)
+                            if cmd_parts:
+                                cmd = cmd_parts[0]
+                                args = cmd_parts[1:]
+                            else:
+                                print("Error: Empty command after parsing")
+                                return 1
+                        except Exception as e:
+                            print(f"Error: Command parsing failed: {e}")
+                            return 1
+                        
+                        # 使用命令注册系统执行命令
+                        return self.command_registry.execute_command(cmd, args, command_identifier=command_identifier)
+                    
+                    # 回退到旧的特殊命令处理系统
+                    special_commands = ['pwd', 'ls', 'cd', 'cat', 'mkdir', 'touch', 'echo', 'help', 'pyenv', 
                                       'cleanup-windows', 'linter', 'pip', 'deps', 'edit', 'read', 'python', 
-                                      'upload', 'upload-folder', 'download', 'mv', 'find', 'rm', 'grep']
-                    print(f"🔍 DEBUG: Checking special commands - first_word='{first_word}', in_special={first_word in special_commands}")
+                                      'upload', 'upload-folder', 'download', 'mv', 'find', 'rm']
+                    print(f"🔍 DEBUG: Checking legacy special commands - first_word='{first_word}', in_special={first_word in special_commands}")
                     if first_word in special_commands:
                         print(f"DEBUG: Processing special command '{first_word}' with local API")
                         
@@ -1247,9 +1287,33 @@ For more information, visit: https://github.com/your-repo/gds"""
                         
                         print(f"🔍 DEBUG: Parsed special cmd='{cmd}', args={args}")
                         print(f"🔍 DEBUG: About to enter if-elif chain...")
+                        print(f"🔍 DEBUG: Checking cmd == 'pwd': {cmd == 'pwd'}")
+                        print(f"🔍 DEBUG: Checking cmd == 'ls': {cmd == 'ls'}")
+                        print(f"🔍 DEBUG: Checking cmd == 'cd': {cmd == 'cd'}")
+                        print(f"🔍 DEBUG: Checking cmd == 'cat': {cmd == 'cat'}")
+                        print(f"🔍 DEBUG: Checking cmd == 'mkdir': {cmd == 'mkdir'}")
+                        print(f"🔍 DEBUG: Checking cmd == 'touch': {cmd == 'touch'}")
+                        print(f"🔍 DEBUG: Checking cmd == 'echo': {cmd == 'echo'}")
+                        print(f"🔍 DEBUG: Checking cmd == 'help': {cmd == 'help'}")
+                        print(f"🔍 DEBUG: Checking cmd == 'venv': {cmd == 'venv'}")
+                        print(f"🔍 DEBUG: Checking cmd == 'pyenv': {cmd == 'pyenv'}")
+                        print(f"🔍 DEBUG: Checking cmd == 'cleanup-windows': {cmd == 'cleanup-windows'}")
+                        print(f"🔍 DEBUG: Checking cmd == 'linter': {cmd == 'linter'}")
+                        print(f"🔍 DEBUG: Checking cmd == 'pip': {cmd == 'pip'}")
+                        print(f"🔍 DEBUG: Checking cmd == 'deps': {cmd == 'deps'}")
+                        print(f"🔍 DEBUG: Checking cmd == 'edit': {cmd == 'edit'}")
+                        print(f"🔍 DEBUG: Checking cmd == 'read': {cmd == 'read'}")
+                        print(f"🔍 DEBUG: Checking cmd == 'python': {cmd == 'python'}")
+                        print(f"🔍 DEBUG: Checking cmd == 'upload': {cmd == 'upload'}")
+                        print(f"🔍 DEBUG: Checking cmd == 'upload-folder': {cmd == 'upload-folder'}")
+                        print(f"🔍 DEBUG: Checking cmd == 'download': {cmd == 'download'}")
+                        print(f"🔍 DEBUG: Checking cmd == 'mv': {cmd == 'mv'}")
+                        print(f"🔍 DEBUG: Checking cmd == 'find': {cmd == 'find'}")
+                        print(f"🔍 DEBUG: Checking cmd == 'rm': {cmd == 'rm'}")
+                        print(f"🔍 DEBUG: Checking cmd == 'grep': {cmd == 'grep'}")
                         
                         if cmd == 'pwd':
-                            print(f"🔍 DEBUG: Matched pwd branch")
+                            print(f"🔍 DEBUG: ✅ MATCHED PWD BRANCH!")
                             # print(f"DEBUG: Inside pwd condition")
                             # print(f"DEBUG: Matched pwd condition")
                             # print(f"DEBUG: Found pwd condition")
@@ -1438,102 +1502,6 @@ For more information, visit: https://github.com/your-repo/gds"""
                             else:
                                 error_msg = result.get("error", "Upload folder failed")
                                 print(error_msg)
-                                return 1
-                        elif cmd == 'grep':
-                            # 使用委托方法处理grep命令
-                            # print(f"🔍 DEBUG: ✅ ENTERED GREP ELIF BLOCK IN SPECIAL COMMANDS! args={args}")
-                            if len(args) < 1:
-                                print(f"Error: grep command needs at least a file name")
-                                return 1
-                            
-                            # 处理参数解析
-                            if len(args) == 1:
-                                # 只有一个参数，视为文件名，模式为空（等效于read）
-                                pattern = ""
-                                filenames = args
-                                # print(f"🔍 DEBUG: Single arg detected - pattern='{pattern}', filenames={filenames}")
-                            elif '.' in args[-1] and not args[-1].startswith('.'):
-                                # 最后一个参数很可能是文件名，前面的是模式
-                                filenames = [args[-1]]
-                                pattern_parts = args[:-1]
-                                pattern = ' '.join(pattern_parts)
-                                # print(f"🔍 DEBUG: File extension detected - pattern='{pattern}', filenames={filenames}")
-                            else:
-                                # 传统处理：第一个参数是模式，其余是文件名
-                                pattern = args[0]
-                                filenames = args[1:]
-                                # print(f"🔍 DEBUG: Traditional parsing - pattern='{pattern}', filenames={filenames}")
-                            
-                            # 移除pattern的外层引号（如果存在）
-                            original_pattern = pattern
-                            if pattern.startswith('"') and pattern.endswith('"'):
-                                pattern = pattern[1:-1]
-                            elif pattern.startswith("'") and pattern.endswith("'"):
-                                pattern = pattern[1:-1]
-                            if original_pattern != pattern:
-                                # print(f"🔍 DEBUG: Pattern quotes removed - '{original_pattern}' -> '{pattern}'")
-                                pass
-                                
-                            # 检查是否为无模式的grep（等效于read）
-                            if not pattern or pattern.strip() == "":
-                                # print(f"🔍 DEBUG: No pattern detected, using read mode for files: {filenames}")
-                                # 无模式grep，等效于read命令
-                                for filename in filenames:
-                                    # print(f"🔍 DEBUG: Processing file: {filename}")
-                                    cat_result = self.cmd_cat(filename)
-                                    # print(f"🔍 DEBUG: cat_result success={cat_result.get('success')}")
-                                    if cat_result.get("success"):
-                                        content = cat_result["output"]
-                                        # print(f"🔍 DEBUG: File content length: {len(content)} chars")
-                                        # 修复换行显示问题，并添加行号
-                                        lines = content.split('\n')
-                                        # print(f"🔍 DEBUG: Split into {len(lines)} lines")
-                                        for i, line in enumerate(lines, 1):
-                                            print(f"{i:3}: {line}")
-                                    else:
-                                        print(f"Error: 无法读取文件: {filename}")
-                                # print(f"🔍 DEBUG: No pattern grep completed, returning 0")
-                                return 0
-                            
-                            # print(f"🔍 DEBUG: Pattern grep mode - pattern='{pattern}', filenames={filenames}")
-                            # 有模式的grep，只显示匹配行
-                            result = self.cmd_grep(pattern, *filenames)
-                            if result.get("success", False):
-                                result_data = result.get("result", {})
-                                has_matches = False
-                                
-                                has_file_errors = False
-                                for filename, file_result in result_data.items():
-                                    if "error" in file_result:
-                                        print(f"Error: {filename}: {file_result['error']}")
-                                        has_file_errors = True
-                                    else:
-                                        occurrences = file_result.get("occurrences", {})
-                                        if occurrences:
-                                            has_matches = True
-                                            # 获取文件内容用于显示匹配行
-                                            cat_result = self.cmd_cat(filename)
-                                            if cat_result.get("success"):
-                                                lines = cat_result["output"].split('\n')
-                                                # 按行号排序显示匹配行
-                                                sorted_line_nums = sorted([int(line_num) for line_num in occurrences.keys()])
-                                                for line_num in sorted_line_nums:
-                                                    line_index = line_num - 1
-                                                    if 0 <= line_index < len(lines):
-                                                        line_content = lines[line_index]
-                                                        print(f"{line_num:3}: {line_content}")
-                                            else:
-                                                print(f"Error: 无法读取文件内容: {filename}")
-                                
-                                # 按照bash grep的标准行为返回退出码
-                                if has_file_errors:
-                                    return 2  # 文件错误（如文件不存在）
-                                elif not has_matches:
-                                    return 1  # 没有匹配项
-                                else:
-                                    return 0  # 有匹配项
-                            else:
-                                print(result.get("error", "Error: Grep命令执行失败"))
                                 return 1
                         elif cmd == 'read':
                             # 使用委托方法处理read命令
@@ -1868,9 +1836,11 @@ For more information, visit: https://github.com/your-repo/gds"""
                     return 1
 
             elif cmd == 'echo':
+                print(f"🔍 DEBUG: Matched echo branch")
                 # 简化的echo处理：直接使用统一的echo命令处理
                 return self._handle_unified_echo_command(args)
             elif cmd == 'help':
+                print(f"🔍 DEBUG: Matched help branch")
                 # 导入shell_commands模块中的具体函数
                 import os
                 current_dir = os.path.dirname(__file__)
@@ -1881,7 +1851,7 @@ For more information, visit: https://github.com/your-repo/gds"""
                 from modules.shell_commands import shell_help
                 return shell_help(command_identifier)
             elif cmd == 'venv':
-                print(f"🔍 DEBUG: Inside venv elif branch, calling cmd_venv with args: {args}")
+                print(f"🔍 DEBUG: ✅ MATCHED VENV BRANCH! Inside venv elif branch, calling cmd_venv with args: {args}")
                 # 使用委托方法处理venv命令
                 result = self.cmd_venv(*args)
                 print(f"🔍 DEBUG: cmd_venv returned: {result}")
@@ -2353,9 +2323,9 @@ For more information, visit: https://github.com/your-repo/gds"""
                     print(result.get("error", "Error: Grep命令执行失败"))
                     return 1
             else:
-                # print(f"🔍 DEBUG: ❌ REACHED REMOTE EXECUTION FALLBACK! cmd='{cmd}' not handled locally")
-                # print(f"🔍 DEBUG: This means '{cmd}' was not matched in the if-elif chain")
-                # print(f"🔍 DEBUG: Available conditions in chain should include grep")
+                print(f"🔍 DEBUG: ❌ REACHED REMOTE EXECUTION FALLBACK! cmd='{cmd}' not handled locally")
+                print(f"🔍 DEBUG: This means '{cmd}' was not matched in the if-elif chain")
+                print(f"🔍 DEBUG: Available conditions in chain should include venv")
                 # 尝试通过通用远程命令执行
                 result = self.execute_command_interface(cmd, args)
                 if result.get("success", False):

@@ -6,34 +6,45 @@ FAIL
 FAIL: test_15_venv_package (test_gds.GDSTest)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 1784, in test_15_venv_package
-    self.assertIn("No virtual environment", result.stdout)
-AssertionError: 'No virtual environment' not found in '\n\x1b[K⏳ Waiting for result ......\n\x1b[K\n\x1b[K'
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 357, in _run_gds_command
+    self.assertEqual(result.returncode, 0, f"命令执行失败: {command}")
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/case.py", line 831, in assertEqual
+    assertion_func(first, second, msg=msg)
+AssertionError: 1 != 0 : 命令执行失败: venv --create current_test_env_1760615104
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 1787, in test_15_venv_package
+    result = self._run_gds_command(f'venv --create {venv_name}')
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 363, in _run_gds_command
+    self.fail(f"命令执行异常: {command} - {e}")
+AssertionError: 命令执行异常: venv --create current_test_env_1760615104 - 1 != 0 : 命令执行失败: venv --create current_test_env_1760615104
 
 ----------------------------------------------------------------------
-Ran 1 test in 121.631s
+Ran 1 test in 105.871s
 
 FAILED (failures=1)
 设置GDS全面测试环境...
-远端测试目录: ~/tmp/gds_test_20251016_191526_192003_32497822
-已切换到远端测试目录: ~/tmp/gds_test_20251016_191526_192003_32497822
-本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_5m8dw58r
+远端测试目录: ~/tmp/gds_test_20251016_194405_042910_c24e6b61
+已切换到远端测试目录: ~/tmp/gds_test_20251016_194405_042910_c24e6b61
+本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_2ne0sg9x
 测试环境设置完成
-虚拟环境名称: current_test_env_1760613400
+虚拟环境名称: current_test_env_1760615104
 清理测试环境...
 命令转译成功: venv --deactivate -> venv --deactivate
 返回码: 0
-输出: 
-[K⏳ Waiting for result .......
-[K
-[K...
-Warning: 错误: bash: line 1: venv: command not found
-...
+输出: 🔍 DEBUG: Checking special commands - first_word='venv', is_special=True
+DEBUG: Processing special command 'venv' with new command system
+🔍 DEBUG: ✅ MATCHED VENV BRANCH! Inside venv command handler, ca...
 命令转译成功: venv --current -> venv --current
 返回码: 0
-输出: 
-[K⏳ Waiting for result ......
-[K
-[K...
-Warning: 错误: bash: line 1: venv: command not found
-...
+输出: 🔍 DEBUG: Checking special commands - first_word='venv', is_special=True
+DEBUG: Processing special command 'venv' with new command system
+🔍 DEBUG: ✅ MATCHED VENV BRANCH! Inside venv command handler, ca...
+命令转译成功: venv --create current_test_env_1760615104 -> venv --create current_test_env_1760615104
+返回码: 1
+输出: 🔍 DEBUG: Checking special commands - first_word='venv', is_special=True
+DEBUG: Processing special command 'venv' with new command system
+🔍 DEBUG: ✅ MATCHED VENV BRANCH! Inside venv command handler, ca...
+命令执行异常: 1 != 0 : 命令执行失败: venv --create current_test_env_1760615104
