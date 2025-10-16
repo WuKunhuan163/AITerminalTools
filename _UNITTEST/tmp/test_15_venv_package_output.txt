@@ -10,7 +10,7 @@ Traceback (most recent call last):
     self.assertEqual(result.returncode, 0, f"命令执行失败: {command}")
   File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/case.py", line 831, in assertEqual
     assertion_func(first, second, msg=msg)
-AssertionError: 1 != 0 : 命令执行失败: venv --create current_test_env_1760615104
+AssertionError: 1 != 0 : 命令执行失败: venv --create current_test_env_1760615445
 
 During handling of the above exception, another exception occurred:
 
@@ -19,18 +19,18 @@ Traceback (most recent call last):
     result = self._run_gds_command(f'venv --create {venv_name}')
   File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 363, in _run_gds_command
     self.fail(f"命令执行异常: {command} - {e}")
-AssertionError: 命令执行异常: venv --create current_test_env_1760615104 - 1 != 0 : 命令执行失败: venv --create current_test_env_1760615104
+AssertionError: 命令执行异常: venv --create current_test_env_1760615445 - 1 != 0 : 命令执行失败: venv --create current_test_env_1760615445
 
 ----------------------------------------------------------------------
-Ran 1 test in 105.871s
+Ran 1 test in 123.061s
 
 FAILED (failures=1)
 设置GDS全面测试环境...
-远端测试目录: ~/tmp/gds_test_20251016_194405_042910_c24e6b61
-已切换到远端测试目录: ~/tmp/gds_test_20251016_194405_042910_c24e6b61
-本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_2ne0sg9x
+远端测试目录: ~/tmp/gds_test_20251016_194943_679524_e0fd200e
+已切换到远端测试目录: ~/tmp/gds_test_20251016_194943_679524_e0fd200e
+本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_awhyj77e
 测试环境设置完成
-虚拟环境名称: current_test_env_1760615104
+虚拟环境名称: current_test_env_1760615445
 清理测试环境...
 命令转译成功: venv --deactivate -> venv --deactivate
 返回码: 0
@@ -42,9 +42,9 @@ DEBUG: Processing special command 'venv' with new command system
 输出: 🔍 DEBUG: Checking special commands - first_word='venv', is_special=True
 DEBUG: Processing special command 'venv' with new command system
 🔍 DEBUG: ✅ MATCHED VENV BRANCH! Inside venv command handler, ca...
-命令转译成功: venv --create current_test_env_1760615104 -> venv --create current_test_env_1760615104
+命令转译成功: venv --create current_test_env_1760615445 -> venv --create current_test_env_1760615445
 返回码: 1
 输出: 🔍 DEBUG: Checking special commands - first_word='venv', is_special=True
 DEBUG: Processing special command 'venv' with new command system
 🔍 DEBUG: ✅ MATCHED VENV BRANCH! Inside venv command handler, ca...
-命令执行异常: 1 != 0 : 命令执行失败: venv --create current_test_env_1760615104
+命令执行异常: 1 != 0 : 命令执行失败: venv --create current_test_env_1760615445

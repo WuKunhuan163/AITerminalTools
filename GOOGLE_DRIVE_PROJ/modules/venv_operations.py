@@ -87,7 +87,7 @@ class VenvOperations:
     def _get_venv_api_manager(self):
         """获取虚拟环境API管理器"""
         if not hasattr(self, '_venv_api_manager'):
-            from venv_manager import VenvApiManager
+            from .venv_manager import VenvApiManager
             self._venv_api_manager = VenvApiManager(self.drive_service, self.main_instance)
         return self._venv_api_manager
     
