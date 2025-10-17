@@ -36,6 +36,14 @@ try:
     from .modules.commands import CommandRegistry
     from .modules.commands.venv_command import VenvCommand
     from .modules.commands.grep_command import GrepCommand
+    from .modules.commands.python_command import PythonCommand
+    from .modules.commands.ls_command import LsCommand
+    from .modules.commands.cd_command import CdCommand
+    from .modules.commands.cat_command import CatCommand
+    from .modules.commands.mkdir_command import MkdirCommand
+    from .modules.commands.edit_command import EditCommand
+    from .modules.commands.read_command import ReadCommand
+    from .modules.commands.pwd_command import PwdCommand
 except ImportError:
     # 当作为独立模块导入时使用绝对导入
     from GOOGLE_DRIVE_PROJ.google_drive_api import GoogleDriveService
@@ -54,6 +62,14 @@ except ImportError:
     from GOOGLE_DRIVE_PROJ.modules.commands import CommandRegistry
     from GOOGLE_DRIVE_PROJ.modules.commands.venv_command import VenvCommand
     from GOOGLE_DRIVE_PROJ.modules.commands.grep_command import GrepCommand
+    from GOOGLE_DRIVE_PROJ.modules.commands.python_command import PythonCommand
+    from GOOGLE_DRIVE_PROJ.modules.commands.ls_command import LsCommand
+    from GOOGLE_DRIVE_PROJ.modules.commands.cd_command import CdCommand
+    from GOOGLE_DRIVE_PROJ.modules.commands.cat_command import CatCommand
+    from GOOGLE_DRIVE_PROJ.modules.commands.mkdir_command import MkdirCommand
+    from GOOGLE_DRIVE_PROJ.modules.commands.edit_command import EditCommand
+    from GOOGLE_DRIVE_PROJ.modules.commands.read_command import ReadCommand
+    from GOOGLE_DRIVE_PROJ.modules.commands.pwd_command import PwdCommand
 
 class GoogleDriveShell:
     """Google Drive Shell管理类 (重构版本)"""
@@ -202,6 +218,14 @@ class GoogleDriveShell:
         # 注册命令处理器
         self.command_registry.register(VenvCommand(self))
         self.command_registry.register(GrepCommand(self))
+        self.command_registry.register(PythonCommand(self))
+        self.command_registry.register(LsCommand(self))
+        self.command_registry.register(CdCommand(self))
+        self.command_registry.register(CatCommand(self))
+        self.command_registry.register(MkdirCommand(self))
+        self.command_registry.register(EditCommand(self))
+        self.command_registry.register(ReadCommand(self))
+        self.command_registry.register(PwdCommand(self))
     
     def calculate_timeout_from_file_sizes(self, *args, **kwargs):
         """委托到sync_manager管理器"""
@@ -1032,8 +1056,8 @@ class GoogleDriveShell:
     def execute_shell_command(self, shell_cmd, command_identifier=None):
         """执行shell命令 - 使用WindowManager的新架构入口点"""
         
-        # Debug print (disabled)
-        # print(f"DEBUG: execute_shell_command called with: '{shell_cmd}'")
+        print(f"🔍 EXECUTE_SHELL DEBUG: execute_shell_command called with: '{shell_cmd}'")
+        print(f"🔍 EXECUTE_SHELL DEBUG: command_identifier: {command_identifier}")
         
         # 保存原始用户命令，用于后续的文件验证分析
         self._original_user_command = shell_cmd.strip()
@@ -1052,13 +1076,18 @@ class GoogleDriveShell:
             if ((shell_cmd_clean.startswith("'") and shell_cmd_clean.endswith("'")) or 
                 (shell_cmd_clean.startswith('"') and shell_cmd_clean.endswith('"'))):
                 # 去除外层引号，这是一个完整的远程命令
+                print(f"🔍 QUOTED_COMMAND DEBUG: Detected quoted command: '{shell_cmd_clean}'")
                 shell_cmd_clean = shell_cmd_clean[1:-1]
                 shell_cmd = shell_cmd_clean  # 更新shell_cmd以便后续使用
                 is_quoted_command = True  # 设置引号命令标记
+                print(f"🔍 QUOTED_COMMAND DEBUG: After removing quotes: '{shell_cmd_clean}'")
+                print(f"🔍 QUOTED_COMMAND DEBUG: is_quoted_command set to: {is_quoted_command}")
                 
                 # 引号包围的命令直接使用远程执行
                 # 不需要特殊处理，让通用的远程命令执行机制处理
+                print(f"🔍 QUOTED_PROCESSING DEBUG: Quoted command processing completed")
 
+            print(f"🔍 FLOW_DEBUG: About to check help commands")
             # 首先检查特殊命令（不需要远程执行）
             if shell_cmd_clean in ['--help', '-h', 'help']:
                 # 显示本地帮助信息，不触发远程窗口
@@ -1192,1138 +1221,129 @@ For more information, visit: https://github.com/your-repo/gds"""
             #     # 使用新的用户友好的edit命令解析器
             #     return self._handle_edit_command(shell_cmd_clean.strip())
             # else:
-                # 特殊处理python -c命令，避免shlex破坏Python代码中的引号
-                if shell_cmd_clean.strip().startswith('python -c '):
-                    # 对于python -c命令，手动分割以保护Python代码中的引号
-                    cmd = 'python'
-                    # 提取-c后面的所有内容作为Python代码
-                    python_code = shell_cmd_clean.strip()[len('python -c '):].strip()
-                    
-                    # 去掉外层的引号（如果存在）
-                    if python_code.startswith('"') and python_code.endswith('"'):
-                        python_code = python_code[1:-1]
-                    elif python_code.startswith("'") and python_code.endswith("'"):
-                        python_code = python_code[1:-1]
-                    
-                    args = ['-c', python_code]
-
-                else:
-                    # 首先检查是否包含多命令组合（&&、||或|），在特殊命令检查之前
-                    has_multiple_ops = False
-                    # 检查带空格和不带空格的操作符，使用清理后的命令
-                    for op in [' && ', ' || ', ' | ', '&&', '||', '|']:
-                        if op in shell_cmd_clean:
-                            # 检查操作符是否在引号外
-                            if self._is_operator_outside_quotes(shell_cmd_clean, op):
-                                has_multiple_ops = True
-                                break
-                    
-                    if has_multiple_ops:
-                        # 导入shell_commands模块中的具体函数
-                        import os
-                        import sys
-                        current_dir = os.path.dirname(__file__)
-                        modules_dir = os.path.join(current_dir, 'modules')
-                        if modules_dir not in sys.path:
-                            sys.path.append(modules_dir)
-                        
-                        from shell_commands import handle_multiple_commands
-                        return handle_multiple_commands(shell_cmd_clean, command_identifier)
-                    
-                    # 然后检查是否为特殊命令（导航命令等）
-                    first_word = shell_cmd_clean.split()[0] if shell_cmd_clean.split() else ""
-                    
-                    # Debug print (disabled)
-                    # print(f"DEBUG: first_word='{first_word}', checking special commands first")
-                    # print(f"DEBUG: shell_cmd_clean='{shell_cmd_clean}'")
-                    # print(f"DEBUG: is_quoted_command={is_quoted_command}")
-                    
-                    # 特殊命令处理 - 在pipe检查之后
-                    # 使用新的命令注册系统
-                    # print(f"🔍 DEBUG: Checking special commands - first_word='{first_word}', is_special={self.command_registry.is_special_command(first_word)}")
-                    
-                    # 首先检查新的命令注册系统
-                    if self.command_registry.is_special_command(first_word):
-                        # print(f"DEBUG: Processing special command '{first_word}' with new command system")
-                        
-                        # 解析命令和参数
-                        import shlex
-                        try:
-                            cmd_parts = shlex.split(shell_cmd_clean)
-                            if cmd_parts:
-                                cmd = cmd_parts[0]
-                                args = cmd_parts[1:]
-                            else:
-                                print("Error: Empty command after parsing")
-                                return 1
-                        except Exception as e:
-                            print(f"Error: Command parsing failed: {e}")
-                            return 1
-                        
-                        # 使用命令注册系统执行命令
-                        return self.command_registry.execute_command(cmd, args, command_identifier=command_identifier)
-                    
-                    # 回退到旧的特殊命令处理系统
-                    special_commands = ['pwd', 'ls', 'cd', 'cat', 'mkdir', 'touch', 'echo', 'help', 'pyenv', 
-                                      'cleanup-windows', 'linter', 'pip', 'deps', 'edit', 'read', 'python', 
-                                      'upload', 'upload-folder', 'download', 'mv', 'find', 'rm']
-                    # print(f"🔍 DEBUG: Checking legacy special commands - first_word='{first_word}', in_special={first_word in special_commands}")
-                    if first_word in special_commands:
-                        # print(f"DEBUG: Processing special command '{first_word}' with local API")
-                        
-                        # 解析命令和参数
-                        import shlex
-                        try:
-                            cmd_parts = shlex.split(shell_cmd_clean)
-                            if cmd_parts:
-                                cmd = cmd_parts[0]
-                                args = cmd_parts[1:]
-                            else:
-                                print("Error: Empty command after parsing")
-                                return 1
-                        except Exception as e:
-                            print(f"Error: Command parsing failed: {e}")
-                            return 1
-                        
-                        if cmd == 'pwd':
-                            print(f"🔍 DEBUG: ✅ MATCHED PWD BRANCH!")
-                            # print(f"DEBUG: Inside pwd condition")
-                            # print(f"DEBUG: Matched pwd condition")
-                            # print(f"DEBUG: Found pwd condition")
-                            # 导入shell_commands模块中的具体函数
-                            import os
-                            import sys
-                            current_dir = os.path.dirname(__file__)
-                            modules_dir = os.path.join(current_dir, 'modules')
-                            if modules_dir not in sys.path:
-                                sys.path.append(modules_dir)
-                            
-                            from shell_commands import shell_pwd
-                            return shell_pwd(command_identifier)
-                        elif cmd == 'ls':
-                            # 使用本地API调用cmd_ls，不调用远程命令
-                            recursive = False
-                            detailed = False
-                            paths = []
-                            
-                            for arg in args:
-                                if arg == '-R':
-                                    recursive = True
-                                elif arg == '--detailed':
-                                    detailed = True
-                                elif not arg.startswith('-'):
-                                    paths.append(arg)
-                            
-                            path = paths[0] if paths else None
-                            result = self.cmd_ls(path=path, detailed=detailed, recursive=recursive, show_hidden=False)
-                            
-                            if result.get("success"):
-                                files = result.get("files", [])
-                                folders = result.get("folders", [])
-                                all_items = folders + files
-                                
-                                if all_items:
-                                    # 按名称排序，文件夹优先
-                                    sorted_folders = sorted(folders, key=lambda x: x.get('name', '').lower())
-                                    sorted_files = sorted(files, key=lambda x: x.get('name', '').lower())
-                                    
-                                    # 合并列表，文件夹在前
-                                    all_sorted_items = sorted_folders + sorted_files
-                                    
-                                    if detailed:
-                                        # 详细模式显示更多信息
-                                        for item in all_sorted_items:
-                                            name = item.get('name', 'Unknown')
-                                            size = item.get('size', 'N/A')
-                                            modified = item.get('modifiedTime', 'Unknown')
-                                            if item.get('mimeType') == 'application/vnd.google-apps.folder':
-                                                print(f"d {name}/ - {modified}")
-                                            else:
-                                                print(f"f {name} ({size}) - {modified}")
-                                    else:
-                                        # 简单的列表格式，类似bash ls
-                                        for item in all_sorted_items:
-                                            name = item.get('name', 'Unknown')
-                                            if item.get('mimeType') == 'application/vnd.google-apps.folder':
-                                                print(f"{name}")
-                                            else:
-                                                print(name)
-                                
-                                return 0
-                            else:
-                                error_msg = result.get('error', 'Unknown error')
-                                print(f"Failed to list files: {error_msg}")
-                                return 1
-                        elif cmd == 'cd':
-                            if not args:
-                                print(f"Error: cd command needs a path")
-                                return 1
-                            # 使用file_operations中的cmd_cd方法
-                            path = args[0]
-                            result = self.cmd_cd(path)
-                            if result.get("success"):
-                                # cd命令成功时不显示输出（像bash一样）
-                                return 0
-                            else:
-                                print(result.get("error", "Error: cd command execution failed"))
-                                return 1
-                        elif cmd == 'cat':
-                            # 使用本地Google Drive API处理cat命令
-                            if not args:
-                                print(f"Error: cat command needs a file name")
-                                return 1
-                            result = self.cmd_cat(args[0])
-                            if result.get("success", False):
-                                # 使用end=''避免添加额外的换行符
-                                print(result.get("output", ""), end='')
-                                return 0
-                            else:
-                                print(result.get("error", "Failed to read file"))
-                                return 1
-                        elif cmd == 'upload':
-                            # print(f"DEBUG: ✅ FOUND UPLOAD IN CORRECT ELIF CHAIN! args={args}")
-                            # 使用委托方法处理upload命令
-                            if not args:
-                                print(f"Error: upload command needs a file name")
-                                return 1
-                            
-                            # 参数解析规则：
-                            # 格式: upload [--target-dir TARGET] [--force] [--remove-local] file1 file2 file3 ...
-                            # 或者: upload file1 file2 file3 ... [--force] [--remove-local]
-                            
-                            target_path = "."  # 默认上传到当前目录
-                            source_files = []
-                            force = False
-                            remove_local = False
-                            
-                            i = 0
-                            while i < len(args):
-                                if args[i] == '--target-dir':
-                                    if i + 1 < len(args):
-                                        target_path = args[i + 1]
-                                        i += 2  # 跳过--target-dir和其值
-                                    else:
-                                        print(f"Error: --target-dir option requires a directory path")
-                                        return 1
-                                elif args[i] == '--force':
-                                    force = True
-                                    i += 1
-                                elif args[i] == '--remove-local':
-                                    remove_local = True
-                                    i += 1
-                                else:
-                                    source_files.append(args[i])
-                                    i += 1
-                            
-                            if not source_files:
-                                print(f"Error: No source files specified for upload")
-                                return 1
-                            
-                            # 调用upload命令
-                            result = self.cmd_upload(source_files, target_path=target_path, force=force, remove_local=remove_local)
-                            if result.get("success"):
-                                # 统一在命令处理结束后打印输出
-                                stdout = result.get("stdout", "")
-                                if stdout:
-                                    print(stdout)
-                                return 0
-                            else:
-                                error_msg = result.get("error", "Upload failed")
-                                print(error_msg)
-                                return 1
-                        elif cmd == 'upload-folder':
-                            # 使用委托方法处理upload-folder命令
-                            if not args:
-                                print(f"Error: upload-folder command needs a folder path")
-                                return 1
-                            
-                            # 解析参数: upload-folder [--keep-zip] [--force] <folder> [target]
-                            # 或者: upload-folder <folder> [target] [--keep-zip] [--force]
-                            folder_path = None
-                            target_path = "."
-                            keep_zip = False
-                            force = False
-                            
-                            i = 0
-                            while i < len(args):
-                                if args[i] == '--keep-zip':
-                                    keep_zip = True
-                                    i += 1
-                                elif args[i] == '--force':
-                                    force = True
-                                    i += 1
-                                elif not folder_path:
-                                    folder_path = args[i]
-                                    i += 1
-                                elif not target_path or target_path == ".":
-                                    target_path = args[i]
-                                    i += 1
-                                else:
-                                    print(f"Error: Too many arguments for upload-folder command")
-                                    return 1
-                            
-                            if not folder_path:
-                                print(f"Error: upload-folder command needs a folder path")
-                                return 1
-                            
-                            result = self.cmd_upload_folder(folder_path, target_path=target_path, keep_zip=keep_zip, force=force)
-                            if result.get("success"):
-                                stdout = result.get("stdout", "")
-                                if stdout:
-                                    print(stdout)
-                                return 0
-                            else:
-                                error_msg = result.get("error", "Upload folder failed")
-                                print(error_msg)
-                                return 1
-                        elif cmd == 'read':
-                            # 使用委托方法处理read命令
-                            if not args:
-                                print(f"Error: read command needs a file name")
-                                return 1
-                            
-                            # 解析--force标志
-                            force = False
-                            remaining_args = []
-                            
-                            for arg in args:
-                                if arg == '--force':
-                                    force = True
-                                else:
-                                    remaining_args.append(arg)
-                            
-                            if not remaining_args:
-                                print(f"Error: read command needs a file name")
-                                return 1
-                            
-                            filename = remaining_args[0]
-                            
-                            # read命令等效于cat命令，显示带行号的文件内容
-                            cat_result = self.cmd_cat(filename)
-                            if cat_result.get("success"):
-                                content = cat_result["output"]
-                                # 修复换行显示问题，并添加行号
-                                lines = content.split('\n')
-                                for i, line in enumerate(lines, 1):
-                                    print(f"{i:3}: {line}")
-                                return 0
-                            else:
-                                print(f"Error: 无法读取文件: {filename}")
-                                return 1
-                        elif cmd == 'edit':
-                            # 使用委托方法处理edit命令
-                            if len(args) < 2:
-                                print(f"Error: edit command needs a file name and edit specification")
-                                return 1
-                            
-                            # 解析选项参数
-                            preview = False
-                            backup = False
-                            remaining_args = []
-                            
-                            for arg in args:
-                                if arg == '--preview':
-                                    preview = True
-                                elif arg == '--backup':
-                                    backup = True
-                                else:
-                                    remaining_args.append(arg)
-                            
-                            if len(remaining_args) < 2:
-                                print(f"Error: edit command needs a file name and edit specification")
-                                return 1
-                                
-                            filename = remaining_args[0]
-                            # 对于edit命令，JSON参数不能用空格连接，需要从原始命令中提取
-                            # 使用正则表达式从原始shell_cmd中提取JSON部分
-                            import re
-                            # 构建选项字符串用于匹配
-                            options_pattern = ""
-                            if preview:
-                                options_pattern += r"(?:--preview\s+)?"
-                            if backup:
-                                options_pattern += r"(?:--backup\s+)?"
-                            
-                            # 匹配命令：edit [options] filename JSON_spec
-                            pattern = rf'^edit\s+{options_pattern}(\S+)\s+(.+)$'
-                            match = re.search(pattern, shell_cmd_clean)
-                            if match:
-                                edit_spec = match.group(2)  # 直接提取JSON部分，不做空格连接
-                            else:
-                                # 回退方案：如果只有一个JSON参数，直接使用
-                                if len(remaining_args) == 2:
-                                    edit_spec = remaining_args[1]
-                                else:
-                                    # 多个参数时，可能是引号被分割了，尝试重新组合
-                                    edit_spec = ' '.join(remaining_args[1:])
-                            
-                            try:
-                                result = self.cmd_edit(filename, edit_spec, preview=preview, backup=backup)
-                            except KeyboardInterrupt:
-                                result = {"success": False, "error": "Operation interrupted by user"}
-                            
-                            if result.get("success", False):
-                                # 显示diff比较（预览模式和正常模式都显示）
-                                diff_output = result.get("diff_output", "")
-                                
-                                if diff_output and diff_output != "No changes detected":
-                                    print(f"\nEdit comparison: {filename}")
-                                    print(f"=" * 50)
-                                    
-                                    # 过滤diff输出，移除文件头和行号信息
-                                    diff_lines = diff_output.splitlines()
-                                    filtered_lines = []
-                                    for line in diff_lines:
-                                        # 跳过文件头行（--- 和 +++）
-                                        if line.startswith('---') or line.startswith('+++'):
-                                            continue
-                                        # 跳过行号信息行（@@）
-                                        if line.startswith('@@'):
-                                            continue
-                                        filtered_lines.append(line)
-                                    
-                                    # 显示过滤后的diff内容
-                                    if filtered_lines:
-                                        print('\n'.join(filtered_lines))
-                                    print(f"=" * 50)
-                                elif diff_output == "No changes detected":
-                                    print(f"No changes detected")
-                                
-                                # 对于正常模式，显示成功信息
-                                if result.get("mode") != "preview":
-                                    print(result.get("message", "\nFile edited successfully"))
-                                
-                                # 显示linter结果（如果有）
-                                if result.get("has_linter_issues"):
-                                    print(f"=" * 50)
-                                    linter_output = result.get("linter_output", "")
-                                    total_issues = linter_output.count("ERROR:") + linter_output.count("WARNING:")
-                                    print(f"{total_issues} linter warnings or errors found:")
-                                    print(linter_output)
-                                    print(f"=" * 50)
-                                elif result.get("linter_error"):
-                                    print(f"=" * 50)
-                                    print(f"Linter check failed: {result.get('linter_error')}")
-                                    print(f"=" * 50)
-                                elif result.get("has_linter_issues") == False:
-                                    # Only show "no issues" message if linter actually ran
-                                    pass  # No need to show anything for clean files
-                                
-                                return 0
-                            else:
-                                print(result.get("error", "Failed to edit file"))
-                                return 1
-                    
-                    # 使用统一的命令解析和转译接口
-                    translation_result = self.parse_and_translate_command(shell_cmd_clean)
-                    if not translation_result["success"]:
-                        print(f"Error: {translation_result['error']}")
-                        return 1
-                    
-                    # 直接使用转译后的命令，不需要再次解析
-                    translated_cmd = translation_result["translated_command"]
-                    
-                    # 直接使用execute_command执行转译后的命令
-                    current_shell = self.get_current_shell()
-                    result = self.remote_commands.execute_command(
-                        user_command=translated_cmd,
-                        current_shell=current_shell
-                    )
-                    
-                    if result.get("success", False):
-                        # 显示输出
-                        data = result.get("data", {})
-                        stdout = data.get("stdout", "").strip()
-                        stderr = data.get("stderr", "").strip()
-                        if stdout:
-                            print(stdout)
-                        if stderr:
-                            import sys
-                            print(stderr, file=sys.stderr)
-                        return 0
-                    else:
-                        error_msg = result.get("error", f"Command '{translated_cmd}' failed")
-                        print(error_msg)
-                        return 1
+            # 移除特殊的python -c处理，让它通过新的command registry
+            print(f"🔍 COMMAND_PARSE DEBUG: About to parse command normally")
+            # 首先检查是否包含多命令组合（&&、||或|），在特殊命令检查之前
+            has_multiple_ops = False
+            # 检查带空格和不带空格的操作符，使用清理后的命令
+            for op in [' && ', ' || ', ' | ', '&&', '||', '|']:
+                if op in shell_cmd_clean:
+                    # 检查操作符是否在引号外
+                    if self._is_operator_outside_quotes(shell_cmd_clean, op):
+                        has_multiple_ops = True
+                        break
             
-            # 引号和转义处理现在统一由parse_and_translate_command处理
-            
-            # 特殊处理BACKGROUND_CMD命令
-            if cmd == "BACKGROUND_CMD":
-                # 将BACKGROUND_CMD转换为GDS的--bg格式，自动引号包围
-                if args:
-                    # 自动将所有参数合并并引号包围
-                    bg_command = ' '.join(str(arg) for arg in args)
-                    # 如果命令包含特殊字符，确保正确处理
-                    return self.execute_shell_command(f"--bg {bg_command}", command_identifier)
-                else:
-                    print("Usage: BACKGROUND_CMD <command>")
-                    print("Example: BACKGROUND_CMD echo hello world")
-                    print("Note: No need to add quotes around the command")
-                    return 1
-            
-                # 解析ls命令的参数
-                recursive = False
-                detailed = False
-                paths = []
-                
-                for arg in args:
-                    if arg == '-R':
-                        recursive = True
-                    elif arg == '--detailed':
-                        detailed = True
-                    elif not arg.startswith('-'):
-                        paths.append(arg)
-                
-                # 使用本地API调用cmd_ls，不调用远程命令
-                path = paths[0] if paths else None
-                result = self.cmd_ls(path=path, detailed=detailed, recursive=recursive, show_hidden=False)
-                
-                if result.get("success"):
-                    files = result.get("files", [])
-                    folders = result.get("folders", [])
-                    all_items = folders + files
-                    
-                    if all_items:
-                        # 按名称排序，文件夹优先
-                        sorted_folders = sorted(folders, key=lambda x: x.get('name', '').lower())
-                        sorted_files = sorted(files, key=lambda x: x.get('name', '').lower())
-                        
-                        # 合并列表，文件夹在前
-                        all_sorted_items = sorted_folders + sorted_files
-                        
-                        if detailed:
-                            # 详细模式显示更多信息
-                            for item in all_sorted_items:
-                                name = item.get('name', 'Unknown')
-                                size = item.get('size', 'N/A')
-                                modified = item.get('modifiedTime', 'Unknown')
-                                if item.get('mimeType') == 'application/vnd.google-apps.folder':
-                                    print(f"d {name}/ - {modified}")
-                                else:
-                                    print(f"f {name} ({size}) - {modified}")
-                        else:
-                            # 简单的列表格式，类似bash ls
-                            for item in all_sorted_items:
-                                name = item.get('name', 'Unknown')
-                                if item.get('mimeType') == 'application/vnd.google-apps.folder':
-                                    print(f"{name}")
-                                else:
-                                    print(name)
-                    
-                    return 0
-                else:
-                    error_msg = result.get('error', 'Unknown error')
-                    print(f"Failed to list files: {error_msg}")
-                    return 1
-            elif cmd == 'cd':
-                if not args:
-                    print(f"Error: cd command needs a path")
-                    return 1
-                # 使用file_operations中的cmd_cd方法
-                path = args[0]
-                result = self.cmd_cd(path)
-                if result.get("success"):
-                    # cd命令成功时不显示输出（像bash一样）
-                    return 0
-                else:
-                    print(result.get("error", "Error: cd command execution failed"))
-                    return 1
-            elif cmd == 'mkdir':
-                if not args:
-                    print(f"Error: mkdir command needs a directory name")
-                    return 1
+            if has_multiple_ops:
                 # 导入shell_commands模块中的具体函数
                 import os
+                import sys
                 current_dir = os.path.dirname(__file__)
                 modules_dir = os.path.join(current_dir, 'modules')
                 if modules_dir not in sys.path:
                     sys.path.append(modules_dir)
                 
-                # 使用file_operations中的cmd_mkdir方法（通过远程命令执行）
-                recursive = '-p' in args
-                dir_names = [arg for arg in args if arg != '-p']
-                if not dir_names:
-                    print(f"Error: mkdir command needs directory name(s)")
-                    return 1
+                from shell_commands import handle_multiple_commands
+                return handle_multiple_commands(shell_cmd_clean, command_identifier)
+            
+            # 然后检查是否为特殊命令（导航命令等）
+            first_word = shell_cmd_clean.split()[0] if shell_cmd_clean.split() else ""
+            
+            # print(f"🔍 PARSE_DEBUG: Parsed first_word='{first_word}'")
+            # print(f"🔍 PARSE_DEBUG: shell_cmd_clean='{shell_cmd_clean}'")
+            # print(f"🔍 PARSE_DEBUG: is_quoted_command={is_quoted_command}")
+            # print(f"🔍 PARSE_DEBUG: About to check for special commands")
+            
+            # # 特殊命令处理 - 在pipe检查之后
+            # # 使用新的命令注册系统
+            # print(f"🔍 DEBUG: About to check special commands")
+            # print(f"🔍 DEBUG: first_word='{first_word}'")
+            # print(f"🔍 DEBUG: is_quoted_command={is_quoted_command}")
+            # print(f"🔍 DEBUG: shell_cmd_clean='{shell_cmd_clean}'")
+            # print(f"🔍 DEBUG: is_special={self.command_registry.is_special_command(first_word)}")
+            
+            # 首先检查新的命令注册系统
+            if self.command_registry.is_special_command(first_word):
+                # print(f"DEBUG: Processing special command '{first_word}' with new command system")
                 
-                # 支持多个目录创建 - 使用单个远端命令提高效率
-                if len(dir_names) == 1:
-                    # 单个目录，直接调用
-                    result = self.cmd_mkdir(dir_names[0], recursive)
-                    if result.get("success"):
-                        return 0
-                    else:
-                        error_msg = result.get("error", "Error: mkdir command execution failed")
-                        print(error_msg)
-                        return 1
-                else:
-                    # 多个目录，合并为单个远端命令
-                    current_shell = self.get_current_shell()
-                    if not current_shell:
-                        print(f"Error: no active remote shell")
-                        return 1
-                    
-                    # 构建合并的mkdir命令
-                    mkdir_prefix = "mkdir -p" if recursive else "mkdir"
-                    absolute_paths = []
-                    for dir_name in dir_names:
-                        abs_path = self.resolve_remote_absolute_path(dir_name, current_shell)
-                        absolute_paths.append(abs_path)
-                    
-                    # 使用&&连接多个mkdir命令
-                    combined_command = " && ".join([f'{mkdir_prefix} "{path}"' for path in absolute_paths])
-                    
-                    # 执行合并的命令
-                    result = self.execute_command_interface("bash", ["-c", combined_command])
-                    
-                    if result.get("success"):
-                        # 验证所有目录都被创建了
-                        all_verified = True
-                        for dir_name in dir_names:
-                            verification_result = self.verify_creation_with_ls(
-                                dir_name, current_shell, creation_type="dir", max_attempts=60
-                            )
-                            if not verification_result.get("success", False):
-                                print(f"Error: Directory {dir_name} verification failed")
-                                all_verified = False
-                        
-                        return 0 if all_verified else 1
-                    else:
-                        error_msg = result.get("error", "Multiple directory creation failed")
-                        print(f"Error: {error_msg}")
-                        return 1
-            elif cmd == 'touch':
-                if not args:
-                    print(f"Error: touch command needs a filename")
-                    return 1
-                
-                filename = args[0]
-                
-                # 调用cmd_touch方法
-                result = self.cmd_touch(filename)
-                if result.get("success"):
-                    return 0
-                else:
-                    print(result.get("error", "Error: touch command execution failed"))
-                    return 1
-
-            elif cmd == 'echo':
-                print(f"🔍 DEBUG: Matched echo branch")
-                # 简化的echo处理：直接使用统一的echo命令处理
-                return self._handle_unified_echo_command(args)
-            elif cmd == 'help':
-                print(f"🔍 DEBUG: Matched help branch")
-                # 导入shell_commands模块中的具体函数
-                import os
-                current_dir = os.path.dirname(__file__)
-                modules_dir = os.path.join(current_dir, 'modules')
-                if modules_dir not in sys.path:
-                    sys.path.append(modules_dir)
-                
-                from modules.shell_commands import shell_help
-                return shell_help(command_identifier)
-            elif cmd == 'venv':
-                print(f"🔍 DEBUG: ✅ MATCHED VENV BRANCH! Inside venv elif branch, calling cmd_venv with args: {args}")
-                # 使用委托方法处理venv命令
-                result = self.cmd_venv(*args)
-                print(f"🔍 DEBUG: cmd_venv returned: {result}")
-                if result.get("success", False):
-                    # venv命令成功后，同步更新本地shell状态
-                    self._sync_venv_state_to_local_shell(args)
-                    return 0
-                else:
-                    error_message = result.get("error", "Virtual environment operation failed")
-                    print(error_message)
-                    return 1
-            elif cmd == 'pyenv':
-                # 使用委托方法处理pyenv命令
-                result = self.cmd_pyenv(*args)
-                if result.get("success", False):
-                    return 0
-                else:
-                    error_message = result.get("error", "Python version management operation failed")
-                    print(error_message)
-                    return 1
-            elif cmd == 'cleanup-windows':
-                # 手动清理窗口命令
-                force = '--force' in args
+                # 解析命令和参数
+                import shlex
                 try:
-                    from modules.window_manager import get_window_manager
-                    manager = get_window_manager()
-                    
-                    # 获取清理前的窗口数量
-                    before_count = manager.get_active_windows_count()
-                    print(f"清理前活跃窗口数量: {before_count}")
-                    
-                    # 执行清理
-                    manager.cleanup_windows(force=force)
-                    
-                    # 等待一下再检查
-                    import time
-                    time.sleep(1)
-                    after_count = manager.get_active_windows_count()
-                    print(f"清理后活跃窗口数量: {after_count}")
-                    
-                    if before_count > 0 and after_count == 0:
-                        print("窗口清理成功")
-                    elif before_count == 0:
-                        print("ℹ️ 没有需要清理的窗口")
-                    elif after_count < before_count:
-                        print(f"部分窗口清理成功 (清理了 {before_count - after_count} 个窗口)")
+                    cmd_parts = shlex.split(shell_cmd_clean)
+                    if cmd_parts:
+                        cmd = cmd_parts[0]
+                        args = cmd_parts[1:]
                     else:
-                        print("⚠️ 窗口清理可能未完全成功")
-                    
-                    return 0
+                        print("Error: Empty command after parsing")
+                        return 1
                 except Exception as e:
-                    print(f"Error: 窗口清理失败: {e}")
-                    return 1
-                    
-                    # 显示stderr如果存在
-                    stderr = result.get("stderr", "")
-                    if stderr.strip():
-                        print(f"\nError: STDERR content:\n{stderr.strip()}")
-                    
-                    # 显示用户错误信息（如果有）
-                    user_error = result.get("user_error_info", "")
-                    if user_error:
-                        print(f"\nError: User provided content:\n{user_error}")
-                    
-                    return 1
-            elif cmd == 'linter':
-                # 使用委托方法处理linter命令
-                result = self.cmd_linter(*args)
-                if result.get("success", False):
-                    print(result.get("output", "Linting completed"))
-                    return 0 if not result.get("has_errors", False) else 1
-                else:
-                    error_message = result.get("error", "Linter operation failed")
-                    print(error_message)
-                    return 1
-            elif cmd == 'pip':
-                # 使用委托方法处理pip命令
-                result = self.cmd_pip(*args)
-                if result.get("success", False):
-                    message = result.get("message", "")
-                    if message.strip():  # 只有当message不为空时才打印
-                        print(message)
-                    return 0
-                else:
-                    print(result.get("error", "Pip operation failed"))
-                    return 1
-            elif cmd == 'deps':
-                # 使用委托方法处理依赖分析命令
-                result = self.cmd_deps(*args)
-                if result.get("success", False):
-                    message = result.get("message", "")
-                    if message.strip():  # 只有当message不为空时才打印
-                        print(message)
-                    return 0
-                else:
-                    print(result.get("error", "Dependency analysis failed"))
-                    return 1
-            elif cmd == 'cat':
-                # 使用委托方法处理cat命令
-                if not args:
-                    print(f"Error: cat command needs a file name")
-                    return 1
-                result = self.cmd_cat(args[0])
-                if result.get("success", False):
-                    if not result.get("direct_feedback", False):
-                        print(result.get("output", ""))
-                    return 0
-                else:
-                    print(result.get("error", "Failed to read file"))
-                    return 1
-            elif cmd == 'edit':
-                # 使用委托方法处理edit命令
-                if len(args) < 2:
-                    print(f"Error: edit command needs a file name and edit specification")
+                    print(f"Error: Command parsing failed: {e}")
                     return 1
                 
-                # 解析选项参数
-                preview = False
-                backup = False
-                remaining_args = []
-                
-                for arg in args:
-                    if arg == '--preview':
-                        preview = True
-                    elif arg == '--backup':
-                        backup = True
-                    else:
-                        remaining_args.append(arg)
-                
-                if len(remaining_args) < 2:
-                    print(f"Error: edit command needs a file name and edit specification")
-                    return 1
-                    
-                filename = remaining_args[0]
-                # 对于edit命令，JSON参数不能用空格连接，需要从原始命令中提取
-                # 使用正则表达式从原始shell_cmd中提取JSON部分
-                import re
-                # 构建选项字符串用于匹配
-                options_pattern = ""
-                if preview:
-                    options_pattern += r"(?:--preview\s+)?"
-                if backup:
-                    options_pattern += r"(?:--backup\s+)?"
-                
-                # 匹配命令：edit [options] filename JSON_spec
-                pattern = rf'^edit\s+{options_pattern}(\S+)\s+(.+)$'
-                match = re.search(pattern, shell_cmd)
-                if match:
-                    edit_spec = match.group(2)  # 直接提取JSON部分，不做空格连接
-                else:
-                    # 回退方案：如果只有一个JSON参数，直接使用
-                    if len(remaining_args) == 2:
-                        edit_spec = remaining_args[1]
-                    else:
-                        # 多个参数时，可能是引号被分割了，尝试重新组合
-                        edit_spec = ' '.join(remaining_args[1:])
-                
-                try:
-                    result = self.cmd_edit(filename, edit_spec, preview=preview, backup=backup)
-                except KeyboardInterrupt:
-                    result = {"success": False, "error": "Operation interrupted by user"}
-                
-                if result.get("success", False):
-                    # 显示diff比较（预览模式和正常模式都显示）
-                    diff_output = result.get("diff_output", "")
-                    
-                    if diff_output and diff_output != "No changes detected":
-                        print(f"\nEdit comparison: {filename}")
-                        print(f"=" * 50)
-                        
-                        # 过滤diff输出，移除文件头和行号信息
-                        diff_lines = diff_output.splitlines()
-                        filtered_lines = []
-                        for line in diff_lines:
-                            # 跳过文件头行（--- 和 +++）
-                            if line.startswith('---') or line.startswith('+++'):
-                                continue
-                            # 跳过行号信息行（@@）
-                            if line.startswith('@@'):
-                                continue
-                            filtered_lines.append(line)
-                        
-                        # 显示过滤后的diff内容
-                        if filtered_lines:
-                            print('\n'.join(filtered_lines))
-                        print(f"=" * 50)
-                    elif diff_output == "No changes detected":
-                        print(f"No changes detected")
-                    
-                    # 对于正常模式，显示成功信息
-                    if result.get("mode") != "preview":
-                        print(result.get("message", "\nFile edited successfully"))
-                    
-                    # 显示linter结果（如果有）
-                    if result.get("has_linter_issues"):
-                        print(f"=" * 50)
-                        linter_output = result.get("linter_output", "")
-                        total_issues = linter_output.count("ERROR:") + linter_output.count("WARNING:")
-                        print(f"{total_issues} linter warnings or errors found:")
-                        print(linter_output)
-                        print(f"=" * 50)
-                    elif result.get("linter_error"):
-                        print(f"=" * 50)
-                        print(f"Linter check failed: {result.get('linter_error')}")
-                        print(f"=" * 50)
-                    elif result.get("has_linter_issues") == False:
-                        # Only show "no issues" message if linter actually ran
-                        pass  # No need to show anything for clean files
-                    
-                    return 0
-                else:
-                    print(result.get("error", "Failed to edit file"))
-                    return 1
-            elif cmd == 'read':
-                # 使用委托方法处理read命令
-                if not args:
-                    print(f"Error: read command needs a file name")
-                    return 1
-                
-                # 解析--force标志
-                force = False
-                remaining_args = []
-                
-                for arg in args:
-                    if arg == '--force':
-                        force = True
-                    else:
-                        remaining_args.append(arg)
-                
-                if not remaining_args:
-                    print(f"Error: read command needs a file name")
-                    return 1
-                
-                filename = remaining_args[0]
-                # Pass all arguments after filename to cmd_read for proper parsing
-                read_args = remaining_args[1:] if len(remaining_args) > 1 else []
-                result = self.cmd_read(filename, *read_args, force=force)
-                if result.get("success", False):
-                    if not result.get("direct_feedback", False):
-                        print(result.get("output", ""))
-                    return 0
-                else:
-                    print(result.get("error", "Failed to read file"))
-                    return 1
-            elif cmd == 'python':
-                # 使用委托方法处理python命令
-                if not args:
-                    print(f"Error: python command needs a file name or code")
-                    return 1
-                if args[0] == '-c':
-                    # 执行Python代码
-                    if len(args) < 2:
-                        print(f"Error: python -c needs code")
-                        return 1
-                    # 过滤掉命令行选项参数，只保留Python代码
-                    code_args = []
-                    for arg in args[1:]:
-                        if not arg.startswith('--'):
-                            code_args.append(arg)
-                    
-                    # 统一处理已经在execute_shell_command中完成
-                    code = ' '.join(code_args)
-                    
-                    # 不要移除Python代码的引号，因为shlex.split已经正确处理了shell引号
-                    # Python代码中的引号是语法的一部分，不应该被移除
-                    result = self.cmd_python_code(code)
-                else:
-                    # 执行Python文件
-                    filename = args[0]
-                    # 传递额外的命令行参数
-                    python_args = args[1:] if len(args) > 1 else []
-                    result = self.cmd_python(filename=filename, python_args=python_args)
-                
-                if result.get("success", False):
-                    # 检查是否来自direct_feedback，如果是则不重复打印
-                    if result.get("source") != "direct_feedback":
-                        # 按正确顺序显示输出：先stdout，后stderr，并确保立即刷新
-                        stdout = result.get("stdout", "")
-                        stderr = result.get("stderr", "")
-                        
-                        if stdout:
-                            print(stdout, end="", flush=True)
-                        if stderr:
-                            print(stderr, end="", file=sys.stderr, flush=True)
-                    
-                    # 返回Python脚本的实际退出码（可能是非零）
-                    return_code = result.get("return_code", result.get("returncode", 0))
-                    
-                    return return_code
-                else:
-                    # 远程执行本身失败（不是Python脚本失败）
-                    print(result.get("error", "Python execution failed"))
-                    # 也显示stderr（如果有）
-                    stderr = result.get("stderr", "")
-                    if stderr:
-                        print(stderr, end="", file=sys.stderr)
-                    return 1
-            else:
-                # print(f"DEBUG: ❌ NO CONDITION MATCHED! cmd='{cmd}' not found in handlers")
-                # print(f"DEBUG: This should not happen for upload command")
-                # 继续到远程执行
-                pass
+                # 使用命令注册系统执行命令
+                return self.command_registry.execute_command(cmd, args, command_identifier=command_identifier)
             
-            # upload-folder条件已移动到正确的elif链中
-            if cmd == 'download':
-                # 使用委托方法处理download命令
-                if not args:
-                    print(f"Error: download command needs a file name")
-                    return 1
-                result = self.cmd_download(*args)
-                if result.get("success", False):
-                    print(result.get("message", "Download completed"))
-                    return 0
-                else:
-                    print(result.get("error", "Download failed"))
-                    return 1
-            elif cmd == 'mv':
-                # 使用委托方法处理mv命令
-                if len(args) < 2:
-                    print(f"Error: mv command needs a source file and target file")
-                    return 1
-                result = self.cmd_mv(args[0], args[1])
-                if result.get("success", False):
-                    print(result.get("message", "Move completed"))
-                    return 0
-                else:
-                    print(result.get("error", "Move failed"))
-                    return 1
-            elif cmd == 'find':
-                # 使用委托方法处理find命令
-                result = self.cmd_find(*args)
-                if result.get("success", False):
-                    if not result.get("direct_feedback", False):
-                        print(result.get("output", ""))
-                    return 0
-                else:
-                    print(result.get("error", "Find failed"))
-                    return 1
-            elif cmd == 'rm':
-                # 使用委托方法处理rm命令
-                if not args:
-                    print(f"Error: rm command needs a file or directory name")
-                    return 1
-                
-                # 解析rm选项
-                recursive = False
-                force = False
-                paths = []
-                
-                for arg in args:
-                    if arg == '-r' or arg == '-rf' or arg == '-fr':
-                        recursive = True
-                        if 'f' in arg:
-                            force = True
-                    elif arg == '-f':
-                        force = True
-                    elif not arg.startswith('-'):
-                        paths.append(arg)
-                
-                if not paths:
-                    print(f"Error: rm command needs at least one file or directory to delete")
-                    return 1
-                
-                # 处理每个路径
-                success_count = 0
-                for path in paths:
-                    result = self.cmd_rm(path, recursive=recursive, force=force)
-                    if result.get("success", False):
-                        success_count += 1
-                        # rm命令成功时通常不显示消息，像bash一样
-                    else:
-                        print(result.get("error", f"Failed to delete {path}"))
-                
-                return 0 if success_count == len(paths) else 1
-            elif cmd == 'grep':
-                # 使用委托方法处理grep命令
-                # print(f"🔍 DEBUG: ✅ ENTERED GREP ELIF BLOCK! args={args}")
-                # print(f"🔍 DEBUG: This should be the correct grep processing path")
-                if len(args) < 1:
-                    print(f"Error: grep command needs at least a file name")
-                    return 1
-                
-                # 处理参数解析
-                if len(args) == 1:
-                    # 只有一个参数，视为文件名，模式为空（等效于read）
-                    pattern = ""
-                    filenames = args
-                    print(f"🔍 DEBUG: Single arg detected - pattern='{pattern}', filenames={filenames}")
-                elif '.' in args[-1] and not args[-1].startswith('.'):
-                    # 最后一个参数很可能是文件名，前面的是模式
-                    filenames = [args[-1]]
-                    pattern_parts = args[:-1]
-                    pattern = ' '.join(pattern_parts)
-                    print(f"🔍 DEBUG: File extension detected - pattern='{pattern}', filenames={filenames}")
-                else:
-                    # 传统处理：第一个参数是模式，其余是文件名
-                    pattern = args[0]
-                    filenames = args[1:]
-                    print(f"🔍 DEBUG: Traditional parsing - pattern='{pattern}', filenames={filenames}")
-                
-                # 移除pattern的外层引号（如果存在）
-                original_pattern = pattern
-                if pattern.startswith('"') and pattern.endswith('"'):
-                    pattern = pattern[1:-1]
-                elif pattern.startswith("'") and pattern.endswith("'"):
-                    pattern = pattern[1:-1]
-                if original_pattern != pattern:
-                    print(f"🔍 DEBUG: Pattern quotes removed - '{original_pattern}' -> '{pattern}'")
+            # 回退到旧的特殊命令处理系统
+            special_commands = ['pwd', 'ls', 'cd', 'cat', 'mkdir', 'touch', 'echo', 'help', 'pyenv', 
+                              'cleanup-windows', 'linter', 'pip', 'deps', 'edit', 'read', 
+                              'upload', 'upload-folder', 'download', 'mv', 'find', 'rm']
+            # print(f"🔍 DEBUG: Checking legacy special commands - first_word='{first_word}', in_special={first_word in special_commands}")
+            if first_word in special_commands:
+                    # print(f"DEBUG: Processing special command '{first_word}' with local API")
                     
-                # 检查是否为无模式的grep（等效于read）
-                if not pattern or pattern.strip() == "":
-                    print(f"🔍 DEBUG: No pattern detected, using read mode for files: {filenames}")
-                    # 无模式grep，等效于read命令
-                    for filename in filenames:
-                        print(f"🔍 DEBUG: Processing file: {filename}")
-                        cat_result = self.cmd_cat(filename)
-                        print(f"🔍 DEBUG: cat_result success={cat_result.get('success')}")
-                        if cat_result.get("success"):
-                            content = cat_result["output"]
-                            print(f"🔍 DEBUG: File content length: {len(content)} chars")
-                            # 修复换行显示问题，并添加行号
-                            lines = content.split('\n')
-                            print(f"🔍 DEBUG: Split into {len(lines)} lines")
-                            for i, line in enumerate(lines, 1):
-                                print(f"{i:3}: {line}")
+                    # 解析命令和参数
+                    import shlex
+                    try:
+                        cmd_parts = shlex.split(shell_cmd_clean)
+                        if cmd_parts:
+                            cmd = cmd_parts[0]
+                            args = cmd_parts[1:]
                         else:
-                            print(f"Error: 无法读取文件: {filename}")
-                    print(f"🔍 DEBUG: No pattern grep completed, returning 0")
-                    return 0
-                
-                print(f"🔍 DEBUG: Pattern grep mode - pattern='{pattern}', filenames={filenames}")
-                # 有模式的grep，只显示匹配行
-                result = self.cmd_grep(pattern, *filenames)
-                if result.get("success", False):
-                    result_data = result.get("result", {})
-                    has_matches = False
+                            print("Error: Empty command after parsing")
+                            return 1
+                    except Exception as e:
+                        print(f"Error: Command parsing failed: {e}")
+                        return 1
                     
-                    has_file_errors = False
-                    for filename, file_result in result_data.items():
-                        if "error" in file_result:
-                            print(f"Error: {filename}: {file_result['error']}")
-                            has_file_errors = True
-                        else:
-                            occurrences = file_result.get("occurrences", {})
-                            if occurrences:
-                                has_matches = True
-                                # 获取文件内容用于显示匹配行
-                                cat_result = self.cmd_cat(filename)
-                                if cat_result.get("success"):
-                                    lines = cat_result["output"].split('\n')
-                                    # 按行号排序显示匹配行
-                                    sorted_line_nums = sorted([int(line_num) for line_num in occurrences.keys()])
-                                    for line_num in sorted_line_nums:
-                                        line_index = line_num - 1
-                                        if 0 <= line_index < len(lines):
-                                            line_content = lines[line_index]
-                                            print(f"{line_num:3}: {line_content}")
-                                else:
-                                    print(f"Error: 无法读取文件内容: {filename}")
-                    
-                    # 按照bash grep的标准行为返回退出码
-                    if has_file_errors:
-                        return 2  # 文件错误（如文件不存在）
-                    elif not has_matches:
-                        return 1  # 没有匹配项
-                    else:
-                        return 0  # 有匹配项
-                else:
-                    print(result.get("error", "Error: Grep命令执行失败"))
-                    return 1
+                    # 旧的特殊命令实现已被移除，现在使用新的command registry系统
+                    print(f"🔍 DEBUG: Command '{cmd}' not found in new command registry, falling back to remote execution")
+             
+            # 如果不是特殊命令，使用统一的命令解析和转译接口
+            translation_result = self.parse_and_translate_command(shell_cmd_clean)
+            if not translation_result["success"]:
+                print(f"Error: {translation_result['error']}")
+                return 1
+            
+            # 直接使用转译后的命令，不需要再次解析
+            translated_cmd = translation_result["translated_command"]
+            
+            # 直接使用execute_command执行转译后的命令
+            current_shell = self.get_current_shell()
+            result = self.remote_commands.execute_command(
+                user_command=translated_cmd,
+                current_shell=current_shell
+            )
+            
+            if result.get("success", False):
+                # 显示输出
+                data = result.get("data", {})
+                stdout = data.get("stdout", "").strip()
+                stderr = data.get("stderr", "").strip()
+                if stdout:
+                    print(stdout)
+                if stderr:
+                    import sys
+                    print(stderr, file=sys.stderr)
+                return 0
             else:
-                print(f"🔍 DEBUG: ❌ REACHED REMOTE EXECUTION FALLBACK! cmd='{cmd}' not handled locally")
-                print(f"🔍 DEBUG: This means '{cmd}' was not matched in the if-elif chain")
-                print(f"🔍 DEBUG: Available conditions in chain should include venv")
-                # 尝试通过通用远程命令执行
-                result = self.execute_command_interface(cmd, args)
-                if result.get("success", False):
-                    stdout = result.get("stdout", "").strip()
-                    stderr = result.get("stderr", "").strip()
-                    # 统一在命令处理结束后打印输出
-                    if stdout:
-                        print(stdout)
-                    if stderr:
-                        print(stderr, file=sys.stderr)
-                    return 0
-                else:
-                    error_msg = result.get("error", f"Command '{cmd}' failed")
-                    print(error_msg)
-                    return 1
+                error_msg = result.get("error", f"Command '{translated_cmd}' failed")
+                print(error_msg)
+                return 1
                 
         except Exception as e:
             error_msg = f"Error: Error executing shell command: {e}"
             print(error_msg)
             return 1
-        finally:
-            # ============ 简化架构：无需手动释放槽位 ============
-            # 槽位释放由execute_generic_command统一处理
-            # 调试日志已禁用
-            # ========== 简化架构结束 ==========
+        finally: 
             pass
 
     def _show_background_status(self, bg_pid, command_identifier=None):

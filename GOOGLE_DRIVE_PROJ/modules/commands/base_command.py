@@ -25,11 +25,12 @@ class BaseCommand(ABC):
         pass
     
     @abstractmethod
-    def execute(self, args: List[str], **kwargs) -> int:
+    def execute(self, cmd: str, args: List[str], **kwargs) -> int:
         """
         Execute the command with given arguments.
         
         Args:
+            cmd: The command name
             args: List of command arguments
             **kwargs: Additional keyword arguments
             

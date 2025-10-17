@@ -74,4 +74,4 @@ class CommandRegistry:
         if not command.validate_args(args):
             return 1
         
-        return command.execute(args, **kwargs)
+        return command.execute(name, args, **kwargs)

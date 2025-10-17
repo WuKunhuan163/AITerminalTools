@@ -3680,19 +3680,31 @@ def main():
                 # 动态导入GoogleDriveShell避免循环导入
                 import sys
                 import os
+                print(f"🔍 REMOTE_COMMANDS DEBUG: About to import GoogleDriveShell")
+                print(f"🔍 REMOTE_COMMANDS DEBUG: shell_cmd='{shell_cmd}'")
+                print(f"🔍 REMOTE_COMMANDS DEBUG: command_identifier={command_identifier}")
+                
                 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
                 from google_drive_shell import GoogleDriveShell
                 
+                print(f"🔍 REMOTE_COMMANDS DEBUG: GoogleDriveShell imported successfully")
+                
                 shell = GoogleDriveShell()
+                print(f"🔍 REMOTE_COMMANDS DEBUG: GoogleDriveShell instance created")
+                
                 # 这里需要GoogleDriveShell提供一个处理shell命令的方法
                 if hasattr(shell, 'execute_shell_command'):
+                    print(f"🔍 REMOTE_COMMANDS DEBUG: Calling shell.execute_shell_command")
                     return shell.execute_shell_command(shell_cmd, command_identifier)
                 else:
                     print(f"Error:  GoogleDriveShell missing execute_shell_command method")
                     return 1
             except Exception as e:
+                import traceback
                 error_msg = f"Error: Execute shell command failed: {e}"
                 print(error_msg)
+                print(f"🔍 REMOTE_COMMANDS DEBUG: Full traceback:")
+                print(traceback.format_exc())
                 return 1
     elif args[0] == '--desktop':
         if len(args) < 2:
