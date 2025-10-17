@@ -13,37 +13,48 @@ class UploadCommand(BaseCommand):
             print("Error: upload command needs a file name")
             return 1
         
-        # 解析参数
-        source_path = None
-        target_path = None
-        overwrite = False
+        # 参数解析规则：
+        # 格式: upload [--target-dir TARGET] [--force] [--remove-local] file1 file2 file3 ...
+        # 或者: upload file1 file2 file3 ... [--force] [--remove-local]
+        
+        target_path = "."  # 默认上传到当前目录
+        source_files = []
+        force = False
+        remove_local = False
         
         i = 0
         while i < len(args):
-            if args[i] == '--overwrite' or args[i] == '--force':
-                overwrite = True
-            elif source_path is None:
-                source_path = args[i]
-            elif target_path is None:
-                target_path = args[i]
-            i += 1
+            if args[i] == '--target-dir':
+                if i + 1 < len(args):
+                    target_path = args[i + 1]
+                    i += 2  # 跳过--target-dir和其值
+                else:
+                    print("Error: --target-dir option requires a directory path")
+                    return 1
+            elif args[i] == '--force':
+                force = True
+                i += 1
+            elif args[i] == '--remove-local':
+                remove_local = True
+                i += 1
+            else:
+                source_files.append(args[i])
+                i += 1
         
-        if source_path is None:
-            print("Error: upload command needs a source file")
+        if not source_files:
+            print("Error: No source files specified for upload")
             return 1
         
-        # 如果没有指定目标路径，使用源文件名
-        if target_path is None:
-            import os
-            target_path = os.path.basename(source_path)
+        # 调用upload命令
+        result = self.shell.cmd_upload(source_files, target_path=target_path, force=force, remove_local=remove_local)
         
-        # 调用shell的upload方法
-        result = self.shell.cmd_upload([source_path], target_path=target_path, force=overwrite)
-        
-        if result.get("success", False):
-            if not result.get("direct_feedback", False):
-                print(result.get("message", "File uploaded successfully"))
+        if result.get("success"):
+            # 统一在命令处理结束后打印输出
+            stdout = result.get("stdout", "")
+            if stdout:
+                print(stdout)
             return 0
         else:
-            print(result.get("error", "Failed to upload file"))
+            error_msg = result.get("error", "Upload failed")
+            print(error_msg)
             return 1
