@@ -1240,11 +1240,11 @@ For more information, visit: https://github.com/your-repo/gds"""
                     
                     # 特殊命令处理 - 在pipe检查之后
                     # 使用新的命令注册系统
-                    print(f"🔍 DEBUG: Checking special commands - first_word='{first_word}', is_special={self.command_registry.is_special_command(first_word)}")
+                    # print(f"🔍 DEBUG: Checking special commands - first_word='{first_word}', is_special={self.command_registry.is_special_command(first_word)}")
                     
                     # 首先检查新的命令注册系统
                     if self.command_registry.is_special_command(first_word):
-                        print(f"DEBUG: Processing special command '{first_word}' with new command system")
+                        # print(f"DEBUG: Processing special command '{first_word}' with new command system")
                         
                         # 解析命令和参数
                         import shlex
@@ -1267,9 +1267,9 @@ For more information, visit: https://github.com/your-repo/gds"""
                     special_commands = ['pwd', 'ls', 'cd', 'cat', 'mkdir', 'touch', 'echo', 'help', 'pyenv', 
                                       'cleanup-windows', 'linter', 'pip', 'deps', 'edit', 'read', 'python', 
                                       'upload', 'upload-folder', 'download', 'mv', 'find', 'rm']
-                    print(f"🔍 DEBUG: Checking legacy special commands - first_word='{first_word}', in_special={first_word in special_commands}")
+                    # print(f"🔍 DEBUG: Checking legacy special commands - first_word='{first_word}', in_special={first_word in special_commands}")
                     if first_word in special_commands:
-                        print(f"DEBUG: Processing special command '{first_word}' with local API")
+                        # print(f"DEBUG: Processing special command '{first_word}' with local API")
                         
                         # 解析命令和参数
                         import shlex
@@ -1284,33 +1284,6 @@ For more information, visit: https://github.com/your-repo/gds"""
                         except Exception as e:
                             print(f"Error: Command parsing failed: {e}")
                             return 1
-                        
-                        print(f"🔍 DEBUG: Parsed special cmd='{cmd}', args={args}")
-                        print(f"🔍 DEBUG: About to enter if-elif chain...")
-                        print(f"🔍 DEBUG: Checking cmd == 'pwd': {cmd == 'pwd'}")
-                        print(f"🔍 DEBUG: Checking cmd == 'ls': {cmd == 'ls'}")
-                        print(f"🔍 DEBUG: Checking cmd == 'cd': {cmd == 'cd'}")
-                        print(f"🔍 DEBUG: Checking cmd == 'cat': {cmd == 'cat'}")
-                        print(f"🔍 DEBUG: Checking cmd == 'mkdir': {cmd == 'mkdir'}")
-                        print(f"🔍 DEBUG: Checking cmd == 'touch': {cmd == 'touch'}")
-                        print(f"🔍 DEBUG: Checking cmd == 'echo': {cmd == 'echo'}")
-                        print(f"🔍 DEBUG: Checking cmd == 'help': {cmd == 'help'}")
-                        print(f"🔍 DEBUG: Checking cmd == 'venv': {cmd == 'venv'}")
-                        print(f"🔍 DEBUG: Checking cmd == 'pyenv': {cmd == 'pyenv'}")
-                        print(f"🔍 DEBUG: Checking cmd == 'cleanup-windows': {cmd == 'cleanup-windows'}")
-                        print(f"🔍 DEBUG: Checking cmd == 'linter': {cmd == 'linter'}")
-                        print(f"🔍 DEBUG: Checking cmd == 'pip': {cmd == 'pip'}")
-                        print(f"🔍 DEBUG: Checking cmd == 'deps': {cmd == 'deps'}")
-                        print(f"🔍 DEBUG: Checking cmd == 'edit': {cmd == 'edit'}")
-                        print(f"🔍 DEBUG: Checking cmd == 'read': {cmd == 'read'}")
-                        print(f"🔍 DEBUG: Checking cmd == 'python': {cmd == 'python'}")
-                        print(f"🔍 DEBUG: Checking cmd == 'upload': {cmd == 'upload'}")
-                        print(f"🔍 DEBUG: Checking cmd == 'upload-folder': {cmd == 'upload-folder'}")
-                        print(f"🔍 DEBUG: Checking cmd == 'download': {cmd == 'download'}")
-                        print(f"🔍 DEBUG: Checking cmd == 'mv': {cmd == 'mv'}")
-                        print(f"🔍 DEBUG: Checking cmd == 'find': {cmd == 'find'}")
-                        print(f"🔍 DEBUG: Checking cmd == 'rm': {cmd == 'rm'}")
-                        print(f"🔍 DEBUG: Checking cmd == 'grep': {cmd == 'grep'}")
                         
                         if cmd == 'pwd':
                             print(f"🔍 DEBUG: ✅ MATCHED PWD BRANCH!")

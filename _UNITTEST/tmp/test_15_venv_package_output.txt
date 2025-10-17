@@ -6,45 +6,108 @@ FAIL
 FAIL: test_15_venv_package (test_gds.GDSTest)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 357, in _run_gds_command
-    self.assertEqual(result.returncode, 0, f"命令执行失败: {command}")
-  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/case.py", line 831, in assertEqual
-    assertion_func(first, second, msg=msg)
-AssertionError: 1 != 0 : 命令执行失败: venv --create current_test_env_1760615445
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 1787, in test_15_venv_package
-    result = self._run_gds_command(f'venv --create {venv_name}')
-  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 363, in _run_gds_command
-    self.fail(f"命令执行异常: {command} - {e}")
-AssertionError: 命令执行异常: venv --create current_test_env_1760615445 - 1 != 0 : 命令执行失败: venv --create current_test_env_1760615445
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 1843, in test_15_venv_package
+    self.assertIn("colorama imported successfully", result.stdout)
+AssertionError: 'colorama imported successfully' not found in '\n\x1b[K⏳ Waiting for result .....\n\x1b[K\n\x1b[K'
 
 ----------------------------------------------------------------------
-Ran 1 test in 123.061s
+Ran 1 test in 473.748s
 
 FAILED (failures=1)
 设置GDS全面测试环境...
-远端测试目录: ~/tmp/gds_test_20251016_194943_679524_e0fd200e
-已切换到远端测试目录: ~/tmp/gds_test_20251016_194943_679524_e0fd200e
-本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_awhyj77e
+远端测试目录: ~/tmp/gds_test_20251017_152144_484087_4f3abadd
+已切换到远端测试目录: ~/tmp/gds_test_20251017_152144_484087_4f3abadd
+本地临时目录: /var/folders/w0/m02j_xv925sg34708rb2xgzr0000gn/T/gds_test_local_8d74dtsb
 测试环境设置完成
-虚拟环境名称: current_test_env_1760615445
+虚拟环境名称: current_test_env_1760685847
 清理测试环境...
 命令转译成功: venv --deactivate -> venv --deactivate
 返回码: 0
-输出: 🔍 DEBUG: Checking special commands - first_word='venv', is_special=True
-DEBUG: Processing special command 'venv' with new command system
-🔍 DEBUG: ✅ MATCHED VENV BRANCH! Inside venv command handler, ca...
+输出: 🔍 VENV_DEACTIVATE DEBUG: About to execute remote command
+🔍 VENV_DEACTIVATE DEBUG: Calling execute_command_interface('bash', ['-c', remote_command])
+
+[K⏳ Waiting for result .....
+[K
+[K🔍 VENV_DEACTIV...
 命令转译成功: venv --current -> venv --current
 返回码: 0
-输出: 🔍 DEBUG: Checking special commands - first_word='venv', is_special=True
-DEBUG: Processing special command 'venv' with new command system
-🔍 DEBUG: ✅ MATCHED VENV BRANCH! Inside venv command handler, ca...
-命令转译成功: venv --create current_test_env_1760615445 -> venv --create current_test_env_1760615445
-返回码: 1
-输出: 🔍 DEBUG: Checking special commands - first_word='venv', is_special=True
-DEBUG: Processing special command 'venv' with new command system
-🔍 DEBUG: ✅ MATCHED VENV BRANCH! Inside venv command handler, ca...
-命令执行异常: 1 != 0 : 命令执行失败: venv --create current_test_env_1760615445
+输出: No virtual environment currently activated
+...
+命令转译成功: venv --create current_test_env_1760685847 -> venv --create current_test_env_1760685847
+返回码: 0
+输出: 🔍 VENV_CREATE DEBUG: About to execute remote command
+🔍 VENV_CREATE DEBUG: env_name='current_test_env_1760685847'
+🔍 VENV_CREATE DEBUG: env_path='/content/drive/MyDrive/REMOTE_ENV/venv/current_test_env_...
+命令转译成功: venv --activate current_test_env_1760685847 -> venv --activate current_test_env_1760685847
+返回码: 0
+输出: 🔍 VENV_ACTIVATE DEBUG: About to execute remote command
+🔍 VENV_ACTIVATE DEBUG: env_name='current_test_env_1760685847'
+🔍 VENV_ACTIVATE DEBUG: env_path='/content/drive/MyDrive/REMOTE_ENV/venv/current_tes...
+命令转译成功: venv --current -> venv --current
+返回码: 0
+输出: Current virtual environment: current_test_env_1760685847
+Environment path: /content/drive/MyDrive/REMOTE_ENV/venv/current_test_env_1760685847
+Activated at: 2025-10-17T07:25:41.996090
+...
+命令转译成功: venv --deactivate -> venv --deactivate
+返回码: 0
+输出: 🔍 VENV_DEACTIVATE DEBUG: About to execute remote command
+🔍 VENV_DEACTIVATE DEBUG: Calling execute_command_interface('bash', ['-c', remote_command])
+
+[K⏳ Waiting for result .....
+[K
+[K🔍 VENV_DEACTIV...
+命令转译成功: venv --current -> venv --current
+返回码: 0
+输出: No virtual environment currently activated
+...
+命令转译成功: venv --delete current_test_env_1760685847 -> venv --delete current_test_env_1760685847
+返回码: 0
+输出: Deleting 1 virtual environment(s): current_test_env_1760685847
+🔍 VENV_DELETE_BATCH DEBUG: About to execute remote command
+🔍 VENV_DELETE_BATCH DEBUG: candidate_envs=['current_test_env_1760685847']
+🔍 VE...
+清理测试环境...
+命令转译成功: venv --deactivate -> venv --deactivate
+返回码: 0
+输出: 🔍 VENV_DEACTIVATE DEBUG: About to execute remote command
+🔍 VENV_DEACTIVATE DEBUG: Calling execute_command_interface('bash', ['-c', remote_command])
+
+[K⏳ Waiting for result ......
+[K
+[K🔍 VENV_DEACTI...
+虚拟环境名称: package_test_env_1760686053
+命令转译成功: venv --create package_test_env_1760686053 -> venv --create package_test_env_1760686053
+返回码: 0
+输出: 🔍 VENV_CREATE DEBUG: About to execute remote command
+🔍 VENV_CREATE DEBUG: env_name='package_test_env_1760686053'
+🔍 VENV_CREATE DEBUG: env_path='/content/drive/MyDrive/REMOTE_ENV/venv/package_test_env_...
+命令转译成功: venv --activate package_test_env_1760686053 -> venv --activate package_test_env_1760686053
+返回码: 0
+输出: 🔍 VENV_ACTIVATE DEBUG: About to execute remote command
+🔍 VENV_ACTIVATE DEBUG: env_name='package_test_env_1760686053'
+🔍 VENV_ACTIVATE DEBUG: env_path='/content/drive/MyDrive/REMOTE_ENV/venv/package_tes...
+命令转译成功: pip install colorama -> pip install colorama
+返回码: 0
+输出: 
+[K⏳ Waiting for result ...
+[K
+[KCollecting colorama
+  Downloading colorama-0.4.6-py2.py3-none-any.whl.metadata (17 kB)
+Downloading colorama-0.4.6-py2.py3-none-any.whl (25 kB)
+Installing collected ...
+命令转译成功: pip list -> pip list
+返回码: 0
+输出: 
+[K⏳ Waiting for result .....
+[K
+[KPackage                               Version
+------------------------------------- -------------------
+absl-py                               1.4.0
+absolufy-impor...
+命令转译成功: python -c "import colorama; print(\"colorama imported successfully\")" -> python -c "import colorama; print(\"colorama imported successfully\")"
+返回码: 0
+输出: 
+[K⏳ Waiting for result .....
+[K
+[K...

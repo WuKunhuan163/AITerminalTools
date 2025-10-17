@@ -15,11 +15,11 @@ class VenvCommand(BaseCommand):
     
     def execute(self, args: List[str], **kwargs) -> int:
         """Execute venv command."""
-        self.print_debug(f"✅ MATCHED VENV BRANCH! Inside venv command handler, calling cmd_venv with args: {args}")
+        # self.print_debug(f"✅ MATCHED VENV BRANCH! Inside venv command handler, calling cmd_venv with args: {args}")
         
         # 使用委托方法处理venv命令
         result = self.shell.cmd_venv(*args)
-        self.print_debug(f"cmd_venv returned: {result}")
+        # self.print_debug(f"cmd_venv returned: {result}")
         
         if result.get("success", False):
             # venv命令成功后，同步更新本地shell状态

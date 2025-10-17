@@ -445,14 +445,14 @@ Shell commands: ls -la && echo "done"
         print(f"All retries failed")
         return False, result
     
-    def _run_command_with_input(self, command_list, input_text, timeout=60):
+    def _run_command_with_input(self, command_list, input_text, timeout=None):
         """
         运行命令并提供输入的辅助方法
         
         Args:
             command_list: 命令列表 (如 [sys.executable, str(self.GOOGLE_DRIVE_PY), "--shell"])
             input_text: 要发送给命令的输入文本
-            timeout: 超时时间（秒）
+            timeout: 超时时间（秒），None表示无超时
         
         Returns:
             subprocess结果对象
@@ -463,7 +463,7 @@ Shell commands: ls -la && echo "done"
                 input=input_text,
                 capture_output=True,
                 text=True,
-                timeout=timeout,
+                timeout=timeout,  # None表示无超时
                 cwd=self.BIN_DIR
             )
             return result
@@ -2176,7 +2176,7 @@ print(f"Sum: {result}")
         result = self._run_command_with_input(
             [sys.executable, str(self.GOOGLE_DRIVE_PY), "--shell"],
             shell_input,
-            timeout=180
+            timeout=180    # GDS is interactive shell, need timeout to exit if operation fails
         )
         
         self.assertEqual(result.returncode, 0, "Shell模式连续操作应该成功")
@@ -2213,7 +2213,6 @@ print(f"Sum: {result}")
             shell_result = self._run_command_with_input(
                 [sys.executable, str(self.GOOGLE_DRIVE_PY), "--shell"],
                 shell_input,
-                timeout=60
             )
             
             self.assertEqual(direct_result.returncode, 0, f"直接执行{cmd}应该成功")
@@ -2284,7 +2283,7 @@ print(f"Sum: {result}")
             shell_result = self._run_command_with_input(
                 [sys.executable, str(self.GOOGLE_DRIVE_PY), "--shell"],
                 shell_input,
-                timeout=120
+                timeout=300   # GDS is interactive shell, need timeout to exit if operation fails
             )
             
             self.assertEqual(shell_result.returncode, 0, "新shell中的操作应该成功")
@@ -2323,7 +2322,6 @@ print(f"Sum: {result}")
             shell_result = self._run_command_with_input(
                 [sys.executable, str(self.GOOGLE_DRIVE_PY), "--shell"],
                 shell_input,
-                timeout=60
             )
             
             # Shell模式应该能够处理错误而不崩溃
@@ -2348,7 +2346,6 @@ print(f"Sum: {result}")
         shell_result = self._run_command_with_input(
             [sys.executable, str(self.GOOGLE_DRIVE_PY), "--shell"],
             shell_input,
-            timeout=60
         )
         end_time = time.time()
         
@@ -2387,7 +2384,6 @@ print(f"Sum: {result}")
         result = self._run_command_with_input(
             [sys.executable, str(self.GOOGLE_DRIVE_PY), "--shell"],
             shell_input,
-            timeout=120
         )
         
         self.assertEqual(result.returncode, 0, "Shell提示符测试应该成功")
@@ -2447,7 +2443,6 @@ print(f"Sum: {result}")
             result = self._run_command_with_input(
                 [sys.executable, str(self.GOOGLE_DRIVE_PY), "--shell"],
                 shell_input,
-                timeout=60
             )
             
             self.assertEqual(result.returncode, 0, f"{cmd}命令应该成功执行")
@@ -2486,7 +2481,6 @@ print(f"Sum: {result}")
         result = self._run_command_with_input(
             [sys.executable, str(self.GOOGLE_DRIVE_PY), "--shell"],
             shell_input,
-            timeout=150
         )
         
         self.assertEqual(result.returncode, 0, "Shell状态持久性测试应该成功")

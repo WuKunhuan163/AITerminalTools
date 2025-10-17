@@ -1,0 +1,73 @@
+ERROR
+
+======================================================================
+ERROR: setUpClass (test_gds.GDSTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 71, in setUpClass
+    cls._setup_remote_test_directory()
+  File "/Users/wukunhuan/.local/bin/_UNITTEST/test_gds.py", line 104, in _setup_remote_test_directory
+    raise RuntimeError(error_msg)
+RuntimeError: 创建远端测试目录失败: 返回码=1, stderr=, stdout=🔍 DEBUG: Parsed special cmd='mkdir', args=['-p', '~/tmp/gds_test_20251017_152144_603892_722946f1']
+🔍 DEBUG: About to enter if-elif chain...
+🔍 DEBUG: Checking cmd == 'pwd': False
+🔍 DEBUG: Checking cmd == 'ls': False
+🔍 DEBUG: Checking cmd == 'cd': False
+🔍 DEBUG: Checking cmd == 'cat': False
+🔍 DEBUG: Checking cmd == 'mkdir': True
+🔍 DEBUG: Checking cmd == 'touch': False
+🔍 DEBUG: Checking cmd == 'echo': False
+🔍 DEBUG: Checking cmd == 'help': False
+🔍 DEBUG: Checking cmd == 'venv': False
+🔍 DEBUG: Checking cmd == 'pyenv': False
+🔍 DEBUG: Checking cmd == 'cleanup-windows': False
+🔍 DEBUG: Checking cmd == 'linter': False
+🔍 DEBUG: Checking cmd == 'pip': False
+🔍 DEBUG: Checking cmd == 'deps': False
+🔍 DEBUG: Checking cmd == 'edit': False
+🔍 DEBUG: Checking cmd == 'read': False
+🔍 DEBUG: Checking cmd == 'python': False
+🔍 DEBUG: Checking cmd == 'upload': False
+🔍 DEBUG: Checking cmd == 'upload-folder': False
+🔍 DEBUG: Checking cmd == 'download': False
+🔍 DEBUG: Checking cmd == 'mv': False
+🔍 DEBUG: Checking cmd == 'find': False
+🔍 DEBUG: Checking cmd == 'rm': False
+🔍 DEBUG: Checking cmd == 'grep': False
+Command 'mkdir -p ~/tmp/gds_test_20251017_152144_603892_722946f1' failed
+
+
+----------------------------------------------------------------------
+Ran 0 tests in 61.869s
+
+FAILED (errors=1)
+设置GDS全面测试环境...
+远端测试目录: ~/tmp/gds_test_20251017_152144_603892_722946f1
+Warning: 创建远端测试目录失败: 返回码=1, stderr=, stdout=🔍 DEBUG: Parsed special cmd='mkdir', args=['-p', '~/tmp/gds_test_20251017_152144_603892_722946f1']
+🔍 DEBUG: About to enter if-elif chain...
+🔍 DEBUG: Checking cmd == 'pwd': False
+🔍 DEBUG: Checking cmd == 'ls': False
+🔍 DEBUG: Checking cmd == 'cd': False
+🔍 DEBUG: Checking cmd == 'cat': False
+🔍 DEBUG: Checking cmd == 'mkdir': True
+🔍 DEBUG: Checking cmd == 'touch': False
+🔍 DEBUG: Checking cmd == 'echo': False
+🔍 DEBUG: Checking cmd == 'help': False
+🔍 DEBUG: Checking cmd == 'venv': False
+🔍 DEBUG: Checking cmd == 'pyenv': False
+🔍 DEBUG: Checking cmd == 'cleanup-windows': False
+🔍 DEBUG: Checking cmd == 'linter': False
+🔍 DEBUG: Checking cmd == 'pip': False
+🔍 DEBUG: Checking cmd == 'deps': False
+🔍 DEBUG: Checking cmd == 'edit': False
+🔍 DEBUG: Checking cmd == 'read': False
+🔍 DEBUG: Checking cmd == 'python': False
+🔍 DEBUG: Checking cmd == 'upload': False
+🔍 DEBUG: Checking cmd == 'upload-folder': False
+🔍 DEBUG: Checking cmd == 'download': False
+🔍 DEBUG: Checking cmd == 'mv': False
+🔍 DEBUG: Checking cmd == 'find': False
+🔍 DEBUG: Checking cmd == 'rm': False
+🔍 DEBUG: Checking cmd == 'grep': False
+Command 'mkdir -p ~/tmp/gds_test_20251017_152144_603892_722946f1' failed
+

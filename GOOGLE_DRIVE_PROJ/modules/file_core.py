@@ -993,26 +993,39 @@ class FileCore:
             # 使用统一接口执行远端命令
             execution_result = self.main_instance.execute_command_interface("bash", ["-c", remote_command])
             
-            if execution_result["success"]:
-                # 执行成功后，进行验证以确保目录真正创建（最多60次重试）
-                verification_result = self.main_instance.verify_creation_with_ls(target_path, current_shell, creation_type="dir", max_attempts=60)
+            # 处理新的返回结构：result.data 包含实际的命令执行结果
+            if execution_result.get("success"):
+                data = execution_result.get("data", {})
+                exit_code = data.get("exit_code", execution_result.get("exit_code", -1))
                 
-                if verification_result["success"]:
-                    # 验证成功，简洁返回，像bash shell一样成功时不显示任何信息
-                    return {
-                        "success": True,
-                        "path": target_path,
-                        "absolute_path": absolute_path,
-                        "remote_command": remote_command,
-                        "message": "",  # 空消息，不显示任何内容
-                        "verification": verification_result
-                    }
+                if exit_code == 0:
+                    # 执行成功后，进行验证以确保目录真正创建（最多60次重试）
+                    verification_result = self.main_instance.verify_creation_with_ls(target_path, current_shell, creation_type="dir", max_attempts=60)
+                    
+                    if verification_result["success"]:
+                        # 验证成功，简洁返回，像bash shell一样成功时不显示任何信息
+                        return {
+                            "success": True,
+                            "path": target_path,
+                            "absolute_path": absolute_path,
+                            "remote_command": remote_command,
+                            "message": "",  # 空消息，不显示任何内容
+                            "verification": verification_result
+                        }
+                    else:
+                        # 验证失败
+                        return {
+                            "success": False,
+                            "error": f"Directory creation may have failed, verification timeout: {target_path}",
+                            "verification": verification_result,
+                            "remote_command": remote_command
+                        }
                 else:
-                    # 验证失败
+                    # 命令执行失败（exit_code != 0）
+                    stderr = data.get("stderr", execution_result.get("stderr", ""))
                     return {
                         "success": False,
-                        "error": f"Directory creation may have failed, verification timeout: {target_path}",
-                        "verification": verification_result,
+                        "error": f"mkdir command failed with exit code {exit_code}: {stderr}",
                         "remote_command": remote_command
                     }
             else:
