@@ -20,7 +20,7 @@ class CatCommand(BaseCommand):
         
         if result.get("success", False):
             if not result.get("direct_feedback", False):
-                print(result.get("output", ""))
+                print(result.get("output", ""), end = "")
             return 0
         else:
             print(result.get("error", "Failed to read file"))
