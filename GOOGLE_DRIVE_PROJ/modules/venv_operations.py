@@ -131,18 +131,18 @@ class VenvOperations:
             
             # 使用bash -c执行命令脚本
             command_script = " && ".join(commands)
-            print(f"🔍 VENV_CREATE DEBUG: About to execute remote command")
-            print(f"🔍 VENV_CREATE DEBUG: env_name='{env_name}'")
-            print(f"🔍 VENV_CREATE DEBUG: env_path='{env_path}'")
-            print(f"🔍 VENV_CREATE DEBUG: commands={commands}")
-            print(f"🔍 VENV_CREATE DEBUG: command_script='{command_script}'")
-            print(f"🔍 VENV_CREATE DEBUG: Calling execute_command_interface('bash', ['-c', '{command_script}'])")
+            # print(f"🔍 VENV_CREATE DEBUG: About to execute remote command")
+            # print(f"🔍 VENV_CREATE DEBUG: env_name='{env_name}'")
+            # print(f"🔍 VENV_CREATE DEBUG: env_path='{env_path}'")
+            # print(f"🔍 VENV_CREATE DEBUG: commands={commands}")
+            # print(f"🔍 VENV_CREATE DEBUG: command_script='{command_script}'")
+            # print(f"🔍 VENV_CREATE DEBUG: Calling execute_command_interface('bash', ['-c', '{command_script}'])")
             
             result = self.main_instance.execute_command_interface("bash", ["-c", command_script])
             
-            print(f"🔍 VENV_CREATE DEBUG: execute_command_interface returned: {result}")
-            print(f"🔍 VENV_CREATE DEBUG: result type: {type(result)}")
-            print(f"🔍 VENV_CREATE DEBUG: result keys: {list(result.keys()) if isinstance(result, dict) else 'Not a dict'}")
+            # print(f"🔍 VENV_CREATE DEBUG: execute_command_interface returned: {result}")
+            # print(f"🔍 VENV_CREATE DEBUG: result type: {type(result)}")
+            # print(f"🔍 VENV_CREATE DEBUG: result keys: {list(result.keys()) if isinstance(result, dict) else 'Not a dict'}")
             
             if result.get("success", False):
                 # 检查远程命令的实际执行结果
@@ -152,19 +152,19 @@ class VenvOperations:
                 stdout = data.get("stdout", result.get("stdout", ""))
                 
                 # 远程命令成功执行（exit_code == 0 表示成功）
-                print(f"🔍 VENV_CREATE DEBUG: Checking exit_code: {exit_code}")
-                print(f"🔍 VENV_CREATE DEBUG: stdout: '{stdout}'")
+                # print(f"🔍 VENV_CREATE DEBUG: Checking exit_code: {exit_code}")
+                # print(f"🔍 VENV_CREATE DEBUG: stdout: '{stdout}'")
                 
                 if exit_code == 0:
-                    print(f"🔍 VENV_CREATE DEBUG: Success! Virtual environment '{env_name}' created successfully")
+                    # print(f"🔍 VENV_CREATE DEBUG: Success! Virtual environment '{env_name}' created successfully")
                     print(f"Virtual environment '{env_name}' created successfully")
                     print(f"Environment path: {env_path}")
                     return {"success": True, "message": f"Virtual environment '{env_name}' created successfully"}
                 else:
                     # 获取完整的结果数据用于调试
                     stderr = data.get("stderr", result.get("stderr", ""))
-                    print(f"🔍 VENV_CREATE DEBUG: Command failed with exit_code={exit_code}")
-                    print(f"🔍 VENV_CREATE DEBUG: stderr: '{stderr}'")
+                    # print(f"🔍 VENV_CREATE DEBUG: Command failed with exit_code={exit_code}")
+                    # print(f"🔍 VENV_CREATE DEBUG: stderr: '{stderr}'")
                     
                     error_details = []
                     error_details.append(f"remote command failed with exit code {exit_code}")
@@ -176,13 +176,13 @@ class VenvOperations:
                         error_details.append(f"stderr: {stderr.strip()}")
                     
                     error_message = f"Failed to create virtual environment: {'; '.join(error_details)}"
-                    print(f"🔍 VENV_CREATE DEBUG: Returning error: {error_message}")
+                    # print(f"🔍 VENV_CREATE DEBUG: Returning error: {error_message}")
                     return {"success": False, "error": error_message}
             else:
-                print(f"🔍 VENV_CREATE DEBUG: execute_command_interface returned success=False")
-                print(f"🔍 VENV_CREATE DEBUG: Full result: {result}")
+                # print(f"🔍 VENV_CREATE DEBUG: execute_command_interface returned success=False")
+                # print(f"🔍 VENV_CREATE DEBUG: Full result: {result}")
                 error_msg = f"Failed to create virtual environment: {result.get('error', 'Unknown error')}"
-                print(f"🔍 VENV_CREATE DEBUG: Returning error: {error_msg}")
+                # print(f"🔍 VENV_CREATE DEBUG: Returning error: {error_msg}")
                 return {"success": False, "error": error_msg}
                 
         except Exception as e:
@@ -238,24 +238,24 @@ class VenvOperations:
             
             # 生成删除环境的远程命令，添加执行状态提示
             command = f"rm -rf {env_path}"
-            print(f"🔍 VENV_DELETE DEBUG: About to execute remote command")
-            print(f"🔍 VENV_DELETE DEBUG: env_name='{env_name}'")
-            print(f"🔍 VENV_DELETE DEBUG: env_path='{env_path}'")
-            print(f"🔍 VENV_DELETE DEBUG: command='{command}'")
+            # print(f"🔍 VENV_DELETE DEBUG: About to execute remote command")
+            # print(f"🔍 VENV_DELETE DEBUG: env_name='{env_name}'")
+            # print(f"🔍 VENV_DELETE DEBUG: env_path='{env_path}'")
+            # print(f"🔍 VENV_DELETE DEBUG: command='{command}'")
             
             result = self.main_instance.execute_command_interface("bash", ["-c", command])
             
-            print(f"🔍 VENV_DELETE DEBUG: execute_command_interface returned: {result}")
+            # print(f"🔍 VENV_DELETE DEBUG: execute_command_interface returned: {result}")
             
             if result.get("success", False):
                 # 处理新的返回结构
                 data = result.get("data", {})
                 exit_code = data.get("exit_code", result.get("exit_code", -1))
                 
-                print(f"🔍 VENV_DELETE DEBUG: Checking exit_code: {exit_code}")
+                # print(f"🔍 VENV_DELETE DEBUG: Checking exit_code: {exit_code}")
                 
                 if exit_code == 0:
-                    print(f"🔍 VENV_DELETE DEBUG: Success! Virtual environment '{env_name}' deleted")
+                    # print(f"🔍 VENV_DELETE DEBUG: Success! Virtual environment '{env_name}' deleted")
                     print(f"Virtual environment '{env_name}' deleted successfully")
                     return {
                         "success": True,
@@ -264,15 +264,15 @@ class VenvOperations:
                     }
                 else:
                     stderr = data.get("stderr", result.get("stderr", ""))
-                    print(f"🔍 VENV_DELETE DEBUG: Command failed with exit_code={exit_code}")
-                    print(f"🔍 VENV_DELETE DEBUG: stderr: '{stderr}'")
+                    # print(f"🔍 VENV_DELETE DEBUG: Command failed with exit_code={exit_code}")
+                    # print(f"🔍 VENV_DELETE DEBUG: stderr: '{stderr}'")
                     return {
                         "success": False,
                         "error": f"Failed to delete virtual environment: remote command failed with exit code {exit_code}"
                     }
             else:
-                print(f"🔍 VENV_DELETE DEBUG: execute_command_interface returned success=False")
-                print(f"🔍 VENV_DELETE DEBUG: Full result: {result}")
+                # print(f"🔍 VENV_DELETE DEBUG: execute_command_interface returned success=False")
+                # print(f"🔍 VENV_DELETE DEBUG: Full result: {result}")
                 return {
                     "success": False,
                     "error": f"Failed to delete virtual environment: {result.get('error', 'Unknown error')}"
@@ -335,13 +335,13 @@ fi
         full_command = "; ".join(delete_script_parts)
         
         # 执行单个远程命令
-        print(f"🔍 VENV_DELETE_BATCH DEBUG: About to execute remote command")
-        print(f"🔍 VENV_DELETE_BATCH DEBUG: candidate_envs={candidate_envs}")
-        print(f"🔍 VENV_DELETE_BATCH DEBUG: full_command='{full_command}'")
+        # print(f"🔍 VENV_DELETE_BATCH DEBUG: About to execute remote command")
+        # print(f"🔍 VENV_DELETE_BATCH DEBUG: candidate_envs={candidate_envs}")
+        # print(f"🔍 VENV_DELETE_BATCH DEBUG: full_command='{full_command}'")
         
         result = self.main_instance.execute_command_interface("bash", ["-c", full_command])
         
-        print(f"🔍 VENV_DELETE_BATCH DEBUG: execute_command_interface returned: {result}")
+        # print(f"🔍 VENV_DELETE_BATCH DEBUG: execute_command_interface returned: {result}")
         
         if result.get("success"):
             # 处理新的返回结构
@@ -349,12 +349,13 @@ fi
             exit_code = data.get("exit_code", result.get("exit_code", -1))
             stdout = data.get("stdout", result.get("stdout", ""))
             
-            print(f"🔍 VENV_DELETE_BATCH DEBUG: Checking exit_code: {exit_code}")
-            print(f"🔍 VENV_DELETE_BATCH DEBUG: stdout: '{stdout}'")
+            # print(f"🔍 VENV_DELETE_BATCH DEBUG: Checking exit_code: {exit_code}")
+            # print(f"🔍 VENV_DELETE_BATCH DEBUG: stdout: '{stdout}'")
             
             if exit_code == 0:
-                print(f"🔍 VENV_DELETE_BATCH DEBUG: Success! Batch delete completed")
+                # print(f"🔍 VENV_DELETE_BATCH DEBUG: Success! Batch delete completed")
                 # 解析远程输出，统计删除结果
+                pass
             
             # 统计符号
             deleted_count = stdout.count("√")  # 成功删除的环境
@@ -503,17 +504,17 @@ fi
 '''
             
             # 执行远程命令（这会显示远端窗口）
-            print(f"🔍 VENV_ACTIVATE DEBUG: About to execute remote command")
-            print(f"🔍 VENV_ACTIVATE DEBUG: env_name='{env_name}'")
-            print(f"🔍 VENV_ACTIVATE DEBUG: env_path='{env_path}'")
-            print(f"🔍 VENV_ACTIVATE DEBUG: venv_states_file='{venv_states_file}'")
-            print(f"🔍 VENV_ACTIVATE DEBUG: Calling execute_command_interface('bash', ['-c', remote_command])")
+            # print(f"🔍 VENV_ACTIVATE DEBUG: About to execute remote command")
+            # print(f"🔍 VENV_ACTIVATE DEBUG: env_name='{env_name}'")
+            # print(f"🔍 VENV_ACTIVATE DEBUG: env_path='{env_path}'")
+            # print(f"🔍 VENV_ACTIVATE DEBUG: venv_states_file='{venv_states_file}'")
+            # print(f"🔍 VENV_ACTIVATE DEBUG: Calling execute_command_interface('bash', ['-c', remote_command])")
             
             result = self.main_instance.execute_command_interface("bash", ["-c", remote_command])
             
-            print(f"🔍 VENV_ACTIVATE DEBUG: execute_command_interface returned: {result}")
-            print(f"🔍 VENV_ACTIVATE DEBUG: result type: {type(result)}")
-            print(f"🔍 VENV_ACTIVATE DEBUG: result keys: {list(result.keys()) if isinstance(result, dict) else 'Not a dict'}")
+            # print(f"🔍 VENV_ACTIVATE DEBUG: execute_command_interface returned: {result}")
+            # print(f"🔍 VENV_ACTIVATE DEBUG: result type: {type(result)}")
+            # print(f"🔍 VENV_ACTIVATE DEBUG: result keys: {list(result.keys()) if isinstance(result, dict) else 'Not a dict'}")
             
             if result.get("success"):
                 # 处理新的返回结构：result.data 包含实际的命令执行结果
@@ -522,13 +523,13 @@ fi
                 output = data.get("stdout", result.get("stdout", "")).strip()
                 stderr = data.get("stderr", result.get("stderr", ""))
                 
-                print(f"🔍 VENV_ACTIVATE DEBUG: Checking exit_code: {exit_code}")
-                print(f"🔍 VENV_ACTIVATE DEBUG: stdout: '{output}'")
-                print(f"🔍 VENV_ACTIVATE DEBUG: stderr: '{stderr}'")
+                # print(f"🔍 VENV_ACTIVATE DEBUG: Checking exit_code: {exit_code}")
+                # print(f"🔍 VENV_ACTIVATE DEBUG: stdout: '{output}'")
+                # print(f"🔍 VENV_ACTIVATE DEBUG: stderr: '{stderr}'")
                 
                 # 检查exit_code而不是依赖输出内容
                 if exit_code == 0:
-                    print(f"🔍 VENV_ACTIVATE DEBUG: Success! Virtual environment '{env_name}' activated")
+                    # print(f"🔍 VENV_ACTIVATE DEBUG: Success! Virtual environment '{env_name}' activated")
                     
                     # 检查是否已经激活
                     if "already active" in output:
@@ -563,8 +564,8 @@ fi
                         }
                 else:
                     # 提供更有用的错误信息
-                    print(f"🔍 VENV_ACTIVATE DEBUG: Command failed with exit_code={exit_code}")
-                    print(f"🔍 VENV_ACTIVATE DEBUG: stderr: '{stderr}'")
+                    # print(f"🔍 VENV_ACTIVATE DEBUG: Command failed with exit_code={exit_code}")
+                    # print(f"🔍 VENV_ACTIVATE DEBUG: stderr: '{stderr}'")
                     error_msg = f"Virtual environment activation failed"
                     if output.strip():
                         error_msg += f": {output}"
@@ -576,10 +577,10 @@ fi
                         "error": error_msg
                     }
             else:
-                print(f"🔍 VENV_ACTIVATE DEBUG: execute_command_interface returned success=False")
-                print(f"🔍 VENV_ACTIVATE DEBUG: Full result: {result}")
+                # print(f"🔍 VENV_ACTIVATE DEBUG: execute_command_interface returned success=False")
+                # print(f"🔍 VENV_ACTIVATE DEBUG: Full result: {result}")
                 error_msg = f"Failed to activate virtual environment: {result.get('error', 'Unknown error')}"
-                print(f"🔍 VENV_ACTIVATE DEBUG: Returning error: {error_msg}")
+                # print(f"🔍 VENV_ACTIVATE DEBUG: Returning error: {error_msg}")
                 return {
                     "success": False,
                     "error": error_msg
@@ -654,12 +655,12 @@ if [ "$VERIFICATION_RESULT" != "VERIFICATION_SUCCESS" ]; then
 fi
 '''
             
-            print(f"🔍 VENV_DEACTIVATE DEBUG: About to execute remote command")
-            print(f"🔍 VENV_DEACTIVATE DEBUG: Calling execute_command_interface('bash', ['-c', remote_command])")
+            # print(f"🔍 VENV_DEACTIVATE DEBUG: About to execute remote command")
+            # print(f"🔍 VENV_DEACTIVATE DEBUG: Calling execute_command_interface('bash', ['-c', remote_command])")
             
             result = self.main_instance.execute_command_interface("bash", ["-c", remote_command])
             
-            print(f"🔍 VENV_DEACTIVATE DEBUG: execute_command_interface returned: {result}")
+            # print(f"🔍 VENV_DEACTIVATE DEBUG: execute_command_interface returned: {result}")
             
             if result.get("success", False):
                 # 处理新的返回结构
@@ -667,11 +668,11 @@ fi
                 exit_code = data.get("exit_code", result.get("exit_code", -1))
                 stdout = data.get("stdout", result.get("stdout", ""))
                 
-                print(f"🔍 VENV_DEACTIVATE DEBUG: Checking exit_code: {exit_code}")
-                print(f"🔍 VENV_DEACTIVATE DEBUG: stdout: '{stdout}'")
+                # print(f"🔍 VENV_DEACTIVATE DEBUG: Checking exit_code: {exit_code}")
+                # print(f"🔍 VENV_DEACTIVATE DEBUG: stdout: '{stdout}'")
                 
                 if exit_code == 0:
-                    print(f"🔍 VENV_DEACTIVATE DEBUG: Success! Virtual environment deactivated")
+                    # print(f"🔍 VENV_DEACTIVATE DEBUG: Success! Virtual environment deactivated")
                     # 添加额外的提示信息
                     print(f"Virtual environment deactivated successfully")
                     return {
@@ -680,15 +681,15 @@ fi
                     }
                 else:
                     stderr = data.get("stderr", result.get("stderr", ""))
-                    print(f"🔍 VENV_DEACTIVATE DEBUG: Command failed with exit_code={exit_code}")
-                    print(f"🔍 VENV_DEACTIVATE DEBUG: stderr: '{stderr}'")
+                    # print(f"🔍 VENV_DEACTIVATE DEBUG: Command failed with exit_code={exit_code}")
+                    # print(f"🔍 VENV_DEACTIVATE DEBUG: stderr: '{stderr}'")
                     return {
                         "success": False,
                         "error": f"Failed to deactivate virtual environment: remote command failed with exit code {exit_code}"
                     }
             else:
-                print(f"🔍 VENV_DEACTIVATE DEBUG: execute_command_interface returned success=False")
-                print(f"🔍 VENV_DEACTIVATE DEBUG: Full result: {result}")
+                # print(f"🔍 VENV_DEACTIVATE DEBUG: execute_command_interface returned success=False")
+                # print(f"🔍 VENV_DEACTIVATE DEBUG: Full result: {result}")
                 return {
                     "success": False,
                     "error": f"Failed to deactivate virtual environment: {result.get('error', 'Unknown error')}"

@@ -29,7 +29,7 @@ class MkdirCommand(BaseCommand):
         
         # 处理每个目录
         for directory in directories:
-            result = self.shell.cmd_mkdir(directory, create_parents=create_parents)
+            result = self.shell.cmd_mkdir(directory, recursive=create_parents)
             
             if not result.get("success", False):
                 print(result.get("error", f"Failed to create directory: {directory}"))

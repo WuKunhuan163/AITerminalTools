@@ -990,7 +990,7 @@ class GoogleDriveShell:
         
         cmd = args[0]
         cmd_args = args[1:]
-        print(f"🔍 DEBUG: execute_shell_command_with_args - cmd='{cmd}', cmd_args={cmd_args}")
+        # print(f"🔍 DEBUG: execute_shell_command_with_args - cmd='{cmd}', cmd_args={cmd_args}")
         
         # 直接处理命令，跳过字符串解析
         if cmd == 'ls':
@@ -1056,8 +1056,8 @@ class GoogleDriveShell:
     def execute_shell_command(self, shell_cmd, command_identifier=None):
         """执行shell命令 - 使用WindowManager的新架构入口点"""
         
-        print(f"🔍 EXECUTE_SHELL DEBUG: execute_shell_command called with: '{shell_cmd}'")
-        print(f"🔍 EXECUTE_SHELL DEBUG: command_identifier: {command_identifier}")
+        # print(f"🔍 EXECUTE_SHELL DEBUG: execute_shell_command called with: '{shell_cmd}'")
+        # print(f"🔍 EXECUTE_SHELL DEBUG: command_identifier: {command_identifier}")
         
         # 保存原始用户命令，用于后续的文件验证分析
         self._original_user_command = shell_cmd.strip()
@@ -1076,18 +1076,18 @@ class GoogleDriveShell:
             if ((shell_cmd_clean.startswith("'") and shell_cmd_clean.endswith("'")) or 
                 (shell_cmd_clean.startswith('"') and shell_cmd_clean.endswith('"'))):
                 # 去除外层引号，这是一个完整的远程命令
-                print(f"🔍 QUOTED_COMMAND DEBUG: Detected quoted command: '{shell_cmd_clean}'")
+                # print(f"🔍 QUOTED_COMMAND DEBUG: Detected quoted command: '{shell_cmd_clean}'")
                 shell_cmd_clean = shell_cmd_clean[1:-1]
                 shell_cmd = shell_cmd_clean  # 更新shell_cmd以便后续使用
                 is_quoted_command = True  # 设置引号命令标记
-                print(f"🔍 QUOTED_COMMAND DEBUG: After removing quotes: '{shell_cmd_clean}'")
-                print(f"🔍 QUOTED_COMMAND DEBUG: is_quoted_command set to: {is_quoted_command}")
+                # print(f"🔍 QUOTED_COMMAND DEBUG: After removing quotes: '{shell_cmd_clean}'")
+                # print(f"🔍 QUOTED_COMMAND DEBUG: is_quoted_command set to: {is_quoted_command}")
                 
                 # 引号包围的命令直接使用远程执行
                 # 不需要特殊处理，让通用的远程命令执行机制处理
-                print(f"🔍 QUOTED_PROCESSING DEBUG: Quoted command processing completed")
+                # print(f"🔍 QUOTED_PROCESSING DEBUG: Quoted command processing completed")
 
-            print(f"🔍 FLOW_DEBUG: About to check help commands")
+            # print(f"🔍 FLOW_DEBUG: About to check help commands")
             # 首先检查特殊命令（不需要远程执行）
             if shell_cmd_clean in ['--help', '-h', 'help']:
                 # 显示本地帮助信息，不触发远程窗口
@@ -1222,7 +1222,7 @@ For more information, visit: https://github.com/your-repo/gds"""
             #     return self._handle_edit_command(shell_cmd_clean.strip())
             # else:
             # 移除特殊的python -c处理，让它通过新的command registry
-            print(f"🔍 COMMAND_PARSE DEBUG: About to parse command normally")
+            # print(f"🔍 COMMAND_PARSE DEBUG: About to parse command normally")
             # 首先检查是否包含多命令组合（&&、||或|），在特殊命令检查之前
             has_multiple_ops = False
             # 检查带空格和不带空格的操作符，使用清理后的命令
@@ -1305,7 +1305,7 @@ For more information, visit: https://github.com/your-repo/gds"""
                         return 1
                     
                     # 旧的特殊命令实现已被移除，现在使用新的command registry系统
-                    print(f"🔍 DEBUG: Command '{cmd}' not found in new command registry, falling back to remote execution")
+                    # print(f"🔍 DEBUG: Command '{cmd}' not found in new command registry, falling back to remote execution")
              
             # 如果不是特殊命令，使用统一的命令解析和转译接口
             translation_result = self.parse_and_translate_command(shell_cmd_clean)
@@ -2473,13 +2473,15 @@ fi
             # 首先确保我们有Google Drive API服务
             if not self.drive_service:
                 if not silent:
-                    print(f"🔍 Google Drive API服务未初始化，无法验证指纹")
+                    # print(f"🔍 Google Drive API服务未初始化，无法验证指纹")
+                    pass
                 return False
             
             # 获取REMOTE_ROOT文件夹ID
             if not hasattr(self, 'REMOTE_ROOT_FOLDER_ID'):
                 if not silent:
-                    print(f"🔍 REMOTE_ROOT_FOLDER_ID未设置，无法验证指纹")
+                    # print(f"🔍 REMOTE_ROOT_FOLDER_ID未设置，无法验证指纹")
+                    pass
                 return False
             
             # 首先获取tmp文件夹ID
@@ -2491,7 +2493,8 @@ fi
             
             if not tmp_folder_result.get('success') or not tmp_folder_result.get('files'):
                 if not silent:
-                    print(f"🔍 tmp文件夹不存在，无法验证指纹")
+                    # print(f"🔍 tmp文件夹不存在，无法验证指纹")
+                    pass
                 return False
             
             tmp_folder_id = tmp_folder_result['files'][0]['id']
@@ -2511,7 +2514,8 @@ fi
             
             if not fingerprint_files:
                 if not silent:
-                    print(f"🔍 在REMOTE_ROOT中未找到指纹文件")
+                    # print(f"🔍 在REMOTE_ROOT中未找到指纹文件")
+                    pass
                 return False
             
             # 使用最新的指纹文件（按名称排序，最新的在最后）

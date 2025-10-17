@@ -57,4 +57,4 @@ class BaseCommand(ABC):
     
     def print_debug(self, message: str) -> None:
         """Print debug message."""
-        print(f"🔍 DEBUG: {message}")
+        # print(f"🔍 DEBUG: {message}")

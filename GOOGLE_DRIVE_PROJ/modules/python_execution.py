@@ -238,15 +238,15 @@ except:
             command = " && ".join(commands)
             
             # 执行远程命令
-            print(f"🔍 PYTHON_CODE_UNIFIED DEBUG: About to execute remote command")
-            print(f"🔍 PYTHON_CODE_UNIFIED DEBUG: original code='{code}'")
-            print(f"🔍 PYTHON_CODE_UNIFIED DEBUG: code_base64='{code_base64}'")
-            print(f"🔍 PYTHON_CODE_UNIFIED DEBUG: temp_file_path='{temp_file_path}'")
-            print(f"🔍 PYTHON_CODE_UNIFIED DEBUG: command='{command}'")
+            # print(f"🔍 PYTHON_CODE_UNIFIED DEBUG: About to execute remote command")
+            # print(f"🔍 PYTHON_CODE_UNIFIED DEBUG: original code='{code}'")
+            # print(f"🔍 PYTHON_CODE_UNIFIED DEBUG: code_base64='{code_base64}'")
+            # print(f"🔍 PYTHON_CODE_UNIFIED DEBUG: temp_file_path='{temp_file_path}'")
+            # print(f"🔍 PYTHON_CODE_UNIFIED DEBUG: command='{command}'")
             
             result = self.main_instance.execute_command_interface("bash", ["-c", command])
             
-            print(f"🔍 PYTHON_CODE_UNIFIED DEBUG: execute_command_interface returned: {result}")
+            # print(f"🔍 PYTHON_CODE_UNIFIED DEBUG: execute_command_interface returned: {result}")
             
             if result.get("success"):
                 # 处理新的返回结构：result.data 包含实际的命令执行结果
@@ -255,9 +255,9 @@ except:
                 stderr = data.get("stderr", result.get("stderr", ""))
                 exit_code = data.get("exit_code", result.get("exit_code", 0))
                 
-                print(f"🔍 PYTHON_CODE_UNIFIED DEBUG: exit_code={exit_code}")
-                print(f"🔍 PYTHON_CODE_UNIFIED DEBUG: stdout='{stdout}'")
-                print(f"🔍 PYTHON_CODE_UNIFIED DEBUG: stderr='{stderr}'")
+                # print(f"🔍 PYTHON_CODE_UNIFIED DEBUG: exit_code={exit_code}")
+                # print(f"🔍 PYTHON_CODE_UNIFIED DEBUG: stdout='{stdout}'")
+                # print(f"🔍 PYTHON_CODE_UNIFIED DEBUG: stderr='{stderr}'")
                 
                 return {
                     "success": True,
