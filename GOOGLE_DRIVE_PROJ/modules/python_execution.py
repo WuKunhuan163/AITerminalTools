@@ -146,11 +146,13 @@ except:
             result = self.main_instance.execute_command_interface("bash", ["-c", command])
             
             if result.get("success"):
+                # 处理新的返回结构：result.data 包含实际的命令执行结果
+                data = result.get("data", {})
                 return {
                     "success": True,
-                    "stdout": result.get("stdout", ""),
-                    "stderr": result.get("stderr", ""),
-                    "return_code": result.get("exit_code", 0),
+                    "stdout": data.get("stdout", result.get("stdout", "")),
+                    "stderr": data.get("stderr", result.get("stderr", "")),
+                    "return_code": data.get("exit_code", result.get("exit_code", 0)),
                     "source": result.get("source", ""),
                     "output_displayed": result.get("output_displayed", False)  # 传递输出显示标记
                 }
@@ -194,11 +196,13 @@ except:
             result = self.main_instance.execute_command_interface("bash", ["-c", command])
             
             if result.get("success"):
+                # 处理新的返回结构：result.data 包含实际的命令执行结果
+                data = result.get("data", {})
                 return {
                     "success": True,
-                    "stdout": result.get("stdout", ""),
-                    "stderr": result.get("stderr", ""),
-                    "return_code": result.get("exit_code", 0),
+                    "stdout": data.get("stdout", result.get("stdout", "")),
+                    "stderr": data.get("stderr", result.get("stderr", "")),
+                    "return_code": data.get("exit_code", result.get("exit_code", 0)),
                     "output_displayed": result.get("output_displayed", False)  # 传递输出显示标记
                 }
             else:
@@ -237,11 +241,13 @@ except:
             result = self.main_instance.execute_command_interface("bash", ["-c", command])
             
             if result.get("success"):
+                # 处理新的返回结构：result.data 包含实际的命令执行结果
+                data = result.get("data", {})
                 return {
                     "success": True,
-                    "stdout": result.get("stdout", ""),
-                    "stderr": result.get("stderr", ""),
-                    "return_code": result.get("exit_code", 0),
+                    "stdout": data.get("stdout", result.get("stdout", "")),
+                    "stderr": data.get("stderr", result.get("stderr", "")),
+                    "return_code": data.get("exit_code", result.get("exit_code", 0)),
                     "environment": venv_name
                 }
             else:
